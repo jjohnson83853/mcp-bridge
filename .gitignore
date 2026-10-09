@@ -2,6 +2,7 @@
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #
 # Binaries for programs and plugins
+/mcp-bridge
 *.exe
 *.exe~
 *.dll
@@ -28,6 +29,16 @@ go.work.sum
 # env file
 .env
 
+# Operator secret files referenced by config documents
+/configs/secrets/
+
+# Tool scratch buffers (dot-prefixed scratch written by local tooling)
+.*.buffer
+.*.count
+
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# local tool scratch spill
+bashnew
