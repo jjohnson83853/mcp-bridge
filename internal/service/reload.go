@@ -22,7 +22,10 @@ import (
 type ReloadDeps struct {
 	// Discover reports the exact tool definitions an upstream currently
 	// exposes. A failure rejects the whole candidate reload.
-	Discover func(server config.Server) ([]core.ToolDefinition, error)
+	Discover        func(server config.Server) ([]core.ToolDefinition, error)
+	DiscoverPrompts func(server config.Server) ([]storage.Prompt, error)
+	LoadPrompts     func() (*storage.PromptSnapshot, error)
+	PersistPrompts  func(snapshot *storage.PromptSnapshot) error
 	// NewClient builds one dedicated upstream client for a server whose
 	// identity or credentials are new in this candidate.
 	NewClient func(server config.Server) (core.Upstream, error)
@@ -74,6 +77,7 @@ type Assembly struct {
 	servers     map[string]ServerRuntime
 	pins        []core.ResolvedPin
 	snapshot    *storage.Snapshot
+	prompts     []storage.Prompt
 }
 
 // Generation is the monotonic publication counter of this assembly.
@@ -97,6 +101,7 @@ func (a *Assembly) ClientTokenHashes() [][32]byte {
 
 // Snapshot is the reconciled durable snapshot this generation published.
 func (a *Assembly) Snapshot() *storage.Snapshot { return a.snapshot }
+func (a *Assembly) Prompts() []storage.Prompt   { return append([]storage.Prompt(nil), a.prompts...) }
 
 // ServerIDs lists the configured servers of this generation in stable order.
 func (a *Assembly) ServerIDs() []string {
@@ -386,6 +391,15 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 	if previous != nil {
 		next.generation = previous.generation + 1
 	}
+	if previous != nil {
+		next.prompts = previous.Prompts()
+	}
+	if in.mode == buildStartup && in.deps.LoadPrompts != nil {
+		if loaded, err := in.deps.LoadPrompts(); err == nil && loaded != nil {
+			next.prompts = append([]storage.Prompt(nil), loaded.Prompts...)
+		}
+	}
+	next.prompts = promptsForServers(next.prompts, in.candidate.Servers)
 
 	var created []core.Upstream
 	published := false
@@ -431,6 +445,13 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 			runtime.Client = client
 			created = append(created, client)
 		}
+		if server.PromptsDisabled {
+			next.prompts = replaceServerPrompts(next.prompts, server.ID, nil)
+		} else if in.mode != buildStartup && in.deps.DiscoverPrompts != nil {
+			if discovered, err := in.deps.DiscoverPrompts(server); err == nil {
+				next.prompts = replaceServerPrompts(next.prompts, server.ID, discovered)
+			}
+		}
 		var defs []core.ToolDefinition
 		if in.mode == buildStartup {
 			// No upstream is contacted: the local generation serves whatever
@@ -473,6 +494,12 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 			EndpointFingerprint: endpointFingerprint(server.Endpoint),
 		})
 	}
+	sort.Slice(next.prompts, func(i, j int) bool {
+		if next.prompts[i].ServerID != next.prompts[j].ServerID {
+			return next.prompts[i].ServerID < next.prompts[j].ServerID
+		}
+		return next.prompts[i].RawName < next.prompts[j].RawName
+	})
 	next.revision = next.catalog.Revision()
 
 	pins := make([]core.PinnedTool, 0, len(in.candidate.Pins))
@@ -531,6 +558,12 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 			return nil, fmt.Errorf("service: %s persist: %w", in.mode, err)
 		}
 	}
+	if in.mode != buildStartup && in.deps.PersistPrompts != nil {
+		candidatePrompts := &storage.PromptSnapshot{SchemaVersion: storage.PromptSchemaVersion, Prompts: append([]storage.Prompt(nil), next.prompts...)}
+		if err := in.deps.PersistPrompts(candidatePrompts); err != nil && previous != nil {
+			next.prompts = previous.Prompts()
+		}
+	}
 	next.snapshot = snapshot
 
 	r.current.Store(next)
@@ -545,6 +578,36 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 // snapshot of the previous run, so that run's exact catalog, vectors, and
 // tombstones survive the restart instead of being dropped (plan §4.5/§4.9,
 // AC-13/AC-15/AC-16).
+func promptsForServers(prompts []storage.Prompt, servers []config.Server) []storage.Prompt {
+	allowed := make(map[string]bool, len(servers))
+	for _, server := range servers {
+		if !server.PromptsDisabled {
+			allowed[server.ID] = true
+		}
+	}
+	filtered := make([]storage.Prompt, 0, len(prompts))
+	for _, prompt := range prompts {
+		if allowed[prompt.ServerID] {
+			filtered = append(filtered, prompt)
+		}
+	}
+	return filtered
+}
+
+func replaceServerPrompts(current []storage.Prompt, serverID string, replacement []storage.Prompt) []storage.Prompt {
+	updated := make([]storage.Prompt, 0, len(current)+len(replacement))
+	for _, prompt := range current {
+		if prompt.ServerID != serverID {
+			updated = append(updated, prompt)
+		}
+	}
+	for _, prompt := range replacement {
+		if prompt.ServerID == serverID {
+			updated = append(updated, prompt)
+		}
+	}
+	return updated
+}
 func (in buildInput) reconcileBase(previous *Assembly) *storage.Snapshot {
 	if in.mode == buildStartup && in.durable != nil {
 		return in.durable

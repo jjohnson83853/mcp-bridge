@@ -195,3 +195,56 @@ func TestCatalogAgeAndReadinessArePerServer(t *testing.T) {
 		t.Fatal("a refused id must not create a series")
 	}
 }
+
+// TestPromptMetricsBoundedLabels pins the prompt observability contract
+// (R-27/AC-29): the prompt surface contributes exactly the finite prompt
+// operations to the inbound request metric plus one unlabelled prompt count,
+// and no server id, prompt name, argument or payload value can reach the
+// exposition.
+func TestPromptMetricsBoundedLabels(t *testing.T) {
+	m := NewMetrics([]string{"alpha"})
+	if !m.RecordRequest("prompts_list", "success") || !m.RecordRequest("prompts_get", "failure") {
+		t.Fatal("the finite prompt operation vocabulary must be recordable")
+	}
+	// Every value below is something a caller could try to smuggle into a
+	// label: an unknown operation, a public name, a raw upstream name, and the
+	// configured server id.
+	for _, operation := range []string{"search", "prompts_delete", "p_publicname", "raw-secret-name", "alpha"} {
+		if m.RecordRequest(operation, "success") {
+			t.Fatalf("out-of-vocabulary operation %q was accepted as a label", operation)
+		}
+	}
+	for _, outcome := range []string{"rejected", "raw-secret-name"} {
+		if m.RecordRequest("prompts_list", outcome) {
+			t.Fatalf("out-of-vocabulary outcome %q was accepted as a label", outcome)
+		}
+	}
+	if !m.SetCatalogPrompts(0) {
+		t.Fatal("an empty published prompt set must be recordable")
+	}
+	if m.SetCatalogPrompts(-1) {
+		t.Fatal("a negative prompt count must be refused")
+	}
+	if !m.SetCatalogPrompts(2) {
+		t.Fatal("a published prompt set must be recordable")
+	}
+
+	exp := exposition(t, m)
+	for _, want := range []string{
+		`bridge_requests_total{operation="prompts_list",outcome="success",server="_bridge"} 1`,
+		`bridge_requests_total{operation="prompts_get",outcome="failure",server="_bridge"} 1`,
+		`bridge_catalog_prompts 2`,
+	} {
+		if !strings.Contains(exp, want) {
+			t.Fatalf("missing %q in exposition: %s", want, exp)
+		}
+	}
+	if strings.Contains(exp, "bridge_catalog_prompts{") {
+		t.Fatalf("the prompt count gauge must carry no labels: %s", exp)
+	}
+	for _, secret := range []string{"alpha", "p_publicname", "raw-secret-name", "search"} {
+		if strings.Contains(exp, secret) {
+			t.Fatalf("sensitive value %q reached the exposition: %s", secret, exp)
+		}
+	}
+}

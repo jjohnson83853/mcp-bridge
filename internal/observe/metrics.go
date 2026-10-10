@@ -32,6 +32,17 @@ var (
 	reloadReasons  = map[string]bool{"none": true, "invalid_configuration": true, "admission_failed": true}
 )
 
+// requestOperations and requestOutcomes bound the inbound request metric's
+// labels to the finite vocabulary the bridge classifies. Recording is refused
+// for anything else, so a prompt or tool name can never become a series
+// (R-27/AC-29): the prompt surface contributes exactly the two prompt
+// operations, and every other inbound request stays the single aggregate
+// "request" operation.
+var (
+	requestOperations = map[string]bool{"request": true, "prompts_list": true, "prompts_get": true}
+	requestOutcomes   = map[string]bool{"success": true, "failure": true}
+)
+
 type serverSet struct {
 	mu       sync.RWMutex
 	accepted map[string]bool
@@ -107,12 +118,13 @@ type Metrics struct {
 	servers  *serverSet
 	registry *prometheus.Registry
 
-	requestsTotal *prometheus.CounterVec
-	catalogTools  *prometheus.GaugeVec
-	catalogAge    *prometheus.GaugeVec
-	refreshTotal  *prometheus.CounterVec
-	reloadTotal   *prometheus.CounterVec
-	readiness     *prometheus.GaugeVec
+	requestsTotal  *prometheus.CounterVec
+	catalogTools   *prometheus.GaugeVec
+	catalogPrompts prometheus.Gauge
+	catalogAge     *prometheus.GaugeVec
+	refreshTotal   *prometheus.CounterVec
+	reloadTotal    *prometheus.CounterVec
+	readiness      *prometheus.GaugeVec
 }
 
 // NewMetrics builds the bridge's metric surface. The collectors live in a
@@ -130,6 +142,10 @@ func NewMetrics(serverIDs []string) *Metrics {
 			Name: "bridge_catalog_tools",
 			Help: "Accepted tool count of each server's current catalog.",
 		}, []string{"server"}),
+		catalogPrompts: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "bridge_catalog_prompts",
+			Help: "Prompt definitions currently published to inbound clients, across all configured servers.",
+		}),
 		catalogAge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: "bridge_catalog_age_seconds",
 			Help: "Seconds since the server's complete catalog was last refreshed.",
@@ -147,7 +163,7 @@ func NewMetrics(serverIDs []string) *Metrics {
 			Help: "Readiness by server: 0 unavailable, 1 degraded, 2 ready.",
 		}, []string{"server"}),
 	}
-	m.registry.MustRegister(m.requestsTotal, m.catalogTools, m.catalogAge, m.refreshTotal, m.reloadTotal, m.readiness)
+	m.registry.MustRegister(m.requestsTotal, m.catalogTools, m.catalogPrompts, m.catalogAge, m.refreshTotal, m.reloadTotal, m.readiness)
 	return m
 }
 
@@ -160,13 +176,26 @@ func (m *Metrics) ServerIDs() []string {
 	return m.servers.ids()
 }
 
-// RecordRequest counts one inbound bridge request. The aggregate label is fixed:
-// inbound work is never attributable to a single configured server.
+// RecordRequest counts one inbound bridge request. The aggregate label is fixed
+// (inbound work is never attributable to a single configured server) and both
+// labels are validated against the finite vocabularies above, so an
+// out-of-vocabulary caller is refused instead of creating a series.
 func (m *Metrics) RecordRequest(operation, outcome string) bool {
-	if operation == "" || outcome == "" {
+	if !requestOperations[operation] || !requestOutcomes[outcome] {
 		return false
 	}
 	m.requestsTotal.WithLabelValues(bridgeServerID, operation, outcome).Inc()
+	return true
+}
+
+// SetCatalogPrompts publishes the number of prompt definitions the inbound
+// surface currently serves. The gauge carries no labels at all, so neither a
+// server id nor a prompt name can enter this signal (R-27/AC-29).
+func (m *Metrics) SetCatalogPrompts(prompts int) bool {
+	if prompts < 0 {
+		return false
+	}
+	m.catalogPrompts.Set(float64(prompts))
 	return true
 }
 

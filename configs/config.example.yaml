@@ -67,6 +67,9 @@ servers:
         X-API-Key: {file: "secrets/developer-api-key"}
   - id: portainer-api
     endpoint: "https://portainer-upstream.invalid/mcp"
+    # Native prompt pass-through is enabled per server by default; set this to
+    # true to exclude one server from prompt discovery and exposure.
+    prompts_disabled: false
     credentials:
       bearer: {env: PORTAINER_UPSTREAM_TOKEN}
     limits:

@@ -14,7 +14,15 @@
 
 **Protocol boundary retained:** Stateful call-based inbound versions are the four pre-2026-07-28 versions, enforced by a default-options server on a stateful StreamableHTTPHandler; NO SupportedProtocolVersions narrowing. Latest server/discover is answered with supportedVersions exactly the four legacy versions; initialize offering latest negotiates down to 2025-11-25; latest tools/call is rejected with HTTP400/CodeUnsupportedProtocolVersion advertising the legacy list and zero execution. No400 for discover or latest initialize offers. Upstream targets all five SDK versions. Every upstream client explicitly sets `MultiRoundTrip: &MultiRoundTripOptions{Disabled:true}`; ALL original-operation re-dispatch middleware, including urlElicitationMiddleware, is prohibited.
 
-**Non-goals:** UI, stdio, legacy HTTP+SSE transport, OAuth, RBAC/per-user/per-tool policy, built-in TLS, distributed storage, vector database, automatic prerequisites/retries/interactive re-dispatch, arbitrary URL proxy, resources/prompts/sampling/elicitation/roots/tasks proxy, new observability infrastructure, inbound latest call-based execution or dual-mode handler, and any namespace abstraction. SDK discovery/negotiate-down is not latest execution support. No speculative namespace extension is planned.
+**Non-goals:** UI, stdio, legacy HTTP+SSE transport, OAuth, RBAC/per-user/per-tool policy, built-in TLS, distributed storage, vector database, automatic prerequisites/retries/interactive re-dispatch, arbitrary URL proxy, resources/sampling/elicitation/roots/tasks proxy, new observability infrastructure, inbound latest call-based execution or dual-mode handler, and any namespace abstraction. SDK discovery/negotiate-down is not latest execution support. No speculative namespace extension is planned.
+
+**Amendment (HMB-v1 r10 increment):** native upstream prompt pass-through is now
+in scope. It is specified entirely by `.omp/plans/headless-mcp-bridge-prompts.md`
+(R-23–R-27, AC-23–AC-29, T-11–T-14, CT-07), which leaves R-01–R-22,
+AC-01–AC-22, T-01–T-10 and CT-01–CT-06 unchanged and touches no protocol-boundary
+row above; this document only drops `prompts` from the non-goal list and points
+at that increment. Requirement, acceptance, task and checkpoint detail lives
+there, not here.
 
 ## 2. REQUIREMENTS VIEW
 

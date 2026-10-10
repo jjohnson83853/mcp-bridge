@@ -86,11 +86,22 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 	if err := surface.Register(server); err != nil {
 		return fmt.Errorf("tool surface: %w", err)
 	}
+	promptSurface := service.NewPromptSurface(runtime, func(message string) { operatorLog(logger)("%s", message) })
+	promptSurface.SetMetrics(metrics)
+	promptSurface.Register(server)
 
 	registry := newUpstreamRegistry(holder)
 	published := publishObserver(holder, checks, readiness, metrics)
 	persist := func(snapshot *storage.Snapshot) error {
 		if err := store.Save(snapshot); err != nil {
+			checks.storage(false)
+			return err
+		}
+		checks.storage(true)
+		return nil
+	}
+	persistPrompts := func(snapshot *storage.PromptSnapshot) error {
+		if err := store.SavePrompts(snapshot); err != nil {
 			checks.storage(false)
 			return err
 		}
@@ -126,8 +137,11 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 		Durable: durableLoader(store),
 		Deps: service.RefreshDeps{ReloadDeps: service.ReloadDeps{
 			Discover:            registry.discover,
+			DiscoverPrompts:     registry.discoverPrompts,
 			NewClient:           registry.newClient,
 			Persist:             persist,
+			LoadPrompts:         promptLoader(store),
+			PersistPrompts:      persistPrompts,
 			Embed:               embedder(provider, model, settings.Embedding),
 			Close:               registry.close,
 			Now:                 time.Now,
@@ -137,8 +151,11 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 		Signals:       reloads,
 		Metrics:       func(serverID, status, reason string) { metrics.RecordRefresh(serverID, status, reason) },
 		ReloadMetrics: func(outcome, reason string) { metrics.RecordReload(outcome, orNone(reason)) },
-		Published:     published,
-		Logf:          operatorLog(logger),
+		Published: func(assembly *service.Assembly) {
+			promptSurface.Published(assembly)
+			published(assembly)
+		},
+		Logf: operatorLog(logger),
 	})
 	if err != nil {
 		return fmt.Errorf("catalog loop: %w", err)

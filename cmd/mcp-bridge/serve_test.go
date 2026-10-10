@@ -113,13 +113,23 @@ func fakeEmbeddings(t *testing.T) *httptest.Server {
 }
 
 type bridgeServerSpec struct {
-	id       string
-	endpoint string
+	id              string
+	endpoint        string
+	promptsDisabled bool
 }
 
-// writeBridgeConfig writes one complete operator document. Reload phases
-// rewrite the same path with different membership.
+// writeBridgeConfig writes one complete operator document with the default
+// catalog refresh interval. Reload phases rewrite the same path with different
+// membership.
 func writeBridgeConfig(t *testing.T, path, httpAddress, operationsAddress, storageDirectory, embeddingURL string, servers []bridgeServerSpec) {
+	t.Helper()
+	writeBridgeConfigInterval(t, path, httpAddress, operationsAddress, storageDirectory, embeddingURL, "5m", servers)
+}
+
+// writeBridgeConfigInterval is writeBridgeConfig with an explicit catalog
+// refresh interval, so a test can observe periodic re-discovery without
+// signalling the process.
+func writeBridgeConfigInterval(t *testing.T, path, httpAddress, operationsAddress, storageDirectory, embeddingURL, refreshInterval string, servers []bridgeServerSpec) {
 	t.Helper()
 	document := fmt.Sprintf(`schema_version: 1
 http:
@@ -139,7 +149,7 @@ storage:
   directory: %q
   max_snapshot_bytes: 268435456
 catalog:
-  refresh_interval: "5m"
+  refresh_interval: %q
   stale_after: "15m"
   max_tools_per_server: 10000
   max_tools_total: 20000
@@ -180,12 +190,15 @@ upstream_defaults:
     consecutive_failures: 3
     open_duration: "30s"
     half_open_probes: 1
-`, httpAddress, httpAddress, operationsAddress, storageDirectory, embeddingURL, serveDimensions)
+`, httpAddress, httpAddress, operationsAddress, storageDirectory, refreshInterval, embeddingURL, serveDimensions)
 	var builder strings.Builder
 	builder.WriteString(document)
 	builder.WriteString("servers:\n")
 	for _, server := range servers {
 		builder.WriteString(fmt.Sprintf("  - id: %s\n    endpoint: %q\n", server.id, server.endpoint))
+		if server.promptsDisabled {
+			builder.WriteString("    prompts_disabled: true\n")
+		}
 	}
 	builder.WriteString("pins: []\n")
 	if err := os.WriteFile(path, []byte(builder.String()), 0o600); err != nil {

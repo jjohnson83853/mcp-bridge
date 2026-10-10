@@ -1,10 +1,10 @@
 # mcp-bridge
 
 A headless bridge that fronts several MCP upstream servers behind exactly one
-Streamable HTTP endpoint, `/mcp`. It discovers each configured server's tools,
-serves them under stable server-derived names, answers tool discovery through
-hybrid keyword/vector search, and forwards executions to the owning upstream
-with provenance attached.
+Streamable HTTP endpoint, `/mcp`. It discovers each configured server's tools
+and prompts, serves them under stable server-derived names, answers tool
+discovery through hybrid keyword/vector search, and forwards tool executions and
+prompt reads to the owning upstream with provenance attached.
 
 There is no namespace layer, no per-server route, and no admin UI: server ID is
 the provenance, and membership is the flat `servers:` list of one YAML document.
@@ -59,6 +59,7 @@ upstream_defaults: { ... } # connect/call/refresh limits, breaker
 servers:
   - id: developer-api
     endpoint: "https://developer-upstream.invalid/mcp"
+    prompts_disabled: false  # optional per-server prompt opt-out (default false)
     credentials:
       bearer: {env: DEVELOPER_UPSTREAM_TOKEN}
       headers:
@@ -107,6 +108,36 @@ Executions return the upstream result unaltered inside a provenance envelope:
 adds `server`, `catalog_revision`, `catalog_status`, `availability`, `tool_name`,
 and `request_id`.
 
+## Prompt surface
+
+Every configured server's native prompts are passed through the same endpoint.
+The bridge serves `prompts/list`, `prompts/get`, and `prompts/list_changed`; it
+does not synthesize prompts, translate arguments, or fan a read out.
+
+Public prompt names are as opaque and stable as tool names: `p_` plus unpadded
+lowercase base32 of `SHA-256([server_id, raw_name])`. Two upstreams may publish
+the same raw prompt name and the public names still differ; a `prompts/get`
+reaches exactly one owning upstream and is never retried against its sibling.
+Arguments are forwarded unchanged.
+
+A served prompt describes its origin in its description (`… (via <server id>)`,
+or just `via <server id>` when the upstream description is empty). The raw
+upstream name stays internal, and the description is provenance for humans only
+— routing never depends on it. Failures are sanitized: an upstream error never
+reaches the client verbatim, a failing prompt is reported as `prompt
+unavailable`, and an unknown public name is JSON-RPC `invalid params`.
+
+Prompts are opt-out per server: everything is discovered unless that server sets
+`prompts_disabled: true`, which excludes it from prompt discovery and exposure
+without touching its tools. The key is reload-safe.
+
+Published prompts survive a restart. The state directory keeps `prompts.json`
+beside the tool snapshot, a server that cannot be reached keeps its complete
+last-known-good prompts and is marked stale exactly like its tools, and a
+prompt-only change never moves the tool catalog revision, so a client holding a
+current revision keeps using it. `GET /metrics` exposes the published count as
+the unlabelled `bridge_catalog_prompts` gauge.
+
 ## Operations
 
 On the `operations.listen` address:
@@ -138,7 +169,13 @@ name, query, URL, or token.
 - **Protocol versions.** The inbound edge accepts the four legacy call versions;
   a client offering the newest version is served after negotiating down to
   `2025-11-25`, and the newest `tools/call` is rejected `400` with the supported
-  version list and zero execution.
+  version list and zero execution. `prompts/list` and `prompts/get` are served on
+  all four accepted versions. Change notifications need a client that offers one
+  of them: a client that offers the newest version is negotiated down, but the
+  pinned `go-sdk` still classifies that session as post-SEP-2575 and delivers
+  list-changed notifications only on a `subscriptions/listen` stream that the
+  legacy handshake never opened, so such a client sees no `prompts/list_changed`
+  and must re-list instead.
 
 ## Testing
 
@@ -156,3 +193,11 @@ go run ./cmd/covcheck
 the real composition root against `httptest` upstreams and a private temp store,
 then exercises readiness, catalog search, a bridged call, a SIGHUP membership
 change, a stale-revision refusal, and a rejected candidate.
+
+`cmd/mcp-bridge/prompts_acceptance_test.go` is the prompt-surface acceptance
+test: one live bridge against three upstreams with two colliding raw prompt
+names, covering advertised capability, publication, opaque names, routing,
+provenance, sanitized errors, removal notifications, prompt-only revision
+isolation, and restart/outage last-known-good behaviour. Its client pins an
+accepted protocol version, because change notifications are unobservable on the
+negotiated-down session described under "Protocol versions".

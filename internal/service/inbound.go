@@ -3,6 +3,8 @@ package service
 import (
 	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -132,12 +134,13 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	started := h.now()
 	status := &statusWriter{ResponseWriter: w}
 	status.Header().Set("X-Request-ID", requestID)
+	captured := captureRequestMethod(r)
 	defer func() {
 		outcome := "success"
 		if status.status >= http.StatusBadRequest {
 			outcome = "failure"
 		}
-		operation := inboundOperation(r)
+		operation := inboundOperation(captured)
 		if h.metrics != nil {
 			h.metrics.RecordRequest(operation, outcome)
 		}
@@ -251,7 +254,79 @@ func (w *statusWriter) WriteHeader(status int) {
 
 func (w *statusWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 
-func inboundOperation(_ *http.Request) string { return "request" }
+// methodCaptureLimit bounds how much request body the edge buffers to classify
+// the JSON-RPC method for the request metric. A message is far smaller than
+// this in practice, and a longer body simply classifies as the aggregate
+// "request" operation instead of growing the capture.
+const methodCaptureLimit = 4096
+
+// bodyCapture records a bounded prefix of a request body. The streamable
+// handler reads the body while the request is being served, and the deferred
+// classification reads the capture afterwards, so access is guarded.
+type bodyCapture struct {
+	mu    sync.Mutex
+	buf   []byte
+	limit int
+}
+
+func (c *bodyCapture) Write(p []byte) (int, error) {
+	c.mu.Lock()
+	if room := c.limit - len(c.buf); room > 0 {
+		if len(p) < room {
+			room = len(p)
+		}
+		c.buf = append(c.buf, p[:room]...)
+	}
+	c.mu.Unlock()
+	return len(p), nil
+}
+
+func (c *bodyCapture) captured() []byte {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return append([]byte(nil), c.buf...)
+}
+
+// requestBody keeps the original body closable while the capture observes what
+// the handler reads.
+type requestBody struct {
+	io.Reader
+	io.Closer
+}
+
+// captureRequestMethod tees a bounded prefix of a POST body into a capture and
+// returns it, or nil when the request carries no message to classify.
+func captureRequestMethod(r *http.Request) *bodyCapture {
+	if r.Method != http.MethodPost || r.Body == nil || r.Body == http.NoBody {
+		return nil
+	}
+	capture := &bodyCapture{limit: methodCaptureLimit}
+	r.Body = requestBody{Reader: io.TeeReader(r.Body, capture), Closer: r.Body}
+	return capture
+}
+
+// inboundOperation classifies one inbound message into the finite metric
+// vocabulary. Only the prompt surface is named individually; every other
+// method stays the single aggregate "request" operation, so no client-chosen
+// text can reach a label.
+func inboundOperation(captured *bodyCapture) string {
+	if captured == nil {
+		return "request"
+	}
+	var header struct {
+		Method string `json:"method"`
+	}
+	if err := json.Unmarshal(captured.captured(), &header); err != nil {
+		return "request"
+	}
+	switch header.Method {
+	case "prompts/list":
+		return "prompts_list"
+	case "prompts/get":
+		return "prompts_get"
+	}
+	return "request"
+}
 
 // hostAllowed reports whether the request Host is admitted. An empty allowlist
 // disables the check; otherwise the observed Host must match an entry exactly.

@@ -68,6 +68,19 @@ const (
 func IsBusy(err error) bool        { return errors.Is(err, errBusy) }
 func IsUnavailable(err error) bool { return errors.Is(err, errUnavailable) }
 
+// transportRejectedCode mirrors jsonrpc2.ErrRejected (-32005), the wire code the
+// SDK transport uses when it could not deliver a request at all. The SDK
+// aliases jsonrpc.Error to jsonrpc2.WireError, so every SDK error matches
+// errors.As(*jsonrpc.Error); this code is what separates a transport fault from
+// a remote protocol answer.
+const transportRejectedCode = -32005
+
+// isTransportRejection reports whether one SDK wire error is a transport-level
+// rejection rather than an answer from the peer.
+func isTransportRejection(rpcError *jsonrpc.Error) bool {
+	return rpcError != nil && rpcError.Code == transportRejectedCode
+}
+
 func NewServerClient(opts ServerOptions) (*ServerClient, error) {
 	parsed, err := url.ParseRequestURI(opts.Endpoint)
 	if err != nil || parsed.Host == "" || parsed.User != nil || parsed.Fragment != "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
@@ -152,7 +165,7 @@ func (c *ServerClient) CallTool(parent context.Context, session *mcp.ClientSessi
 			return nil, &CallError{Code: "internal_error", ExecutionState: "unknown"}
 		}
 		var rpcError *jsonrpc.Error
-		if errors.As(err, &rpcError) {
+		if errors.As(err, &rpcError) && !isTransportRejection(rpcError) {
 			if strings.HasSuffix(rpcError.Message, "client does not support elicitation") {
 				return nil, &CallError{Code: "unsupported_capability", ExecutionState: "unknown"}
 			}

@@ -1213,3 +1213,317 @@ Two shippable-artifact defects found and fixed in this section:
 T-10 (real omp upstream end-to-end) remains BLOCKED on U-01: real upstream
 URLs/auth/versions/capabilities and the negotiated call version from the actual
 omp client are still not supplied.
+
+## 2026-10-10 (r10) — prompt pass-through: intake (pre-checkpoint)
+
+User request: the bridge must pass along the prompts its proxied upstreams
+define, so the LLM reaching the bridge can use them ("if a configured tool has a
+prompt for the llm it should be available to the llm even if using this proxy").
+
+This is a **scope change**: parent spec line 17 (Non-goals:
+"resources/prompts/sampling/elicitation/roots/tasks proxy") and line 277
+("Inbound tools/listChanged where supported, no resources/prompts/tasks") are
+contradicted and require a planner revision plus renewed critic and user
+approval for the affected views.
+
+Three product-level decisions taken by the user before planning (intake
+checkpoint 0, 2026-10-10):
+
+1. Freshness — **mirror into the durable catalog**: prompts discovered on the
+   same refresh cadence as tools, last-known-good retention, served from memory
+   and durable snapshot, not fanned out live per request.
+2. Naming — **stable derived opaque names, like tools**: reuse the existing
+   derivation approach with provenance carried in prompt metadata, not verbatim
+   upstream names on the wire.
+3. Scope — **every server advertising the MCP prompts capability, with a
+   per-server opt-out** (capability-gated; one config switch per server).
+
+Evidence gathered inline: the SDK supports both halves (`Server.AddPrompt`/
+`RemovePrompts` with `notifications/prompts/list_changed`, `ServerOptions.
+HasPrompts`/`Capabilities` for capability advertisement; `ClientSession.
+ListPrompts`/`GetPrompt`/`Prompts` and `InitializeResult()` for upstream
+capability inspection). The bridge is tools-only end to end today: three static
+bridge tools (`internal/service/tools.go:58-70`), upstream discovery via
+`ListTools` only (`internal/upstream/dedicated.go:76`), fixed config key
+allow-lists (`internal/config/config.go:203-214`).
+
+Planner dispatched (2026-10-10) to author r10 at the planning-only sink
+`.omp/plans/headless-mcp-bridge-prompts.md`. No implementation gate is open for
+r10: `.superpowers/sdd/GATE_OPEN` authorizes only the approved r8 task ledger
+whose work is complete/pushed; r10 requires its own requirements, design, and
+task approvals before any implementation dispatch.
+
+### Critic review of r10 requirements and design
+
+Reviewed artifact: `.omp/plans/headless-mcp-bridge-prompts.md`, HMB-v1 r10
+increment (requirements/design/acceptance as one revision).
+
+- RC-01 (findings review) — **REJECT**. C1 (HIGH): the whole-snapshot integrity
+  model (`internal/storage/snapshot.go:39-47,90-98`, `store.go:73-100`,
+  `reconcile.go:41-48`) makes a corrupt or unsupported prompt field fatal to the
+  tool catalog, contradicting the increment's own recovery promise; prior-binary
+  rollback compatibility was unspecified. C2 (MEDIUM): the recovery promise was
+  not traceable to a behavioral acceptance gate (AC-25 / CT-07 / T-12).
+  Independently checked and accepted as-is: revision isolation (R-27/AC-28),
+  cold-start capability (R-26/AC-26), opt-out config/fingerprint/reload
+  (R-27/AC-23/AC-25), metrics cardinality (R-27/AC-29), and the decision to let
+  the owning upstream validate `prompts/get` arguments.
+- Planner revision (2026-10-10) applied both amendments: prompt state becomes a
+  separate versioned/checksummed atomically-published sibling object leaving the
+  tool snapshot's bytes/version/checksum/decode path unchanged; AC-25, CT-07 and
+  T-12 gained the compatibility/corruption/LKG/rollback-reader cases; RELEASE AND
+  RECOVERY states old/new binary compatibility and component-isolated recovery.
+- RC-02 (delta re-review) — **ACCEPT**, no findings. C1 and C2 verified closed
+  against the inspected storage design; regression scan confirmed stable IDs
+  (R-23..R-27, AC-23..AC-29, T-11..T-14, CT-07), unchanged task order, no
+  weakened criterion, no new scope, and no change to T-10/U-01. This is not the
+  final task-ledger verdict, which is requested separately before the tasks
+  checkpoint.
+
+Reviewed revision pin: sha256
+`b9ef1aa0eb99690e18e5360f7fae2b254b148a776fbe23126a5ea212514dcf4b`
+(80 lines). Any change to the sink invalidates RC-02 for the changed content.
+
+### r10 user checkpoints
+
+- **Checkpoint 1 (requirements) — APPROVED, 2026-10-10.** User approved the
+  requirements view as drafted (R-23..R-27 plus the parent non-goal amendment at
+  lines 17 and 277), at reviewed revision sha256
+  `b9ef1aa0eb99690e18e5360f7fae2b254b148a776fbe23126a5ea212514dcf4b`.
+  Scope confirmed by this approval: prompts in scope; resources, sampling,
+  elicitation, roots and tasks remain out of scope.
+- **Checkpoint 2 (design) — APPROVED, 2026-10-10.** User approved the design view
+  as drafted at the same reviewed revision sha256
+  `b9ef1aa0eb99690e18e5360f7fae2b254b148a776fbe23126a5ea212514dcf4b`:
+  per-server `prompts_disabled` opt-out; capability-gated paginated discovery on
+  the tool refresh cadence; separate versioned/checksummed atomically-published
+  prompt sibling object with component-isolated recovery; opaque derived names
+  with canonical provenance; native `prompts/list`/`prompts/get` served from the
+  published mapping with exactly-once forwarding; cold-start capability and
+  published-change-only `prompts/list_changed`; bounded prompt metrics.
+
+### Critic review of the r10 task ledger
+
+Reviewed artifact: `.omp/plans/headless-mcp-bridge-prompts.md`, TASK LEDGER
+(T-11..T-14), CT-07 and the release/recovery region.
+
+- LC-01 — **REJECT**. L1 (BLOCKING): the mandatory project gate was not
+  assigned — `go test ./...` neither measures nor enforces the >=90% source-line
+  coverage threshold and omitted race/vet/build. L2 (HIGH): RED/GREEN integrity
+  was unstated, so a compile-error, presence-only or unrelated failure could be
+  claimed as TDD evidence. L3 (HIGH): docs/regression protection unnamed
+  (no artifact targets, no stated protection of prior acceptance or T-10/U-01).
+  L4 (MEDIUM): package-wide `-run 'Prompt|prompt'` filters do not prove which
+  tests ran.
+- Planner revision (ledger region only; requirements/design untouched).
+- LC-02 — **REJECT**. L5 (BLOCKING): the coverage gate named the `cmd/covcheck`
+  CLI without its `-profile`/`-root` arguments.
+- Planner revision (ledger/recovery region only).
+- LC-03 — **ACCEPT**, no findings. Verified: paired
+  `go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./...`
+  plus `go run ./cmd/covcheck -profile coverage.out -root .` with the measured
+  percentage and >=90% verdict required as CT-07 completion evidence; build, vet
+  and race commands present; named behavioral tests with assertion-level RED and
+  same-test GREEN under `tdd-guide`; recovery, metrics, docs/sync, sample
+  validation and prior-acceptance/T-10/U-01 preservation all assigned.
+
+Reviewed revision pin: sha256
+`a204182eae165cfec1e0597202def29e5f8e08a3f4a7874d9ec466a59326f4c8`
+(80 lines). Diff-verified: lines 1-57 (requirements/design) are byte-identical to
+the revision approved at checkpoints 1 and 2 (sha256
+`b9ef1aa0eb99690e18e5360f7fae2b254b148a776fbe23126a5ea212514dcf4b`), so those
+approvals and RC-02 remain valid; only the task-ledger/CT-07/recovery region
+changed.
+
+- **Checkpoint 3 (task ledger) — APPROVED, 2026-10-10.** User approved the task
+  ledger at reviewed revision sha256
+  `a204182eae165cfec1e0597202def29e5f8e08a3f4a7874d9ec466a59326f4c8` after the
+  LC-03 ACCEPT. All three user checkpoints and both critic verdict sets are now
+  recorded for r10; `.superpowers/sdd/GATE_OPEN` carries the corresponding r10
+  authorization line. Implementation is confined to T-11..T-14 with the ledger's
+  named RED/GREEN evidence and the full mandatory gate (build, vet, race,
+  coverage profile + `cmd/covcheck` >=90% source-line).
+
+### T-11/T-12 implementation evidence (r10)
+
+- **T-11 + T-12 — COMPLETE, 2026-10-10**, on branch `main`, uncommitted.
+  Files: `internal/config/{config.go,fingerprint.go,prompts_edge_test.go}`,
+  `internal/upstream/{dedicated.go,prompts_edge_test.go}`,
+  `internal/storage/{snapshot.go,store.go,prompts_edge_test.go}`,
+  `internal/service/{reload.go,prompts_edge_test.go}`.
+- **RED evidence (recreated).** The implementing agent did not capture a
+  pre-implementation RED run, so RED was recreated under the ledger's criteria by
+  applying one minimal targeted production mutation per named test, running the
+  ledger's identical command, capturing the failing assertion, restoring the file
+  byte-identically, and re-running to GREEN. Each failure is an assertion on the
+  named behavior, after successful compile, not a missing symbol:
+  - `TestPromptConfigOptOutDefaultAndValidation` (removal of the `prompts_disabled`
+    boolean type check in `internal/config/config.go` `validateScalarType`):
+    `prompts_edge_test.go:28: Parse error = <nil>, want rejection` (subtest `wrong_type`).
+  - `TestDiscoverPromptsCapabilityPaginationAndFailure` (removal of the capability
+    gate in `internal/upstream/dedicated.go` `DiscoverPrompts`):
+    `prompts_edge_test.go:48: prompt requests = 1, want 0` (subtest `non-capable upstream issues no prompt request`).
+  - `TestPromptStoreIndependentRecoveryAndRollback` (removal of the checksum
+    comparison in `internal/storage/store.go` `LoadPrompts`):
+    `prompts_edge_test.go:58: LoadPrompts error = <nil>, want corrupt prompt data rejected` (subtest `checksum-invalid`).
+  - `TestPromptRefreshLKGAcrossRestartAndOutage` (startup `LoadPrompts` branch in
+    `internal/service/reload.go` `build` forced off):
+    `prompts_edge_test.go:59: restored prompts = []storage.Prompt(nil), want persisted prompt`.
+  - Additional assertion `TestPromptRefreshPublishesStableOrdering` (removal of the
+    deterministic `(ServerID, RawName)` sort in `internal/service/reload.go` `build`):
+    `prompts_edge_test.go:92: prompt order = [zeta/b zeta/a alpha/b alpha/a], want [alpha/a alpha/b zeta/a zeta/b]`.
+- **GREEN:** after every restore, both ledger commands exit 0
+  (`go test ./internal/config ./internal/upstream -run '^(TestPromptConfigOptOutDefaultAndValidation|TestDiscoverPromptsCapabilityPaginationAndFailure)$' -count=1`,
+  `go test ./internal/storage ./internal/service -run '^(TestPromptStoreIndependentRecoveryAndRollback|TestPromptRefreshLKGAcrossRestartAndOutage)$' -count=1`),
+  `go test ./internal/config ./internal/upstream ./internal/storage ./internal/service -count=1` passes,
+  and `gofmt -l ./internal ./cmd` is empty.
+- Behaviour notes: prompt state is a separate `prompts.json` object (own schema
+  version, checksum, atomic temp/fsync/rename publication, strict decode), the tool
+  snapshot bytes/version/checksum/decode path are unchanged, prompt data never
+  enters the tool catalog revision, and the published prompt mirror is sorted by
+  `(ServerID, RawName)` for deterministic revision/notification behaviour.
+
+### T-13 implementation evidence (r10)
+
+- **T-13 — COMPLETE, 2026-10-10**, on branch `main`, uncommitted. Deliverable
+  per increment §T-13: native `AddPrompt`/`RemovePrompts`/`list`/`get`, cold-start
+  capability, notifications, stable mapping, safe errors, exactly-once route,
+  supported-version evidence.
+- Files: `internal/service/prompts_native_test.go` (new),
+  `internal/upstream/prompts_native_test.go` (new),
+  `internal/upstream/prompt_runtime.go`, `internal/upstream/runtime.go`.
+- **Named tests:** `TestPromptNativeListGetAndChanged` + `TestPromptGetRoutingAndSafeErrors`
+  in `internal/service` (increment-prescribed command:
+  `go test ./internal/service ./internal/upstream -run '^(TestPromptNativeListGetAndChanged|TestPromptGetRoutingAndSafeErrors)$' -count=1`),
+  with supporting upstream coverage `TestPromptPeerRequiresSession` and
+  `TestPromptGetGuardedWirePaths` (deadline / protocol error / peer death /
+  saturated admission / pre-admission cancel / mid-call cancel).
+- **RED evidence (recreated by targeted production mutation, restore byte-identical,
+  each failure an assertion on the named behaviour after successful compile):**
+  - `TestPromptGetGuardedWirePaths/transport_failure_after_the_peer_disappears`
+    (dropped the transport-rejection guard in `prompt_runtime.go`):
+    `prompts_native_test.go:132: error = upstream_protocol_error, want code=backend_unavailable state=unknown`.
+  - `TestPromptGetGuardedWirePaths/deadline_records_one_failure_and_never_retries`
+    (`deadline_exceeded` mapped to `backend_unavailable` in `prompt_runtime.go`):
+    `prompts_native_test.go:95: error = backend_unavailable, want code=deadline_exceeded state=unknown`.
+  - `TestPromptNativeListGetAndChanged` raw-name leak assertion (`prompt_runtime.go`
+    equivalent: `internal/service/prompts.go` `Published` appending `definition.RawName`
+    to the mirrored description):
+    `prompts_native_test.go:82: raw name "raw-z" leaked in response {...}`.
+  - `TestPromptGetRoutingAndSafeErrors` sanitized-failure assertion
+    (`internal/service/prompts.go` `get` returning the raw upstream error):
+    `prompts_native_test.go:233: error leaked "raw-secret-name": calling "prompts/get": raw-secret-name /srv/private/socket transport failure`.
+- **GREEN:** every mutation restored byte-identically, then
+  `go test ./internal/upstream -count=1` and `go test ./internal/service -count=1` pass,
+  `gofmt -l internal/upstream internal/service` empty, and the consolidated gate
+  `go test ./... -count=1 -covermode=atomic -coverprofile=coverage.out` plus
+  `go run ./cmd/covcheck -profile coverage.out` reports
+  **source-line coverage 91.2% (3048/3341), gate 90%: true**.
+- **Test-design notes (hang removal, behaviour unchanged):** the parked prompt
+  handlers now unblock on a `t.Cleanup` release channel, and the dead-peer subtest
+  uses `CloseClientConnections()` then `Close()` (a bare `Close()` blocks on the
+  keep-alive request; `CloseClientConnections()` alone lets the SDK reconnect and
+  succeed). The mid-call cancellation subtest asserts `failures==0`, matching the
+  r8 breaker contract (line 291: breaker counts connect/transport5xx/malformed/deadline,
+  excludes cancel).
+- **Defect found and fixed (shared, pre-existing, also affected `CallTool`):**
+  the SDK aliases `jsonrpc.Error` to `jsonrpc2.WireError` and wraps *transport*
+  rejections as `jsonrpc2.ErrRejected` (code -32005, "rejected by transport"), so
+  `errors.As(err, &jsonrpc.Error)` matched connection failures. A dead upstream
+  was therefore classified `upstream_protocol_error` with **no** breaker fault.
+  Observed at the wire before the fix: `attempt=0 raw=calling "prompts/get":
+  sending "prompts/get": rejected by transport: Post "http://127.0.0.1:34637":
+  dial tcp ... connection refused ... isRPC=true rpcCode=-32005 rpcMessage="rejected by transport"`.
+  Fix: `transportRejectedCode = -32005` + `isTransportRejection` in
+  `internal/upstream/runtime.go`, applied in both `CallTool` and prompt `GetPrompt`
+  so a transport rejection records `FailureTransport` and returns
+  `backend_unavailable` (breaker contract line 291 honoured). Full `internal/upstream`
+  suite stays green, so no existing `CallTool` expectation regressed.
+- **Open finding (outside T-13's named tests, pre-existing from the T-05/T-06
+  service surface; reported, not changed):** `internal/service/protocol.go`
+  `ValidateCallVersion`, `NegotiateInitializeOffer` and `AdvertisedProtocolVersions`
+  have **no production callers** — the inbound version contract that the plan
+  attributes to the SDK (`Server.protocolVersions` order, legacy-set narrowing,
+  `mcp.CodeUnsupportedProtocolVersion` on latest calls) is enforced by the SDK,
+  and the wire tests confirm it. The three helpers are currently dead production
+  code exercised only by unit tests; deciding between wiring them as
+  defence-in-depth and deleting them (with their unit tests) is a coordinator /
+  planner call, not silently taken here.
+
+### T-14 — end-to-end acceptance/observability (RED/GREEN recorded)
+
+**RED (assertion-level, prompt wire absent).** The prompt surface wiring in
+`cmd/mcp-bridge/serve.go` was temporarily disabled (`promptSurface.Register(server)`
+and `promptSurface.Published(assembly)` short-circuited — a controlled revert,
+restored byte-identically afterwards; sha256
+`013d45347e6dbcb246a26c82c23eda1c6462b74f18a9d7865704e151d71f20b7` confirms the
+restore). `go test ./cmd/mcp-bridge -run '^TestPromptPassThroughCT07$' -count=1`
+→ `prompts_acceptance_test.go:328: timed out waiting for both colliding prompts
+to be published` — a behavioural assertion failure for an absent CT-07
+property, with the test compiled and executed (not build/fixture absence, per
+T-14's RED form). Phase 1 still passed in that state because
+`service.NewMCPServer` declares `HasPrompts: true` by design (cold-start
+capability, AC-26), so the first absent property is publication, not capability.
+
+**GREEN (wire restored).** Same command → `--- PASS: TestPromptPassThroughCT07
+(0.85s)`. Re-run three times on the final tree: `ok` at 0.842s / 0.860s / 0.835s
+(notification assertions are no longer timing-dependent).
+
+**Targeted T-14 selection** (plan command):
+`go test ./cmd/mcp-bridge ./internal/observe ./internal/service -run '^(TestPromptPassThroughCT07|TestPromptMetricsBoundedLabels|TestExampleConfigPassesCheck)$' -count=1`
+→ `PASS: TestExampleConfigPassesCheck (0.00s)`, `PASS: TestPromptPassThroughCT07
+(0.86s)`, `PASS: TestPromptMetricsBoundedLabels (0.00s)`; `internal/service`
+reports `[no tests to run]` because none of the three names live there — the
+`cmd/mcp-bridge` and `internal/observe` results are the evidence.
+
+**Mandatory release gate** (plan's RELEASE AND RECOVERY region), all observed:
+- `go build ./cmd/mcp-bridge` → ok
+- `go vet ./...` → ok
+- `go test -race ./...` → ok, 11/11 packages (cmd/covcheck, cmd/mcp-bridge,
+  catalog, config, core, coveragecheck, observe, search, service, storage,
+  upstream)
+- `go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./...` → ok
+- `go run ./cmd/covcheck -profile coverage.out -root .` → `source-line coverage
+  92.6% (3138/3390), gate 90%: true`; a fresh `-count=1` re-run of the same
+  coverage command on the final tree reported `92.6% (3139/3390), gate 90%: true`
+  (one conditionally executed statement differs between runs; both clear the gate)
+
+**Test-design defects found and fixed while producing that GREEN** (both in
+`cmd/mcp-bridge/prompts_acceptance_test.go`; recorded because they change what
+the acceptance test can observe):
+
+1. **Client protocol pin.** The acceptance client originally used the SDK
+   default, which offers the pre-release `2026-07-28` version. The bridge
+   negotiates that down to `2025-11-25` (SDK `negotiatedVersion`, the documented
+   §4.5 contract), but go-sdk@v1.8.0 `Server.notifySessions` selects recipients
+   by the version the *client offered* in `InitializeParams`
+   (`sess.InitializeParams().ProtocolVersion < protocolVersion20260728`), so the
+   negotiated-down session is still treated as SEP-2575 and its list-changed
+   notifications go only to an active `subscriptions/listen` stream — which the
+   legacy initialize fallback never opens, because `Client.Connect` only opens
+   one on the `server/discover` path. Net effect: `prompts/list_changed` was
+   unobservable for that client and the run was flaky (passed once when a
+   debounced notification landed, then failed consistently). The client now
+   pins `ProtocolVersion: "2025-11-25"` — one of the four accepted inbound call
+   versions (increment OPEN DECISION 1) — with the reason in a code comment. This
+   is pinned-SDK session classification, not a bridge defect; the pinned client
+   is the client the bridge's inbound contract serves. It also corroborates the
+   T-13 open finding that the version contract is enforced by the SDK, not by
+   `internal/service/protocol.go` helpers.
+
+2. **Unknown-prompt assertion checked message text, not code.** The SDK server
+   itself answers an unregistered prompt name with `unknown prompt %q` and
+   `jsonrpc.CodeInvalidParams` (go-sdk@v1.8.0 `mcp/server.go` `getPrompt`), so
+   asserting that the message contains `invalid params` failed on a conformant
+   bridge. The assertion now unwraps the error with `errors.As` and requires
+   `jsonrpc.CodeInvalidParams`. (`session.GetPrompt` wraps the wire error with
+   `%w`, so the code survives — `mcp/transport.go`.)
+
+**Documentation/amendment synchronized in the same change:** `README.md` gained
+the prompt-surface section (`prompts_disabled` per-server opt-out, opaque `p_`
+names, provenance-in-description, sanitized errors, `prompts.json` persistence,
+`bridge_catalog_prompts`, the accepted-version notification caveat) and the
+prompt acceptance test description; the parent spec
+`.omp/plans/headless-mcp-bridge.md` drops `prompts` from its non-goal list and
+records the amendment pointer to this increment without restating its technical
+content.

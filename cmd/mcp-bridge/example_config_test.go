@@ -51,11 +51,11 @@ func stageSample(t *testing.T) string {
 	return configPath
 }
 
-// TestShippedSampleValidatesWithItsReferencesResolved pins that the documented
-// sample is a complete document: once its {env:}/{file:} references resolve, the
-// documented --check-config command succeeds and reports only reference names,
-// never a secret value.
-func TestShippedSampleValidatesWithItsReferencesResolved(t *testing.T) {
+// TestExampleConfigPassesCheck pins that the documented sample is a complete
+// document: once its {env:}/{file:} references resolve, the documented
+// --check-config command succeeds and reports only reference names, never a
+// secret value.
+func TestExampleConfigPassesCheck(t *testing.T) {
 	configPath := stageSample(t)
 	var stdout, stderr bytes.Buffer
 

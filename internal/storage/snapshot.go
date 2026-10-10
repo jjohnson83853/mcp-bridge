@@ -97,6 +97,54 @@ type Snapshot struct {
 	Embeddings []Embedding `json:"embeddings"`
 }
 
+const PromptSchemaVersion = 1
+
+type Prompt struct {
+	ServerID    string          `json:"server_id"`
+	RawName     string          `json:"raw_name"`
+	PublicName  string          `json:"public_name"`
+	Title       string          `json:"title,omitempty"`
+	Description string          `json:"description,omitempty"`
+	Arguments   json.RawMessage `json:"arguments,omitempty"`
+}
+
+type PromptSnapshot struct {
+	SchemaVersion int      `json:"schema_version"`
+	Prompts       []Prompt `json:"prompts"`
+	Checksum      string   `json:"checksum"`
+}
+
+func (p *PromptSnapshot) ChecksumValue() (string, error) {
+	canonical := *p
+	canonical.Checksum = ""
+	encoded, err := json.Marshal(&canonical)
+	if err != nil {
+		return "", fmt.Errorf("storage: prompt canonical encoding failed: %w", err)
+	}
+	sum := sha256.Sum256(encoded)
+	return hex.EncodeToString(sum[:]), nil
+}
+
+func (p *PromptSnapshot) Validate() error {
+	if p == nil || p.SchemaVersion != PromptSchemaVersion {
+		return fmt.Errorf("storage: unsupported prompt schema version")
+	}
+	seen := make(map[string]bool, len(p.Prompts))
+	for _, prompt := range p.Prompts {
+		if !serverIDPattern.MatchString(prompt.ServerID) || prompt.RawName == "" || prompt.PublicName == "" {
+			return fmt.Errorf("storage: invalid prompt identity")
+		}
+		if seen[prompt.PublicName] {
+			return fmt.Errorf("storage: duplicate prompt public name")
+		}
+		seen[prompt.PublicName] = true
+		if len(prompt.Arguments) > 0 && !json.Valid(prompt.Arguments) {
+			return fmt.Errorf("storage: invalid prompt arguments")
+		}
+	}
+	return nil
+}
+
 // ToolIdentity is the server-derived tool identity keying embedding records.
 func ToolIdentity(serverID, rawName string) string {
 	return serverID + "\x00" + rawName

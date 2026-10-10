@@ -35,10 +35,11 @@ var serverIDPattern = regexp.MustCompile(`^[a-z][a-z0-9-]{0,31}$`)
 var envNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 type Server struct {
-	ID          string         `yaml:"id"`
-	Endpoint    string         `yaml:"endpoint"`
-	Credentials map[string]any `yaml:"credentials,omitempty"`
-	Limits      map[string]any `yaml:"limits,omitempty"`
+	ID              string         `yaml:"id"`
+	Endpoint        string         `yaml:"endpoint"`
+	PromptsDisabled bool           `yaml:"prompts_disabled"`
+	Credentials     map[string]any `yaml:"credentials,omitempty"`
+	Limits          map[string]any `yaml:"limits,omitempty"`
 }
 
 type Config struct {
@@ -209,7 +210,7 @@ var fields = map[string]map[string]bool{
 	"embedding":         set("provider model model_revision base_url dimensions api_key timeout max_concurrency batch_size max_response_bytes"),
 	"client_auth":       set("bearer_tokens"),
 	"upstream_defaults": set("connect_timeout call_timeout refresh_timeout max_concurrent_calls max_event_bytes max_response_bytes breaker"),
-	"server":            set("id endpoint credentials limits"), "credentials": set("bearer headers"),
+	"server":            set("id endpoint prompts_disabled credentials limits"), "credentials": set("bearer headers"),
 	"limits": set("max_concurrent_calls call_timeout"), "breaker": set("consecutive_failures open_duration half_open_probes"),
 	"pin": set("server tool"), "secret": set("env file"),
 }
@@ -328,6 +329,9 @@ func childSection(section, key string) string {
 
 func validateScalarType(section, key string, node *yaml.Node) error {
 	stringFields := set("listen directory session_idle_timeout refresh_interval stale_after timeout query_cache_ttl provider model model_revision base_url id endpoint bearer env file tool server connect_timeout call_timeout refresh_timeout open_duration")
+	if section == "server" && key == "prompts_disabled" && (node.Kind != yaml.ScalarNode || node.Tag != "!!bool") {
+		return fmt.Errorf("%s must be a boolean", key)
+	}
 	integerFields := set("schema_version max_request_bytes requests_per_second burst max_sessions max_snapshot_bytes max_tools_per_server max_tools_total max_pages_per_server max_schema_bytes max_description_bytes default_top_k max_top_k query_cache_entries rrf_constant dimensions max_concurrency batch_size max_response_bytes max_concurrent_calls max_event_bytes consecutive_failures half_open_probes")
 	sequenceFields := set("allowed_hosts allowed_origins bearer_tokens")
 	if (section == "credentials" && key == "bearer" || section == "embedding" && key == "api_key" || section == "client_auth" && key == "bearer_tokens" || section == "secret" && (key == "env" || key == "file")) && node.Kind == yaml.MappingNode || section == "client_auth" && key == "bearer_tokens" && node.Kind == yaml.SequenceNode {

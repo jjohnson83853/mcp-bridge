@@ -119,6 +119,51 @@ func (d *Dedicated) Discover(ctx context.Context) ([]core.ToolDefinition, error)
 	return defs, nil
 }
 
+// DiscoverPrompts returns the complete prompt list only when the initialized
+// upstream advertises prompt support.
+func (d *Dedicated) DiscoverPrompts(ctx context.Context) ([]*mcp.Prompt, error) {
+	session, err := d.sessionFor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	initialized := session.InitializeResult()
+	if initialized == nil || initialized.Capabilities == nil || initialized.Capabilities.Prompts == nil {
+		return nil, nil
+	}
+	return discoverPromptPages(ctx, d.client.ID, func(ctx context.Context, cursor string) (*mcp.ListPromptsResult, error) {
+		return session.ListPrompts(ctx, &mcp.ListPromptsParams{Cursor: cursor})
+	})
+}
+
+func discoverPromptPages(ctx context.Context, serverID string, list func(context.Context, string) (*mcp.ListPromptsResult, error)) ([]*mcp.Prompt, error) {
+	var prompts []*mcp.Prompt
+	cursor := ""
+	for {
+		page, err := list(ctx, cursor)
+		if err != nil {
+			return nil, fmt.Errorf("upstream: discover prompts %s: %w", serverID, err)
+		}
+		if page == nil {
+			return nil, fmt.Errorf("upstream: discover prompts %s: empty page", serverID)
+		}
+		for _, prompt := range page.Prompts {
+			if prompt == nil || prompt.Name == "" {
+				return nil, fmt.Errorf("upstream: discover prompts %s: prompt without a name", serverID)
+			}
+			prompts = append(prompts, prompt)
+		}
+		if page.NextCursor == "" {
+			break
+		}
+		if page.NextCursor == cursor {
+			return nil, fmt.Errorf("upstream: discover prompts %s: pagination cursor did not advance", serverID)
+		}
+		cursor = page.NextCursor
+	}
+	sort.Slice(prompts, func(i, j int) bool { return prompts[i].Name < prompts[j].Name })
+	return prompts, nil
+}
+
 // CallTool implements core.Upstream. pub is carried for provenance only; the
 // exact raw args bytes reach upstream unchanged. It performs at most one
 // upstream execution and reports failures as safe, payload-free outcomes.

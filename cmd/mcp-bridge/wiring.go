@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -194,6 +195,48 @@ func (r *upstreamRegistry) discover(server config.Server) ([]core.ToolDefinition
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	return client.Discover(ctx)
+}
+
+// discoverPrompts publishes only opaque names while retaining the upstream
+// prompt name as private provenance for get routing.
+func (r *upstreamRegistry) discoverPrompts(server config.Server) ([]storage.Prompt, error) {
+	r.mu.Lock()
+	client, ok := r.clients[server.ID]
+	r.mu.Unlock()
+	if !ok {
+		return nil, fmt.Errorf("bridge: no dedicated client for server %q", server.ID)
+	}
+
+	timeout := r.holder.stagedSettings().RefreshTimeout
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	definitions, err := client.DiscoverPrompts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	prompts := make([]storage.Prompt, 0, len(definitions))
+	publicNames := make(map[string]struct{}, len(definitions))
+	for _, definition := range definitions {
+		if definition == nil {
+			return nil, errors.New("bridge: upstream returned an invalid prompt definition")
+		}
+		publicName := core.PromptPublicName(server.ID, definition.Name)
+		if _, exists := publicNames[publicName]; exists {
+			return nil, fmt.Errorf("bridge: ambiguous prompt publication for server %q", server.ID)
+		}
+		publicNames[publicName] = struct{}{}
+		arguments, err := json.Marshal(definition.Arguments)
+		if err != nil {
+			return nil, fmt.Errorf("bridge: encode prompt definition for server %q: %w", server.ID, err)
+		}
+		prompts = append(prompts, storage.Prompt{
+			ServerID: server.ID, RawName: definition.Name, PublicName: publicName,
+			Title: definition.Title, Description: definition.Description, Arguments: arguments,
+		})
+	}
+	return prompts, nil
+
 }
 
 // close releases one dedicated runtime and drops it when it is still current.
@@ -404,6 +447,18 @@ func pumpReloads(ctx context.Context, hup <-chan os.Signal, reloads chan<- struc
 func durableLoader(store *storage.Store) func() (*storage.Snapshot, error) {
 	return func() (*storage.Snapshot, error) {
 		snapshot, err := store.Load()
+		if errors.Is(err, storage.ErrNoSnapshot) {
+			return nil, nil
+		}
+		return snapshot, err
+	}
+}
+
+// promptLoader reads the durable prompt snapshot. A missing file is not an
+// error: a bridge that has never persisted a prompt simply has none.
+func promptLoader(store *storage.Store) func() (*storage.PromptSnapshot, error) {
+	return func() (*storage.PromptSnapshot, error) {
+		snapshot, err := store.LoadPrompts()
 		if errors.Is(err, storage.ErrNoSnapshot) {
 			return nil, nil
 		}

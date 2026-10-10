@@ -36,10 +36,11 @@ type publicProjection struct {
 }
 
 type projectedServer struct {
-	ID          string         `json:"id"`
-	Endpoint    string         `json:"endpoint"`
-	Limits      map[string]any `json:"limits,omitempty"`
-	Credentials map[string]any `json:"credentials,omitempty"`
+	ID              string         `json:"id"`
+	Endpoint        string         `json:"endpoint"`
+	Limits          map[string]any `json:"limits,omitempty"`
+	PromptsDisabled bool           `json:"prompts_disabled"`
+	Credentials     map[string]any `json:"credentials,omitempty"`
 }
 
 // Fingerprint returns the stable public identity of the configuration: a
@@ -63,10 +64,11 @@ func (c Config) Fingerprint() string {
 	}
 	for _, server := range c.Servers {
 		projection.Servers = append(projection.Servers, projectedServer{
-			ID:          server.ID,
-			Endpoint:    server.Endpoint,
-			Limits:      server.Limits,
-			Credentials: server.Credentials,
+			ID:              server.ID,
+			Endpoint:        server.Endpoint,
+			PromptsDisabled: server.PromptsDisabled,
+			Limits:          server.Limits,
+			Credentials:     server.Credentials,
 		})
 	}
 	if projection.Servers == nil {
