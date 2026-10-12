@@ -1,0 +1,132 @@
+# Suggested bridge config for the mcp-grafana compose stack.
+# Endpoints use compose-internal DNS names; the bridge must run on a host
+# attached to that stack's network (or these names must be rewritten to
+# host-published ports). Secrets are referenced, never inlined.
+schema_version: 1
+http:
+  listen: "127.0.0.1:8080"
+  allowed_hosts: ["127.0.0.1:8080", "localhost:8080"]
+  allowed_origins: []
+  max_request_bytes: 1048576
+  requests_per_second: 50
+  burst: 100
+  max_sessions: 128
+  session_idle_timeout: "10m"
+operations:
+  listen: "127.0.0.1:9090"
+  requests_per_second: 10
+  burst: 20
+storage:
+  directory: "./data"
+  max_snapshot_bytes: 268435456
+catalog:
+  refresh_interval: "5m"
+  stale_after: "15m"
+  max_tools_per_server: 10000
+  max_tools_total: 20000
+  max_pages_per_server: 1000
+  max_schema_bytes: 262144
+  max_description_bytes: 32768
+search:
+  default_top_k: 10
+  max_top_k: 50
+  timeout: "5s"
+  query_cache_entries: 256
+  query_cache_ttl: "5m"
+  keyword_weight: 0.5
+  embedding_weight: 0.5
+  rrf_constant: 60
+embedding:
+  provider: "openai-compatible"
+  model: "OPERATOR_SELECTED_MODEL"       # litellm-hosted embedding model id
+  model_revision: "OPERATOR_SELECTED_REVISION"
+  base_url: "https://litellm.bullprog.com/v1"
+  dimensions: 1536                        # must match the chosen model
+  api_key: {env: LITELLM_API_KEY}
+  timeout: "3s"
+  max_concurrency: 2
+  batch_size: 32
+  max_response_bytes: 4194304
+client_auth:
+  bearer_tokens:
+    - {env: BRIDGE_CLIENT_TOKEN}
+upstream_defaults:
+  connect_timeout: "5s"
+  call_timeout: "30s"
+  refresh_timeout: "15s"
+  max_concurrent_calls: 4
+  max_event_bytes: 2097152
+  max_response_bytes: 2097152
+  breaker:
+    consecutive_failures: 3
+    open_duration: "30s"
+    half_open_probes: 1
+servers:
+  # ---- verified during recon (streamable HTTP, endpoint responds) ----
+  - id: netops-shttp
+    endpoint: "http://netops-shttp:8080/mcp/netops"
+  - id: docuseal-bridge
+    endpoint: "http://docuseal-mcp-bridge:8000/mcp"
+    # 8001 also published; if 8000 is the docs port, switch to 8001.
+  - id: codebase-searcher
+    endpoint: "http://mcp-codebase-searcher:8000/mcp"
+  - id: portainer
+    endpoint: "http://mcp-portainer:17717/mcp"
+    credentials:
+      bearer: {env: PORTAINER_MCP_TOKEN}
+  # ---- command line confirms streamable/http transport, probe pending ----
+  - id: grafana
+    endpoint: "http://mcp-grafana:8000/mcp"
+  - id: realestate-math
+    endpoint: "http://mcp-realestate-math:8003/mcp"
+  - id: courtlistener
+    endpoint: "http://mcp-courtlistener:8000/mcp/"   # /mcp 307s to /mcp/
+  - id: google-maps
+    endpoint: "http://google-maps-mcp-shttp:8000/mcp"
+  - id: second-brain
+    endpoint: "http://mcp-second-brain:8000/mcp"
+  - id: irs-taxpayer
+    endpoint: "http://irs-taxpayer-mcp:8000/mcp"
+  - id: market-data
+    endpoint: "http://mcp-market-data:8000/mcp"
+  - id: swing-trade
+    endpoint: "http://swing-trade-mcp:8000/mcp"
+  - id: github
+    endpoint: "http://github-mcp:8000/mcp"
+  - id: rag
+    endpoint: "http://rag-mcp:8000/mcp"
+  - id: graphify
+    endpoint: "http://graphify-mcp:8080/mcp"
+    credentials:
+      headers:
+        X-API-Key: {env: GRAPHIFY_MCP_KEY}
+  # ---- 401 observed without auth on port 8011 (both /mcp and /); auth scheme
+  # unverified (container env has MCP_API_KEY/MCP_TRANSPORT) — probe before keeping
+  - id: proxmox
+    endpoint: "http://mcp-proxmox-http:8011/mcp"
+    credentials:
+      bearer: {env: PROXMOX_MCP_TOKEN}
+  - id: proxmox-service
+    endpoint: "http://mcp-proxmox-service-http:8011/mcp"
+    credentials:
+      bearer: {env: PROXMOX_MCP_TOKEN}
+  # ---- 401 without Authorization header on port 8000 /mcp — auth pending
+  - id: mysql
+    endpoint: "http://mcp-mysql:8000/mcp"
+    credentials:
+      bearer: {env: MYSQL_MCP_TOKEN}
+  # ---- metamcp: /en/mcp 307 -> /en/login (auth-gated web login) — needs API key
+  # ---- plex-mcp-server:3001: SSE only (GET /sse -> /messages/?session_id=) —
+  #      no streamable HTTP; only wireable if the bridge gains SSE transport
+  - id: opnsense
+    endpoint: "http://opnsense-mcp:8000/mcp"     # verified 200 streamable HTTP
+  - id: jellyfin-mcp
+    endpoint: "http://jellyfin-mcp:8010/mcp"     # verified 200 streamable HTTP
+  # ---- incompatible as direct upstreams; not listed above ----
+  # mcp-mysql:8080              transport unverified (needs protocol check)
+  # hass-mcp, mqtt-mcp, firecrawl-mcp, ssh-mcp, mcp-netutils,
+  # google-maps stdio, mcp-restart-watcher:
+  #   stdio-only. Reachable only through an aggregator (e.g. metamcp:12008
+  #   streamable endpoint with X-MetaMCP-API-Key); add as a single entry if
+  #   needed.
+pins: []
