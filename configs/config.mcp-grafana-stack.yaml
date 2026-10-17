@@ -38,8 +38,8 @@ search:
   rrf_constant: 60
 embedding:
   provider: "openai-compatible"
-  model: "OPERATOR_SELECTED_MODEL"       # litellm-hosted embedding model id
-  model_revision: "OPERATOR_SELECTED_REVISION"
+  model: "fictitious-embedding-model-v1"        # placeholder: swap for the litellm-hosted model id
+  model_revision: "fictitious-revision-v1"      # placeholder: swap for the model revision
   base_url: "https://litellm.bullprog.com/v1"
   dimensions: 1536                        # must match the chosen model
   api_key: {env: LITELLM_API_KEY}
@@ -122,11 +122,26 @@ servers:
     endpoint: "http://opnsense-mcp:8000/mcp"     # verified 200 streamable HTTP
   - id: jellyfin-mcp
     endpoint: "http://jellyfin-mcp:8010/mcp"     # verified 200 streamable HTTP
+  # ---- stdio-origin stack servers, verified as streamable HTTP from inside
+  #      the mcp network: POST /mcp initialize -> HTTP 200 (2026-10-13) ----
+  - id: hass-mcp
+    endpoint: "http://hass-mcp:8086/mcp"         # 200; listens on 8086, not 8000
+  - id: mqtt-mcp
+    endpoint: "http://mqtt-mcp:8000/mcp"         # 200; no authorization on /mcp
+  - id: firecrawl-mcp
+    endpoint: "http://firecrawl-mcp:3000/mcp"    # 200; FastMCP stateless HTTP
+  - id: ssh-mcp
+    endpoint: "http://ssh-mcp:8000/mcp"          # 401 without Authorization header
+    credentials:
+      bearer: {env: SSH_MCP_UPSTREAM_TOKEN}
   # ---- incompatible as direct upstreams; not listed above ----
   # mcp-mysql:8080              transport unverified (needs protocol check)
-  # hass-mcp, mqtt-mcp, firecrawl-mcp, ssh-mcp, mcp-netutils,
-  # google-maps stdio, mcp-restart-watcher:
-  #   stdio-only. Reachable only through an aggregator (e.g. metamcp:12008
-  #   streamable endpoint with X-MetaMCP-API-Key); add as a single entry if
-  #   needed.
+  # mcp-netutils:3000           SSE only (--sse --sse-port=3000; /mcp -> 404) —
+  #                             no streamable HTTP; only wireable if the bridge
+  #                             gains SSE transport
+  # mcp-restart-watcher         not an MCP server: docker-events loop that
+  #                             restarts metamcp when a mcp.service=true
+  #                             container starts
+  # metamcp:12008               streamable endpoint behind X-MetaMCP-API-Key;
+  #                             reachable only through the aggregator
 pins: []

@@ -1527,3 +1527,44 @@ prompt acceptance test description; the parent spec
 `.omp/plans/headless-mcp-bridge.md` drops `prompts` from its non-goal list and
 records the amendment pointer to this increment without restating its technical
 content.
+
+---
+
+## Increment: mcp-grafana stack upstream onboarding (2026-10-13)
+
+**Operator ask.** Add the seven mcp-grafana stack servers believed to serve
+streamable HTTP on :8000 as template upstreams with env-var credential
+placeholders, set a fictitious embedding model, and validate the document.
+
+**Recon** (in-network probes from inside the `mcp` network via the Portainer
+docker-proxy exec path; `POST /mcp` `initialize`):
+
+| server | endpoint | result | auth |
+|---|---|---|---|
+| hass-mcp | `http://hass-mcp:8086/mcp` | 200 | none |
+| mqtt-mcp | `http://mqtt-mcp:8000/mcp` | 200 | none |
+| firecrawl-mcp | `http://firecrawl-mcp:3000/mcp` | 200 | none |
+| ssh-mcp | `http://ssh-mcp:8000/mcp` | 401 | bearer required |
+| google-maps-mcp-shttp | `http://google-maps-mcp-shttp:8000/mcp` | 200 | none |
+| mcp-netutils | `http://mcp-netutils:3000/mcp` | 404 | SSE server (`--sse --sse-port=3000`); no streamable HTTP |
+| mcp-restart-watcher | — | — | not an MCP server (docker-events restart loop) |
+
+Listening ports differ from the assumption for hass-mcp (8086) and
+firecrawl-mcp (3000), and google-maps was already a configured upstream
+(`google-maps-mcp-shttp`), so the change adds four entries rather than seven.
+
+**Change.** `configs/config.mcp-grafana-stack.yaml`: added `hass-mcp`, `mqtt-mcp`
+and `firecrawl-mcp` (no credentials — probes returned 200 unauthenticated) and
+`ssh-mcp` (`credentials.bearer` from `SSH_MCP_UPSTREAM_TOKEN`); replaced the
+embedding `OPERATOR_SELECTED_MODEL` / `OPERATOR_SELECTED_REVISION` placeholders
+with fictitious ids; rewrote the exclusion comment block to the verified state
+(netutils SSE-only, restart-watcher not an MCP server, metamcp via aggregator).
+
+**Verification.** `go run ./cmd/mcp-bridge --check-config --config
+configs/config.mcp-grafana-stack.yaml` → `configuration valid: ... servers:24`
+(20 previously configured + 4). Running the same check without
+`SSH_MCP_UPSTREAM_TOKEN` fails closed (`secret must be nonempty UTF-8 ...`), so
+the template requires that env var under its real name before it loads.
+
+**Not committed.** Held for the plan's commit step; `GATE_OPEN` and this ledger
+remain local.
