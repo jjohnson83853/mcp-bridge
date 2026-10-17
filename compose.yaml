@@ -1,0 +1,79 @@
+# Containerized mcp-bridge, attached to the mcp-grafana stack's network so the
+# document's compose-internal DNS names (hass-mcp:8086, mqtt-mcp:8000, ...)
+# resolve.
+#
+# PREREQUISITE -- NOT a Docker-only change. The mounted document binds its
+# listeners to 127.0.0.1. Inside a container that address is the container's own
+# loopback, so the published ports below cannot answer until the document binds
+# 0.0.0.0 instead:
+#
+#   http:       listen: "0.0.0.0:8080"   # was 127.0.0.1:8080
+#   operations: listen: "0.0.0.0:9090"   # was 127.0.0.1:9090
+#
+# The address clients dial must also be in allowed_hosts (the Host header they
+# send), e.g. "http://<docker-host>:8080/mcp" needs "<docker-host>:8080" listed.
+# The container's healthcheck is unaffected: it reads /livez over the container's
+# own loopback.
+#
+# Secrets: the document references credentials as {env: NAME}. Put the values in
+# ./.env next to this file (compose reads it automatically) or export them in
+# the applying shell. Never commit them. {file: PATH} references are deliberately
+# not used here: the document requires secret files to be "regular, non-symlink,
+# operator-owned, and private", where "owned" means the process UID, so a
+# host-mounted file owned by another user would be rejected at startup.
+
+services:
+  mcp-bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mcp-bridge:local
+    container_name: mcp-bridge
+    restart: unless-stopped
+    # The bridge drains on SIGTERM within 10s; leave the daemon room for it.
+    stop_grace_period: 20s
+    command: ["--config", "/app/configs/config.mcp-grafana-stack.yaml"]
+    environment:
+      # Every {env: NAME} reference in the mounted document must resolve to a
+      # non-empty value or the bridge refuses to start (fail closed).
+      BRIDGE_CLIENT_TOKEN: ${BRIDGE_CLIENT_TOKEN:?set it in ./.env}
+      LITELLM_API_KEY: ${LITELLM_API_KEY:?set it in ./.env}
+      PORTAINER_MCP_TOKEN: ${PORTAINER_MCP_TOKEN:?set it in ./.env}
+      GRAPHIFY_MCP_KEY: ${GRAPHIFY_MCP_KEY:?set it in ./.env}
+      PROXMOX_MCP_TOKEN: ${PROXMOX_MCP_TOKEN:?set it in ./.env}
+      MYSQL_MCP_TOKEN: ${MYSQL_MCP_TOKEN:?set it in ./.env}
+      SSH_MCP_UPSTREAM_TOKEN: ${SSH_MCP_UPSTREAM_TOKEN:?set it in ./.env}
+    volumes:
+      # The whole configs/ directory, so SIGHUP reloads see in-place edits: a
+      # single-file bind mount pins the original inode, so an editor that saves
+      # by renaming would leave the container reading the old document.
+      - ./configs:/app/configs:ro
+      # Private state (catalog and prompt snapshots). A named volume inherits
+      # /app/data's owner from the image; with a bind mount instead, chown the
+      # host directory to 1000:1000 first or the bridge cannot take its lock.
+      - mcp-bridge-data:/app/data
+    ports:
+      # Inbound MCP endpoint (/mcp), host loopback only. The bridge authenticates
+      # every client with a bearer token, and whatever address clients dial has to
+      # be in allowed_hosts.
+      - "127.0.0.1:8080:8080"
+      # Operations listener (/livez, /readyz, metrics), host loopback only.
+      - "127.0.0.1:9090:9090"
+    read_only: true
+    tmpfs:
+      - /tmp:uid=1000,gid=1000,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - mcp
+
+networks:
+  # The stack's own compose file declares this network key as `mcp`. If your
+  # project prefixes it (e.g. mcp-grafana_mcp), set MCP_NETWORK to the name
+  # `docker network ls` shows.
+  mcp:
+    external: true
+    name: ${MCP_NETWORK:-mcp}
+
+volumes:
+  mcp-bridge-data:
