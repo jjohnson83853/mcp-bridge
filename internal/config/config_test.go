@@ -99,24 +99,24 @@ func TestParseBoundsDurations(t *testing.T) {
 	t.Setenv("TEST_UPSTREAM_SECRET", "upstream")
 	t.Setenv("TEST_CLIENT_SECRET", "client")
 	cases := []struct {
-		name      string
-		input     string
-		wantError string // "" means Parse must succeed
+		name    string
+		input   string
+		wantKey string // "" means Parse must succeed
 	}{
 		{"plan sample session idle 10m accepted", strings.Replace(valid, "pins: []", "http:\n  session_idle_timeout: 10m\npins: []", 1), ""},
 		{"session idle window edge 1s accepted", strings.Replace(valid, "pins: []", "http:\n  session_idle_timeout: 1s\npins: []", 1), ""},
 		{"session idle window edge 1h accepted", strings.Replace(valid, "pins: []", "http:\n  session_idle_timeout: 1h\npins: []", 1), ""},
-		{"session idle just above 1h rejected", strings.Replace(valid, "pins: []", "http:\n  session_idle_timeout: 1h1s\npins: []", 1), "session_idle_timeout outside permitted duration bounds"},
-		{"session idle just below 1s rejected", strings.Replace(valid, "pins: []", "http:\n  session_idle_timeout: 999ms\npins: []", 1), "session_idle_timeout outside permitted duration bounds"},
-		{"session idle zero rejected", strings.Replace(valid, "pins: []", "http:\n  session_idle_timeout: 0s\npins: []", 1), "session_idle_timeout outside permitted duration bounds"},
-		{"search timeout ceiling kept", strings.Replace(valid, "pins: []", "search:\n  timeout: 31s\npins: []", 1), "timeout outside permitted duration bounds"},
-		{"upstream call timeout ceiling kept", strings.Replace(valid, "pins: []", "upstream_defaults:\n  call_timeout: 121s\npins: []", 1), "call_timeout outside permitted duration bounds"},
-		{"embedding timeout ceiling kept", strings.Replace(valid, "pins: []", "embedding:\n  timeout: 31s\npins: []", 1), "embedding.timeout outside permitted duration bounds"},
+		{"session idle just above 1h rejected", strings.Replace(valid, "pins: []", "http:\n  session_idle_timeout: 1h1s\npins: []", 1), "http.session_idle_timeout"},
+		{"session idle just below 1s rejected", strings.Replace(valid, "pins: []", "http:\n  session_idle_timeout: 999ms\npins: []", 1), "http.session_idle_timeout"},
+		{"session idle zero rejected", strings.Replace(valid, "pins: []", "http:\n  session_idle_timeout: 0s\npins: []", 1), "http.session_idle_timeout"},
+		{"search timeout ceiling kept", strings.Replace(valid, "pins: []", "search:\n  timeout: 31s\npins: []", 1), "search.timeout"},
+		{"upstream call timeout ceiling kept", strings.Replace(valid, "pins: []", "upstream_defaults:\n  call_timeout: 121s\npins: []", 1), "upstream_defaults.call_timeout"},
+		{"embedding timeout ceiling kept", strings.Replace(valid, "pins: []", "embedding:\n  timeout: 31s\npins: []", 1), "embedding.timeout"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := config.Parse([]byte(tc.input), ".")
-			if tc.wantError == "" {
+			if tc.wantKey == "" {
 				if err != nil {
 					t.Fatalf("Parse rejected a permitted duration: %v", err)
 				}
@@ -125,8 +125,10 @@ func TestParseBoundsDurations(t *testing.T) {
 			if err == nil {
 				t.Fatal("Parse succeeded; want rejection")
 			}
-			if !strings.Contains(err.Error(), tc.wantError) {
-				t.Fatalf("error %q does not name %s", err, tc.wantError)
+			// The rejected key is carried by the location metadata and the
+			// bounds explanation stays a static reason (spec §3.1D).
+			if !strings.Contains(err.Error(), `key="`+tc.wantKey+`"`) {
+				t.Fatalf("error %q does not name the key %s", err, tc.wantKey)
 			}
 			if !strings.Contains(err.Error(), "outside permitted duration bounds") {
 				t.Fatalf("error %q lacks the bounds message", err)

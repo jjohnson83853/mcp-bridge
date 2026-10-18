@@ -139,60 +139,66 @@ func (c Config) Command() (Command, error) {
 }
 
 // readSetting copies one scalar setting into its typed destination. It reports
-// the section and key, never the value, so a rejected document cannot leak a
-// secret through the error.
+// the section and key through metadata, never the value, so a rejected document
+// cannot leak a secret through the error (spec §5.2 C-1 direct setting guards).
 func readSetting(c Config, section, key string, target any) error {
 	name := section + "." + key
+	fail := func(code, property, shape, reason string) error {
+		return direct(Diagnostic{
+			Path: c.Origin(), Key: name,
+			Code: code, Property: property, Shape: shape, Reason: reason,
+		})
+	}
 	leaf := c.section(section)
 	walk := splitDots(key)
 	for _, part := range walk[:len(walk)-1] {
 		child, ok := leaf[part].(map[string]any)
 		if !ok {
-			return fmt.Errorf("configuration is missing %s", name)
+			return fail("setting_missing", "value", "missing", "configuration is missing")
 		}
 		leaf = child
 	}
 	value, ok := leaf[walk[len(walk)-1]]
 	if !ok {
-		return fmt.Errorf("configuration is missing %s", name)
+		return fail("setting_missing", "value", "missing", "configuration is missing")
 	}
 	switch destination := target.(type) {
 	case *string:
 		text, ok := value.(string)
 		if !ok {
-			return fmt.Errorf("%s must be a string", name)
+			return fail("setting_type", "type", actualKind(value), "must be a string")
 		}
 		*destination = text
 	case *int:
 		number, ok := integerValue(value)
 		if !ok {
-			return fmt.Errorf("%s must be an integer", name)
+			return fail("setting_type", "type", actualKind(value), "must be an integer")
 		}
 		*destination = int(number)
 	case *int64:
 		number, ok := integerValue(value)
 		if !ok {
-			return fmt.Errorf("%s must be an integer", name)
+			return fail("setting_type", "type", actualKind(value), "must be an integer")
 		}
 		*destination = number
 	case *float64:
 		number, ok := numberValue(value)
 		if !ok {
-			return fmt.Errorf("%s must be a number", name)
+			return fail("setting_type", "type", actualKind(value), "must be a number")
 		}
 		*destination = number
 	case *time.Duration:
 		text, ok := value.(string)
 		if !ok {
-			return fmt.Errorf("%s must be a duration string", name)
+			return fail("setting_duration", "type", "wrong_type", "must be a duration string")
 		}
 		duration, err := time.ParseDuration(text)
 		if err != nil {
-			return fmt.Errorf("%s must be a duration string", name)
+			return fail("setting_duration", "type", "invalid_duration", "must be a duration string")
 		}
 		*destination = duration
 	default:
-		return fmt.Errorf("configuration reader has no destination for %s", name)
+		return fail("setting_internal", "destination", "unsupported_destination", "configuration reader has no destination")
 	}
 	return nil
 }
@@ -212,7 +218,11 @@ func readOptionalSequence(c Config, section, key string, destination *[]string) 
 	}
 	sequence, ok := value.([]any)
 	if !ok {
-		return fmt.Errorf("%s must be a sequence of strings", name)
+		return direct(Diagnostic{
+			Path: c.Origin(), Key: name,
+			Code: "setting_type", Property: "type", Shape: actualKind(value),
+			Reason: "must be a sequence of strings",
+		})
 	}
 	if len(sequence) == 0 {
 		*destination = []string{}
@@ -222,7 +232,11 @@ func readOptionalSequence(c Config, section, key string, destination *[]string) 
 	for index, entry := range sequence {
 		text, ok := entry.(string)
 		if !ok {
-			return fmt.Errorf("%s must be a sequence of strings", name)
+			return direct(Diagnostic{
+				Path: c.Origin(), Key: fmt.Sprintf("%s[%d]", name, index),
+				Code: "setting_type", Property: "type", Shape: actualKind(entry),
+				Reason: "must be a sequence of strings",
+			})
 		}
 		entries[index] = text
 	}

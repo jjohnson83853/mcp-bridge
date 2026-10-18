@@ -43,9 +43,10 @@ func runContext(ctx context.Context, args []string, stdout, stderr io.Writer) in
 	return 0
 }
 
-// checkConfig validates the document's structure without resolving or starting
-// anything: it reports the reference names a document mentions, never their
-// values.
+// checkConfig validates the document's structure and its secret references: it
+// resolves every {env:}/{file:} reference the document mentions (spec
+// HMB-CD-v1 §4.4), reports the reference names it inspected, and never prints
+// their values.
 func checkConfig(path string, stdout, stderr io.Writer) int {
 	cfg, err := config.ParseFile(path)
 	if err != nil {

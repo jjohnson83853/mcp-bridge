@@ -81,6 +81,61 @@ Rules that matter operationally:
   rotating that endpoint's credentials is allowed.
 - `pins:` names exact `[server_id, raw_name]` pairs that must stay discoverable.
 
+## Configuration diagnostics
+
+Every rejected document is attributed as one typed, single-line record: the
+supplied config path, the complete known location, the owner and reference
+identity, a finite code/property/shape class, and a static reason. Records
+never contain a secret value, a preview, a hash, a fingerprint, an exact
+length, an offset, or raw YAML/URL/OS text — a multi-failure collection is
+pipe-separated and bounded:
+
+```text
+invalid configuration: diagnostics=5: config="configs/config.example.yaml" key="embedding.api_key" ref="env:BRIDGE_EMBEDDING_KEY" code=secret_unset property=value shape=unset: secret environment variable is unset; set the named reference without printing its value | ... | config="configs/config.example.yaml" key="servers[1].credentials.bearer" server="portainer-api" ref="env:PORTAINER_UPSTREAM_TOKEN" code=secret_unset property=value shape=unset: secret environment variable is unset; set the named reference without printing its value; remaining_stages=not_checked
+```
+
+Safe repair path: edit the file named by `config=` at the `key=` location named
+by the record. The code is a closed vocabulary (`secret_unset`, `secret_empty`,
+`secret_too_large`, `secret_cr`/`secret_lf`/`secret_nul`, `secret_file_missing`,
+`secret_file_policy`, `bound_range`, `duration_*`, `url_invalid`, …) and the
+reason is a static instruction; neither ever echoes the value. `ref=` names the
+configured reference identity (`env:NAME` or `file:PATH` as written); the
+config-dir resolution of a relative file path stays internal and is never
+rendered.
+
+Channels:
+
+- `--check-config`: rejections print `invalid configuration: <records>` to
+  stderr with stdout empty and exit status 1; a valid document keeps the
+  existing `configuration valid: <summary>` line on stdout. This is the
+  intended validation step before `docker compose up`, and it can also run
+  inside the deployed image:
+  `docker compose run --rm mcp-bridge --check-config --config /app/configs/config.mcp-grafana-stack.yaml`.
+  In Compose the same record surfaces as a container log line prefixed
+  `mcp-bridge |`.
+- Serve startup: rejections keep the existing `mcp-bridge: configuration:`
+  stderr prefix followed by the same records; stdout shape is unchanged.
+- Reload: a rejected candidate is reported as an operator-log JSON entry
+  (`event: reload`, `outcome: failure`) carrying the typed manifest —
+  `config_path`, `location`, `line`, `column`, `code`, `property`, `shape`,
+  `ref_kind`, `ref_name`, `pin_server`, `pin_tool`, `related_location`,
+  `related_ref_kind`, `related_ref_name`, `diagnostic_index`,
+  `diagnostics_incomplete`, `remaining_stages`, `server`. Disallowed metadata
+  (`config_key`, `secret_ref`, header/URL/endpoint identities, freeform error
+  text) is dropped by the logger allowlist and never reflected; the unrelated
+  credential redaction stays intact.
+
+Line-ending policy: file secret values must be UTF-8 with no CR, LF, or NUL.
+Reads strip exactly one final LF, so a file with a single trailing newline is
+fine; a second trailing LF is a `secret_lf` rejection. Environment values are
+never newline-stripped.
+
+A collection reports at most 32 records. Beyond that the collection is marked
+incomplete (`diagnostics_incomplete: true` in the logger manifest, footer once
+on the rendered line), and a secret-stage failure skips the remaining stages
+(`remaining_stages: not_checked`) rather than guessing what they would have
+reported.
+
 ## Tool surface
 
 One MCP server, three tools:
@@ -188,6 +243,13 @@ go vet ./...
 go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./...
 go run ./cmd/covcheck
 ```
+
+`internal/config` carries the typed-diagnostic contract tests: every rejected
+document names its config path, document location, owner/reference identity,
+code, property, shape and static reason, file classification keeps its
+exact-case matrix (`bounds_edge_test.go`, `private_file_test.go`,
+`secret_validation_edge_test.go`), and `internal/observe` pins the exact
+18-field diagnostic logger manifest in `TestConfigDiagnosticFieldManifest`.
 
 `cmd/mcp-bridge/serve_test.go` is the process-level acceptance test: it starts
 the real composition root against `httptest` upstreams and a private temp store,

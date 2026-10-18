@@ -14,42 +14,95 @@ servers:
 pins: []
 `
 
+// TestParseValidationEdges migrates the C-1 semantic table to full-metadata
+// oracles: key + owner + finite code/property/shape + static reason, with the
+// stage barrier naming the skipped later stages (spec §5.2).
 func TestParseValidationEdges(t *testing.T) {
-	cases := []struct{ name, input, want string }{
-		{"schema version", strings.Replace(edgeValid, "schema_version: 1", "schema_version: 2", 1), "schema_version"},
-		{"unknown root key", edgeValid + "unexpected: true\n", "unknown key"},
-		{"missing schema version", strings.Replace(edgeValid, "schema_version: 1\n", "", 1), "schema_version"},
-		{"no servers", strings.Replace(edgeValid, "servers:\n  - id: alpha\n    endpoint: https://alpha.invalid/mcp\n", "servers: []\n", 1), "servers"},
-		{"duplicate server", strings.Replace(edgeValid, "pins: []", "  - id: alpha\n    endpoint: https://other.invalid/mcp\npins: []", 1), "duplicate server id"},
-		{"invalid endpoint", strings.Replace(edgeValid, "https://alpha.invalid/mcp", "file:///tmp/socket", 1), "endpoint"},
-		{"invalid pin", strings.Replace(edgeValid, "pins: []", "pins:\n  - {server: absent, tool: x}", 1), "invalid pin"},
-		{"duplicate pin", strings.Replace(edgeValid, "pins: []", "pins:\n  - {server: alpha, tool: x}\n  - {server: alpha, tool: x}", 1), "duplicate pin"},
+	cases := []struct {
+		name, input string
+		fragments   []string
+		forbidden   []string
+	}{
+		{"schema version", strings.Replace(edgeValid, "schema_version: 1", "schema_version: 2", 1),
+			[]string{`key="schema_version"`, "code=schema_version", "property=schema_version", "shape=unsupported_integer", "schema_version must equal 1"},
+			nil},
+		{"unknown root key", edgeValid + "unexpected: true\n",
+			[]string{`key="<document>"`, "code=yaml_key_unknown", "property=unknown_key", "unknown key"},
+			[]string{"unexpected"}},
+		{"no schema", strings.Replace(edgeValid, "schema_version: 1\n", "", 1),
+			[]string{`key="schema_version"`, "code=schema_version", "property=schema_version", "shape=missing", "schema_version must equal 1"},
+			nil},
+		{"no servers", strings.Replace(edgeValid, "servers:\n  - id: alpha\n    endpoint: https://alpha.invalid/mcp\n", "servers: []\n", 1),
+			[]string{`key="servers"`, "code=server_count", "property=server_count", "shape=empty", "servers must contain 1..1024 entries"},
+			nil},
+		{"duplicate server", strings.Replace(edgeValid, "  - id: alpha\n    endpoint: https://alpha.invalid/mcp", "  - id: alpha\n    endpoint: https://alpha.invalid/mcp\n  - id: alpha\n    endpoint: https://alpha.invalid/mcp", 1),
+			[]string{`key="servers[1].id"`, `server="alpha"`, "code=server_id_duplicate", "shape=duplicate", `related_key="servers[0].id"`, "duplicate server id"},
+			nil},
+		{"invalid endpoint", strings.Replace(edgeValid, "https://alpha.invalid/mcp", "not-a-url", 1),
+			[]string{`key="servers[0].endpoint"`, `server="alpha"`, "code=url_invalid", "property=absolute_http_url", "shape=invalid_url", "invalid absolute HTTP(S) URL"},
+			[]string{"not-a-url"}},
+		{"unknown pin server", strings.Replace(edgeValid, "pins: []", "pins:\n  - {server: absent, tool: x}", 1),
+			[]string{`key="pins[0].server"`, `pin_server="absent"`, `pin_tool="x"`, "code=pin_server_unknown", "property=server", "shape=unknown_server", "pin references unknown server"},
+			nil},
+		{"duplicate pin", strings.Replace(edgeValid, "pins: []", "pins:\n  - {server: alpha, tool: x}\n  - {server: alpha, tool: x}", 1),
+			[]string{`key="pins[1]"`, `pin_server="alpha"`, `pin_tool="x"`, `related_key="pins[0]"`, "code=pin_duplicate", "property=identity", "shape=duplicate", "duplicate pin"},
+			nil},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := Parse([]byte(tc.input), filepath.Join(t.TempDir(), "config.yaml"))
-			if err == nil || !strings.Contains(strings.ToLower(err.Error()), strings.ToLower(tc.want)) {
-				t.Fatalf("Parse error = %v, want class/field containing %q", err, tc.want)
+			diags := requireDiagnostics(t, err)
+			requireRendered(t, err, tc.fragments...)
+			forbidRendered(t, err, tc.forbidden...)
+			if diags.RemainingStages != stageNotChecked {
+				t.Fatalf("expected the stage barrier to name skipped stages, got %q", diags.RemainingStages)
 			}
 		})
 	}
 }
 
+// TestParseFileAndCredentialResolutionEdges migrates the C-1 file/env rows:
+// a missing file is a config_read record for the requested path, and an unset
+// environment reference is the unset class, never the old conflated
+// empty-secret phrase (spec §5.2).
 func TestParseFileAndCredentialResolutionEdges(t *testing.T) {
 	t.Run("missing file", func(t *testing.T) {
-		_, err := ParseFile(filepath.Join(t.TempDir(), "absent.yaml"))
-		if err == nil {
-			t.Fatal("ParseFile accepted a missing file")
+		path := filepath.Join(t.TempDir(), "absent.yaml")
+		_, err := ParseFile(path)
+		diags := requireDiagnostics(t, err)
+		requireRendered(t, err,
+			`config="`+path+`"`, `key="<document>"`,
+			"code=config_read", "property=document", "shape=not_found",
+		)
+		if diags.Records[0].Path != path {
+			t.Fatalf("record path = %q, want the requested path", diags.Records[0].Path)
 		}
+		forbidRendered(t, err, "no such file", "os.")
 	})
-	t.Run("unset env resolves to empty-secret rejection", func(t *testing.T) {
+	t.Run("unset env resolves to unset-secret rejection", func(t *testing.T) {
 		t.Setenv("CONFIG_EDGE_MISSING", "present temporarily")
 		if err := os.Unsetenv("CONFIG_EDGE_MISSING"); err != nil {
 			t.Fatal(err)
 		}
 		input := strings.Replace(edgeValid, "endpoint: https://alpha.invalid/mcp", "endpoint: https://alpha.invalid/mcp\n    credentials: {bearer: {env: CONFIG_EDGE_MISSING}}", 1)
-		if _, err := Parse([]byte(input), t.TempDir()); err == nil || !strings.Contains(err.Error(), "secret must be nonempty") {
-			t.Fatalf("Parse error = %v, want empty-secret rejection", err)
+		path := filepath.Join(t.TempDir(), "config.yaml")
+		_, err := Parse([]byte(input), path)
+		diags := requireDiagnostics(t, err)
+		// The record must attribute the failure to the document, the known
+		// location, the owner and the named reference, with the unset class:
+		// never the old conflated empty-secret phrase for a var that was never set.
+		requireRendered(t, err,
+			`config="`+path+`"`,
+			`key="servers[0].credentials.bearer"`,
+			`server="alpha"`,
+			`ref="env:CONFIG_EDGE_MISSING"`,
+			"code=secret_unset", "property=value", "shape=unset",
+			"secret environment variable is unset",
+			"; remaining_stages="+stageNotChecked,
+		)
+		forbidRendered(t, err, "secret must be nonempty")
+		if diags.RemainingStages != stageNotChecked {
+			t.Fatalf("expected the stage barrier, got %q", diags.RemainingStages)
 		}
 	})
 	t.Run("file credential trims terminal newline", func(t *testing.T) {
@@ -58,34 +111,54 @@ func TestParseFileAndCredentialResolutionEdges(t *testing.T) {
 			t.Fatal(err)
 		}
 		input := strings.Replace(edgeValid, "endpoint: https://alpha.invalid/mcp", "endpoint: https://alpha.invalid/mcp\n    credentials: {bearer: {file: secret}}", 1)
-		cfg, err := Parse([]byte(input), filepath.Join(dir, "config.yaml"))
+		path := filepath.Join(dir, "config.yaml")
+		cfg, err := Parse([]byte(input), path)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("Parse rejected one-terminal-LF file: %v", err)
 		}
-		got, err := cfg.ServerCredentials("alpha")
-		if err != nil || got.Bearer != "token" {
-			t.Fatalf("ServerCredentials = %#v, %v", got, err)
+		credentials, err := cfg.ServerCredentials("alpha")
+		if err != nil {
+			t.Fatalf("ServerCredentials rejected a valid credential: %v", err)
+		}
+		if credentials.Bearer != "token" {
+			t.Fatalf("bearer token = %q, want exactly the file contents with one LF removed", credentials.Bearer)
+		}
+		if strings.Contains(cfg.String(), "token") {
+			t.Fatal("Config.String leaked a resolved credential")
 		}
 	})
 }
 
+// TestServerLimitsRejectInvalidValues migrates the C-1 direct limits rows:
+// config=<memory>, full key, owner, and finite setting_type / setting_duration
+// classes with static reasons (spec §5.2).
 func TestServerLimitsRejectInvalidValues(t *testing.T) {
-	cases := []struct {
-		name   string
-		limits map[string]any
-		want   string
-	}{
-		{"noninteger", map[string]any{"max_concurrent_calls": 1.5}, "max_concurrent_calls"},
-		{"wrong duration type", map[string]any{"call_timeout": 1}, "call_timeout"},
-		{"invalid duration", map[string]any{"call_timeout": "soon"}, "call_timeout"},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			cfg := Config{Servers: []Server{{ID: "alpha", Limits: tc.limits}}}
-			_, err := cfg.ServerLimits("alpha")
-			if err == nil || !strings.Contains(err.Error(), tc.want) {
-				t.Fatalf("ServerLimits error = %v, want field %q", err, tc.want)
-			}
-		})
-	}
+	_, err := (Config{Servers: []Server{{ID: "alpha", Limits: map[string]any{"max_concurrent_calls": 1.5}}}}).ServerLimits("alpha")
+	requireDiagnostics(t, err)
+	requireRendered(t, err,
+		`config="<memory>"`,
+		`key="servers[0].limits.max_concurrent_calls"`,
+		`server="alpha"`,
+		"code=setting_type", "property=type", "shape=number", "must be an integer",
+	)
+	forbidRendered(t, err, "1.5")
+
+	_, err = (Config{Servers: []Server{{ID: "alpha", Limits: map[string]any{"call_timeout": 1}}}}).ServerLimits("alpha")
+	requireDiagnostics(t, err)
+	requireRendered(t, err,
+		`config="<memory>"`,
+		`key="servers[0].limits.call_timeout"`,
+		`server="alpha"`,
+		"code=setting_duration", "property=type", "shape=wrong_type", "must be a duration string",
+	)
+
+	_, err = (Config{Servers: []Server{{ID: "alpha", Limits: map[string]any{"call_timeout": "soon"}}}}).ServerLimits("alpha")
+	requireDiagnostics(t, err)
+	requireRendered(t, err,
+		`config="<memory>"`,
+		`key="servers[0].limits.call_timeout"`,
+		`server="alpha"`,
+		"code=setting_duration", "property=type", "shape=invalid_duration", "must be a duration string",
+	)
+	forbidRendered(t, err, "soon")
 }

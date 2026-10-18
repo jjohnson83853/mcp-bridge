@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -23,18 +22,37 @@ type Limits struct {
 	CallTimeout        *time.Duration
 }
 
+// serverIndex locates one configured server element; -1 means the requested id
+// matches no configured server.
+func (c Config) serverIndex(serverID string) int {
+	for index, server := range c.Servers {
+		if server.ID == serverID {
+			return index
+		}
+	}
+	return -1
+}
+
 // ServerCredentials resolves the credential values one server's own mappings
 // reference. Every reference must resolve, and every header name must be one the
 // transport accepts, so a caller fails closed instead of opening a client with a
-// missing or malformed credential (plan §4.2/§4.6).
+// missing or malformed credential (plan §4.2/§4.6). Rejections are
+// metadata-only records attributed to config=<memory> for a directly
+// constructed Config (spec §4.1/§5.2 C-1).
 func (c Config) ServerCredentials(serverID string) (Credentials, error) {
-	server, ok := c.server(serverID)
-	if !ok {
-		return Credentials{}, fmt.Errorf("credentials reference unknown server %q", serverID)
+	index := c.serverIndex(serverID)
+	if index < 0 {
+		return Credentials{}, direct(Diagnostic{
+			Path: c.Origin(), Key: "servers", Server: serverID,
+			Code: "server_unknown", Property: "credentials", Shape: "unknown_server",
+			Reason: "credentials reference unknown server",
+		})
 	}
+	base := fmt.Sprintf("servers[%d]", index)
+	server := c.Servers[index]
 	var credentials Credentials
 	if raw, ok := server.Credentials["bearer"]; ok {
-		value, err := c.resolveOne(serverID, "bearer", raw)
+		value, err := c.resolveOne(base+".credentials.bearer", serverID, raw)
 		if err != nil {
 			return Credentials{}, err
 		}
@@ -43,14 +61,22 @@ func (c Config) ServerCredentials(serverID string) (Credentials, error) {
 	if raw, ok := server.Credentials["headers"]; ok {
 		headers, ok := raw.(map[string]any)
 		if !ok {
-			return Credentials{}, fmt.Errorf("server %q credentials.headers must be a mapping", serverID)
+			return Credentials{}, direct(Diagnostic{
+				Path: c.Origin(), Key: base + ".credentials.headers", Server: serverID,
+				Code: "header_mapping", Property: "type", Shape: actualKind(raw),
+				Reason: "credentials.headers must be a mapping",
+			})
 		}
 		credentials.Headers = make(http.Header, len(headers))
 		for name, value := range headers {
 			if !validHeaderFieldName(name) {
-				return Credentials{}, fmt.Errorf("server %q credential header name is invalid", serverID)
+				return Credentials{}, direct(Diagnostic{
+					Path: c.Origin(), Key: base + ".credentials.headers", Server: serverID,
+					Code: "header_name_invalid", Property: "name", Shape: "invalid_identifier",
+					Reason: "invalid credential header name",
+				})
 			}
-			resolved, err := c.resolveOne(serverID, "headers."+name, value)
+			resolved, err := c.resolveOne(base+".credentials.headers["+fmt.Sprintf("%q", name)+"]", serverID, value)
 			if err != nil {
 				return Credentials{}, err
 			}
@@ -62,15 +88,25 @@ func (c Config) ServerCredentials(serverID string) (Credentials, error) {
 
 // ServerLimits reports the per-server limit overrides that server declares.
 func (c Config) ServerLimits(serverID string) (Limits, error) {
-	server, ok := c.server(serverID)
-	if !ok {
-		return Limits{}, fmt.Errorf("limits reference unknown server %q", serverID)
+	index := c.serverIndex(serverID)
+	if index < 0 {
+		return Limits{}, direct(Diagnostic{
+			Path: c.Origin(), Key: "servers", Server: serverID,
+			Code: "server_unknown", Property: "limits", Shape: "unknown_server",
+			Reason: "limits reference unknown server",
+		})
 	}
+	base := fmt.Sprintf("servers[%d]", index)
+	server := c.Servers[index]
 	var limits Limits
 	if raw, ok := server.Limits["max_concurrent_calls"]; ok {
 		number, ok := integerValue(raw)
 		if !ok {
-			return Limits{}, fmt.Errorf("server %q limits.max_concurrent_calls must be an integer", serverID)
+			return Limits{}, direct(Diagnostic{
+				Path: c.Origin(), Key: base + ".limits.max_concurrent_calls", Server: serverID,
+				Code: "setting_type", Property: "type", Shape: actualKind(raw),
+				Reason: "must be an integer",
+			})
 		}
 		value := int(number)
 		limits.MaxConcurrentCalls = &value
@@ -78,11 +114,19 @@ func (c Config) ServerLimits(serverID string) (Limits, error) {
 	if raw, ok := server.Limits["call_timeout"]; ok {
 		text, ok := raw.(string)
 		if !ok {
-			return Limits{}, fmt.Errorf("server %q limits.call_timeout must be a duration string", serverID)
+			return Limits{}, direct(Diagnostic{
+				Path: c.Origin(), Key: base + ".limits.call_timeout", Server: serverID,
+				Code: "setting_duration", Property: "type", Shape: "wrong_type",
+				Reason: "must be a duration string",
+			})
 		}
 		duration, err := time.ParseDuration(text)
 		if err != nil {
-			return Limits{}, fmt.Errorf("server %q limits.call_timeout must be a duration string", serverID)
+			return Limits{}, direct(Diagnostic{
+				Path: c.Origin(), Key: base + ".limits.call_timeout", Server: serverID,
+				Code: "setting_duration", Property: "type", Shape: "invalid_duration",
+				Reason: "must be a duration string",
+			})
 		}
 		limits.CallTimeout = &duration
 	}
@@ -99,36 +143,31 @@ func (c Config) EmbeddingCredential() (string, error) {
 	if !ok {
 		return "", nil
 	}
-	refs := credentialRefs(raw)
-	if len(refs) != 1 {
-		return "", errors.New("embedding.api_key must reference exactly one secret")
-	}
-	value, ok := c.resolved[refs[0]]
-	if !ok {
-		return "", errors.New("embedding.api_key does not resolve")
-	}
-	return value, nil
+	return c.resolveOne("embedding.api_key", "", raw)
 }
 
 // resolveOne resolves exactly one secret reference, and reports a reference it
-// cannot resolve rather than substituting an empty value.
-func (c Config) resolveOne(serverID, key string, raw any) (string, error) {
+// cannot resolve rather than substituting an empty value. A multi-reference or
+// non-reference shape reports the shape class without inventing a reference
+// identity; an unresolved reference reports its configured identity (spec
+// §4.3/§5.2 C-1).
+func (c Config) resolveOne(keyPath, serverID string, raw any) (string, error) {
 	refs := credentialRefs(raw)
 	if len(refs) != 1 {
-		return "", fmt.Errorf("server %q credentials.%s must reference exactly one secret", serverID, key)
+		return "", direct(Diagnostic{
+			Path: c.Origin(), Key: keyPath, Server: serverID,
+			Code: "reference_shape", Property: "reference", Shape: actualKind(raw),
+			Reason: "must reference exactly one secret",
+		})
 	}
-	value, ok := c.resolved[refs[0]]
-	if !ok {
-		return "", fmt.Errorf("server %q credentials.%s does not resolve", serverID, key)
+	if value, ok := c.resolved[refs[0]]; ok {
+		return value, nil
 	}
-	return value, nil
-}
-
-func (c Config) server(serverID string) (Server, bool) {
-	for _, server := range c.Servers {
-		if server.ID == serverID {
-			return server, true
-		}
-	}
-	return Server{}, false
+	kind, name := refParts(refs[0])
+	return "", direct(Diagnostic{
+		Path: c.Origin(), Key: keyPath, Server: serverID,
+		RefKind: kind, RefName: name,
+		Code: "reference_unresolved", Property: "reference", Shape: "unresolved",
+		Reason: "secret reference does not resolve",
+	})
 }

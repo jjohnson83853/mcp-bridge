@@ -47,7 +47,19 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 		}
 		if published := holder.publishedSettings(); published != nil {
 			if field := restartOnlyField(*published, settings); field != "" {
-				return nil, fmt.Errorf("%s can only change across a restart", field)
+				// The restart-only guard is a typed record (spec §3.1 E), so
+				// operatorLog attributes it on reload: the candidate path, the
+				// full dotted key, the restart_required class, and a static
+				// reason — never a setting value. The rejected reload keeps
+				// the working generation staged.
+				return nil, &config.Diagnostics{Records: []config.Diagnostic{{
+					Path:     path,
+					Key:      field,
+					Code:     "restart_required",
+					Property: "setting",
+					Shape:    "immutable",
+					Reason:   "setting can only change across a restart",
+				}}}
 			}
 		}
 		holder.stage(candidate, settings)

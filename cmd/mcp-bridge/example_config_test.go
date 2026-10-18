@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -76,17 +77,39 @@ func TestExampleConfigPassesCheck(t *testing.T) {
 
 // TestShippedSampleFailsWithoutOneReference pins that resolution failures are
 // reported as configuration errors, so a missing credential cannot pass the
-// documented preflight.
+// documented preflight. An unset environment variable must NOT be relabelled
+// empty, and a t.Setenv-empty variable must NOT be relabelled unset.
 func TestShippedSampleFailsWithoutOneReference(t *testing.T) {
 	configPath := stageSample(t)
 	t.Setenv("BRIDGE_CLIENT_TOKEN", "")
 	var stdout, stderr bytes.Buffer
 
-	if code := runContext(context.Background(), []string{"--check-config", "--config", configPath}, &stdout, &stderr); code == 0 {
-		t.Fatal("check-config succeeded with an empty client token")
+	code := runContext(context.Background(), []string{"--check-config", "--config", configPath}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("check-config exit = %d, want 1", code)
 	}
-	if !strings.Contains(stderr.String(), "invalid configuration:") {
-		t.Fatalf("stderr = %q, want an invalid-configuration report", stderr.String())
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout = %q, want empty", stdout.String())
+	}
+	lines := strings.Split(strings.TrimSuffix(stderr.String(), "\n"), "\n")
+	if len(lines) != 1 {
+		t.Fatalf("stderr lines = %d (%q), want 1", len(lines), stderr.String())
+	}
+	// Exact attribution: unset BRIDGE_CLIENT_TOKEN inside client_auth, whose
+	// empty value is exactly `code=secret_empty`, not relabelled as unset
+	// (or vice versa). The Go-quoted path and key must match the supplied
+	// temp config path and the dotted key path exactly.
+	want := fmt.Sprintf("invalid configuration: config=%q key=%q ref=%q code=%s property=%s shape=%s: %s; remaining_stages=not_checked",
+		configPath,
+		"client_auth.bearer_tokens[0]",
+		"env:BRIDGE_CLIENT_TOKEN",
+		"secret_empty",
+		"value",
+		"empty",
+		"secret must be nonempty; provide a nonempty value for the named reference",
+	)
+	if lines[0] != want {
+		t.Fatalf("stderr = %q, want %q", lines[0], want)
 	}
 }
 

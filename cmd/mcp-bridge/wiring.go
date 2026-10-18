@@ -409,7 +409,40 @@ func publishObserver(holder *configHolder, checks *localChecks, state *service.R
 // and finite (plan §4.11), so a rejected candidate is reported by its class: a
 // configuration error can quote the document it rejected.
 func operatorLog(logger *observe.Logger) func(string, ...any) {
-	return func(string, ...any) {
+	return func(message string, args ...any) {
+		var diagnostics *config.Diagnostics
+		for _, arg := range args {
+			if err, ok := arg.(error); ok {
+				if errors.As(err, &diagnostics) {
+					break
+				}
+			}
+		}
+		if diagnostics != nil {
+			for i, record := range diagnostics.Records {
+				logger.Log(observe.Entry{
+					Level:   "warn",
+					Event:   "reload",
+					Outcome: "failure",
+					Reason:  "invalid_config",
+					Server:  recordOwnerLabel(record.Server),
+					Fields:  diagnosticFields(record, i, diagnostics),
+				})
+			}
+			if diagnostics.Incomplete {
+				logger.Log(observe.Entry{
+					Level:   "warn",
+					Event:   "reload",
+					Outcome: "failure",
+					Reason:  "invalid_config",
+					Server:  bridgeServerLabel,
+					Fields: map[string]any{
+						"diagnostics_incomplete": true,
+					},
+				})
+			}
+			return
+		}
 		logger.Log(observe.Entry{
 			Level:   "warn",
 			Event:   "reload",
@@ -417,12 +450,86 @@ func operatorLog(logger *observe.Logger) func(string, ...any) {
 			Reason:  "invalid_config",
 			Server:  bridgeServerLabel,
 		})
+		_ = message
 	}
+}
+
+// diagnosticFields projects one typed diagnostics record onto the operator
+// logger's exact 18-field manifest (spec HMB-CD-v1 §4.5 item 4). It never
+// carries a secret value, a preview, a hash, a fingerprint, an exact length,
+// an offset, or any raw YAML/URL/OS text: every key mirrors the package's
+// metadata-only contract, and no unclassified error argument is ever logged.
+func diagnosticFields(record config.Diagnostic, index int, diagnostics *config.Diagnostics) map[string]any {
+	fields := make(map[string]any, 18)
+	fields["config_path"] = record.Path
+	fields["location"] = record.Key
+	if record.Line != 0 {
+		fields["line"] = record.Line
+		fields["column"] = record.Column
+	}
+	if record.PinServer != "" {
+		fields["pin_server"] = record.PinServer
+	}
+	if record.PinTool != "" {
+		fields["pin_tool"] = record.PinTool
+	}
+	if record.RefKind != "" {
+		fields["ref_kind"] = record.RefKind
+	}
+	if record.RefName != "" {
+		fields["ref_name"] = record.RefName
+	}
+	if record.RelatedKey != "" {
+		fields["related_location"] = record.RelatedKey
+	}
+	if record.RelatedRefKind != "" {
+		fields["related_ref_kind"] = record.RelatedRefKind
+	}
+	if record.RelatedRefName != "" {
+		fields["related_ref_name"] = record.RelatedRefName
+	}
+	fields["code"] = record.Code
+	fields["property"] = record.Property
+	fields["shape"] = record.Shape
+	fields["diagnostic_index"] = index
+	if diagnostics != nil && diagnostics.Incomplete {
+		fields["diagnostics_incomplete"] = true
+	}
+	fields["remaining_stages"] = diagnostics.RemainingStages
+	return fields
 }
 
 // bridgeServerLabel is the aggregate label of work the bridge does for itself
 // rather than for one configured server.
 const bridgeServerLabel = "_bridge"
+
+// recordOwnerLabel maps a diagnostic record's owning server id onto the
+// operator log's top-level `server` field (spec §4.5 item 4): the record's
+// validated owner when it passes the existing safe-server rules, and the
+// bridge's own aggregate label otherwise. Ownerless records keep _bridge.
+func recordOwnerLabel(server string) string {
+	if server == "" || !isSafeServerID(server) {
+		return bridgeServerLabel
+	}
+	return server
+}
+
+// isSafeServerID mirrors the observe logger's safe-server rule: the finite
+// vocabulary of configured server ids (lowercase lead, lowercase/digits/dashes).
+func isSafeServerID(value string) bool {
+	if len(value) == 0 || len(value) > 32 {
+		return false
+	}
+	if value[0] < 'a' || value[0] > 'z' {
+		return false
+	}
+	for _, r := range value[1:] {
+		if !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-') {
+			return false
+		}
+	}
+	return true
+}
 
 // pumpReloads turns each SIGHUP into one reload request. A burst coalesces into
 // one pending request, because the loop already collapses a storm into one

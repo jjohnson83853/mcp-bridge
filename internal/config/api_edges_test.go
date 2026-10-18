@@ -1,55 +1,78 @@
 package config
 
 import (
-	"strings"
 	"testing"
 )
 
+// TestCredentialAccessorsRejectUnknownOrMalformedReferences migrates the C-1
+// direct credential guards: config=<memory>, full key, validated owner, finite
+// code/property/shape and static reasons, with references read only from valid
+// single-reference shapes (spec §5.2).
 func TestCredentialAccessorsRejectUnknownOrMalformedReferences(t *testing.T) {
 	cases := []struct {
-		name   string
-		cfg    Config
-		server string
-		want   string
+		name      string
+		cfg       Config
+		server    string
+		fragments []string
+		forbidden []string
 	}{
-		{"unknown server", Config{}, "unknown", "unknown server"},
-		{"headers not mapping", Config{Servers: []Server{{ID: "alpha", Credentials: map[string]any{"headers": "bad"}}}}, "alpha", "headers must be a mapping"},
-		{"invalid header name", Config{Servers: []Server{{ID: "alpha", Credentials: map[string]any{"headers": map[string]any{"bad header": map[string]any{"env": "TOKEN"}}}}}}, "alpha", "header name is invalid"},
-		{"missing resolved bearer", Config{Servers: []Server{{ID: "alpha", Credentials: map[string]any{"bearer": map[string]any{"env": "TOKEN"}}}}}, "alpha", "does not resolve"},
-		{"non-reference bearer", Config{Servers: []Server{{ID: "alpha", Credentials: map[string]any{"bearer": "plain"}}}}, "alpha", "exactly one secret"},
+		{"unknown server", Config{}, "unknown",
+			[]string{`config="<memory>"`, `key="servers"`, "code=server_unknown", "property=credentials", "shape=unknown_server", "credentials reference unknown server"},
+			nil},
+		{"headers not mapping", Config{Servers: []Server{{ID: "alpha", Credentials: map[string]any{"headers": "bad"}}}}, "alpha",
+			[]string{`config="<memory>"`, `key="servers[0].credentials.headers"`, `server="alpha"`, "code=header_mapping", "property=type", "shape=string", "credentials.headers must be a mapping"},
+			[]string{"bad"}},
+		{"invalid header name", Config{Servers: []Server{{ID: "alpha", Credentials: map[string]any{"headers": map[string]any{"bad header": map[string]any{"env": "TOKEN"}}}}}}, "alpha",
+			[]string{`config="<memory>"`, `key="servers[0].credentials.headers"`, `server="alpha"`, "code=header_name_invalid", "property=name", "shape=invalid_identifier", "invalid credential header name"},
+			[]string{"bad header"}},
+		{"missing resolved bearer", Config{Servers: []Server{{ID: "alpha", Credentials: map[string]any{"bearer": map[string]any{"env": "TOKEN"}}}}}, "alpha",
+			[]string{`config="<memory>"`, `key="servers[0].credentials.bearer"`, `server="alpha"`, `ref="env:TOKEN"`, "code=reference_unresolved", "property=reference", "shape=unresolved", "secret reference does not resolve"},
+			nil},
+		{"non-reference bearer", Config{Servers: []Server{{ID: "alpha", Credentials: map[string]any{"bearer": "plain"}}}}, "alpha",
+			[]string{`config="<memory>"`, `key="servers[0].credentials.bearer"`, `server="alpha"`, "code=reference_shape", "property=reference", "shape=string", "must reference exactly one secret"},
+			[]string{"plain"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := tc.cfg.ServerCredentials(tc.server)
-			if err == nil || !strings.Contains(err.Error(), tc.want) {
-				t.Fatalf("ServerCredentials error = %v, want %q", err, tc.want)
-			}
+			requireDiagnostics(t, err)
+			requireRendered(t, err, tc.fragments...)
+			forbidRendered(t, err, tc.forbidden...)
 		})
 	}
-	if _, err := (Config{}).ServerLimits("missing"); err == nil || !strings.Contains(err.Error(), "unknown server") {
-		t.Fatalf("ServerLimits unknown server error = %v", err)
-	}
+	_, err := (Config{}).ServerLimits("missing")
+	requireDiagnostics(t, err)
+	requireRendered(t, err,
+		`config="<memory>"`, `key="servers"`, "code=server_unknown", "property=limits", "shape=unknown_server", "limits reference unknown server",
+	)
 }
 
+// TestEmbeddingCredentialResolutionFailures migrates the C-1 embedding rows:
+// reference_shape for a multi-reference mapping and reference_unresolved with
+// the configured reference identity (spec §5.2).
 func TestEmbeddingCredentialResolutionFailures(t *testing.T) {
 	for _, tc := range []struct {
 		name      string
 		embedding map[string]any
 		resolved  map[string]string
-		want      string
+		fragments []string
 	}{
-		{"multiple references", map[string]any{"api_key": map[string]any{"env": "A", "file": "b"}}, nil, "exactly one"},
-		{"unresolved reference", map[string]any{"api_key": map[string]any{"env": "TOKEN"}}, nil, "does not resolve"},
+		{"multiple references", map[string]any{"api_key": map[string]any{"env": "A", "file": "b"}}, nil,
+			[]string{`config="<memory>"`, `key="embedding.api_key"`, "code=reference_shape", "property=reference", "shape=mapping", "must reference exactly one secret"}},
+		{"unresolved reference", map[string]any{"api_key": map[string]any{"env": "TOKEN"}}, nil,
+			[]string{`config="<memory>"`, `key="embedding.api_key"`, `ref="env:TOKEN"`, "code=reference_unresolved", "property=reference", "shape=unresolved", "secret reference does not resolve"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := (Config{Embedding: tc.embedding, resolved: tc.resolved}).EmbeddingCredential()
-			if err == nil || !strings.Contains(err.Error(), tc.want) {
-				t.Fatalf("EmbeddingCredential error = %v, want %q", err, tc.want)
-			}
+			requireDiagnostics(t, err)
+			requireRendered(t, err, tc.fragments...)
 		})
 	}
 }
 
+// TestCredentialFingerprintFailureAndSuccess stays a behavioral regression: the
+// fingerprint surface neither gains nor loses cases, and no diagnostic may
+// carry a fingerprint value (spec §5.2).
 func TestCredentialFingerprintFailureAndSuccess(t *testing.T) {
 	cfg := Config{Servers: []Server{{ID: "alpha", Credentials: map[string]any{"bearer": map[string]any{"env": "TOKEN"}}}}, resolved: map[string]string{"env:TOKEN": "secret"}}
 	if _, ok := cfg.ServerCredentialFingerprint("missing"); ok {

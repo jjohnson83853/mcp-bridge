@@ -25,30 +25,49 @@ func secretSequenceConfig(element string) string {
 }
 
 // TestParseRejectsNonMappingBearerTokenElements covers the inverted predicate in
-// validateNode's sequence branch: a scalar string child carries tag !!str, so it
+// the sequence-element branch: a scalar string child carries tag !!str, so it
 // used to slip through while only non-string scalars (ints, bools) were caught.
-// Every non-mapping element must be rejected with "secret must be a reference".
+// Every non-mapping element must be rejected with the reference_required class,
+// the exact location, the actual finite element kind, and the static reason —
+// never a plain-secret or scalar echo (spec §5.2).
 func TestParseRejectsNonMappingBearerTokenElements(t *testing.T) {
 	t.Setenv("SEQ_UNUSED_SECRET", "unused")
 	cases := []struct {
-		name    string
-		element string
+		name, element, shape string
 	}{
-		{"literal string", "plain-secret"},
-		{"quoted literal string", "'plain-secret'"},
-		{"integer", "12345"},
-		{"boolean", "true"},
-		{"null", "null"},
-		{"nested sequence", "[plain-secret]"},
+		{"literal string", "plain-secret", "string"},
+		{"quoted literal string", "'plain-secret'", "string"},
+		{"integer", "12345", "integer"},
+		{"boolean", "true", "boolean"},
+		{"null", "null", "null"},
+		{"nested sequence", "[plain-secret]", "sequence"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := config.Parse([]byte(secretSequenceConfig(tc.element)), t.TempDir())
+			path := t.TempDir()
+			_, err := config.Parse([]byte(secretSequenceConfig(tc.element)), path)
 			if err == nil {
 				t.Fatalf("Parse accepted non-mapping bearer token %s; want rejection", tc.element)
 			}
-			if !strings.Contains(err.Error(), "secret must be a reference") {
-				t.Fatalf("Parse error = %v, want %q", err, "secret must be a reference")
+			line := err.Error()
+			if strings.Contains(line, "\n") {
+				t.Fatalf("expected one physical line, got %q", line)
+			}
+			for _, want := range []string{
+				`config="` + path + `"`,
+				`key="client_auth.bearer_tokens[0]"`,
+				"code=reference_required",
+				"property=reference",
+				"shape=" + tc.shape,
+				"secret must be a reference",
+				"; remaining_stages=not_checked",
+			} {
+				if !strings.Contains(line, want) {
+					t.Fatalf("rendered line lacks %q: %s", want, line)
+				}
+			}
+			if strings.Contains(line, "plain-secret") || strings.Contains(line, "12345") {
+				t.Fatalf("rendered line echoes the rejected scalar: %s", line)
 			}
 		})
 	}
@@ -57,7 +76,7 @@ func TestParseRejectsNonMappingBearerTokenElements(t *testing.T) {
 // TestParseAcceptsEnvBearerTokenReferences guards the legal form: a sequence of
 // {env: NAME} mappings must still parse and yield one client token hash per
 // reference, so the rejection above cannot be implemented by dropping sequence
-// support wholesale.
+// support wholesale (spec §5.2 AC-32; unchanged).
 func TestParseAcceptsEnvBearerTokenReferences(t *testing.T) {
 	t.Setenv("SEQ_CLIENT_TOKEN_A", "client-token-a")
 	t.Setenv("SEQ_CLIENT_TOKEN_B", "client-token-b")

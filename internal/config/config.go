@@ -11,10 +11,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
-	"syscall"
 	"time"
-	"unicode/utf8"
 
 	"gopkg.in/yaml.v3"
 )
@@ -56,114 +55,304 @@ type Config struct {
 	Pins              []map[string]string `yaml:"pins"`
 	resolved          map[string]string
 	clientTokenHashes [][32]byte
+	// origin is the supplied config path for a parsed document, and empty for
+	// a directly constructed Config (which then reports <memory>; spec §4.1).
+	origin string
 }
 
 func (c Config) ClientTokenHashes() [][32]byte {
 	return append([][32]byte(nil), c.clientTokenHashes...)
 }
 
+// yamlLine extracts the one safe datum a YAML syntax error carries — the line
+// number — without ever echoing decoder prose (spec §4.1/§4.3).
+var yamlLinePattern = regexp.MustCompile(`yaml: line (\d+):`)
+
+func yamlSyntaxPosition(err error) (int, int) {
+	if match := yamlLinePattern.FindStringSubmatch(err.Error()); match != nil {
+		line, _ := strconv.Atoi(match[1])
+		return line, 0
+	}
+	return 0, 0
+}
+
 func Parse(data []byte, configPath string) (*Config, error) {
 	if len(data) > maxConfigBytes {
-		return nil, fmt.Errorf("configuration exceeds 1 MiB")
+		return nil, single(Diagnostic{
+			Path: configPath, Key: "<document>",
+			Code: "config_too_large", Property: "document", Shape: "over_limit",
+			Reason: "configuration exceeds the 1 MiB limit",
+		})
 	}
 	root := yaml.Node{}
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
 	if err := decoder.Decode(&root); err != nil {
-		return nil, fmt.Errorf("decode configuration: %w", err)
+		line, column := yamlSyntaxPosition(err)
+		return nil, single(Diagnostic{
+			Path: configPath, Key: "<document>", Line: line, Column: column,
+			Code: "yaml_syntax", Property: "document", Shape: "invalid_yaml",
+			Reason: "cannot decode YAML configuration",
+		})
 	}
 	var extra yaml.Node
 	if err := decoder.Decode(&extra); err != io.EOF {
-		return nil, fmt.Errorf("configuration must contain one YAML document")
+		return nil, single(Diagnostic{
+			Path: configPath, Key: "<document>",
+			Code: "yaml_documents", Property: "document_count", Shape: "not_one",
+			Reason: "configuration must contain one YAML document",
+		})
 	}
 	if len(root.Content) != 1 || root.Content[0].Kind != yaml.MappingNode {
-		return nil, fmt.Errorf("configuration must be a mapping")
+		shape := shapeOf(root.Content[0])
+		if len(root.Content) == 1 && root.Content[0].Kind == yaml.ScalarNode {
+			shape = "scalar-" + shape
+		}
+		return nil, single(Diagnostic{
+			Path: configPath, Key: "<document>",
+			Code: "yaml_root_type", Property: "root", Shape: shape,
+			Reason: "configuration must be a mapping",
+		})
 	}
-	if err := validateNode(root.Content[0], "root"); err != nil {
-		return nil, err
+	v := &docValidator{configPath: configPath}
+	if diags := v.validateNode(root.Content[0], "", "root", ""); diags != nil {
+		return nil, diags
 	}
 	var cfg Config
 	strict := yaml.NewDecoder(bytes.NewReader(data))
 	strict.KnownFields(true)
 	if err := strict.Decode(&cfg); err != nil {
-		return nil, fmt.Errorf("decode configuration: %w", err)
+		return nil, single(Diagnostic{
+			Path: configPath, Key: "<document>",
+			Code: "yaml_type", Property: "type", Shape: "schema",
+			Reason: "configuration does not match the schema",
+		})
 	}
 	if cfg.SchemaVersion != 1 {
-		return nil, fmt.Errorf("schema_version must equal 1")
+		shape := "unsupported_integer"
+		if cfg.SchemaVersion == 0 {
+			shape = "missing"
+		}
+		return nil, single(Diagnostic{
+			Path: configPath, Key: "schema_version",
+			Code: "schema_version", Property: "schema_version", Shape: shape,
+			Reason: "schema_version must equal 1",
+		})
 	}
 	if len(cfg.Servers) == 0 || len(cfg.Servers) > 1024 {
-		return nil, fmt.Errorf("servers must contain 1..1024 entries")
+		shape := "empty"
+		if len(cfg.Servers) > 1024 {
+			shape = "over_limit"
+		}
+		return nil, single(Diagnostic{
+			Path: configPath, Key: "servers",
+			Code: "server_count", Property: "server_count", Shape: shape,
+			Reason: "servers must contain 1..1024 entries",
+		})
 	}
 	ids := make(map[string]bool, len(cfg.Servers))
-	for _, server := range cfg.Servers {
+	firstIDIndex := make(map[string]int, len(cfg.Servers))
+	for index, server := range cfg.Servers {
 		if !serverIDPattern.MatchString(server.ID) {
-			return nil, fmt.Errorf("invalid server id %q", server.ID)
+			// An invalid id is withheld from the owner field entirely (spec
+			// §3.1:99/§4.1/AC-37): the record locates the failure by index and
+			// never echoes the unvalidated scalar.
+			return nil, single(Diagnostic{
+				Path: configPath, Key: fmt.Sprintf("servers[%d].id", index),
+				Code: "server_id_invalid", Property: "id", Shape: "invalid_identifier",
+				Reason: "invalid server id",
+			})
 		}
 		if ids[server.ID] {
-			return nil, fmt.Errorf("duplicate server id %q", server.ID)
+			return nil, single(Diagnostic{
+				Path: configPath, Key: fmt.Sprintf("servers[%d].id", index), Server: server.ID,
+				Code: "server_id_duplicate", Property: "id", Shape: "duplicate",
+				Reason:     "duplicate server id",
+				RelatedKey: fmt.Sprintf("servers[%d].id", firstIDIndex[server.ID]),
+			})
 		}
 		ids[server.ID] = true
+		firstIDIndex[server.ID] = index
 		normalized, err := normalizeURL(server.Endpoint)
 		if err != nil {
-			return nil, fmt.Errorf("server %s endpoint: %w", server.ID, err)
+			// The owning URL is attributed by key/server id only; neither the
+			// URL, a query name, nor a value is echoed (spec §3.1:183/:189,
+			// §4.3).
+			reason := err.Error() // static package-owned reason, never runtime text
+			code, property, shape := "url_invalid", "absolute_http_url", "invalid_url"
+			if strings.Contains(reason, "secret parameter") {
+				code, property, shape = "url_secret_parameter", "query", "credential_parameter"
+			}
+			return nil, single(Diagnostic{
+				Path: configPath, Key: fmt.Sprintf("servers[%d].endpoint", index), Server: server.ID,
+				Code: code, Property: property, Shape: shape,
+				Reason: reason,
+			})
 		}
-		cfg.Servers[len(ids)-1].Endpoint = normalized
+		cfg.Servers[index].Endpoint = normalized
 	}
-	seenPins := make(map[string]bool, len(cfg.Pins))
-	for _, pin := range cfg.Pins {
+	seenPins := make(map[string]int, len(cfg.Pins))
+	for index, pin := range cfg.Pins {
 		if len(pin) != 2 || pin["server"] == "" || pin["tool"] == "" || !ids[pin["server"]] {
-			return nil, fmt.Errorf("invalid pin")
+			record := Diagnostic{
+				Path: configPath, Key: fmt.Sprintf("pins[%d]", index),
+				Code: "pin_fields", Property: "identity", Shape: "malformed",
+				Reason: "pin must contain exactly server and tool",
+			}
+			switch {
+			case len(pin) == 2 && pin["server"] == "":
+				record = Diagnostic{
+					Path: configPath, Key: fmt.Sprintf("pins[%d].server", index),
+					Code: "pin_server_missing", Property: "server", Shape: "empty",
+					Reason: "pin server must be nonempty",
+				}
+			case len(pin) == 2 && pin["tool"] == "":
+				record = Diagnostic{
+					Path: configPath, Key: fmt.Sprintf("pins[%d].tool", index),
+					Code: "pin_tool_missing", Property: "tool", Shape: "empty",
+					Reason: "pin tool must be nonempty",
+				}
+			case len(pin) == 2 && pin["server"] != "" && !ids[pin["server"]]:
+				record = Diagnostic{
+					Path: configPath, Key: fmt.Sprintf("pins[%d].server", index),
+					Code: "pin_server_unknown", Property: "server", Shape: "unknown_server",
+					Reason: "pin references unknown server",
+					// The configured pin identity is safe metadata (U-02);
+					// omitting the server owner avoids inventing a resolved owner.
+					PinServer: pin["server"],
+					PinTool:   pin["tool"],
+				}
+			}
+			return nil, single(record)
 		}
 		key := pin["server"] + "\x00" + pin["tool"]
-		if seenPins[key] {
-			return nil, fmt.Errorf("duplicate pin")
+		if first, duplicate := seenPins[key]; duplicate {
+			return nil, single(Diagnostic{
+				Path: configPath, Key: fmt.Sprintf("pins[%d]", index),
+				Code: "pin_duplicate", Property: "identity", Shape: "duplicate",
+				Reason:     "duplicate pin",
+				PinServer:  pin["server"],
+				PinTool:    pin["tool"],
+				RelatedKey: fmt.Sprintf("pins[%d]", first),
+			})
 		}
-		seenPins[key] = true
+		seenPins[key] = index
 	}
-	if err := validateBounds(root.Content[0]); err != nil {
-		return nil, err
+	if diags := validateBounds(root.Content[0], configPath); diags != nil {
+		return nil, diags
 	}
-	if err := validateWeights(root.Content[0]); err != nil {
-		return nil, err
+	if diags := validateWeights(root.Content[0], configPath); diags != nil {
+		return nil, diags
 	}
 	if baseURL := findScalar(root.Content[0], "base_url"); baseURL != "" {
 		if err := validateURL(baseURL); err != nil {
-			return nil, fmt.Errorf("embedding base_url: %w", err)
+			// The owning URL is attributed by key only; neither the URL, a
+			// query name, nor a value is echoed (spec §3.1:183/:189, §4.3).
+			reason := err.Error() // static package-owned reason, never runtime text
+			code, property, shape := "url_invalid", "absolute_http_url", "invalid_url"
+			if strings.Contains(reason, "secret parameter") {
+				code, property, shape = "url_secret_parameter", "query", "credential_parameter"
+			}
+			return nil, single(Diagnostic{
+				Path: configPath, Key: "embedding.base_url",
+				Code: code, Property: property, Shape: shape,
+				Reason: reason,
+			})
 		}
 	}
 	if directory, ok := cfg.Storage["directory"].(string); ok && !filepath.IsAbs(directory) {
 		cfg.Storage["directory"] = filepath.Clean(filepath.Join(filepath.Dir(configPath), directory))
 	}
 	resolved := make(map[string]string)
-	if err := resolveSecrets(root.Content[0], filepath.Dir(configPath), resolved); err != nil {
-		return nil, err
+	if diags := resolveSecrets(root.Content[0], filepath.Dir(configPath), configPath, resolved); diags != nil {
+		return nil, diags
 	}
-	clientRefs, backendRefs := map[string]bool{}, map[string]bool{}
+	// Overlap stage (spec §4.2/§4.4): the first document-order client/backend
+	// pair that shares a reference or a resolved value is reported as one
+	// record naming both references — never a value, a hash, or the equality
+	// mechanism. Overlap is the final parse stage, so no stage footer applies.
+	var clientOccs, backendOccs []refOccurrence
 	for i := 0; i < len(root.Content[0].Content); i += 2 {
 		key, value := root.Content[0].Content[i], root.Content[0].Content[i+1]
 		if key.Value == "client_auth" {
-			collectRefs(value, clientRefs)
+			clientOccs = collectRefOccurrences(value, "client_auth", clientOccs)
 		} else {
-			collectRefs(value, backendRefs)
+			backendOccs = collectRefOccurrences(value, key.Value, backendOccs)
 		}
 	}
-	backendValues := make(map[string]bool, len(backendRefs))
-	for ref := range backendRefs {
-		backendValues[resolved[ref]] = true
-	}
-	for ref := range clientRefs {
-		if backendRefs[ref] || backendValues[resolved[ref]] {
-			return nil, fmt.Errorf("client tokens and backend credentials must be disjoint")
+	backendFirstRef := make(map[string]int, len(backendOccs))
+	backendFirstValue := make(map[string]int, len(backendOccs))
+	for index, occurrence := range backendOccs {
+		if _, seen := backendFirstRef[occurrence.reference]; !seen {
+			backendFirstRef[occurrence.reference] = index
 		}
-		cfg.clientTokenHashes = append(cfg.clientTokenHashes, sha256.Sum256([]byte(resolved[ref])))
+		if value, ok := resolved[occurrence.reference]; ok {
+			if _, seen := backendFirstValue[value]; !seen {
+				backendFirstValue[value] = index
+			}
+		}
+	}
+	for _, occurrence := range clientOccs {
+		value, ok := resolved[occurrence.reference]
+		if !ok {
+			// Unreachable after the secret stage, which has resolved every
+			// collected reference or rejected the document; fail closed anyway.
+			kind, name := refParts(occurrence.reference)
+			return nil, single(Diagnostic{
+				Path: configPath, Key: occurrence.location,
+				RefKind: kind, RefName: name,
+				Code: "reference_unresolved", Property: "reference", Shape: "unresolved",
+				Reason: "secret reference does not resolve",
+			})
+		}
+		related, overlap := backendFirstRef[occurrence.reference]
+		if !overlap {
+			if first, equal := backendFirstValue[value]; equal {
+				related, overlap = first, true
+			}
+		}
+		if !overlap {
+			cfg.clientTokenHashes = append(cfg.clientTokenHashes, sha256.Sum256([]byte(value)))
+			continue
+		}
+		other := backendOccs[related]
+		kind, name := refParts(occurrence.reference)
+		relatedKind, relatedName := refParts(other.reference)
+		return nil, &Diagnostics{Records: []Diagnostic{{
+			Path:       configPath,
+			Key:        occurrence.location,
+			RefKind:    kind,
+			RefName:    name,
+			RelatedKey: other.location,
+
+			RelatedRefKind: relatedKind,
+			RelatedRefName: relatedName,
+			Code:           "credential_overlap",
+			Property:       "identity",
+			Shape:          "overlap",
+			Reason:         "client tokens and backend credentials must be disjoint",
+		}}}
 	}
 	cfg.resolved = resolved
+	cfg.origin = configPath
 	return &cfg, nil
 }
 
 func ParseFile(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		shape := "io_error"
+		if os.IsNotExist(err) {
+			shape = "not_found"
+		} else if os.IsPermission(err) {
+			shape = "permission_denied"
+		}
+		// The requested path is the supplied config path; the OS error text is
+		// never echoed (spec §4.3).
+		return nil, single(Diagnostic{
+			Path: path, Key: "<document>",
+			Code: "config_read", Property: "document", Shape: shape,
+			Reason: "cannot read configuration file",
+		})
 	}
 	return Parse(data, path)
 }
@@ -223,74 +412,166 @@ func set(words string) map[string]bool {
 	return result
 }
 
-func validateNode(node *yaml.Node, section string) error {
+// docValidator carries the parse context every structural/type record needs:
+// the supplied config path (spec §4.1). It rejects at the first record, like
+// the previous error-based walk, and every record carries the stage barrier
+// via single().
+type docValidator struct {
+	configPath string
+}
+
+func (v *docValidator) fail(record Diagnostic) *Diagnostics {
+	record.Path = v.configPath
+	return single(record)
+}
+
+// mappingOnlySections are the schema sections that must be YAML mappings; a
+// sequence or scalar in their place is attributed before the typed decode so
+// the record names the section from the parsed node, never decoder prose
+// (spec §5.2 C-1 wrong-section-type row).
+var mappingOnlySections = set("http operations storage catalog search embedding client_auth upstream_defaults credentials limits breaker headers")
+
+func (v *docValidator) validateNode(node *yaml.Node, path, section, server string) *Diagnostics {
 	if section == "headers" {
-		return validateHeaders(node)
+		return v.validateHeaders(node, path, server)
 	}
 	if section == "secret" {
-		if node.Kind != yaml.MappingNode || len(node.Content) != 2 || (node.Content[0].Value != "env" && node.Content[0].Value != "file") {
-			return fmt.Errorf("secret must be exactly {env: NAME} or {file: PATH}")
-		}
-		key, value := node.Content[0], node.Content[1]
-		if key.Kind != yaml.ScalarNode || value.Kind != yaml.ScalarNode || value.Tag != "!!str" || value.Value == "" {
-			return fmt.Errorf("invalid secret reference")
-		}
-		if key.Value == "env" && !envNamePattern.MatchString(value.Value) {
-			return fmt.Errorf("invalid environment variable name")
-		}
-		if strings.ContainsAny(value.Value, "$`\r\n\x00") {
-			return fmt.Errorf("secret references cannot contain interpolation or commands")
-		}
-		return nil
+		return v.validateSecretRef(node, path, server)
 	}
 	if node.Kind != yaml.MappingNode {
-		return fmt.Errorf("expected mapping")
+		return v.fail(Diagnostic{
+			Key: keyOrDocument(path), Code: "yaml_type", Property: "type", Shape: shapeOf(node),
+			Reason: "expected mapping",
+		})
 	}
-	seen := map[string]bool{}
+	// firstKey records the first occurrence of a mapping key: its dotted path
+	// and parser position, so a duplicate can name the first occurrence
+	// without echoing the raw key text (spec §3.1:256).
+	type firstKey struct {
+		path   string
+		line   int
+		column int
+	}
+	seen := map[string]firstKey{}
 	for i := 0; i < len(node.Content); i += 2 {
 		key, value := node.Content[i], node.Content[i+1]
+		childPath := joinKey(path, key.Value)
 		if key.Kind != yaml.ScalarNode || key.Tag != "!!str" || key.Value == "<<" {
-			return fmt.Errorf("aliases, merge keys, and non-string keys are not allowed")
+			shape := "non_string"
+			switch {
+			case key.Value == "<<":
+				shape = "merge"
+			case key.Kind == yaml.AliasNode:
+				shape = "alias"
+			}
+			return v.fail(Diagnostic{
+				Key: keyOrDocument(path), Line: key.Line, Column: key.Column,
+				Code: "yaml_key_invalid", Property: "key", Shape: shape,
+				Reason: "aliases, merge keys, and non-string keys are not allowed",
+			})
 		}
-		if seen[key.Value] {
-			return fmt.Errorf("duplicate key %q", key.Value)
+		if first, duplicate := seen[key.Value]; duplicate {
+			// The duplicate names the first occurrence: its location as
+			// RelatedKey and its parser position, never the raw key text
+			// (spec §3.1:256).
+			return v.fail(Diagnostic{
+				Key: childPath, RelatedKey: first.path,
+				Line: first.line, Column: first.column,
+				Code: "yaml_key_duplicate", Property: "key", Shape: "duplicate",
+				Reason: "duplicate key",
+			})
 		}
-		seen[key.Value] = true
+		seen[key.Value] = firstKey{path: childPath, line: key.Line, column: key.Column}
 		allowed, ok := fields[section]
 		if !ok || !allowed[key.Value] {
-			return fmt.Errorf("unknown key %q", key.Value)
+			// The offending key text is withheld; the parent location and the
+			// node position locate it without echoing unsafe input (spec §5.2).
+			return v.fail(Diagnostic{
+				Key: keyOrDocument(path), Line: key.Line, Column: key.Column,
+				Code: "yaml_key_unknown", Property: "unknown_key", Shape: "unknown_key",
+				Reason: "unknown key",
+			})
 		}
 		if value.Kind == yaml.AliasNode {
-			return fmt.Errorf("YAML aliases are not allowed")
+			return v.fail(Diagnostic{
+				Key: childPath, Code: "yaml_alias", Property: "value", Shape: "alias",
+				Reason: "YAML aliases are not allowed",
+			})
 		}
 		if value.Kind == yaml.ScalarNode && value.Tag == "!!float" {
 			var number float64
 			if err := value.Decode(&number); err != nil || math.IsNaN(number) || math.IsInf(number, 0) {
-				return fmt.Errorf("non-finite numbers are not allowed")
+				return v.fail(Diagnostic{
+					Key: childPath, Code: "yaml_number", Property: "value", Shape: "nonfinite",
+					Reason: "non-finite numbers are not allowed",
+				})
 			}
 		}
 		next := childSection(section, key.Value)
-		if (section == "credentials" && key.Value == "bearer" || section == "embedding" && key.Value == "api_key") && value.Kind != yaml.MappingNode {
-			return fmt.Errorf("secret must use an env or file reference")
+		if mappingOnlySections[next] && value.Kind != yaml.MappingNode {
+			return v.fail(Diagnostic{
+				Key: childPath, Code: "yaml_type", Property: "type", Shape: shapeOf(value),
+				Reason: "must be a mapping",
+			})
 		}
-		if err := validateScalarType(section, key.Value, value); err != nil {
+		if (section == "credentials" && key.Value == "bearer" || section == "embedding" && key.Value == "api_key") && value.Kind != yaml.MappingNode {
+			return v.fail(Diagnostic{
+				Key: childPath, Server: server, Code: "reference_required", Property: "reference", Shape: shapeOf(value),
+				Reason: "secret must use an env or file reference",
+			})
+		}
+		if err := v.validateScalarType(childPath, section, key.Value, value, server); err != nil {
 			return err
 		}
 		if value.Kind == yaml.MappingNode {
-			if err := validateNode(value, next); err != nil {
+			childServer := server
+			if section == "root" && key.Value == "servers" {
+				// Only an id matching the validated server-ID rule may own the
+				// child records; an unsafe scalar is omitted, never echoed
+				// (spec §3.1:99/§4.1/AC-37).
+				if id := mappingScalar(value, "id"); id != "" && serverIDPattern.MatchString(id) {
+					childServer = id
+				}
+			}
+			if err := v.validateNode(value, childPath, next, childServer); err != nil {
 				return err
 			}
 		}
 		if value.Kind == yaml.SequenceNode {
-			for _, child := range value.Content {
+			for index, child := range value.Content {
+				elemPath := fmt.Sprintf("%s[%d]", childPath, index)
+				childServer := server
+				if next == "server" && child.Kind == yaml.MappingNode {
+					// Only an id matching the validated server-ID rule may own
+					// the child records; an unsafe scalar is omitted, never
+					// echoed (spec §3.1:99/§4.1/AC-37).
+					if id := mappingScalar(child, "id"); id != "" && serverIDPattern.MatchString(id) {
+						childServer = id
+					}
+				}
 				if child.Kind == yaml.AliasNode {
-					return fmt.Errorf("YAML aliases are not allowed")
+					return v.fail(Diagnostic{
+						Key: elemPath, Code: "yaml_alias", Property: "value", Shape: "alias",
+						Reason: "YAML aliases are not allowed",
+					})
 				}
 				if next == "secret" && child.Kind != yaml.MappingNode {
-					return fmt.Errorf("secret must be a reference")
+					return v.fail(Diagnostic{
+						Key: elemPath, Server: childServer, Code: "reference_required", Property: "reference", Shape: shapeOf(child),
+						Reason: "secret must be a reference",
+					})
+				}
+				if child.Kind != yaml.MappingNode && (next == "server" || next == "pin") {
+					// A sequence element that must be a mapping is attributed
+					// to its indexed location instead of falling through to
+					// the generic schema record (spec §3.1:247).
+					return v.fail(Diagnostic{
+						Key: elemPath, Code: "yaml_type", Property: "type", Shape: shapeOf(child),
+						Reason: "expected mapping",
+					})
 				}
 				if child.Kind == yaml.MappingNode {
-					if err := validateNode(child, next); err != nil {
+					if err := v.validateNode(child, elemPath, next, childServer); err != nil {
 						return err
 					}
 				}
@@ -327,10 +608,13 @@ func childSection(section, key string) string {
 	}
 }
 
-func validateScalarType(section, key string, node *yaml.Node) error {
+func (v *docValidator) validateScalarType(path, section, key string, node *yaml.Node, server string) *Diagnostics {
 	stringFields := set("listen directory session_idle_timeout refresh_interval stale_after timeout query_cache_ttl provider model model_revision base_url id endpoint bearer env file tool server connect_timeout call_timeout refresh_timeout open_duration")
 	if section == "server" && key == "prompts_disabled" && (node.Kind != yaml.ScalarNode || node.Tag != "!!bool") {
-		return fmt.Errorf("%s must be a boolean", key)
+		return v.fail(Diagnostic{
+			Key: path, Server: server, Code: "yaml_type", Property: "type", Shape: shapeOf(node),
+			Reason: "prompts_disabled must be a boolean",
+		})
 	}
 	integerFields := set("schema_version max_request_bytes requests_per_second burst max_sessions max_snapshot_bytes max_tools_per_server max_tools_total max_pages_per_server max_schema_bytes max_description_bytes default_top_k max_top_k query_cache_entries rrf_constant dimensions max_concurrency batch_size max_response_bytes max_concurrent_calls max_event_bytes consecutive_failures half_open_probes")
 	sequenceFields := set("allowed_hosts allowed_origins bearer_tokens")
@@ -341,61 +625,145 @@ func validateScalarType(section, key string, node *yaml.Node) error {
 		return nil
 	}
 	if key == "bearer" && section == "credentials" || key == "api_key" && section == "embedding" || key == "bearer_tokens" && section == "client_auth" {
-		return fmt.Errorf("%s must use secret references", key)
+		return v.fail(Diagnostic{
+			Key: path, Server: server, Code: "reference_required", Property: "reference", Shape: shapeOf(node),
+			Reason: "must use secret references",
+		})
 	}
 	if section == "root" && key == "schema_version" && node.Kind == yaml.ScalarNode && node.Tag == "!!int" {
 		return nil
 	}
 	if stringFields[key] && (node.Kind != yaml.ScalarNode || node.Tag != "!!str") {
-		return fmt.Errorf("%s must be a string", key)
+		return v.fail(Diagnostic{
+			Key: path, Server: server, Code: "yaml_type", Property: "type", Shape: shapeOf(node),
+			Reason: "must be a string",
+		})
 	}
 	if integerFields[key] && (node.Kind != yaml.ScalarNode || node.Tag != "!!int") {
-		return fmt.Errorf("%s must be an integer", key)
+		return v.fail(Diagnostic{
+			Key: path, Server: server, Code: "yaml_type", Property: "type", Shape: shapeOf(node),
+			Reason: "must be an integer",
+		})
 	}
 	if (key == "keyword_weight" || key == "embedding_weight") && (node.Kind != yaml.ScalarNode || node.Tag != "!!float" && node.Tag != "!!int") {
-		return fmt.Errorf("%s must be numeric", key)
+		return v.fail(Diagnostic{
+			Key: path, Server: server, Code: "yaml_type", Property: "type", Shape: shapeOf(node),
+			Reason: "must be numeric",
+		})
 	}
 	if sequenceFields[key] && node.Kind != yaml.SequenceNode {
-		return fmt.Errorf("%s must be a sequence", key)
+		return v.fail(Diagnostic{
+			Key: path, Server: server, Code: "yaml_type", Property: "type", Shape: shapeOf(node),
+			Reason: "must be a sequence",
+		})
 	}
 	if section == "http" && (key == "allowed_hosts" || key == "allowed_origins") {
-		for _, value := range node.Content {
+		for index, value := range node.Content {
 			if value.Kind != yaml.ScalarNode || value.Tag != "!!str" {
-				return fmt.Errorf("%s entries must be strings", key)
+				return v.fail(Diagnostic{
+					Key: fmt.Sprintf("%s[%d]", path, index), Server: server,
+					Code: "yaml_type", Property: "type", Shape: shapeOf(value),
+					Reason: "entries must be strings",
+				})
 			}
 		}
 	}
 	if section == "root" && node.Kind != yaml.MappingNode && node.Kind != yaml.SequenceNode && key != "schema_version" {
-		return fmt.Errorf("%s must be a structured value", key)
+		return v.fail(Diagnostic{
+			Key: path, Server: server, Code: "yaml_type", Property: "type", Shape: shapeOf(node),
+			Reason: "must be a structured value",
+		})
 	}
 	return nil
 }
 
-func validateHeaders(node *yaml.Node) error {
-	if node.Kind != yaml.MappingNode {
-		return fmt.Errorf("credentials.headers must be a mapping")
+// validateSecretRef classifies one {env: NAME}/{file: PATH} reference node;
+// the configured reference identity is safe metadata, but a rejected env name
+// or interpolated path is withheld (spec §4.3/§5.2 F-01).
+func (v *docValidator) validateSecretRef(node *yaml.Node, path, server string) *Diagnostics {
+	if node.Kind != yaml.MappingNode || len(node.Content) != 2 || (node.Content[0].Value != "env" && node.Content[0].Value != "file") {
+		return v.fail(Diagnostic{
+			Key: path, Server: server, Code: "reference_shape", Property: "reference", Shape: shapeOf(node),
+			Reason: "secret must be exactly {env: NAME} or {file: PATH}",
+		})
 	}
-	seen := make(map[string]struct{}, len(node.Content)/2)
+	key, value := node.Content[0], node.Content[1]
+	if key.Kind != yaml.ScalarNode || value.Kind != yaml.ScalarNode || value.Tag != "!!str" || value.Value == "" {
+		// A malformed or wrongly typed reference identity is withheld; the
+		// shape names only the finite cause class (spec §3.1:236).
+		shape := "wrong_type"
+		switch {
+		case value.Kind == yaml.ScalarNode && value.Tag == "!!null":
+			shape = "missing"
+		case value.Kind == yaml.ScalarNode && value.Tag == "!!str" && value.Value == "":
+			shape = "empty"
+		}
+		return v.fail(Diagnostic{
+			Key: path, Server: server, Code: "reference_invalid", Property: "reference", Shape: shape,
+			Reason: "invalid secret reference",
+		})
+	}
+	if key.Value == "env" && !envNamePattern.MatchString(value.Value) {
+		return v.fail(Diagnostic{
+			Key: path, Server: server, Code: "reference_env_name", Property: "reference", Shape: "invalid_identifier",
+			Reason: "invalid environment variable name",
+		})
+	}
+	if strings.ContainsAny(value.Value, "$`\r\n\x00") {
+		return v.fail(Diagnostic{
+			Key: path, Server: server, Code: "reference_literal_required", Property: "reference", Shape: "literal",
+			Reason: "secret references cannot contain interpolation or commands",
+		})
+	}
+	return nil
+}
+
+func (v *docValidator) validateHeaders(node *yaml.Node, path, server string) *Diagnostics {
+	if node.Kind != yaml.MappingNode {
+		return v.fail(Diagnostic{
+			Key: path, Server: server, Code: "header_mapping", Property: "type", Shape: shapeOf(node),
+			Reason: "credentials.headers must be a mapping",
+		})
+	}
+	seen := make(map[string]string, len(node.Content)/2)
 	for i := 0; i < len(node.Content); i += 2 {
 		header := node.Content[i]
+		entryPath := path + "[" + fmt.Sprintf("%q", header.Value) + "]"
 		if header.Kind != yaml.ScalarNode || header.Tag != "!!str" || !validHeaderFieldName(header.Value) {
-			return fmt.Errorf("invalid credential header name")
+			// The invalid header text is withheld; the header-mapping parent
+			// location and the key node position locate it (spec §5.2 F-01).
+			return v.fail(Diagnostic{
+				Key: path, Line: header.Line, Column: header.Column, Server: server,
+				Code: "header_name_invalid", Property: "name", Shape: "invalid_identifier",
+				Reason: "invalid credential header name",
+			})
 		}
 		key := strings.ToLower(header.Value)
-		if _, exists := seen[key]; exists {
-			return fmt.Errorf("duplicate credential header %q", header.Value)
+		if first, exists := seen[key]; exists {
+			return v.fail(Diagnostic{
+				Key: entryPath, RelatedKey: first, Server: server,
+				Code: "header_duplicate", Property: "name", Shape: "casefold",
+				Reason: "duplicate credential header",
+			})
 		}
-		seen[key] = struct{}{}
+		seen[key] = entryPath
 		for _, forbidden := range []string{"authorization", "host", "cookie", "origin", "mcp-session-id", "mcp-protocol-version", "x-request-id", "connection", "proxy-", "transfer-encoding", "upgrade", "keep-alive", "te", "trailer"} {
 			if key == forbidden || strings.HasPrefix(forbidden, "proxy-") && strings.HasPrefix(key, forbidden) {
-				return fmt.Errorf("credential header %q is forbidden", header.Value)
+				return v.fail(Diagnostic{
+					Key: entryPath, Server: server,
+					Code: "header_forbidden", Property: "name", Shape: "forbidden",
+					Reason: "credential header is forbidden",
+				})
 			}
 		}
 		value := node.Content[i+1]
 		if value.Kind != yaml.MappingNode {
-			return fmt.Errorf("credential header value must use a secret reference")
+			return v.fail(Diagnostic{
+				Key: entryPath, Server: server, Code: "reference_required", Property: "reference", Shape: shapeOf(value),
+				Reason: "credential header value must use a secret reference",
+			})
 		}
-		if err := validateNode(value, "secret"); err != nil {
+		if err := v.validateNode(value, entryPath, "secret", server); err != nil {
 			return err
 		}
 	}
@@ -415,71 +783,39 @@ func validHeaderFieldName(value string) bool {
 	return true
 }
 
-func privateSecretFile(info os.FileInfo) bool {
-	if info == nil || !info.Mode().IsRegular() || info.Mode().Perm()&0o077 != 0 {
-		return false
-	}
-	stat, ok := info.Sys().(*syscall.Stat_t)
-	return ok && int(stat.Uid) == os.Geteuid()
+// refOccurrence is one configured secret-reference occurrence with the dotted
+// location it appears at (header names in the validated bracket form). The
+// overlap stage reports the first document-order pair (spec §4.2).
+type refOccurrence struct {
+	reference string
+	location  string
 }
 
-func resolveSecrets(node *yaml.Node, base string, result map[string]string) error {
+func collectRefOccurrences(node *yaml.Node, path string, occurrences []refOccurrence) []refOccurrence {
+	if node == nil {
+		return occurrences
+	}
 	if node.Kind == yaml.MappingNode {
 		if len(node.Content) == 2 && (node.Content[0].Value == "env" || node.Content[0].Value == "file") {
-			kind, ref := node.Content[0].Value, node.Content[1].Value
-			value := ""
-			if kind == "env" {
-				value = os.Getenv(ref)
-			} else {
-				path := ref
-				if !filepath.IsAbs(path) {
-					path = filepath.Join(base, path)
+			return append(occurrences, refOccurrence{node.Content[0].Value + ":" + node.Content[1].Value, path})
+		}
+		for i := 0; i < len(node.Content); i += 2 {
+			key, child := node.Content[i], node.Content[i+1]
+			childPath := joinKey(path, key.Value)
+			if key.Value == "headers" && child.Kind == yaml.MappingNode {
+				for h := 0; h < len(child.Content); h += 2 {
+					occurrences = collectRefOccurrences(child.Content[h+1], childPath+"["+fmt.Sprintf("%q", child.Content[h].Value)+"]", occurrences)
 				}
-				info, err := os.Lstat(path)
-				if err != nil || !privateSecretFile(info) {
-					return fmt.Errorf("secret file must be regular, non-symlink, operator-owned, and private")
-				}
-				data, err := os.ReadFile(path)
-				if err != nil {
-					return err
-				}
-				value = strings.TrimSuffix(string(data), "\n")
+				continue
 			}
-			if len(value) == 0 || len(value) > 8192 || !utf8.ValidString(value) || strings.ContainsAny(value, "\r\n\x00") {
-				return fmt.Errorf("secret must be nonempty UTF-8, <=8KiB, without CR/LF/NUL")
-			}
-			result[kind+":"+ref] = value
-			return nil
+			occurrences = collectRefOccurrences(child, childPath, occurrences)
 		}
-		for _, child := range node.Content {
-			if err := resolveSecrets(child, base, result); err != nil {
-				return err
-			}
-		}
-	} else {
-		for _, child := range node.Content {
-			if err := resolveSecrets(child, base, result); err != nil {
-				return err
-			}
-		}
+		return occurrences
 	}
-	return nil
-}
-
-func collectRefs(node *yaml.Node, refs map[string]bool) {
-	if node.Kind == yaml.MappingNode {
-		if len(node.Content) == 2 && (node.Content[0].Value == "env" || node.Content[0].Value == "file") {
-			refs[node.Content[0].Value+":"+node.Content[1].Value] = true
-			return
-		}
-		for _, child := range node.Content {
-			collectRefs(child, refs)
-		}
-		return
+	for index, child := range node.Content {
+		occurrences = collectRefOccurrences(child, fmt.Sprintf("%s[%d]", path, index), occurrences)
 	}
-	for _, child := range node.Content {
-		collectRefs(child, refs)
-	}
+	return occurrences
 }
 
 func findScalar(node *yaml.Node, key string) string {
@@ -499,103 +835,4 @@ func findScalar(node *yaml.Node, key string) string {
 		}
 	}
 	return ""
-}
-
-func validateWeights(root *yaml.Node) error {
-	keyword, embedding := findScalar(root, "keyword_weight"), findScalar(root, "embedding_weight")
-	if keyword == "" && embedding == "" {
-		return nil
-	}
-	var k, e float64
-	if _, err := fmt.Sscan(keyword, &k); err != nil {
-		return fmt.Errorf("invalid keyword_weight")
-	}
-	if _, err := fmt.Sscan(embedding, &e); err != nil {
-		return fmt.Errorf("invalid embedding_weight")
-	}
-	if math.IsNaN(k) || math.IsInf(k, 0) || math.IsNaN(e) || math.IsInf(e, 0) || k <= 0 || e < 0 || math.Abs(k+e-1) > 1e-9 {
-		return fmt.Errorf("search weights must be nonnegative, sum to one, and keyword_weight positive")
-	}
-	return nil
-}
-
-func validateBounds(node *yaml.Node) error {
-	return validateBoundsAt(node, "")
-}
-
-// validateBoundsAt walks the document carrying the dotted path of the mapping
-// being inspected, so a rejected bound names the key an operator must edit
-// (`embedding.timeout`, not a bare `timeout` that could be any of a dozen keys).
-func validateBoundsAt(node *yaml.Node, path string) error {
-	bounds := map[string][2]float64{
-		"max_top_k": {1, 50}, "default_top_k": {1, 50}, "max_sessions": {1, 4096}, "max_concurrent_calls": {1, 128},
-		"max_tools_per_server": {1, 10000}, "max_tools_total": {1, 20000}, "max_pages_per_server": {1, 1000},
-		"max_schema_bytes": {1, 262144}, "max_description_bytes": {1, 32768}, "max_snapshot_bytes": {1, 268435456},
-		"max_request_bytes": {1, 1048576}, "max_event_bytes": {1, 4194304}, "max_response_bytes": {1, 8388608},
-		"dimensions": {1, 4096}, "batch_size": {1, 128}, "max_concurrency": {1, 32}, "query_cache_entries": {0, 4096},
-		"rrf_constant": {1, 1e9}, "slots": {1, 128},
-	}
-	if node.Kind == yaml.MappingNode {
-		for i := 0; i < len(node.Content); i += 2 {
-			key, value := node.Content[i], node.Content[i+1]
-			keyPath := key.Value
-			if path != "" {
-				keyPath = path + "." + key.Value
-			}
-			if bound, ok := bounds[key.Value]; ok {
-				var number float64
-				if err := value.Decode(&number); err != nil || number < bound[0] || number > bound[1] {
-					return fmt.Errorf("%s outside permitted bounds", keyPath)
-				}
-			}
-			// session_idle_timeout is a session lifetime, not a request timeout: the
-			// spec's documented default is 10m (.omp/plans/headless-mcp-bridge.md §4.2),
-			// so it gets an explicit window instead of the request-path suffix heuristic
-			// below. 1s..1h admits that default with headroom for longer-lived idle
-			// sessions while rejecting effectively permanent sessions (>1h) and
-			// sub-second churning; non-positive/unparseable values still fail closed.
-			// The branch is exclusive: the key ends in "_timeout" but is NOT a
-			// request-path timeout, so it must never fall through to that rule.
-			if key.Value == "session_idle_timeout" {
-				if value.Kind != yaml.ScalarNode {
-					return fmt.Errorf("%s must be a duration", keyPath)
-				}
-				duration, err := time.ParseDuration(value.Value)
-				if err != nil || duration < sessionIdleMinDuration || duration > sessionIdleMaxDuration {
-					return fmt.Errorf("%s outside permitted duration bounds", keyPath)
-				}
-			} else if key.Value == "timeout" || strings.HasSuffix(key.Value, "_timeout") {
-				if value.Kind != yaml.ScalarNode {
-					return fmt.Errorf("%s must be a duration", keyPath)
-				}
-				duration, err := time.ParseDuration(value.Value)
-				limit := 30 * time.Second
-				if key.Value != "timeout" {
-					limit = 120 * time.Second
-				}
-				if strings.Contains(strings.ToLower(key.Value), "search") || strings.Contains(strings.ToLower(key.Value), "embed") {
-					limit = 30 * time.Second
-				}
-				if err != nil || duration <= 0 || duration > limit {
-					return fmt.Errorf("%s outside permitted duration bounds", keyPath)
-				}
-			}
-			if key.Value == "refresh_interval" || key.Value == "stale_after" || key.Value == "query_cache_ttl" || key.Value == "open_duration" {
-				duration, err := time.ParseDuration(value.Value)
-				if err != nil || duration <= 0 {
-					return fmt.Errorf("%s must be a positive duration", keyPath)
-				}
-			}
-			if err := validateBoundsAt(value, keyPath); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-	for _, child := range node.Content {
-		if err := validateBoundsAt(child, path); err != nil {
-			return err
-		}
-	}
-	return nil
 }

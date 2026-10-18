@@ -548,6 +548,15 @@ func TestServeCompositionRootServesCatalogAndSurvivesReload(t *testing.T) {
 	waitFor(t, "a rejected reload to be logged", func() bool {
 		return strings.Contains(stdout.String(), "reload")
 	})
+	// The rejected candidate is reported as a typed diagnostic entry: the
+	// candidate's location and finite code survive the operator-log wrapper,
+	// with no opaque prose (spec §4.5 item 3).
+	waitFor(t, "the typed diagnostic reload entry", func() bool {
+		return strings.Contains(stdout.String(), `"code":"url_invalid"`)
+	})
+	if !strings.Contains(stdout.String(), `"location":"servers[0].endpoint"`) || !strings.Contains(stdout.String(), `"reason":"invalid_config"`) {
+		t.Fatalf("rejected reload lacked typed diagnostic context: %s", stdout.String())
+	}
 	afterRejection := callTool(t, ctx, session, catalog.ToolCallTool, map[string]any{
 		"tool_name":        betaName,
 		"catalog_revision": betaRevision,

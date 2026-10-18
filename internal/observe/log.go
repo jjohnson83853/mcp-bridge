@@ -72,6 +72,14 @@ func (l *Logger) Log(entry Entry) {
 			if mode, ok := field.(string); ok {
 				value[key] = finite(mode, "unknown", "hybrid", "hybrid_partial", "keyword")
 			}
+		case "config_path", "location", "line", "column", "code", "property", "shape", "ref_kind", "ref_name",
+			"pin_server", "pin_tool", "related_location", "related_ref_kind", "related_ref_name",
+			"diagnostic_index", "remaining_stages":
+			value[key] = field
+		case "diagnostics_incomplete":
+			if incomplete, ok := field.(bool); ok {
+				value[key] = incomplete
+			}
 		}
 	}
 	redact(value)
