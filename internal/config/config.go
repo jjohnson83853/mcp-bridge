@@ -55,6 +55,13 @@ type Config struct {
 	Pins              []map[string]string `yaml:"pins"`
 	resolved          map[string]string
 	clientTokenHashes [][32]byte
+	// embeddingSnapshot holds the per-load effective embedding model and base
+	// URL resolved from environment references. It is populated only by Parse
+	// and is treated as immutable; a directly constructed Config leaves it
+	// nil, which keeps literal Config behavior unchanged (spec §4.1). It is a
+	// pointer so fmt rendering of a Config shows only an address, never the
+	// resolved bytes (spec §4.1, §5).
+	embeddingSnapshot *embeddingSnapshotData
 	// origin is the supplied config path for a parsed document, and empty for
 	// a directly constructed Config (which then reports <memory>; spec §4.1).
 	origin string
@@ -243,6 +250,16 @@ func Parse(data []byte, configPath string) (*Config, error) {
 	if diags := validateWeights(root.Content[0], configPath); diags != nil {
 		return nil, diags
 	}
+	// Embedding environment references (spec §4.1): strict shape/name checks
+	// and one LookupEnv per reference run after document shape validation and
+	// before effective field validation, secret resolution, or any consumer.
+	// Resolved bytes live only in the private per-load snapshot below; the
+	// raw public embedding map keeps the configured reference objects.
+	if embeddingSnapshot, diags := resolveEmbeddingEnv(mappingChild(root.Content[0], "embedding"), configPath); diags != nil {
+		return nil, diags
+	} else {
+		cfg.embeddingSnapshot = &embeddingSnapshotData{values: embeddingSnapshot}
+	}
 	if baseURL := findScalar(root.Content[0], "base_url"); baseURL != "" {
 		if err := validateURL(baseURL); err != nil {
 			// The owning URL is attributed by key only; neither the URL, a
@@ -337,6 +354,120 @@ func Parse(data []byte, configPath string) (*Config, error) {
 	return &cfg, nil
 }
 
+// embeddingEnvFields names the only embedding settings that accept an unquoted
+// native {env: NAME} reference (spec §2 R-35). Every other field keeps its
+// existing literal/reference grammar.
+var embeddingEnvFields = set("model base_url")
+
+// embeddingSnapshotData wraps the per-load resolved effective values. The
+// indirection keeps resolved bytes out of any fmt rendering of Config: only
+// an address is shown, never the model or URL strings (spec §4.1, §5).
+type embeddingSnapshotData struct {
+	values map[string]string
+}
+
+// resolveEmbeddingEnv validates the two embedding env-reference fields before
+// any consumer runs (spec §4.1). A literal string keeps the existing grammar;
+// a mapping value must be exactly {env: NAME} with a valid identifier name.
+// The name is validated (shape, then expression syntax, then identifier) before
+// os.LookupEnv, and a missing or exactly-empty value is a distinct static
+// failure, so no partial or lazy resolution is possible (spec §5).
+func resolveEmbeddingEnv(embedding *yaml.Node, configPath string) (map[string]string, *Diagnostics) {
+	if embedding == nil {
+		return nil, nil
+	}
+	var snapshot map[string]string
+	for i := 0; i+1 < len(embedding.Content); i += 2 {
+		key, value := embedding.Content[i], embedding.Content[i+1]
+		if !embeddingEnvFields[key.Value] {
+			continue
+		}
+		if value.Kind != yaml.MappingNode {
+			continue // literal strings keep their existing grammar and paths
+		}
+		field := key.Value
+		effective, diags := resolveEmbeddingRef(value, configPath, joinKey("embedding", field))
+		if diags != nil {
+			return nil, diags
+		}
+		if field == "base_url" {
+			// The effective URL is validated before any consumer sees the
+			// snapshot (spec §4.3/§5): whitespace and control bytes fail the
+			// absolute-HTTP(S) class without being trimmed or rewritten.
+			if err := validateEffectiveURL(effective); err != nil {
+				return nil, single(Diagnostic{
+					Path: configPath, Key: "embedding.base_url",
+					Code: "url_invalid", Property: "absolute_http_url", Shape: "invalid_url",
+					Reason: err.Error(),
+				})
+			}
+		}
+		// Allocated lazily with capacity for the two reference fields only, so
+		// a document with no native references never pays for the map.
+		if snapshot == nil {
+			snapshot = make(map[string]string, 2)
+		}
+		snapshot[field] = effective
+	}
+	return snapshot, nil
+}
+
+// resolveEmbeddingRef classifies one {env: NAME} embedding reference. Shape
+// errors precede lookup; a malformed reference name is withheld from the
+// reason, and the missing versus empty distinction is static metadata only
+// (spec §5).
+func resolveEmbeddingRef(node *yaml.Node, configPath, keyPath string) (string, *Diagnostics) {
+	if node.Kind != yaml.MappingNode || len(node.Content) != 2 || node.Content[0].Value != "env" {
+		return "", single(Diagnostic{
+			Path: configPath, Key: keyPath,
+			Code: "reference_shape", Property: "reference", Shape: shapeOf(node),
+			Reason: "embedding value must be a literal string or an env reference",
+		})
+	}
+	key, value := node.Content[0], node.Content[1]
+	if key.Kind != yaml.ScalarNode || value.Kind != yaml.ScalarNode || value.Tag != "!!str" {
+		return "", single(Diagnostic{
+			Path: configPath, Key: keyPath,
+			Code: "reference_shape", Property: "reference", Shape: shapeOf(node),
+			Reason: "embedding value must be a literal string or an env reference",
+		})
+	}
+	name := value.Value
+	// Expression syntax is classified before the generic invalid-name check so
+	// an interpolated or command-like name is rejected with its own record
+	// (spec §5); the rejected name itself is never echoed.
+	if strings.ContainsAny(name, "$`") {
+		return "", single(Diagnostic{
+			Path: configPath, Key: keyPath,
+			Code: "reference_literal_required", Property: "reference", Shape: "literal",
+			Reason: "environment references cannot contain interpolation or commands",
+		})
+	}
+	if !envNamePattern.MatchString(name) {
+		return "", single(Diagnostic{
+			Path: configPath, Key: keyPath,
+			Code: "reference_env_name", Property: "name", Shape: "invalid_identifier",
+			Reason: "invalid environment variable name (name withheld)",
+		})
+	}
+	resolved, present := os.LookupEnv(name)
+	if !present {
+		return "", single(Diagnostic{
+			Path: configPath, Key: keyPath,
+			Code: "reference_unresolved", Property: "reference", Shape: "missing",
+			Reason: "environment variable is not set",
+		})
+	}
+	if resolved == "" {
+		return "", single(Diagnostic{
+			Path: configPath, Key: keyPath,
+			Code: "reference_unresolved", Property: "reference", Shape: "empty",
+			Reason: "environment variable is empty",
+		})
+	}
+	return resolved, nil
+}
+
 func ParseFile(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -366,6 +497,13 @@ func (c Config) String() string {
 	return fmt.Sprintf("Config{schema_version:%d servers:%d secret_refs:%v}", c.SchemaVersion, len(c.Servers), names)
 }
 
+// GoString renders Config for the %#v verb with the same redaction as String
+// so no fmt verb can echo resolved environment bytes or secret values
+// (spec §4.1 byte fidelity).
+func (c Config) GoString() string {
+	return c.String()
+}
+
 func normalizeURL(raw string) (string, error) {
 	u, err := url.ParseRequestURI(raw)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil || u.Fragment != "" || strings.Contains(raw, "#") {
@@ -387,6 +525,19 @@ func normalizeURL(raw string) (string, error) {
 func validateURL(raw string) error {
 	_, err := normalizeURL(raw)
 	return err
+}
+
+// validateEffectiveURL validates an env-resolved embedding base URL. It first
+// rejects every ASCII whitespace and control byte in the raw resolved string
+// — including the space that ordinary URL parsing tolerates — so reference
+// resolution never trims or rewrites the effective value (spec §4.3).
+func validateEffectiveURL(raw string) error {
+	for _, b := range []byte(raw) {
+		if b == ' ' || b < 0x20 || b == 0x7f {
+			return fmt.Errorf("invalid absolute HTTP(S) URL")
+		}
+	}
+	return validateURL(raw)
 }
 
 var fields = map[string]map[string]bool{
@@ -533,6 +684,13 @@ func (v *docValidator) validateNode(node *yaml.Node, path, section, server strin
 					childServer = id
 				}
 			}
+			// A native embedding env reference mapping ({env: NAME}) will be
+			// validated by the dedicated embedding pass (shape, keys, name
+			// expression, spec §4.1); the generic section walk must not
+			// descend into it or it would report `env` as an unknown key.
+			if section == "embedding" && embeddingEnvFields[key.Value] {
+				continue
+			}
 			if err := v.validateNode(value, childPath, next, childServer); err != nil {
 				return err
 			}
@@ -633,7 +791,11 @@ func (v *docValidator) validateScalarType(path, section, key string, node *yaml.
 	if section == "root" && key == "schema_version" && node.Kind == yaml.ScalarNode && node.Tag == "!!int" {
 		return nil
 	}
-	if stringFields[key] && (node.Kind != yaml.ScalarNode || node.Tag != "!!str") {
+	// The two embedding env-reference fields are validated by the dedicated
+	// resolution pass (spec §4.1); the string shape check must not reject
+	// their strict {env: NAME} mapping before that pass runs.
+	if stringFields[key] && (node.Kind != yaml.ScalarNode || node.Tag != "!!str") &&
+		!(section == "embedding" && embeddingEnvFields[key] && node.Kind == yaml.MappingNode) {
 		return v.fail(Diagnostic{
 			Key: path, Server: server, Code: "yaml_type", Property: "type", Shape: shapeOf(node),
 			Reason: "must be a string",
@@ -797,6 +959,12 @@ func collectRefOccurrences(node *yaml.Node, path string, occurrences []refOccurr
 	}
 	if node.Kind == yaml.MappingNode {
 		if len(node.Content) == 2 && (node.Content[0].Value == "env" || node.Content[0].Value == "file") {
+			// The embedding model/base_url env references are not secrets and
+			// are already resolved by the dedicated embedding pass; the overlap
+			// stage never sees them (spec §4.1).
+			if path == "embedding.model" || path == "embedding.base_url" {
+				return occurrences
+			}
 			return append(occurrences, refOccurrence{node.Content[0].Value + ":" + node.Content[1].Value, path})
 		}
 		for i := 0; i < len(node.Content); i += 2 {
@@ -835,4 +1003,20 @@ func findScalar(node *yaml.Node, key string) string {
 		}
 	}
 	return ""
+}
+
+// mappingChild returns the direct child mapping named key, or nil. Unlike
+// findScalar it never searches nested sections, so an embedding env reference
+// is attributed to its own field without scanning unrelated parts of the
+// document (spec §4.1).
+func mappingChild(node *yaml.Node, key string) *yaml.Node {
+	if node == nil || node.Kind != yaml.MappingNode {
+		return nil
+	}
+	for i := 0; i < len(node.Content); i += 2 {
+		if node.Content[i].Value == key {
+			return node.Content[i+1]
+		}
+	}
+	return nil
 }

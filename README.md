@@ -81,6 +81,78 @@ Rules that matter operationally:
   rotating that endpoint's credentials is allowed.
 - `pins:` names exact `[server_id, raw_name]` pairs that must stay discoverable.
 
+### Embedding model and base URL from the environment
+
+`embedding.model` and `embedding.base_url` accept either a literal YAML string
+or a native, unquoted environment reference — the same one-key mapping syntax
+the secret fields already use:
+
+```yaml
+embedding:
+  model: {env: EMBEDDINGS_LLM_MODEL}       # unquoted mapping: resolves the variable
+  base_url: {env: EMBEDDINGS_LLM_BASE_URL} # unquoted mapping: resolves the variable
+  api_key: {env: LITELLM_API_KEY}          # existing reference grammar, unchanged
+```
+
+The mapping is the intended syntax, not text to be repaired: there is no
+autoquoting, no `${...}`/`!env` interpolation, no templating or preprocessing
+step, and no fallback evaluation. Quoting changes the meaning —
+`model: "{env: EMBEDDINGS_LLM_MODEL}"` is the literal string `{env:
+EMBEDDINGS_LLM_MODEL}`, never a reference. A quoted map-looking string in
+`base_url` therefore fails ordinary URL validation (it is not a URL), while a
+quoted map-looking `model` is accepted as that literal model name. Plain legal
+literals (`model: nomic-embed-text`, a plain URL) never need quotes; quote only
+when YAML syntax itself requires it. These two fields take `{env: NAME}` only —
+no `{file: PATH}` and no other key. `api_key` keeps its existing
+`{env: NAME}`/`{file: PATH}` rules.
+
+Resolved values are captured per config load and byte-preserved: no trimming,
+no newline stripping, no re-quoting. A nonempty model that contains spaces,
+quotes, `${...}` or an embedded newline is used exactly as-is (existing model
+semantics); `base_url` must be an absolute HTTP(S) URL and rejects ASCII
+whitespace/control characters, including CR/LF, as `url_invalid` rather than
+trimming them. An unset variable and a variable set to exactly the empty string
+fail startup (or the whole reload candidate) with distinct, value-free
+diagnostics on the named field — `code=reference_unresolved` with shape
+`missing` vs `empty` and distinct static reasons, never the value.
+
+Because the raw reference (not the resolved value) feeds the public config
+fingerprint, rotating only the variable's value leaves the fingerprint stable
+— but the effective embedding identity changes, so a restart rebuilds or
+rejects stale vectors as usual. Changing the *reference itself* (literal ↔
+mapping, or a different variable name) changes the fingerprint, as expected.
+
+### Docker: environment layering
+
+Host `.env` values and Compose `${...}` substitution only affect the Compose
+file itself — they do not by themselves put variables in the container. Each
+`{env: NAME}` reference in the mounted document must be satisfied by the
+container's own process environment, so pass them explicitly under the
+service's `environment:` (or an `env_file`):
+
+```yaml
+    # Documentation only — docker-compose.yaml is unchanged; adapt to your service.
+    environment:
+      EMBEDDINGS_LLM_MODEL: ${EMBEDDINGS_LLM_MODEL:?set it in ./.env}
+      EMBEDDINGS_LLM_BASE_URL: ${EMBEDDINGS_LLM_BASE_URL:?set it in ./.env}
+      LITELLM_API_KEY: ${LITELLM_API_KEY:?set it in ./.env}
+```
+
+The `:?` guard rejects variables that are unset or empty; a whitespace-only
+value passes it (the bridge's own validation still applies downstream).
+
+`SIGHUP` re-reads the mounted document against the *existing* process
+environment. It cannot import a changed host `.env` or a changed Compose
+`environment:` block. Resolved embedding settings are restart-only: to apply a
+changed variable value or a changed Compose environment, recreate the container
+with the new environment (e.g. `docker compose up -d --force-recreate
+mcp-bridge`); restarting the old container without it does not acquire the
+change, and a reload that sees different effective embedding settings is
+rejected as `restart_required` with the live runtime unchanged. Failure
+diagnostics surface through the existing local channels only — startup stderr,
+`--check-config` output, and reload JSON/metric records — with no promise of
+external log-shipping ingestion.
+
 ## Configuration diagnostics
 
 Every rejected document is attributed as one typed, single-line record: the

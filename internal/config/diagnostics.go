@@ -202,7 +202,13 @@ func (w *secretWalk) walk(node *yaml.Node, keyPath, server string) bool {
 		return true
 	case yaml.MappingNode:
 		if len(node.Content) == 2 && (node.Content[0].Value == "env" || node.Content[0].Value == "file") {
-			return w.resolve(node, keyPath, server)
+			// The embedding model/base_url env references are resolved once per
+			// load by the dedicated embedding pass (spec §4.1) and are not
+			// secrets; the secret stage must neither resolve nor fail them.
+			if keyPath != "embedding.model" && keyPath != "embedding.base_url" {
+				return w.resolve(node, keyPath, server)
+			}
+			return true
 		}
 		// A server's own mapping owns the validated id above it; every
 		// credential inside it is attributed to that id (spec §3.1 R/S). Only

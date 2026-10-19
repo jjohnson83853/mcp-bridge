@@ -141,8 +141,22 @@ func (c Config) Command() (Command, error) {
 // readSetting copies one scalar setting into its typed destination. It reports
 // the section and key through metadata, never the value, so a rejected document
 // cannot leak a secret through the error (spec §5.2 C-1 direct setting guards).
+//
+// For embedding.model/embedding.base_url on a parsed Config, the effective
+// per-load snapshot supplies the resolved bytes (spec §4.1); a directly
+// constructed Config (no snapshot) keeps reading the raw map, so an unresolved
+// mapping value fails as a type error and never triggers a lazy environment
+// lookup.
 func readSetting(c Config, section, key string, target any) error {
 	name := section + "." + key
+	if section == "embedding" && embeddingEnvFields[key] && c.embeddingSnapshot != nil {
+		if effective, ok := c.embeddingSnapshot.values[key]; ok {
+			if destination, isString := target.(*string); isString {
+				*destination = effective
+				return nil
+			}
+		}
+	}
 	fail := func(code, property, shape, reason string) error {
 		return direct(Diagnostic{
 			Path: c.Origin(), Key: name,
