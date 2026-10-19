@@ -14,6 +14,7 @@ import (
 
 	"github.com/jjohnson83853/mcp-bridge/internal/catalog"
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/search"
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
@@ -25,6 +26,11 @@ type ToolSurfaceConfig struct {
 	Search   search.Config
 	Provider search.Provider
 	Model    search.ModelIdentity
+
+	// Logger receives the tool surface's own terminal observability records.
+	// A nil Logger is a supported configuration: the surface serves with
+	// request observability disabled rather than failing validation.
+	Logger *observe.Logger
 }
 
 // ToolSurface registers and serves the bridge's own three tools. Every handler
@@ -33,6 +39,7 @@ type ToolSurfaceConfig struct {
 type ToolSurface struct {
 	runtime *Runtime
 	cfg     ToolSurfaceConfig
+	logger  *observe.Logger
 
 	cached   *search.Searcher
 	cacheKey string
@@ -46,7 +53,7 @@ func NewToolSurface(runtime *Runtime, cfg ToolSurfaceConfig) (*ToolSurface, erro
 	if cfg.Model.Dimensions <= 0 {
 		return nil, errors.New("service: tool surface needs the embedding model dimensions")
 	}
-	return &ToolSurface{runtime: runtime, cfg: cfg}, nil
+	return &ToolSurface{runtime: runtime, cfg: cfg, logger: cfg.Logger}, nil
 }
 
 // Register installs exactly the three bridge tools on server with the exact
@@ -213,34 +220,108 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 	if schema := binding.Def.OutputSchema; len(schema) > 0 {
 		payload["output_schema"] = rawValue(schema)
 	}
+	if t.logger != nil {
+		t.logger.Log(observe.Entry{
+			Level:     "info",
+			Event:     "mcp_complete",
+			RequestID: "",
+			Operation: "describe_tool",
+			Duration:  0,
+			Outcome:   "success",
+			Reason:    "none",
+			Fields: map[string]any{
+				"reason": "none",
+			},
+		})
+	}
 	return &mcp.CallToolResult{StructuredContent: payload}, nil
+}
+
+// logToolAdmissionFailure terminates the tools/call operation at the
+// tool_admission stage: exactly one mcp_complete record per rejected call,
+// emitted before any upstream dispatch is attempted.
+func (t *ToolSurface) logToolAdmissionFailure(requestID, operationID, corrState string, start time.Time, reason string) {
+	if t.logger == nil {
+		return
+	}
+	duration := time.Since(start)
+	t.logger.Log(observe.Entry{
+		Level:     "warn",
+		Event:     "mcp_complete",
+		RequestID: requestID,
+		Operation: "call_tool",
+		Duration:  duration,
+		Outcome:   "error",
+		Reason:    reason,
+		Fields: map[string]any{
+			"request_id":        requestID,
+			"operation_id":      operationID,
+			"mcp_method":        "tools_call",
+			"stage":             "tool_admission",
+			"outcome":           "error",
+			"reason":            reason,
+			"correlation_state": corrState,
+			"duration_ms":       duration.Milliseconds(),
+		},
+	})
+}
+
+// validHex reports whether the provided string is a valid lowercase hexadecimal identifier.
+func validHex(s string) bool {
+	for _, r := range s {
+		if !(r >= '0' && r <= '9' || r >= 'a' && r <= 'f') {
+			return false
+		}
+	}
+	return true
 }
 
 // callTool admits and forwards exactly one execution (plan §4.4/§4.5).
 func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	// Observability scope: the internal request identity rides the private
+	// carrier the inbound edge attached to this POST and is never caller
+	// controlled; the operation identity scopes this decoded tools/call
+	// execution independently. A missing or invalid carrier leaves the
+	// request identity empty and reports correlation as unavailable.
+	var requestID string
+	corrState := "unavailable"
+	if req != nil && req.Extra != nil && req.Extra.Header != nil {
+		carrier := req.Extra.Header.Get("X-Mcp-Bridge-Internal-Request-Id")
+		if len(carrier) == 32 && validHex(carrier) {
+			requestID = carrier
+			corrState = "valid"
+		}
+	}
+	operationID := observe.CorrelationID("")
+	start := time.Now()
 	var wire struct {
 		ToolName        string          `json:"tool_name"`
 		CatalogRevision string          `json:"catalog_revision"`
 		Arguments       json.RawMessage `json:"arguments"`
 	}
 	if err := decodeStrict(rawArguments(req), &wire); err != nil {
+		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "invalid_arguments")
 		return errorResult(search.CodeInvalidArguments, "call arguments are not a valid call request", core.ExecutionNotStarted), nil
 	}
 	assembly := t.runtime.Current()
 	if assembly == nil {
+		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "backend_unavailable")
 		return errorResult(codeBackendUnavailable, "no catalog generation is published", core.ExecutionNotStarted), nil
 	}
 	// Revision admission precedes every other check, so a stale expected
 	// revision is never answered with a schema verdict about the new catalog.
 	if wire.CatalogRevision != assembly.CatalogRevision() {
+		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "catalog_changed")
 		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
 	}
 	binding, ok := assembly.catalog.Binding(wire.ToolName)
 	if !ok {
+		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "unknown_tool")
 		return errorResult(codeUnknownTool, "no such tool in the published catalog", core.ExecutionNotStarted), nil
 	}
 	health, _ := assembly.Health(binding.ServerID)
 	if health.Availability != AvailabilityAvailable {
+		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "backend_unavailable")
 		return errorResult(codeBackendUnavailable, "the server of this tool is not available", core.ExecutionNotStarted), nil
 	}
 	args := wire.Arguments
@@ -249,26 +330,114 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 	}
 	if len(binding.Def.InputSchema) > 0 {
 		if err := catalog.ValidateSchemaDocument(string(binding.Def.InputSchema)); err != nil {
+			t.logToolAdmissionFailure(requestID, operationID, corrState, start, "unsupported_schema")
 			return errorResult(codeUnsupportedSchema, "the stored input schema cannot be applied", core.ExecutionNotStarted), nil
 		}
 		if err := catalog.ValidateSchema(string(binding.Def.InputSchema), string(args)); err != nil {
 			// The validator's own text may quote submitted values, so the
 			// rejection is answered with a fixed, payload-free message.
+			t.logToolAdmissionFailure(requestID, operationID, corrState, start, "invalid_arguments")
 			return errorResult(search.CodeInvalidArguments, "arguments do not satisfy the tool's stored input schema", core.ExecutionNotStarted), nil
 		}
 	}
 
 	lease, ok := assembly.Acquire(binding.ServerID)
 	if !ok {
+		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "backend_busy")
 		return errorResult(codeBackendUnavailable, "the server of this tool is draining", core.ExecutionNotStarted), nil
 	}
 	defer lease.Release()
+	backendCallID := observe.CorrelationID("")
+	backendStart := time.Now()
 	envelope, dispatchErr := assembly.catalog.Dispatch(ctx, wire.ToolName, wire.CatalogRevision, args, lease.Server().Client)
 	if dispatchErr != nil {
+		if t.logger != nil {
+			outcome := "error"
+			if dispatchErr.Code == "deadline_exceeded" {
+				outcome = "timeout"
+			}
+			t.logger.Log(observe.Entry{
+				Level:     "warn",
+				Event:     "backend_complete",
+				RequestID: requestID,
+				Server:    binding.ServerID,
+				Operation: "call_tool",
+				Duration:  time.Since(backendStart),
+				Outcome:   outcome,
+				Reason:    dispatchErr.Code,
+				Fields: map[string]any{
+					"request_id":      requestID,
+					"operation_id":    operationID,
+					"backend_call_id": backendCallID,
+					"tool":            core.PublicName(binding.ServerID, binding.RawName),
+					"outcome":         outcome,
+					"reason":          dispatchErr.Code,
+					"duration_ms":     time.Since(backendStart).Milliseconds(),
+				},
+			})
+			t.logger.Log(observe.Entry{
+				Level:     "warn",
+				Event:     "mcp_complete",
+				RequestID: requestID,
+				Operation: "call_tool",
+				Duration:  time.Since(start),
+				Outcome:   "error",
+				Reason:    dispatchErr.Code,
+				Fields: map[string]any{
+					"request_id":       requestID,
+					"operation_id":     operationID,
+					"mcp_method":       "tools_call",
+					"mcp_message_kind": "request",
+					"stage":            "backend_dispatch",
+					"outcome":          "error",
+					"reason":           dispatchErr.Code,
+					"duration_ms":      time.Since(start).Milliseconds(),
+				},
+			})
+		}
 		return errorResult(dispatchErr.Code, dispatchMessage(dispatchErr.Code), dispatchErr.ExecutionState), nil
 	}
-
 	upstream := decodeUpstreamResult(envelope.UpstreamResult)
+	uCount, uText, uStructured := summarizeShape(upstream.Content, upstream.StructuredContent)
+	if t.logger != nil {
+		// The admitted dispatch is terminal evidence of its own boundary:
+		// one record per actual upstream call, joined to the operation and
+		// request scope by the fresh identities minted above. A healthy
+		// transport delivering a tool-reported failure terminates as error.
+		level, outcome := "info", "success"
+		if upstream.IsError {
+			level, outcome = "warn", "error"
+		}
+		fields := map[string]any{
+			"request_id":                  requestID,
+			"operation_id":                operationID,
+			"correlation_state":           corrState,
+			"backend_call_id":             backendCallID,
+			"tool":                        core.PublicName(binding.ServerID, binding.RawName),
+			"outcome":                     outcome,
+			"upstream_content_count":      uCount,
+			"upstream_text_presence":      uText,
+			"upstream_structured_presence": uStructured,
+			"duration_ms":                 time.Since(backendStart).Milliseconds(),
+		}
+		reason := "none"
+		if upstream.IsError {
+			reason = "tool_reported_error"
+		}
+		fields["reason"] = reason
+		t.logger.Log(observe.Entry{
+			Level:     level,
+			Event:     "backend_complete",
+			RequestID: requestID,
+			Server:    binding.ServerID,
+			Operation: "call_tool",
+			Duration:  time.Since(backendStart),
+			Outcome:   outcome,
+			Reason:    reason,
+			Fields:    fields,
+		})
+	}
+
 	payload := map[string]any{
 		"server":           envelope.Server,
 		"catalog_revision": envelope.CatalogRevision,
@@ -278,11 +447,68 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 		"request_id":       newRequestID(),
 		"upstream_result":  rawValue(envelope.UpstreamResult),
 	}
+	fCount, fText, fStructured := summarizeShape(upstream.Content, payload)
+	if t.logger != nil {
+		// The decoded MCP operation is terminal evidence of its own boundary:
+		// one record per tools/call the surface actually executed. A
+		// tool-reported failure terminates at the backend_response stage.
+		level, outcome := "info", "success"
+		if upstream.IsError {
+			level, outcome = "warn", "error"
+		}
+		fields := map[string]any{
+			"request_id":                 requestID,
+			"operation_id":               operationID,
+			"correlation_state":          corrState,
+			"mcp_method":                 "tools_call",
+			"mcp_message_kind":           "request",
+			"outcome":                    outcome,
+			"final_content_count":        fCount,
+			"final_text_presence":        fText,
+			"final_structured_presence":  fStructured,
+			"duration_ms":                time.Since(start).Milliseconds(),
+		}
+		reason := "none"
+		if upstream.IsError {
+			reason = "tool_reported_error"
+			fields["stage"] = "backend_response"
+		}
+		fields["reason"] = reason
+		t.logger.Log(observe.Entry{
+			Level:     level,
+			Event:     "mcp_complete",
+			RequestID: requestID,
+			Operation: "call_tool",
+			Duration:  time.Since(start),
+			Outcome:   outcome,
+			Reason:    reason,
+			Fields:    fields,
+		})
+	}
 	return &mcp.CallToolResult{
 		Content:           upstream.Content,
 		StructuredContent: payload,
 		IsError:           upstream.IsError,
 	}, nil
+}
+
+// summarizeShape inspects a tool result's content blocks and structured
+// payload, reporting the block count and whether text or structured data
+// is present. It feeds terminal logging without leaking payload contents.
+func summarizeShape(content []mcp.Content, structured any) (int, string, string) {
+	contentCount := len(content)
+	textPresence := "absent"
+	for _, c := range content {
+		if _, ok := c.(*mcp.TextContent); ok {
+			textPresence = "present"
+			break
+		}
+	}
+	structuredPresence := "absent"
+	if structured != nil {
+		structuredPresence = "present"
+	}
+	return contentCount, textPresence, structuredPresence
 }
 
 // decodeUpstreamResult reads the upstream's complete CallToolResult so the

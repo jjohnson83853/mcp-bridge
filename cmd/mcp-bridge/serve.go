@@ -90,6 +90,7 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 		Search:   searchSettings(settings.Search),
 		Provider: provider,
 		Model:    model,
+		Logger:   logger,
 	})
 	if err != nil {
 		return fmt.Errorf("tool surface: %w", err)

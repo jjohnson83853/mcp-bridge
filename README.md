@@ -279,6 +279,48 @@ Metric labels stay inside a finite vocabulary: `server` is always a configured
 ID (or the reserved `_bridge` for work the bridge does for itself), never a tool
 name, query, URL, or token.
 
+### HTTP request diagnostics
+
+Every HTTP request reaching the inbound listener produces exactly one terminal
+structured JSON record (`event: http_complete`) on standard output:
+
+- **Base envelope:** `time` (UTC RFC3339Nano), `level` (`info` for successes,
+  `warn` for rejections/client errors, `error` for internal errors), `service`
+  (`mcp-bridge`), `environment` (`unspecified`), `version` (`unspecified`),
+  and fixed `message: "http request completed"`.
+- **Transport fields:** `http_method` (`GET`, `POST`, `DELETE`, `HEAD`,
+  `OPTIONS`, `PUT`, `PATCH`, `OTHER`), `route` (`mcp`, `not_found`),
+  `http_status` (observed integer `100`–`599`, or explicit JSON `null` when no
+  response evidence exists), `http_outcome` (`success`, `failure`, `incomplete`,
+  `unknown`), `http_bytes_bucket` (`empty`, `le_1k`, `le_16k`, `le_256k`,
+  `le_1m`, `gt_1m`, `unavailable`), and `duration_ms` (elapsed milliseconds from
+  handler entry through terminal emission). Raw paths, queries, and arbitrary
+  verbs are never reflected.
+- **Internal correlation:** `request_id` is an internal lowercase 32-hex ID
+  minted independently of caller-supplied identifiers; `correlation_state`
+  reports `available` or `unavailable`. Public `X-Request-ID` headers are
+  preserved on responses but never used as internal logging identities.
+- **Finite admission stages and reasons:**
+  - `client_auth` / `client_auth_failed`: missing or invalid client Bearer token.
+  - `session_admission` / `session_auth_failed`: missing or unbound session ID.
+  - `session_admission` / `session_capacity`: active sessions exceed `max_sessions`.
+  - `host_admission` / `host_rejected`: Host header not allowed by `allowed_hosts`.
+  - `origin_admission` / `origin_rejected`: Origin header not allowed by
+    `allowed_origins` (Host rejection decisive before Origin).
+  - `request_limits` / `request_too_large`: body exceeds `max_request_body_bytes`
+    (returns 413 with native transport close-on-limit).
+  - `http_route` / `route_not_found`: unmatched path or unusual verb.
+- **Collection and delivery boundary:** Records are emitted as single-line JSON
+  to stdout. Standard container/service stdout collection is the shipping boundary.
+  Stdout write failures are nonfatal and do not fail requests, retry, or recurse;
+  no durable buffer or delivery guarantee is provided. When routing to Loki or
+  similar systems, index only low-cardinality metadata (`level`, `event`,
+  `service`, `http_method`, `route`, `stage`, `reason`); keep high-cardinality
+  identifiers (`request_id`, session IDs, client addresses) out of label indexes.
+- **Metrics unchanged:** Prometheus metrics, exposition formats, label names,
+  and cardinality remain unchanged; new logging classifications do not alter
+  metric series.
+
 ## Behaviour worth knowing
 
 - **Reload is atomic.** Parse, resolve, validate, then publish one new pointer.

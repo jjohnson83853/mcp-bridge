@@ -653,8 +653,11 @@ func TestInboundUnauthorizedLogClassifiesAuthFailure(t *testing.T) {
 	if recorder.Code != http.StatusUnauthorized {
 		t.Fatalf("status = %d", recorder.Code)
 	}
-	if !strings.Contains(logs.String(), "backend_auth_failed") {
+	if !strings.Contains(logs.String(), "client_auth_failed") {
 		t.Fatalf("unauthorized audit event = %s", logs.String())
+	}
+	if strings.Contains(logs.String(), "backend_auth_failed") {
+		t.Fatalf("unauthorized audit event falsely contained backend_auth_failed: %s", logs.String())
 	}
 }
 

@@ -1,0 +1,20 @@
+# 03: Distinguish protocol, tool-admission, and backend failures
+
+**What to build:** Operators can distinguish rejected MCP/tool requests, JSON-RPC errors, tool-reported errors and backend failures even when an HTTP exchange returns 200. Every classification states the observed stage and a finite reason, without exposing error prose or changing public failures.
+
+**Blocked by:** 02 — Trace successful MCP operations through backend execution.
+
+Status: complete
+
+Type: task
+
+Source: Logging observability specification, revision LOG-OBS-r4 (supersedes the original r1 source reference; approved ticket scope and dependencies unchanged). Coverage: rejection/error portions of AC2 and AC4; AC6, AC7; unattributed-failure portion of AC13; relevant AC5, AC8, AC14–AC24. Ticket publication approval does not authorize implementation; applicable project gates still apply.
+
+- [ ] HTTP, JSON-RPC, tool and backend outcomes remain separate facts. Demonstrate successful transport with successful RPC/tool execution; HTTP 200 with JSON-RPC success and tool isError; and an HTTP-200 JSON-RPC-error exchange. If the client-facing SDK legitimately uses non-200 for RPC errors, preserve it and additionally use a conforming fake backend returning HTTP 200 with a JSON-RPC error. Do not alter production responses to manufacture a test case.
+- [ ] Malformed, missing/non-string and unknown methods, protocol errors and notifications receive only evidence-backed finite classifications. A rejected pre-decode request without an SDK classification remains not_observed/unknown where appropriate; prefix-capture truncation or absent middleware callbacks never become asserted parse errors. Existing responses and supported capabilities remain unchanged.
+- [ ] Invalid wrapper arguments, schema-invalid arguments, stale catalog revisions, unknown tools and unavailable/draining bindings have precise admission stage/reason, unchanged public error results, zero upstream calls and no backend completion. No submitted names, validation details or argument values leak.
+- [ ] Typed backend authentication, unavailable/busy, protocol, unsupported-capability and unknown failures map to the spec's finite stage/reason vocabulary at the boundary where evidence exists. Backend authentication is distinct from client authentication. Arbitrary backend error messages/codes and HTTP status at another boundary cannot drive classification. Do not string-match errors or inspect credentials.
+- [ ] A successful backend protocol exchange containing tool isError is distinguishable from a failed backend exchange. No tool result is not mistaken for an empty successful result. Unexplained failures remain unknown; timeout/cancellation/disconnection-specific behavior is delivered by ticket 05 rather than guessed here.
+- [ ] Extend existing field/value validation only with the specified error/outcome vocabulary. Structured error metadata contains only approved finite fields; no arbitrary message, error data, stack, header or backend response is emitted. Unknown strings/types/nested objects cannot bypass validation, including through the existing diagnostic exception.
+- [ ] The real HTTP/MCP composition-root harness uses local fake upstreams to prove the error matrix, actual call counts, correlation and unchanged statuses/challenges/envelopes/content/isError. Synthetic secrets in malformed methods, tool arguments/names, protocol error data, backend error text and nested metadata are absent from every captured line. Preserve existing diagnostics, metric vocabulary and networking/session behavior.
+- [ ] Update operator documentation/changelog for outcome dimensions, failure filters and honest unknown states. Record deterministic RED/GREEN evidence for changed failure logging, smoke a real local failed call, run focused/full-suite checks with at least 90% full-suite source-line coverage, and complete applicable code/Go/security review. No retries, policy changes, response rewriting or compatibility fix is included.
