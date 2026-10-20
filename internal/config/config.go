@@ -32,6 +32,7 @@ const sessionIdleMaxDuration = 1 * time.Hour
 
 var serverIDPattern = regexp.MustCompile(`^[a-z][a-z0-9-]{0,31}$`)
 var envNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+var pinToolNamePattern = regexp.MustCompile("^[a-zA-Z0-9_-]+$")
 
 type Server struct {
 	ID              string         `yaml:"id"`
@@ -197,6 +198,13 @@ func Parse(data []byte, configPath string) (*Config, error) {
 		}
 		cfg.Servers[index].Endpoint = normalized
 	}
+	if len(cfg.Pins) > 64 {
+		return nil, single(Diagnostic{
+			Path: configPath, Key: "pins",
+			Code: "pin_ceiling", Property: "pins", Shape: "out_of_bounds",
+			Reason: "pins list may contain at most 64 entries",
+		})
+	}
 	seenPins := make(map[string]int, len(cfg.Pins))
 	for index, pin := range cfg.Pins {
 		if len(pin) != 2 || pin["server"] == "" || pin["tool"] == "" || !ids[pin["server"]] {
@@ -230,6 +238,25 @@ func Parse(data []byte, configPath string) (*Config, error) {
 				}
 			}
 			return nil, single(record)
+		}
+		tool := pin["tool"]
+		if !pinToolNamePattern.MatchString(tool) {
+			return nil, single(Diagnostic{
+				Path: configPath, Key: fmt.Sprintf("pins[%d].tool", index),
+				Code: "pin_tool_name", Property: "tool", Shape: "invalid_chars",
+				Reason: "pin tool name must contain only standard identifier characters",
+				PinServer: pin["server"],
+				PinTool: tool,
+			})
+		}
+		if len(tool) > 94 || len(pin["server"])+2+len(tool) > 128 {
+			return nil, single(Diagnostic{
+				Path: configPath, Key: fmt.Sprintf("pins[%d].tool", index),
+				Code: "pin_tool_name", Property: "tool", Shape: "too_long",
+				Reason: "pin tool name exceeds 94 characters or wire name exceeds 128 characters",
+				PinServer: pin["server"],
+				PinTool: tool,
+			})
 		}
 		key := pin["server"] + "\x00" + pin["tool"]
 		if first, duplicate := seenPins[key]; duplicate {
@@ -1019,4 +1046,20 @@ func mappingChild(node *yaml.Node, key string) *yaml.Node {
 		}
 	}
 	return nil
+}
+
+// WireToolName formats a preloaded tool's canonical wire name as <server_id>__<upstream_tool_name>.
+func WireToolName(serverID, toolName string) string {
+	return serverID + "__" + toolName
+}
+
+// ParseWireToolName splits a canonical preloaded tool wire name into its owning server ID
+// and raw upstream tool name. It returns ok=false if the wire name does not contain the
+// double-underscore delimiter or if either part is empty.
+func ParseWireToolName(wireName string) (serverID, toolName string, ok bool) {
+	idx := strings.Index(wireName, "__")
+	if idx <= 0 || idx+2 >= len(wireName) {
+		return "", "", false
+	}
+	return wireName[:idx], wireName[idx+2:], true
 }

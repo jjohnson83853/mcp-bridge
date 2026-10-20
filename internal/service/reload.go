@@ -180,10 +180,15 @@ func (a *Assembly) PinnedNames() map[string]bool {
 
 // Acquire pins this generation for one call to serverID. It fails once the
 // generation has been retired, so a caller that raced a reload re-reads the
-// pointer instead of reaching a closed client.
+// pointer instead of reaching a closed client. It also fails while this
+// generation's own probe of the server has not succeeded, so an outage can
+// never hand out a lease for dispatch (fail-closed, plan §4.5).
 func (a *Assembly) Acquire(serverID string) (*Lease, bool) {
 	server, ok := a.servers[serverID]
 	if !ok {
+		return nil, false
+	}
+	if !server.available {
 		return nil, false
 	}
 	if !server.tracker.acquire() {
@@ -506,11 +511,20 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 	for _, pin := range in.candidate.Pins {
 		pins = append(pins, core.PinnedTool{ServerID: pin["server"], RawName: pin["tool"]})
 	}
-	resolvedPins, err := core.AddPins(next.catalog, pins)
-	if err != nil {
-		return nil, fmt.Errorf("service: %s pins: %w", in.mode, err)
+	if in.mode == buildStartup {
+		// Startup contacts no upstream, so its catalog is only the durable
+		// snapshot; a fresh start has no bindings to satisfy pins. Defer pin
+		// resolution to the first post-startup discovery pass, which rebuilds
+		// the catalog from live discovery and then resolves pins exactly as
+		// below.
+		next.pins = nil
+	} else {
+		resolvedPins, err := core.AddPins(next.catalog, pins)
+		if err != nil {
+			return nil, fmt.Errorf("service: %s pins: %w", in.mode, err)
+		}
+		next.pins = resolvedPins
 	}
-	next.pins = resolvedPins
 
 	snapshot, err := storage.Reconcile(in.reconcileBase(previous), storage.ReconcileInput{
 		CreatedAt:               at,

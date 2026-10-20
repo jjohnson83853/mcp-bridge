@@ -1,5 +1,5 @@
 Status: ready-for-agent
-Revision: HYBRID-DISCOVERY-r2 (2026-10-19)
+Revision: HYBRID-DISCOVERY-r3 (2026-10-19)
 
 ## Problem Statement
 
@@ -25,12 +25,12 @@ From the user's and client's perspective:
 ## Contract Amendments
 
 1. **Tool Name Schema Pattern Amendment**:
-   The input schemas for `catalog.CallToolInputSchema()` and `catalog.DescribeToolInputSchema()` currently restrict `tool_name` to the opaque base32 hash format `^t_[a-z2-7]{52}$`. This specification formally amends that contract to an `anyOf` pattern supporting both the opaque hash and the preloaded namespaced wire format:
+   The input schemas for `catalog.CallToolInputSchema()` and `catalog.DescribeToolInputSchema()` currently restrict `tool_name` to the opaque base32 hash format `^t_[a-z2-7]{52}$`. This specification formally amends that contract to a single pattern string with regular expression alternation supporting both the opaque hash and the preloaded namespaced wire format:
    ```regex
    ^(t_[a-z2-7]{52}|[a-z][a-z0-9-]{0,31}__[a-zA-Z0-9_-]{1,94})$
    ```
 2. **`tools/list` Exact Count Assertion Amendment**:
-   The existing integration test assertion that `tools/list` returns *exactly* 3 tools is amended to assert `3 + len(active_pins)`.
+   The existing integration test assertion that `tools/list` returns *exactly* 3 tools is amended to assert `3 + len(active_pins)`, where `active_pins` is defined as the set of successfully resolved preloaded tools in the active generation.
 
 ## User Stories
 
@@ -82,11 +82,11 @@ From the user's and client's perspective:
    When an incoming `tools/call` request specifies a preloaded tool name (e.g. `rag__search_documents`):
    - The bridge resolves the binding directly from the generation's preloaded tool registry.
    - The bridge validates the incoming arguments against the tool's stored `inputSchema`.
+   - If arguments fail schema validation, the bridge returns an MCP tool error result with `isError: true` without forwarding to upstream.
    - The bridge acquires an upstream execution lease (enforcing concurrency limits, timeouts, and circuit breaker checks).
    - The request is forwarded directly to the upstream server's `tools/call` endpoint with the raw upstream tool name.
    - The result is unpacked, logged, and returned to the client as a standard MCP `CallToolResult`.
    - The client is NOT required to wrap arguments in a `call_tool` envelope.
-
 5. **Coexistence with On-Demand Discovery**:
    - `search_tools` remains active and continues to index all tools across all connected upstreams.
    - Search results continue to flag preloaded tools with `"pinned": true` and provide their wire names.
@@ -95,10 +95,12 @@ From the user's and client's perspective:
 
 6. **Generation Lifecycle, Startup Validation & LKG Reloads**:
    - **Startup:** During bridge startup, the assembly resolves all configured pins against freshly fetched upstream catalogs. If any pinned tool is missing, startup fails closed to catch misconfigurations immediately.
-   - **Runtime Reload (SIGHUP):** If a previously pinned tool's upstream is temporarily unreachable or fails refresh, the bridge preserves the Last-Known-Good (LKG) catalog definitions for that tool, marking its health as degraded/unavailable. If a candidate configuration introduces a *newly added pin* for an unknown tool or server, the reload candidate is rejected atomically and the running generation is preserved.
+   - **Runtime Reload (SIGHUP):**
+     - *Upstream Outage:* If a previously pinned tool's upstream is temporarily unreachable or fails refresh, the bridge preserves the Last-Known-Good (LKG) catalog definitions for that tool, marking its health as degraded/unavailable. Degraded LKG tools remain advertised in `tools/list` with their cached schemas; direct execution of a degraded tool returns `isError: true` with reason `backend_unavailable`.
+     - *Upstream Deletion:* If an upstream server is reachable but an existing pinned tool was deleted from its catalog, the reload candidate is rejected atomically with a typed diagnostic, preserving the running generation.
+     - *New Pin Invalid:* If a candidate configuration introduces a *newly added pin* for an unknown tool or server, the reload candidate is rejected atomically and the running generation is preserved.
    - Once a new generation is published, the preloaded tool map is updated atomically under the runtime lock.
    - Active client sessions receive a `notifications/tools/list_changed` notification if the transport supports notifications.
-
 7. **Normative Guardrails & Memory Bounds**:
    - Enforce a strict upper bound of at most 64 preloaded tools per configuration (`max_preloaded_tools = 64`).
    - Enforce a maximum wire name length of 128 characters.
@@ -111,7 +113,7 @@ From the user's and client's perspective:
 Tests must verify observable external behavior at the highest available system boundary without coupling to unexported internal structures or intermediate helper functions:
 - Test that an MCP client sending `tools/list` receives the expected meta-tools plus the exact preloaded tool names, descriptions, and schemas.
 - Test that calling a preloaded tool directly with valid arguments executes the upstream tool and returns the expected payload.
-- Test that calling a preloaded tool with invalid arguments returns a JSON-RPC error or validation failure with `isError: true` without hitting the upstream server.
+- Test that calling a preloaded tool with invalid arguments returns an MCP tool error result with `isError: true` without hitting the upstream server.
 - Test that unknown tool calls produce standard MCP errors.
 - Test that SIGHUP reload with modified pins updates `tools/list` and handles execution under the new tool set.
 - Test that SIGHUP reload preserves LKG preloaded tools during temporary upstream outages.

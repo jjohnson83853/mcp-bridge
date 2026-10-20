@@ -166,6 +166,7 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 		ReloadMetrics: func(outcome, reason string) { metrics.RecordReload(outcome, orNone(reason)) },
 		Published: func(assembly *service.Assembly) {
 			promptSurface.Published(assembly)
+			surface.Published(assembly)
 			published(assembly)
 		},
 		Logf: operatorLog(logger),

@@ -4,11 +4,10 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+Status: complete
 
 Type: task
-
-Source: Hybrid tool discovery specification, revision HYBRID-DISCOVERY-r2. Coverage: User Stories 1–6, 26; Implementation Decisions 1, 2, 7; Contract Amendment 1.
+Source: Hybrid tool discovery specification, revision HYBRID-DISCOVERY-r3. Coverage: User Stories 1–6, 26; Implementation Decisions 1, 2, 7; Contract Amendment 1.
 
 - [ ] Enforce a strict upper bound of at most 64 configured pins (`max_preloaded_tools = 64`) during configuration validation, failing closed with a typed diagnostic if exceeded.
 - [ ] Implement a canonical wire naming function formatting preloaded tools as `<server_id>__<upstream_tool_name>`.

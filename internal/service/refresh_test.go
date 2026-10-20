@@ -188,6 +188,56 @@ func TestRefreshKeepsRevisionStableForAnUnchangedCatalog(t *testing.T) {
 	}
 }
 
+// TestRefreshPreservesLKGPinsForFailedServer pins the LKG pin contract: when a
+// pinned server's discovery is temporarily unreachable, the refresh keeps the
+// last-known-good catalog entry for its pinned tool, preserves the binding,
+// marks the server stale, and refuses to acquire it so execution fails closed.
+func TestRefreshPreservesLKGPinsForFailedServer(t *testing.T) {
+	h := newReloadHarness(t)
+	advancingClock(h)
+	pinnedYAML := strings.Replace(reloadTwoServers, "pins: []", "pins:\n  - {server: beta, tool: write}", 1)
+	cfg := refreshConfig(t, pinnedYAML)
+
+	first, err := h.runtime.Reload(cfg, h.deps())
+	if err != nil {
+		t.Fatalf("initial reload: %v", err)
+	}
+	if len(first.Pins()) != 1 {
+		t.Fatalf("initial pins = %d; want 1", len(first.Pins()))
+	}
+
+	h.mu.Lock()
+	h.failDiscover["beta"] = errors.New("beta connection refused")
+	h.mu.Unlock()
+
+	next, err := h.runtime.Refresh(cfg, refreshDeps(h))
+	if err != nil {
+		t.Fatalf("refresh: %v", err)
+	}
+	if len(next.Pins()) != 1 {
+		t.Fatalf("next pins = %d; want 1", len(next.Pins()))
+	}
+	if next.Pins()[0].PinnedTool.RawName != "write" {
+		t.Fatalf("next pinned tool = %q; want write", next.Pins()[0].PinnedTool.RawName)
+	}
+	if next.Pins()[0].Binding == nil {
+		t.Fatal("next pin has no binding; want the LKG binding preserved")
+	}
+	if !next.PinnedNames()[core.PublicName("beta", "write")] {
+		t.Fatalf("next pinned names = %v; want to contain beta/write", next.PinnedNames())
+	}
+	betaHealth, ok := next.Health("beta")
+	if !ok {
+		t.Fatal("next health has no entry for beta")
+	}
+	if betaHealth.Status != storage.StatusStale {
+		t.Fatalf("beta health = %s; want %s", betaHealth.Status, storage.StatusStale)
+	}
+	if lease, acquired := next.Acquire("beta"); acquired || lease != nil {
+		t.Fatalf("Acquire(beta) = (%v, %t); want a fail-closed nil lease", lease, acquired)
+	}
+}
+
 // gatedDiscovery blocks the first discovery so a trigger storm can be aimed at
 // an in-flight refresh pass.
 type gatedDiscovery struct {

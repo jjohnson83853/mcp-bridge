@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"sync"
@@ -181,15 +182,26 @@ func startToolHarness(t *testing.T, runtime *service.Runtime, assembly *service.
 
 func (h *toolHarness) call(t *testing.T, name string, args map[string]any) *mcp.CallToolResult {
 	t.Helper()
-	raw, err := json.Marshal(args)
-	if err != nil {
-		t.Fatalf("marshal args: %v", err)
-	}
-	result, err := h.session.CallTool(context.Background(), &mcp.CallToolParams{Name: name, Arguments: json.RawMessage(raw)})
+	result, err := h.callErr(name, args)
 	if err != nil {
 		t.Fatalf("tools/call %s: %v", name, err)
 	}
 	return result
+}
+
+// callErr is the concurrency-safe variant of call: it reports failures as a
+// returned error so worker goroutines never invoke t.Fatal (which must only
+// run on the test goroutine).
+func (h *toolHarness) callErr(name string, args map[string]any) (*mcp.CallToolResult, error) {
+	raw, err := json.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("marshal args: %w", err)
+	}
+	result, err := h.session.CallTool(context.Background(), &mcp.CallToolParams{Name: name, Arguments: json.RawMessage(raw)})
+	if err != nil {
+		return nil, fmt.Errorf("tools/call %s: %w", name, err)
+	}
+	return result, nil
 }
 
 func structured(t *testing.T, result *mcp.CallToolResult) map[string]any {
@@ -456,6 +468,20 @@ func TestToolSurfaceSearchToolsReturnsRankedProvenance(t *testing.T) {
 	if result.IsError {
 		t.Fatalf("search_tools reported an error: %s", canonical(t, structured(t, result)))
 	}
+	if len(result.Content) != 1 {
+		t.Fatalf("search_tools content length = %d; want 1", len(result.Content))
+	}
+	textContent, ok := result.Content[0].(*mcp.TextContent)
+	if !ok || textContent.Text == "" {
+		t.Fatalf("search_tools content[0] = %T (%v); want non-empty *mcp.TextContent", result.Content[0], result.Content[0])
+	}
+	var decodedSearch map[string]any
+	if err := json.Unmarshal([]byte(textContent.Text), &decodedSearch); err != nil {
+		t.Fatalf("unmarshal search_tools text content: %v", err)
+	}
+	if decodedSearch["catalog_revision"] != h.assembly.CatalogRevision() {
+		t.Fatalf("decoded search revision = %v; want %v", decodedSearch["catalog_revision"], h.assembly.CatalogRevision())
+	}
 	payload := structured(t, result)
 	if payload["catalog_revision"] != h.assembly.CatalogRevision() {
 		t.Fatalf("search revision = %v; want the published revision", payload["catalog_revision"])
@@ -472,8 +498,10 @@ func TestToolSurfaceSearchToolsReturnsRankedProvenance(t *testing.T) {
 		t.Fatalf("results = %v; want both matching tools", payload["results"])
 	}
 	match, _ := results[0].(map[string]any)
-	if match["tool_name"] != h.readName || match["server"] != "alpha" || match["upstream_name"] != "read" {
-		t.Fatalf("first result provenance = %v; want the read tool first", match)
+	// Pinned tools render by wire name (config.WireToolName): "alpha__read".
+	// The unpinned long tail keeps the opaque hash name.
+	if match["tool_name"] != "alpha__read" || match["server"] != "alpha" || match["upstream_name"] != "read" {
+		t.Fatalf("first result provenance = %v; want the read tool first under its wire name", match)
 	}
 	if match["pinned"] != true {
 		t.Fatalf("result pinned = %v; want true", match["pinned"])
@@ -519,5 +547,82 @@ func TestToolSurfaceSurvivesReloadWithoutDuplicatingTools(t *testing.T) {
 	}
 	if len(after.Tools) != 3 {
 		t.Fatalf("advertised %d tools after reload; want 3", len(after.Tools))
+	}
+}
+func TestToolSurfaceDescribeToolReturnsTextContent(t *testing.T) {
+	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")
+	t.Setenv("TOOLS_CLIENT_TOKEN", "client-token")
+	h := newToolHarness(t, parseReloadConfig(t, toolSurfaceConfig), service.ToolSurfaceConfig{
+		Model: search.ModelIdentity{Provider: "openai", Model: "embed-1", Dimensions: 4, FormatVersion: "v1"},
+	})
+
+	result := h.call(t, catalog.ToolDescribeTool, map[string]any{
+		"tool_name":        h.readName,
+		"catalog_revision": h.assembly.CatalogRevision(),
+	})
+	if result.IsError {
+		t.Fatalf("describe_tool reported an error: %s", canonical(t, structured(t, result)))
+	}
+	if len(result.Content) != 1 {
+		t.Fatalf("describe_tool content length = %d; want 1", len(result.Content))
+	}
+	textContent, ok := result.Content[0].(*mcp.TextContent)
+	if !ok || textContent.Text == "" {
+		t.Fatalf("describe_tool content[0] = %T (%v); want non-empty *mcp.TextContent", result.Content[0], result.Content[0])
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal([]byte(textContent.Text), &decoded); err != nil {
+		t.Fatalf("unmarshal describe_tool text content: %v", err)
+	}
+	if decoded["tool_name"] != h.readName || decoded["server"] != "alpha" || decoded["upstream_name"] != "read" {
+		t.Fatalf("decoded describe fields = %v; want tool_name, server, and upstream_name matching payload", decoded)
+	}
+}
+
+// TestToolSurfaceConcurrentSearcher races many concurrent search_tools calls
+// against the searcher cache: every goroutine starts before the cache is
+// populated, so they contend on the cache-miss rebuild and the cached store,
+// and later rounds contend on the cache-hit read. A lost lock around
+// t.cached/t.cacheKey surfaces as a data race under the race detector.
+// Failures are collected per goroutine and asserted on the test goroutine,
+// never with t.Fatal inside a worker.
+func TestToolSurfaceConcurrentSearcher(t *testing.T) {
+	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")
+	t.Setenv("TOOLS_CLIENT_TOKEN", "client-token")
+	h := newToolHarness(t, parseReloadConfig(t, toolSurfaceConfig), service.ToolSurfaceConfig{
+		Model: search.ModelIdentity{Provider: "openai", Model: "embed-1", Dimensions: 4, FormatVersion: "v1"},
+	})
+
+	const workers = 16
+	const callsPerWorker = 4
+	results := make([]*mcp.CallToolResult, workers)
+	errs := make([]error, workers)
+	var wg sync.WaitGroup
+	for i := range workers {
+		wg.Add(1)
+		go func(slot int) {
+			defer wg.Done()
+			for range callsPerWorker {
+				result, err := h.callErr(catalog.ToolSearchTools, map[string]any{"query": "read"})
+				if err != nil {
+					errs[slot] = fmt.Errorf("worker %d call: %w", slot, err)
+					return
+				}
+				if result.IsError {
+					errs[slot] = fmt.Errorf("worker %d search_tools answered with an error: %v", slot, result.StructuredContent)
+					return
+				}
+				results[slot] = result
+			}
+		}(i)
+	}
+	wg.Wait()
+	for slot, err := range errs {
+		if err != nil {
+			t.Fatal(err)
+		}
+		if results[slot] == nil {
+			t.Fatalf("worker %d produced no result", slot)
+		}
 	}
 }

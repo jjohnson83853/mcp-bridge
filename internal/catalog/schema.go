@@ -14,7 +14,7 @@ const Draft202012 = "https://json-schema.org/draft/2020-12/schema"
 
 // Exact §4.4 patterns for the bridge's own parameter values.
 const (
-	PublicToolNamePattern  = "^t_[a-z2-7]{52}$"
+	PublicToolNamePattern  = `^(t_[a-z2-7]{52}|[a-z][a-z0-9-]{0,31}__[a-zA-Z0-9_-]{1,94})$`
 	CatalogRevisionPattern = "^[a-f0-9]{64}$"
 	ServerIDPattern        = "^[a-z][a-z0-9-]{0,31}$"
 )

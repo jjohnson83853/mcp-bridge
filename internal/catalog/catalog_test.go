@@ -1,6 +1,8 @@
 package catalog_test
 
 import (
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/catalog"
@@ -98,5 +100,41 @@ func TestSchemasAreIndependent(t *testing.T) {
 	if second := catalog.SearchToolsInputSchema(); second["type"] != "object" ||
 		second["properties"].(map[string]any)["query"].(map[string]any)["maxLength"] != catalog.QueryMaxLength {
 		t.Fatalf("SearchToolsInputSchema returned shared mutable state: %v", second)
+	}
+}
+
+// TestPublicToolNamePattern verifies the exact §4.4 admission pattern for
+// tool_name: opaque hashes (t_...) and preloaded wire names (server__tool)
+// match, while malformed names are rejected.
+func TestPublicToolNamePattern(t *testing.T) {
+	pattern := regexp.MustCompile(catalog.PublicToolNamePattern)
+
+	valid := []struct {
+		name  string
+		input string
+	}{
+		{"opaque hash", "t_" + strings.Repeat("a", 52)},
+		{"wire name", "rag__search_docs"},
+	}
+	for _, tc := range valid {
+		if !pattern.MatchString(tc.input) {
+			t.Errorf("%s: expected %q to match PublicToolNamePattern", tc.name, tc.input)
+		}
+	}
+
+	invalid := []string{
+		"",
+		"search_tools",
+		"rag_search_docs",
+		"rag__",
+		"__search_docs",
+		"Rag__search_docs",
+		"rag__search docs",
+		strings.Repeat("a", 33) + "__tool",
+	}
+	for _, input := range invalid {
+		if pattern.MatchString(input) {
+			t.Errorf("expected %q to be rejected by PublicToolNamePattern", input)
+		}
 	}
 }

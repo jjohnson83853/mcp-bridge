@@ -8,11 +8,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
+	"sync"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/catalog"
+	"github.com/jjohnson83853/mcp-bridge/internal/config"
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
 	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/search"
@@ -43,6 +46,10 @@ type ToolSurface struct {
 
 	cached   *search.Searcher
 	cacheKey string
+
+	mu          sync.Mutex
+	server      *mcp.Server
+	pinnedTools map[string]core.ResolvedPin
 }
 
 // NewToolSurface validates the tool surface's own configuration.
@@ -53,7 +60,7 @@ func NewToolSurface(runtime *Runtime, cfg ToolSurfaceConfig) (*ToolSurface, erro
 	if cfg.Model.Dimensions <= 0 {
 		return nil, errors.New("service: tool surface needs the embedding model dimensions")
 	}
-	return &ToolSurface{runtime: runtime, cfg: cfg, logger: cfg.Logger}, nil
+	return &ToolSurface{runtime: runtime, cfg: cfg, logger: cfg.Logger, pinnedTools: make(map[string]core.ResolvedPin)}, nil
 }
 
 // Register installs exactly the three bridge tools on server with the exact
@@ -62,6 +69,9 @@ func (t *ToolSurface) Register(server *mcp.Server) error {
 	if server == nil {
 		return errors.New("service: tool surface needs a server")
 	}
+	t.mu.Lock()
+	t.server = server
+	t.mu.Unlock()
 	server.AddTool(&mcp.Tool{
 		Name:        catalog.ToolSearchTools,
 		Description: "Search the bridge's indexed tools.",
@@ -80,20 +90,257 @@ func (t *ToolSurface) Register(server *mcp.Server) error {
 	return nil
 }
 
+// Published reconciles the inbound SDK tool registry with one immutable
+// publication: pinned prerequisite tools are exposed exactly as configured.
+// It is safe for concurrent use.
+func (t *ToolSurface) Published(assembly *Assembly) {
+	if assembly == nil {
+		return
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.server == nil {
+		return
+	}
+	pins := assembly.Pins()
+	next := make(map[string]core.ResolvedPin, len(pins))
+	for _, pin := range pins {
+		if pin.Binding == nil {
+			continue
+		}
+		name := config.WireToolName(pin.PinnedTool.ServerID, pin.PinnedTool.RawName)
+		next[name] = pin
+	}
+	for name, previous := range t.pinnedTools {
+		if _, exists := next[name]; !exists {
+			t.server.RemoveTools(name)
+			delete(t.pinnedTools, name)
+		} else {
+			// Idempotency: skip registration when the binding is unchanged.
+			if previous.Binding != nil && reflect.DeepEqual(previous.Binding, next[name].Binding) {
+				delete(next, name)
+			}
+		}
+	}
+	for name, pin := range next {
+		def := pin.Binding.Def
+		t.server.AddTool(&mcp.Tool{
+			Name:        name,
+			Description: def.Description,
+			InputSchema: json.RawMessage(def.InputSchema),
+		}, t.callPinnedTool)
+		t.pinnedTools[name] = pin
+	}
+}
+
+// callPinnedTool dispatches one direct invocation of a preloaded pinned tool
+// (plan §4.4). The wire tool name selects the pin's binding, the stored input
+// schema validates the arguments, and the dispatch reuses the same upstream
+// execution path as the bridge's own call tool.
+func (t *ToolSurface) callPinnedTool(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	// Observability scope mirrors callTool: the internal request identity
+	// rides the private carrier the inbound edge attached to this POST and is
+	// never caller controlled; the operation identity scopes this decoded
+	// tools/call execution independently.
+	var requestID string
+	corrState := "unavailable"
+	if req != nil && req.Extra != nil && req.Extra.Header != nil {
+		carrier := req.Extra.Header.Get("X-Mcp-Bridge-Internal-Request-Id")
+		if len(carrier) == 32 && validHex(carrier) {
+			requestID = carrier
+			corrState = "valid"
+		}
+	}
+	operationID := observe.CorrelationID("")
+	start := time.Now()
+	toolName := ""
+	if req != nil && req.Params != nil {
+		toolName = req.Params.Name
+	}
+
+	// The wire name selects the pin. The registered map is authoritative;
+	// the published assembly's own pins cover a call that races a publication.
+	t.mu.Lock()
+	pin, found := t.pinnedTools[toolName]
+	t.mu.Unlock()
+	assembly := t.runtime.Current()
+	if !found && assembly != nil {
+		for _, candidate := range assembly.Pins() {
+			if candidate.Binding == nil {
+				continue
+			}
+			if config.WireToolName(candidate.PinnedTool.ServerID, candidate.PinnedTool.RawName) == toolName {
+				pin, found = candidate, true
+				break
+			}
+		}
+	}
+	if !found {
+		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "unknown_tool")
+		return errorResult(codeUnknownTool, "unknown preloaded tool", core.ExecutionNotStarted), nil
+	}
+	if assembly == nil {
+		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "backend_unavailable")
+		return errorResult(codeBackendUnavailable, "no catalog generation is published", core.ExecutionNotStarted), nil
+	}
+	binding := pin.Binding
+	args := rawArguments(req)
+	if len(bytes.TrimSpace(args)) == 0 {
+		args = json.RawMessage(`{}`)
+	}
+	if len(binding.Def.InputSchema) > 0 {
+		if err := catalog.ValidateSchemaDocument(string(binding.Def.InputSchema)); err != nil {
+			t.logToolAdmissionFailure(requestID, operationID, corrState, start, "invalid_arguments")
+			return errorResult(search.CodeInvalidArguments, "arguments do not satisfy the tool's stored input schema", core.ExecutionNotStarted), nil
+		}
+		if err := catalog.ValidateSchema(string(binding.Def.InputSchema), string(args)); err != nil {
+			// The validator's own text may quote submitted values, so the
+			// rejection is answered with a fixed, payload-free message.
+			t.logToolAdmissionFailure(requestID, operationID, corrState, start, "invalid_arguments")
+			return errorResult(search.CodeInvalidArguments, "arguments do not satisfy the tool's stored input schema", core.ExecutionNotStarted), nil
+		}
+	}
+	lease, ok := assembly.Acquire(binding.ServerID)
+	if !ok {
+		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "backend_busy")
+		return errorResult(codeBackendUnavailable, "the server of this tool is draining", core.ExecutionNotStarted), nil
+	}
+	defer lease.Release()
+	backendCallID := observe.CorrelationID("")
+	backendStart := time.Now()
+	envelope, dispatchErr := assembly.catalog.Dispatch(ctx, core.PublicName(pin.PinnedTool.ServerID, pin.PinnedTool.RawName), assembly.CatalogRevision(), args, lease.Server().Client)
+	if dispatchErr != nil {
+		if t.logger != nil {
+			outcome := "error"
+			if dispatchErr.Code == "deadline_exceeded" {
+				outcome = "timeout"
+			}
+			t.logger.Log(observe.Entry{
+				Level:     "warn",
+				Event:     "backend_complete",
+				RequestID: requestID,
+				Server:    binding.ServerID,
+				Operation: "call_tool",
+				Duration:  time.Since(backendStart),
+				Outcome:   outcome,
+				Reason:    dispatchErr.Code,
+				Fields: map[string]any{
+					"request_id":      requestID,
+					"operation_id":    operationID,
+					"backend_call_id": backendCallID,
+					"tool":            core.PublicName(binding.ServerID, binding.RawName),
+					"outcome":         outcome,
+					"reason":          dispatchErr.Code,
+					"duration_ms":     time.Since(backendStart).Milliseconds(),
+				},
+			})
+			t.logger.Log(observe.Entry{
+				Level:     "warn",
+				Event:     "mcp_complete",
+				RequestID: requestID,
+				Operation: "call_tool",
+				Duration:  time.Since(start),
+				Outcome:   "error",
+				Reason:    dispatchErr.Code,
+				Fields: map[string]any{
+					"request_id":       requestID,
+					"operation_id":     operationID,
+					"mcp_method":       "tools_call",
+					"mcp_message_kind": "request",
+					"stage":            "backend_dispatch",
+					"outcome":          "error",
+					"reason":           dispatchErr.Code,
+					"duration_ms":      time.Since(start).Milliseconds(),
+				},
+			})
+		}
+		return errorResult(dispatchErr.Code, dispatchMessage(dispatchErr.Code), dispatchErr.ExecutionState), nil
+	}
+	upstream := decodeUpstreamResult(envelope.UpstreamResult)
+	uCount, uText, uStructured := summarizeShape(upstream.Content, upstream.StructuredContent)
+	if t.logger != nil {
+		// The admitted dispatch is terminal evidence of its own boundary:
+		// one record per actual upstream call, joined to the operation and
+		// request scope by the fresh identities minted above. A healthy
+		// transport delivering a tool-reported failure terminates as error.
+		level, outcome := "info", "success"
+		if upstream.IsError {
+			level, outcome = "warn", "error"
+		}
+		reason := "none"
+		if upstream.IsError {
+			reason = "tool_reported_error"
+		}
+		t.logger.Log(observe.Entry{
+			Level:     level,
+			Event:     "backend_complete",
+			RequestID: requestID,
+			Server:    binding.ServerID,
+			Operation: "call_tool",
+			Duration:  time.Since(backendStart),
+			Outcome:   outcome,
+			Reason:    reason,
+			Fields: map[string]any{
+				"request_id":                   requestID,
+				"operation_id":                 operationID,
+				"correlation_state":            corrState,
+				"backend_call_id":              backendCallID,
+				"tool":                         core.PublicName(binding.ServerID, binding.RawName),
+				"outcome":                      outcome,
+				"reason":                       reason,
+				"upstream_content_count":       uCount,
+				"upstream_text_presence":       uText,
+				"upstream_structured_presence": uStructured,
+				"duration_ms":                  time.Since(backendStart).Milliseconds(),
+			},
+		})
+		t.logger.Log(observe.Entry{
+			Level:     level,
+			Event:     "mcp_complete",
+			RequestID: requestID,
+			Operation: "call_tool",
+			Duration:  time.Since(start),
+			Outcome:   outcome,
+			Reason:    reason,
+			Fields: map[string]any{
+				"request_id":        requestID,
+				"operation_id":      operationID,
+				"correlation_state": corrState,
+				"mcp_method":        "tools_call",
+				"mcp_message_kind":  "request",
+				"outcome":           outcome,
+				"reason":            reason,
+				"duration_ms":       time.Since(start).Milliseconds(),
+			},
+		})
+	}
+	return &mcp.CallToolResult{
+		Content:           upstream.Content,
+		StructuredContent: upstream.StructuredContent,
+		IsError:           upstream.IsError,
+	}, nil
+}
+
 // searcher returns the searcher of the published generation, rebuilding it
 // only when the generation's catalog, model identity or pin set changed so the
 // search layer's own caches keep their value.
 func (t *ToolSurface) searcher(assembly *Assembly) (*search.Searcher, error) {
 	key := fmt.Sprintf("%d\x00%s\x00%s\x00%d", assembly.Generation(), assembly.CatalogRevision(), t.cfg.Model.Digest(), len(assembly.Pins()))
+	t.mu.Lock()
 	if t.cached != nil && t.cacheKey == key {
-		return t.cached, nil
+		cached := t.cached
+		t.mu.Unlock()
+		return cached, nil
 	}
+	t.mu.Unlock()
 	searcher, err := search.NewSearcher(t.snapshot(assembly), t.cfg.Provider, t.cfg.Search)
 	if err != nil {
 		return nil, err
 	}
+	t.mu.Lock()
 	t.cached = searcher
 	t.cacheKey = key
+	t.mu.Unlock()
 	return searcher, nil
 }
 
@@ -174,7 +421,35 @@ func (t *ToolSurface) searchTools(ctx context.Context, req *mcp.CallToolRequest)
 	if err != nil {
 		return failureResult(err), nil
 	}
-	return &mcp.CallToolResult{StructuredContent: searchPayload(response)}, nil
+	payload := searchPayload(response)
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return errorResult(codeInternalError, "failed to marshal search response", core.ExecutionNotStarted), nil
+	}
+	return &mcp.CallToolResult{
+		Content:           []mcp.Content{&mcp.TextContent{Text: string(raw)}},
+		StructuredContent: payload,
+	}, nil
+}
+
+// resolveBinding locates a published binding by either the wire tool name or
+// its derived public name (server/hash), so hybrid wire-name callers resolve
+// to the same binding as public-hash callers. The second return value is the
+// public tool name the binding was found under.
+func resolveBinding(catalog *core.Bridge, toolName string) (*core.Binding, string, bool) {
+	if catalog == nil {
+		return nil, "", false
+	}
+	if binding, ok := catalog.Binding(toolName); ok {
+		return &binding, toolName, true
+	}
+	if server, tool, ok := config.ParseWireToolName(toolName); ok {
+		pub := core.PublicName(server, tool)
+		if binding, ok := catalog.Binding(pub); ok {
+			return &binding, pub, true
+		}
+	}
+	return nil, "", false
 }
 
 // describeTool answers one exact stored definition (plan §4.4).
@@ -193,7 +468,7 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 	if wire.CatalogRevision != assembly.CatalogRevision() {
 		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
 	}
-	binding, ok := assembly.catalog.Binding(wire.ToolName)
+	binding, pub, ok := resolveBinding(assembly.catalog, wire.ToolName)
 	if !ok {
 		return errorResult(codeUnknownTool, "no such tool in the published catalog", core.ExecutionNotStarted), nil
 	}
@@ -206,7 +481,7 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 		"tool_name":         wire.ToolName,
 		"upstream_name":     binding.RawName,
 		"description":       binding.Def.Description,
-		"pinned":            assembly.PinnedNames()[wire.ToolName],
+		"pinned":            assembly.PinnedNames()[pub],
 		"last_success_at":   timestamp(health.LastSuccessAt),
 		"validation_status": "supported",
 	}
@@ -234,7 +509,14 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 			},
 		})
 	}
-	return &mcp.CallToolResult{StructuredContent: payload}, nil
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return errorResult(codeInternalError, "failed to marshal describe response", core.ExecutionNotStarted), nil
+	}
+	return &mcp.CallToolResult{
+		Content:           []mcp.Content{&mcp.TextContent{Text: string(raw)}},
+		StructuredContent: payload,
+	}, nil
 }
 
 // logToolAdmissionFailure terminates the tools/call operation at the
@@ -314,7 +596,7 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "catalog_changed")
 		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
 	}
-	binding, ok := assembly.catalog.Binding(wire.ToolName)
+	binding, pub, ok := resolveBinding(assembly.catalog, wire.ToolName)
 	if !ok {
 		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "unknown_tool")
 		return errorResult(codeUnknownTool, "no such tool in the published catalog", core.ExecutionNotStarted), nil
@@ -349,7 +631,7 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 	defer lease.Release()
 	backendCallID := observe.CorrelationID("")
 	backendStart := time.Now()
-	envelope, dispatchErr := assembly.catalog.Dispatch(ctx, wire.ToolName, wire.CatalogRevision, args, lease.Server().Client)
+	envelope, dispatchErr := assembly.catalog.Dispatch(ctx, pub, wire.CatalogRevision, args, lease.Server().Client)
 	if dispatchErr != nil {
 		if t.logger != nil {
 			outcome := "error"
@@ -409,16 +691,16 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 			level, outcome = "warn", "error"
 		}
 		fields := map[string]any{
-			"request_id":                  requestID,
-			"operation_id":                operationID,
-			"correlation_state":           corrState,
-			"backend_call_id":             backendCallID,
-			"tool":                        core.PublicName(binding.ServerID, binding.RawName),
-			"outcome":                     outcome,
-			"upstream_content_count":      uCount,
-			"upstream_text_presence":      uText,
+			"request_id":                   requestID,
+			"operation_id":                 operationID,
+			"correlation_state":            corrState,
+			"backend_call_id":              backendCallID,
+			"tool":                         core.PublicName(binding.ServerID, binding.RawName),
+			"outcome":                      outcome,
+			"upstream_content_count":       uCount,
+			"upstream_text_presence":       uText,
 			"upstream_structured_presence": uStructured,
-			"duration_ms":                 time.Since(backendStart).Milliseconds(),
+			"duration_ms":                  time.Since(backendStart).Milliseconds(),
 		}
 		reason := "none"
 		if upstream.IsError {
@@ -457,16 +739,16 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 			level, outcome = "warn", "error"
 		}
 		fields := map[string]any{
-			"request_id":                 requestID,
-			"operation_id":               operationID,
-			"correlation_state":          corrState,
-			"mcp_method":                 "tools_call",
-			"mcp_message_kind":           "request",
-			"outcome":                    outcome,
-			"final_content_count":        fCount,
-			"final_text_presence":        fText,
-			"final_structured_presence":  fStructured,
-			"duration_ms":                time.Since(start).Milliseconds(),
+			"request_id":                requestID,
+			"operation_id":              operationID,
+			"correlation_state":         corrState,
+			"mcp_method":                "tools_call",
+			"mcp_message_kind":          "request",
+			"outcome":                   outcome,
+			"final_content_count":       fCount,
+			"final_text_presence":       fText,
+			"final_structured_presence": fStructured,
+			"duration_ms":               time.Since(start).Milliseconds(),
 		}
 		reason := "none"
 		if upstream.IsError {
@@ -528,8 +810,12 @@ func decodeUpstreamResult(raw json.RawMessage) mcp.CallToolResult {
 func searchPayload(response search.Response) map[string]any {
 	results := make([]map[string]any, 0, len(response.Results))
 	for _, result := range response.Results {
+		toolName := result.ToolName
+		if result.Pinned {
+			toolName = config.WireToolName(result.Server, result.UpstreamName)
+		}
 		results = append(results, map[string]any{
-			"tool_name":        result.ToolName,
+			"tool_name":        toolName,
 			"server":           result.Server,
 			"upstream_name":    result.UpstreamName,
 			"description":      result.Description,
