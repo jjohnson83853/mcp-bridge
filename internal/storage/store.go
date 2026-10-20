@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"syscall"
 )
 
 // Store layout constants (plan §4.9).
@@ -37,13 +38,19 @@ type Store struct {
 }
 
 // Open creates the private state directory and takes the exclusive writer lock.
+// The lock is an advisory kernel flock on .writer.lock, so a stale lockfile left
+// by a dead process is recovered automatically while a live writer is respected.
 func Open(directory string) (*Store, error) {
 	if err := os.MkdirAll(directory, directoryMode); err != nil {
 		return nil, fmt.Errorf("storage: create state directory: %w", err)
 	}
-	lock, err := os.OpenFile(filepath.Join(directory, lockFile), os.O_CREATE|os.O_EXCL|os.O_WRONLY, fileMode)
+	lock, err := os.OpenFile(filepath.Join(directory, lockFile), os.O_CREATE|os.O_RDWR, fileMode)
 	if err != nil {
-		if errors.Is(err, os.ErrExist) {
+		return nil, fmt.Errorf("storage: take writer lock: %w", err)
+	}
+	if err := syscall.Flock(int(lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+		lock.Close()
+		if errors.Is(err, syscall.EWOULDBLOCK) || errors.Is(err, syscall.EAGAIN) {
 			return nil, fmt.Errorf("%w: %s", ErrWriterLocked, directory)
 		}
 		return nil, fmt.Errorf("storage: take writer lock: %w", err)
@@ -57,6 +64,7 @@ func (s *Store) Close() error {
 		return nil
 	}
 	s.closed = true
+	_ = syscall.Flock(int(s.lock.Fd()), syscall.LOCK_UN)
 	closeErr := s.lock.Close()
 	if err := os.Remove(filepath.Join(s.directory, lockFile)); err != nil && !errors.Is(err, os.ErrNotExist) {
 		if closeErr == nil {

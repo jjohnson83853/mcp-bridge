@@ -365,7 +365,7 @@ func (s *Searcher) Search(ctx context.Context, request Request) (Response, error
 	if err := s.admit(&request); err != nil {
 		return Response{}, err
 	}
-	eligible, backends := s.eligible(request.Servers)
+	eligible, backends, globalToEligible := s.eligible(request.Servers)
 	response := Response{
 		CatalogRevision: s.snapshot.Revision,
 		Mode:            ModeHybrid,
@@ -376,7 +376,13 @@ func (s *Searcher) Search(ctx context.Context, request Request) (Response, error
 	lists := make([][]int, 0, 2)
 	weights := make([]float64, 0, 2)
 
-	lexical := s.index.rank(tokenize(request.Query), s.cfg.BM25K1, s.cfg.BM25B)
+	rawLexical := s.index.rank(tokenize(request.Query), s.cfg.BM25K1, s.cfg.BM25B)
+	lexical := make([]int, 0, len(rawLexical))
+	for _, g := range rawLexical {
+		if e := globalToEligible[g]; e != -1 {
+			lexical = append(lexical, e)
+		}
+	}
 	lists = append(lists, lexical)
 	weights = append(weights, s.cfg.KeywordWeight)
 
@@ -450,22 +456,33 @@ func (s *Searcher) admit(request *Request) error {
 }
 
 // eligible filters the configured server set before any scoring and returns the
-// matching backend rows sorted by server.
-func (s *Searcher) eligible(servers []string) ([]Document, []Backend) {
+// matching backend rows sorted by server, plus a mapping from every global
+// document index to its index in the returned eligible slice (-1 when filtered
+// out). The lexical rank list is global-indexed, so this map is what keeps a
+// filtered corpus from indexing past the eligible slice.
+func (s *Searcher) eligible(servers []string) ([]Document, []Backend, []int) {
+	globalToEligible := make([]int, len(s.snapshot.Documents))
 	if servers == nil {
+		for i := range globalToEligible {
+			globalToEligible[i] = i
+		}
 		documents := append([]Document(nil), s.snapshot.Documents...)
 		backends := append([]Backend(nil), s.snapshot.Backends...)
 		sort.Slice(backends, func(i, j int) bool { return backends[i].Server < backends[j].Server })
-		return documents, backends
+		return documents, backends, globalToEligible
+	}
+	for i := range globalToEligible {
+		globalToEligible[i] = -1
 	}
 	selected := make(map[string]bool, len(servers))
 	for _, server := range servers {
 		selected[server] = true
 	}
 	documents := make([]Document, 0, len(s.snapshot.Documents))
-	for _, document := range s.snapshot.Documents {
+	for globalIdx, document := range s.snapshot.Documents {
 		if selected[document.ServerID] {
 			documents = append(documents, document)
+			globalToEligible[globalIdx] = len(documents) - 1
 		}
 	}
 	backends := make([]Backend, 0, len(selected))
@@ -475,7 +492,7 @@ func (s *Searcher) eligible(servers []string) ([]Document, []Backend) {
 		}
 	}
 	sort.Slice(backends, func(i, j int) bool { return backends[i].Server < backends[j].Server })
-	return documents, backends
+	return documents, backends, globalToEligible
 }
 
 func (s *Searcher) queryVector(ctx context.Context, request Request) ([]float64, error) {

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"slices"
 	"strings"
@@ -510,6 +511,64 @@ func TestCacheExpiresAtTTL(t *testing.T) {
 	}
 	if provider.calls != before+1 {
 		t.Fatalf("expired entry was reused: provider calls %d -> %d", before, provider.calls)
+	}
+}
+
+// serverfilterpanicwhenlargercorpus: when the corpus is larger than the
+// eligible set after a server filter, the lexical rank indices (global) must
+// be translated to eligible indices before use, or a raw global index used
+// against the smaller eligible slice panics (r8 §4.8).
+func TestServerFilterPanicWhenCorpusLargerThanEligible(t *testing.T) {
+	// Arrange: 30 documents, 25 on "other" and 5 on "target".
+	documents := make([]search.Document, 0, 30)
+	for i := range 25 {
+		documents = append(documents, search.Document{
+			ServerID:    "other",
+			RawName:     fmt.Sprintf("other_tool_%d", i),
+			PublicName:  fmt.Sprintf("t_other_%d", i),
+			Description: "list running containers on the endpoint",
+			Vector:      vector(dimensions, float64(i+1)),
+		})
+	}
+	for i := range 5 {
+		documents = append(documents, search.Document{
+			ServerID:    "target",
+			RawName:     fmt.Sprintf("target_tool_%d", i),
+			PublicName:  fmt.Sprintf("t_target_%d", i),
+			Description: "list running containers on the target server",
+			Vector:      vector(dimensions, float64(i+26)),
+		})
+	}
+
+	snapshot := search.Snapshot{
+		Revision:  strings.Repeat("a", 64),
+		Model:     model(),
+		Documents: documents,
+		Backends: []search.Backend{
+			{Server: "other", Status: "fresh", Availability: "available", Revision: strings.Repeat("a", 64), LastSuccessAt: time.Unix(1, 0).UTC()},
+			{Server: "target", Status: "fresh", Availability: "available", Revision: strings.Repeat("a", 64), LastSuccessAt: time.Unix(2, 0).UTC()},
+		},
+	}
+
+	searcher := newSearcher(t, snapshot, &countingProvider{}, testConfig())
+
+	// Act: query matches "other" terms but filter to "target" only.
+	response, err := searcher.Search(context.Background(), search.Request{
+		Query:   "list running containers",
+		Servers: []string{"target"},
+	})
+
+	// Assert: must not panic; filtered results carry "target" provenance.
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+	if len(response.Results) == 0 {
+		t.Fatal("expected at least one result")
+	}
+	for _, result := range response.Results {
+		if result.Server != "target" {
+			t.Errorf("expected result.Server = %q, got %q", "target", result.Server)
+		}
 	}
 }
 

@@ -117,6 +117,27 @@ func TestOpenCreatesPrivateLayoutAndExclusiveWriter(t *testing.T) {
 	}
 }
 
+// §4.9: a leftover .writer.lock from a dead process must not wedge the store —
+// the advisory kernel lock (flock), not the file's existence, is the writer gate.
+func TestOpenRecoversStaleLockfileWhenProcessNotAlive(t *testing.T) {
+	directory := filepath.Join(t.TempDir(), "state")
+	if err := os.MkdirAll(directory, 0o700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	// Simulate a crashed process: the lock file exists on disk, but no open
+	// descriptor holds the advisory lock.
+	if err := os.WriteFile(filepath.Join(directory, ".writer.lock"), nil, 0o600); err != nil {
+		t.Fatalf("WriteFile stale lock: %v", err)
+	}
+	store, err := storage.Open(directory)
+	if err != nil {
+		t.Fatalf("Open with stale lockfile = %v; want success", err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+}
+
 // §4.9: complete immutable snapshot, files 0600, canonical checksum, UTC
 // RFC3339Nano timestamps, and a re-save that reproduces identical bytes.
 func TestSaveLoadRoundTripIsAtomicAndPrivate(t *testing.T) {
