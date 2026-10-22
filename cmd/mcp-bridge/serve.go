@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jjohnson83853/mcp-bridge/internal/auth"
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
 	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
@@ -78,6 +79,12 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 	}
 	defer store.Close()
 
+	authCfg := auth.NewConfigFromEnv()
+	jwksCache, err := auth.NewJWKSCache(ctx, authCfg.PocketIDJWKSURL)
+	if err != nil {
+		return fmt.Errorf("jwks cache: %w", err)
+	}
+
 	runtime := service.NewRuntime()
 	readiness := service.NewReadinessState(true, true, true, false)
 	checks := newLocalChecks(readiness, true)
@@ -139,6 +146,23 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 		},
 	})
 
+	inboundMux := http.NewServeMux()
+	inboundMux.Handle("/.well-known/oauth-protected-resource", auth.NewProtectedResourceHandler(authCfg))
+	inboundMux.HandleFunc("/livez", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("live\n"))
+	})
+	inboundMux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok\n"))
+	})
+	inboundMux.Handle("/readyz", service.NewOperationsHandler(readiness, nil))
+	authMiddleware := auth.NewAuthMiddleware(authCfg, jwksCache, auth.WithStaticFallback(true))
+	inboundMux.Handle("/mcp", authMiddleware(inbound))
+	inboundMux.Handle("/", inbound)
+
 	reloads := make(chan struct{}, 1)
 	hup := make(chan os.Signal, 1)
 	signal.Notify(hup, syscall.SIGHUP)
@@ -186,7 +210,7 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 	}
 	defer operationsListener.Close()
 
-	inboundServer := &http.Server{Handler: inbound, ReadHeaderTimeout: readHeaderTimeout}
+	inboundServer := &http.Server{Handler: inboundMux, ReadHeaderTimeout: readHeaderTimeout}
 	operationsServer := &http.Server{
 		Handler: service.RateLimit(
 			service.NewOperationsHandler(readiness, metrics.Handler()),

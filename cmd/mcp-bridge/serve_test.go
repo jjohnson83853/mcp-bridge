@@ -398,12 +398,15 @@ func TestServeCompositionRootServesCatalogAndSurvivesReload(t *testing.T) {
 			strings.Contains(body, `bridge_readiness{server="alpha"}`)
 	})
 
-	// The inbound edge enforces the configured host before authentication.
+	// The inbound edge enforces the configured host: even a request carrying a
+	// valid client token is refused on an untrusted Host, while an anonymous
+	// request is refused by authentication before the host check can run.
 	request, err := http.NewRequest(http.MethodPost, httpURL+"/mcp", strings.NewReader(`{}`))
 	if err != nil {
 		t.Fatalf("build host-check request: %v", err)
 	}
 	request.Host = "untrusted.invalid"
+	request.Header.Set("Authorization", "Bearer "+serveClientToken)
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		t.Fatalf("host-check request: %v", err)

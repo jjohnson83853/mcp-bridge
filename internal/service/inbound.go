@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jjohnson83853/mcp-bridge/internal/auth"
 	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 )
 
@@ -609,6 +610,9 @@ func (h *InboundHandler) authenticate(r *http.Request) ([32]byte, bool) {
 		return [32]byte{}, false
 	}
 	candidate := sha256.Sum256([]byte(parts[1]))
+	if claims := auth.ClaimsFromContext(r.Context()); claims != nil {
+		return candidate, true
+	}
 	match := 0
 	for _, allowed := range h.acceptedTokens() {
 		match |= subtle.ConstantTimeCompare(candidate[:], allowed[:])
