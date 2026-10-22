@@ -41,6 +41,104 @@ DEVELOPER_UPSTREAM_TOKEN=... PORTAINER_UPSTREAM_TOKEN=... \
   ./mcp-bridge --check-config --config configs/config.example.yaml
 ```
 
+## Authentication (OAuth 2.1 via Pocket ID & RFC 9728)
+
+The bridge enforces OAuth 2.1 Bearer authentication via our Pocket ID identity provider in accordance with the Model Context Protocol specification and RFC 9728 (OAuth 2.0 Protected Resource Metadata).
+
+### Protected Resource Metadata (RFC 9728)
+
+The bridge serves unauthenticated metadata at:
+
+```http
+GET /.well-known/oauth-protected-resource
+```
+
+Returning HTTP 200 with JSON:
+
+```json
+{
+  "resource": "https://mcp.bullprog.com",
+  "authorization_servers": ["https://id.bullprog.com"],
+  "scopes_supported": ["openid", "email", "profile", "mcp:connect"],
+  "bearer_methods_supported": ["header"]
+}
+```
+
+Standard MCP clients (Claude Desktop, LibreChat, and custom agent runtimes) query this endpoint to automatically discover the required authorization server and supported scopes.
+
+### Pocket ID Identity Provider Setup
+
+To configure Pocket ID for this bridge:
+
+1. **Create an Application / API Resource**:
+   - In your Pocket ID admin console, register a new client application for the MCP bridge.
+   - Set the **Resource Identifier / Audience** to match `MCP_RESOURCE_URL` (default: `https://mcp.bullprog.com`).
+2. **Configure Scopes**:
+   - Ensure the application permits scopes: `openid`, `email`, `profile`, and `mcp:connect`.
+3. **Grant Types & Client Authentication**:
+   - For interactive user agents (e.g. desktop clients), configure Authorization Code grant with PKCE.
+   - For automated headless agents, configure Client Credentials grant.
+
+### Environment Variables & Defaults
+
+All OAuth 2.1 endpoints and validation settings are configurable via environment variables with safe defaults:
+
+| Variable | Default Value | Description |
+|---|---|---|
+| `POCKET_ID_ISSUER` | `https://id.bullprog.com` | Base URL of the Pocket ID instance. The token's `iss` claim must match this exactly. |
+| `POCKET_ID_JWKS_URL` | `https://id.bullprog.com/.well-known/jwks.json` | Remote JSON Web Key Set endpoint. The bridge caches keys and auto-refreshes them in the background. |
+| `MCP_RESOURCE_URL` | `https://mcp.bullprog.com` | Canonical resource identifier for this bridge. The token's `aud` claim must equal or contain this URL (trailing slashes normalized). |
+| `MCP_REQUIRED_SCOPE` | `""` | Optional required scope (e.g. `mcp:connect`). When configured, tokens lacking this scope receive HTTP 403 Forbidden. |
+
+### Running with Pocket ID
+
+Pass the environment variables directly:
+
+```sh
+POCKET_ID_ISSUER="https://id.bullprog.com" \
+POCKET_ID_JWKS_URL="https://id.bullprog.com/.well-known/jwks.json" \
+MCP_RESOURCE_URL="https://mcp.bullprog.com" \
+MCP_REQUIRED_SCOPE="mcp:connect" \
+./mcp-bridge --config configs/config.yaml
+```
+
+Or in Docker Compose:
+
+```yaml
+services:
+  mcp-bridge:
+    image: mcp-bridge:latest
+    environment:
+      POCKET_ID_ISSUER: "https://id.bullprog.com"
+      POCKET_ID_JWKS_URL: "https://id.bullprog.com/.well-known/jwks.json"
+      MCP_RESOURCE_URL: "https://mcp.bullprog.com"
+      MCP_REQUIRED_SCOPE: "mcp:connect"
+```
+
+### Protocol Challenges & Error Responses
+
+- **Missing, invalid, or expired token**:
+  - Responds with `HTTP 401 Unauthorized`
+  - Challenge header:
+    ```http
+    WWW-Authenticate: Bearer realm="mcp", resource_metadata="https://mcp.bullprog.com/.well-known/oauth-protected-resource"
+    ```
+- **Token missing required scope (`MCP_REQUIRED_SCOPE`)**:
+  - Responds with `HTTP 403 Forbidden`
+  - Challenge header:
+    ```http
+    WWW-Authenticate: Bearer error="insufficient_scope", scope="mcp:connect"
+    ```
+- **Clock Skew Tolerance**:
+  - A 60-second clock skew grace period is permitted on `exp` validation to absorb NTP drift between hosts.
+- **Context Identity**:
+  - Validated claims (`sub`, `email`, etc.) are injected into the request context for downstream tool provenance and audit logs.
+
+### Dual-Mode & Health Check Bypass
+
+- **Dual-Mode Fallback**: Non-JWT opaque tokens continue to be verified against the static tokens configured in `client_auth.bearer_tokens` (YAML document), preserving compatibility for legacy scripts and integration tests.
+- **Bypassed Endpoints**: `/.well-known/oauth-protected-resource`, `/livez`, `/readyz`, and `/healthz` bypass authentication without credentials.
+
 ## Configuration
 
 `configs/config.example.yaml` is a complete document. The shape is flattened —
@@ -54,7 +152,7 @@ storage: { ... }         # private state directory and snapshot ceiling
 catalog: { ... }         # refresh interval, staleness horizon, catalog ceilings
 search: { ... }          # top-k bounds, hybrid weights, query cache, timeouts
 embedding: { ... }       # OpenAI-compatible provider and model identity
-client_auth: { ... }     # bearer tokens this bridge accepts
+client_auth: { ... }     # optional static bearer tokens (dual-mode fallback)
 upstream_defaults: { ... } # connect/call/refresh limits, breaker
 servers:
   - id: developer-api
