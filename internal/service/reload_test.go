@@ -2,8 +2,10 @@ package service_test
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -375,13 +377,6 @@ func TestFailedReloadRetainsExactWorkingAssembly(t *testing.T) {
 				return parseReloadConfig(t, reloadAlphaOnly)
 			},
 		},
-		{
-			name: "endpoint identity change",
-			prepare: func(t *testing.T, h *reloadHarness) *config.Config {
-				return parseReloadConfig(t, strings.Replace(reloadTwoServers,
-					"https://alpha.invalid/mcp", "https://alpha-2.invalid/mcp", 1))
-			},
-		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -434,6 +429,73 @@ func TestFailedReloadRetainsExactWorkingAssembly(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestReloadRebindsEndpointIdentityChange pins the revised §4.10 step 2: a
+// live server whose endpoint changed rebinds — the reload succeeds, alpha gets
+// a rotated client on the new endpoint while beta keeps its exact client, the
+// old alpha client is closed after drain, and the published snapshot carries
+// the rebound binding fingerprint.
+func TestReloadRebindsEndpointIdentityChange(t *testing.T) {
+	reloadEnv(t)
+	h := newReloadHarness(t)
+	working, err := h.runtime.Reload(parseReloadConfig(t, reloadTwoServers), h.deps())
+	if err != nil {
+		t.Fatalf("baseline Reload: %v", err)
+	}
+	alphaClient := h.client("alpha", 0)
+	betaClient := h.client("beta", 0)
+
+	next, err := h.runtime.Reload(parseReloadConfig(t, strings.Replace(reloadTwoServers,
+		"https://alpha.invalid/mcp", "https://alpha-2.invalid/mcp", 1)), h.deps())
+	if err != nil {
+		t.Fatalf("endpoint-change Reload: %v", err)
+	}
+	if h.runtime.Current() != next || next == working {
+		t.Fatal("endpoint-change reload did not publish a new working assembly")
+	}
+	alpha := mustServer(t, next, "alpha")
+	if alpha.Endpoint != "https://alpha-2.invalid/mcp" {
+		t.Fatalf("alpha endpoint = %q; want the rebound endpoint", alpha.Endpoint)
+	}
+	if h.created("alpha") != 2 || h.client("alpha", 1) == alphaClient {
+		t.Fatal("endpoint-change reload did not rotate alpha's client")
+	}
+	if mustServer(t, next, "beta").Client != betaClient {
+		t.Fatal("endpoint-change reload replaced beta's working client")
+	}
+	if !containsClient(h.closedClients(), alphaClient) {
+		waitClosed(t, h, alphaClient)
+	}
+	if !containsClient(h.closedClients(), alphaClient) {
+		t.Fatal("the replaced alpha client was never closed")
+	}
+	if containsClient(h.closedClients(), betaClient) {
+		t.Fatal("beta's working client was closed")
+	}
+	if next.Generation() != working.Generation()+1 {
+		t.Fatalf("generation = %d; want %d", next.Generation(), working.Generation()+1)
+	}
+
+	snapshot := next.Snapshot()
+	bindings := map[string]storage.Binding{}
+	for _, binding := range snapshot.Bindings {
+		bindings[binding.ServerID] = binding
+	}
+	rebound, ok := bindings["alpha"]
+	if !ok || rebound.Retired {
+		t.Fatalf("alpha binding = %+v; want a live rebound binding", rebound)
+	}
+	if rebound.EndpointFingerprint != mustFingerprint("https://alpha-2.invalid/mcp") {
+		t.Fatalf("alpha binding fingerprint = %q; want the rebound endpoint fingerprint", rebound.EndpointFingerprint)
+	}
+	if beta, ok := bindings["beta"]; !ok || beta.Retired || beta.EndpointFingerprint == rebound.EndpointFingerprint {
+		t.Fatalf("beta binding = %+v; want an unchanged live binding", beta)
+	}
+}
+
+func mustFingerprint(endpoint string) string {
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(endpoint)))
 }
 
 // TestRemovedServerClientDrainsWithoutReplay pins §4.10 step 6: a removed

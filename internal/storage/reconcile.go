@@ -33,11 +33,12 @@ type ReconcileInput struct {
 
 // Reconcile derives the next durable snapshot for the configured membership
 // (plan §4.9/§4.10). Matching servers are retained with their exact catalog;
-// a server that left the config is purged so its cache is unreachable and
-// tombstoned so it never rebinds; a newly configured server enters unbound;
-// a model identity change invalidates vectors but never exact definitions.
-// The previous snapshot is never mutated and a rejected cycle publishes
-// nothing.
+// a live server whose endpoint identity changed rebinds to the new endpoint
+// with its catalog and cache purged; a server that left the config is purged
+// so its cache is unreachable and tombstoned so it never rebinds; a newly
+// configured server enters unbound; a model identity change invalidates
+// vectors but never exact definitions. The previous snapshot is never mutated
+// and a rejected cycle publishes nothing.
 func Reconcile(previous *Snapshot, input ReconcileInput) (*Snapshot, error) {
 	if err := input.validate(); err != nil {
 		return nil, err
@@ -79,7 +80,11 @@ func Reconcile(previous *Snapshot, input ReconcileInput) (*Snapshot, error) {
 		case stillConfigured && binding.Retired:
 			return nil, fmt.Errorf("%w: server %q", ErrRebindTombstoned, binding.ServerID)
 		case stillConfigured && binding.EndpointFingerprint != server.EndpointFingerprint:
-			return nil, fmt.Errorf("%w: server %q", ErrEndpointChanged, binding.ServerID)
+			purged[binding.ServerID] = true
+			nextBindings = append(nextBindings, Binding{
+				ServerID:            binding.ServerID,
+				EndpointFingerprint: server.EndpointFingerprint,
+			})
 		case stillConfigured:
 			nextBindings = append(nextBindings, binding)
 		case binding.Retired:

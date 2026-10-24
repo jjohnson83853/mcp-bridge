@@ -462,7 +462,7 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 			// No upstream is contacted: the local generation serves whatever
 			// complete catalog the previous run stored, and a server without
 			// one stays empty until a probe succeeds (plan §4.5).
-			defs = definitionsFromSnapshot(in.durable, server.ID)
+			defs = definitionsFromSnapshot(in.durable, server.ID, server.Endpoint)
 			outcomes = append(outcomes, serverOutcome{
 				id:        server.ID,
 				notProbed: true,
@@ -630,11 +630,25 @@ func (in buildInput) reconcileBase(previous *Assembly) *storage.Snapshot {
 }
 
 // definitionsFromSnapshot reconstructs one server's exact tool definitions from
-// the durable snapshot of the previous run. The four fields a definition is
-// hashed from survive the round trip byte-exactly in canonical form, so a
-// restored catalog keeps its public names and revision (plan §4.9, AC-13).
-func definitionsFromSnapshot(snapshot *storage.Snapshot, serverID string) []core.ToolDefinition {
+// the durable snapshot of the previous run, and only while the server's
+// endpoint still matches the durable binding: a changed endpoint must not
+// serve the cache of the endpoint it left behind, so it admits empty until a
+// probe rebuilds its catalog. The four fields a definition is hashed from
+// survive the round trip byte-exactly in canonical form, so a restored catalog
+// keeps its public names and revision (plan §4.9, AC-13).
+func definitionsFromSnapshot(snapshot *storage.Snapshot, serverID string, endpoint string) []core.ToolDefinition {
 	if snapshot == nil {
+		return nil
+	}
+	expected := endpointFingerprint(endpoint)
+	var binding *storage.Binding
+	for index := range snapshot.Bindings {
+		if snapshot.Bindings[index].ServerID == serverID {
+			binding = &snapshot.Bindings[index]
+			break
+		}
+	}
+	if binding == nil || binding.Retired || binding.EndpointFingerprint != expected {
 		return nil
 	}
 	var defs []core.ToolDefinition

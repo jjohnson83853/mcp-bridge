@@ -12,9 +12,9 @@ import (
 	// T-07 membership reconciliation RED gate (r8 plan §4.9/§4.10 steps 2-3):
 	// reconcile the current flat config against the durable snapshot — retain
 	// matching servers with their catalog and vectors, purge removed servers so
-	// their cache is unreachable, tombstone them so they never rebind, refuse an
-	// endpoint identity change, invalidate vectors when the model identity
-	// changes, and stay deterministic across a restart.
+	// their cache is unreachable, tombstone them so they never rebind, rebind a
+	// live server whose endpoint identity changed with its cache purged, and stay
+	// deterministic across a restart.
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
 
@@ -192,24 +192,98 @@ func TestReconcileRejectsTombstonedRebind(t *testing.T) {
 	}
 }
 
-// §4.10 step 2: reuse requires the same endpoint identity; rebinding a live
-// server to a new endpoint is refused and the previous snapshot is untouched.
-func TestReconcileRejectsEndpointIdentityChange(t *testing.T) {
+// §4.10 step 2 (revised): an endpoint identity change on a live configured
+// server rebinds it — the binding adopts the new fingerprint, its catalog and
+// cache are purged, its health row resets, and unaffected servers keep their
+// exact state.
+func TestReconcileRebindsEndpointIdentityChange(t *testing.T) {
 	previous := twoServerSnapshot()
 	original := twoServerSnapshot()
+	newFingerprint := strings.Repeat("6", 64)
 
 	next, err := storage.Reconcile(previous, reconcileInput(
-		storage.ConfiguredServer{ServerID: "portainer", EndpointFingerprint: strings.Repeat("6", 64)},
-		storage.ConfiguredServer{ServerID: "developer", EndpointFingerprint: developerFingerprint},
+		storage.ConfiguredServer{ServerID: "portainer", EndpointFingerprint: newFingerprint},
+		storage.ConfiguredServer{ServerID: "developer", EndpointFingerprint: developerFingerprint, NegotiatedVersion: "2025-06-18"},
 	))
-	if !errors.Is(err, storage.ErrEndpointChanged) {
-		t.Fatalf("Reconcile = %v; want ErrEndpointChanged", err)
-	}
-	if next != nil {
-		t.Fatal("a rejected reconcile returned a snapshot")
+	if err != nil {
+		t.Fatalf("Reconcile: %v", err)
 	}
 	if !reflect.DeepEqual(previous, original) {
-		t.Fatal("a rejected reconcile mutated the previous snapshot")
+		t.Fatal("Reconcile mutated the previous snapshot")
+	}
+	if err := next.Validate(); err != nil {
+		t.Fatalf("reconciled snapshot is invalid: %v", err)
+	}
+	if next.Envelope.GenerationSequence != previous.Envelope.GenerationSequence+1 {
+		t.Fatalf("generation = %d; want %d", next.Envelope.GenerationSequence, previous.Envelope.GenerationSequence+1)
+	}
+
+	// Binding: live, unretired, pointing at the new endpoint only.
+	bindings := map[string]storage.Binding{}
+	for _, binding := range next.Bindings {
+		bindings[binding.ServerID] = binding
+	}
+	rebound, ok := bindings["portainer"]
+	if !ok {
+		t.Fatal("rebound server lost its binding")
+	}
+	if rebound.Retired {
+		t.Fatal("rebound binding was tombstoned")
+	}
+	if rebound.EndpointFingerprint != newFingerprint {
+		t.Fatalf("rebound fingerprint = %q; want the new endpoint identity", rebound.EndpointFingerprint)
+	}
+	if !next.BindingAllowed("portainer", newFingerprint) {
+		t.Fatal("rebound server was refused its new endpoint")
+	}
+	if next.BindingAllowed("portainer", fingerprintValue) {
+		t.Fatal("rebound server still accepts its stale endpoint")
+	}
+
+	// Health row: reset to catalog_status none with the new fingerprint.
+	servers := map[string]storage.Server{}
+	for _, server := range next.Servers {
+		servers[server.ServerID] = server
+	}
+	row, ok := servers["portainer"]
+	if !ok {
+		t.Fatal("rebound server lost its health row")
+	}
+	if row.CatalogStatus != storage.StatusNone {
+		t.Fatalf("rebound row catalog_status = %q; want none", row.CatalogStatus)
+	}
+	if row.EndpointFingerprint != newFingerprint {
+		t.Fatalf("rebound row fingerprint = %q; want the new endpoint identity", row.EndpointFingerprint)
+	}
+	if !row.LastSuccessAt.IsZero() {
+		t.Fatal("rebound row kept a pre-change last success")
+	}
+
+	// Cache: the rebound server's tool definitions and vectors are purged.
+	for _, tool := range next.Tools {
+		if tool.ServerID == "portainer" {
+			t.Fatalf("rebound server tool %q survived the endpoint change", tool.PublicName)
+		}
+	}
+	for _, embedding := range next.Embeddings {
+		if embedding.ToolIdentity == storage.ToolIdentity("portainer", "list_containers") {
+			t.Fatalf("rebound server vector %q survived the endpoint change", embedding.ToolIdentity)
+		}
+	}
+
+	// Unaffected server: binding, health row, tool, and vector all retained.
+	unaffected, ok := bindings["developer"]
+	if !ok || unaffected.Retired || unaffected.EndpointFingerprint != developerFingerprint {
+		t.Fatalf("unaffected binding = %+v; want an unchanged live binding", unaffected)
+	}
+	if row, ok := servers["developer"]; !ok || row.CatalogStatus != storage.StatusFresh || row.NegotiatedVersion != "2025-06-18" {
+		t.Fatalf("unaffected row = %+v; want a fresh 2025-06-18 row", row)
+	}
+	if len(next.Tools) != 1 || next.Tools[0].ServerID != "developer" || next.Tools[0].PublicName != "t_"+strings.Repeat("b", 52) {
+		t.Fatalf("retained tools = %+v; want only the developer tool", next.Tools)
+	}
+	if len(next.Embeddings) != 1 || next.Embeddings[0].ToolIdentity != storage.ToolIdentity("developer", "read_file") {
+		t.Fatalf("retained vectors = %+v; want only the developer vector", next.Embeddings)
 	}
 }
 

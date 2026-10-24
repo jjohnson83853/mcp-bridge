@@ -285,6 +285,83 @@ func TestStartupInvalidatesVectorsWhenTheModelIdentityChanged(t *testing.T) {
 	}
 }
 
+// catalogToolCount counts the published catalog bindings of one server.
+func catalogToolCount(assembly *service.Assembly, serverID string) int {
+	count := 0
+	for _, binding := range assembly.Catalog().Bindings() {
+		if binding.ServerID == serverID {
+			count++
+		}
+	}
+	return count
+}
+
+// AC-13 + §4.10 step 2: a startup whose candidate endpoint changed for a
+// server never serves that server's stale cache. The endpoint no longer
+// matches the durable binding, so alpha is admitted empty with catalog_status
+// none and zero cached rows (a fresh catalog_status none for the new endpoint)
+// while the unaffected beta keeps its warm tools and vectors, and the durable
+// binding of alpha is rebound to the new endpoint fingerprint.
+func TestStartupRebindsServerWhenEndpointChanged(t *testing.T) {
+	reloadEnv(t)
+	base := publishedSnapshot(t)
+	durable := durableSnapshot(t, base,
+		alphaDurableServer(strings.Repeat("a", 64)),
+		betaDurableServer(strings.Repeat("a", 64)),
+	)
+
+	cold := newReloadHarness(t)
+	cfg := parseReloadConfig(t, strings.Replace(reloadTwoServers,
+		"https://alpha.invalid/mcp", "https://alpha-2.invalid/mcp", 1))
+	assembly, err := cold.runtime.AdmitStartup(cfg, cold.deps(), durable)
+	if err != nil {
+		t.Fatalf("AdmitStartup: %v", err)
+	}
+
+	alphaHealth, ok := assembly.Health("alpha")
+	if !ok {
+		t.Fatal("startup snapshot has no health row for alpha")
+	}
+	if alphaHealth.Status != storage.StatusNone {
+		t.Fatalf("alpha health = %q; want %q", alphaHealth.Status, storage.StatusNone)
+	}
+	if got := catalogToolCount(assembly, "alpha"); got != 0 {
+		t.Fatalf("startup catalog serves %d tools for the rebound alpha; want 0", got)
+	}
+
+	betaHealth, ok := assembly.Health("beta")
+	if !ok {
+		t.Fatal("startup snapshot has no health row for beta")
+	}
+	if betaHealth.Status != storage.StatusStale {
+		t.Fatalf("beta health = %q; want %q", betaHealth.Status, storage.StatusStale)
+	}
+	if got := catalogToolCount(assembly, "beta"); got != 1 {
+		t.Fatalf("startup catalog serves %d tools for the unaffected beta; want 1", got)
+	}
+
+	bindings := map[string]storage.Binding{}
+	for _, binding := range assembly.Snapshot().Bindings {
+		bindings[binding.ServerID] = binding
+	}
+	rebound, ok := bindings["alpha"]
+	if !ok || rebound.Retired {
+		t.Fatalf("alpha binding = %+v; want a live rebound binding", rebound)
+	}
+	if rebound.EndpointFingerprint != mustFingerprint("https://alpha-2.invalid/mcp") {
+		t.Fatalf("alpha binding fingerprint = %q; want the rebound endpoint fingerprint", rebound.EndpointFingerprint)
+	}
+	if got := len(snapshotTools(assembly.Snapshot(), "alpha")); got != 0 {
+		t.Fatalf("startup kept %d tool rows for the rebound alpha; want 0", got)
+	}
+	if got := len(snapshotTools(assembly.Snapshot(), "beta")); got != 1 {
+		t.Fatalf("startup kept %d tool rows for beta; want 1", got)
+	}
+	if got := len(assembly.Snapshot().Embeddings); got != 1 {
+		t.Fatalf("startup kept %d vectors; want 1 (beta only)", got)
+	}
+}
+
 // durableVector is the fixture embedding direction. It has the search layer's
 // fixed width, so a document that carries it is vectorizable.
 func durableVector() []float64 {
