@@ -65,6 +65,8 @@ This behavior contradicts the declarative contract of configuration files: modif
 - **Zero Schema Breaking Changes**:
   The schema version and structural layout of the durable snapshot and prompt snapshot remain unchanged. The fields `server_id`, `endpoint_fingerprint`, `catalog_status`, and tool collections continue to follow the existing schema.
 
+- **Dual-Credential Upstream Support (Bearer Gate + Header Pass-Through)**:
+  Upstream MCP servers using FastMCP / HTTP per-user passthrough (such as `portainer-mcp`) require both a shared front-gate bearer token (`Authorization: Bearer <gate-token>`) to admit the connection and an API key header (e.g. `X-Portainer-API-Key: <key>`) to identify the user. The configuration schema supports supplying both `bearer:` and `headers:` concurrently under `credentials:`. Upstream request assembly propagates both without conflict, and runtime discovery/call dispatch sends the combined authentication set.
 ## Testing Decisions
 
 - **Good Test Standard**:
