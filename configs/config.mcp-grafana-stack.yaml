@@ -73,7 +73,9 @@ servers:
   - id: portainer
     endpoint: "http://mcp-portainer:17717/mcp"
     credentials:
-      bearer: {env: PORTAINER_MCP_TOKEN}
+      bearer: {env: PORTAINER_MCP_AUTH_TOKEN}
+      headers:
+        X-Portainer-API-Key: {env: PORTAINER_MCP_TOKEN}
   # ---- command line confirms streamable/http transport, probe pending ----
   - id: grafana
     endpoint: "http://mcp-grafana:8000/mcp"
