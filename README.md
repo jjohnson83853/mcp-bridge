@@ -456,6 +456,11 @@ go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./...
 go run ./cmd/covcheck
 ```
 
+GitHub Actions runs the race suite, vet and the instrumented full-suite coverage
+gate on pushes to `main`, pull requests and manual dispatch. The instrumented run
+also supplies ordinary full-suite verification; no image build or deployment runs
+in this workflow.
+
 `internal/config` carries the typed-diagnostic contract tests: every rejected
 document names its config path, document location, owner/reference identity,
 code, property, shape and static reason, file classification keeps its

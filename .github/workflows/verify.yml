@@ -1,0 +1,51 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: test, vet, coverage gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Validate tracked JSON evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          import subprocess
+          paths = subprocess.check_output(
+              ["git", "ls-files", "-z", "--", "*.json"], text=True
+          ).split("\0")
+          for path in filter(None, paths):
+              with open(path, encoding="utf-8") as source:
+                  json.load(source)
+          PY
+
+      - name: Race-detector test suite
+        run: go test -race ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Instrumented full suite with coverage
+        run: go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./...
+
+      - name: Coverage threshold gate
+        run: go run ./cmd/covcheck
