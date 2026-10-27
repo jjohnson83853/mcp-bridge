@@ -11,6 +11,7 @@ import (
 )
 
 type Entry struct {
+	Time       time.Time
 	Level      string
 	Event      string
 	RequestID  string
@@ -21,6 +22,7 @@ type Entry struct {
 	Outcome    string
 	Reason     string
 	Fields     map[string]any
+	HTTP       *HTTPDiagnostic
 }
 
 type Logger struct {
@@ -48,6 +50,33 @@ func (l *Logger) Log(entry Entry) {
 	if l == nil || l.encoder == nil {
 		return
 	}
+	if entry.HTTP != nil {
+		l.logHTTP(entry)
+		return
+	}
+	l.logLegacyEntry(entry)
+}
+
+// logHTTP encodes the fixed-slot record once and attempts exactly one write.
+// Validation failures and sink failures are nonfatal: unsafe output is
+// suppressed, never retried and never partially written.
+func (l *Logger) logHTTP(entry Entry) {
+	if entry.Event != "http_complete" {
+		// Incompatible non-http_complete use of the typed lane is invalid
+		// input; suppress the typed record rather than emit a misleading one.
+		return
+	}
+	encoder := &httpEncoder{}
+	if !encoder.build(entry) {
+		return
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	_, _ = l.output.Write(encoder.buf.Bytes())
+}
+
+// logLegacyEntry is the untouched legacy record path.
+func (l *Logger) logLegacyEntry(entry Entry) {
 	// We need to know if the correlation is unavailable to prevent re-minting
 	// an identity when the logger is explicitly told correlation failed.
 	state, _ := entry.Fields["correlation_state"].(string)

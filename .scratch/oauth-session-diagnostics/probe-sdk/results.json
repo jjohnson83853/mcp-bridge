@@ -1,0 +1,73 @@
+{
+  "cases": [
+    {
+      "case": "initialize_fresh_no_session",
+      "http_status": 200,
+      "rpc_error_code": null,
+      "result_present": true,
+      "session_issued": true
+    },
+    {
+      "case": "initialized_notification_with_session",
+      "http_status": 202,
+      "rpc_error_code": null,
+      "result_present": false,
+      "session_issued": false
+    },
+    {
+      "case": "tools_list_valid_session",
+      "http_status": 200,
+      "rpc_error_code": null,
+      "result_present": true,
+      "session_issued": false
+    },
+    {
+      "case": "tools_list_missing_session",
+      "http_status": 200,
+      "rpc_error_code": 0,
+      "result_present": false,
+      "session_issued": false
+    },
+    {
+      "case": "tools_list_unknown_session",
+      "http_status": 404,
+      "rpc_error_code": null,
+      "result_present": false,
+      "session_issued": false
+    },
+    {
+      "case": "tools_list_valid_session_repeat",
+      "http_status": 200,
+      "rpc_error_code": null,
+      "result_present": true,
+      "session_issued": false
+    },
+    {
+      "case": "initialize_fresh_no_session_repeat",
+      "http_status": 200,
+      "rpc_error_code": null,
+      "result_present": true,
+      "session_issued": true
+    }
+  ],
+  "go_version": "go1.25.0 linux/amd64",
+  "command": "go run main.go (cwd .scratch/oauth-session-diagnostics/probe-sdk, repo mcp-bridge)",
+  "exit_code": 0,
+  "code_zero_note": "For tools_list_missing_session the probe observed HTTP 200 and decoded a non-null error object; its extractor returned zero. The decoder used a non-pointer code field, so presence and numeric wire type were not proved: zero may be a default for absent/null code. No exact wire-code or wrapped-internal-error claim is supported.",
+  "handler_options": "nil (default: stateful, SessionTimeout zero, localhost protection enabled)",
+  "evidence_qualifications": [
+    "JSON/SSE parser decodes candidate data lines separately, skips malformed candidates and does not validate JSON-RPC version/id; no general protocol-conformance or complete-handshake proof",
+    "Recorded status/result/error-object/session-issued sequence only; distinctness of session values was not proved",
+    "SDK standalone unknown-session 404 is not bridge-owned admission behavior; missing-session HTTP 200 does not by itself establish a normative violation",
+    "Use retained finite JSON, not pointer-bearing console output; no real-client, refresh, production or historical-cause proof",
+    "Independent Go review APPROVE-WITH-QUALIFICATIONS; no rerun or code change required when these limitations are retained"
+  ],
+  "limits": [
+    "standalone httptest SDK server only; no bridge middleware, auth, or backend",
+    "synthetic evidence; not proof of real client, production, or deployed behavior",
+    "transport errors reported as opaque outcome without raw text"
+  ],
+  "negotiated_proto": "2025-11-25",
+  "probe": "ticket01 U-D6 standalone default stateful StreamableHTTPHandler session-header semantics",
+  "sdk_version": "github.com/modelcontextprotocol/go-sdk v1.8.0"
+}

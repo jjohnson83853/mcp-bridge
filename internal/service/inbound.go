@@ -1,13 +1,11 @@
 package service
 
 import (
-	"context"
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"io"
-	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -37,6 +35,10 @@ type InboundHandler struct {
 	// observe.CorrelationID(""), but tests may replace it per-instance
 	// before traffic; production never mutates it after construction.
 	generator func() string
+
+	// diagOnce guards the lazy standalone fallback owner construction.
+	diagOnce            sync.Once
+	fallbackDiagnostics *observe.HTTPDiagnostics
 }
 
 type sessionRecord struct {
@@ -61,6 +63,11 @@ type InboundBounds struct {
 type InboundOptions struct {
 	Logger  *observe.Logger
 	Metrics *observe.Metrics
+
+	// Diagnostics supplies the shared outer completion owner. nil means the
+	// handler claims through its own lazily built fallback owner using the
+	// same logger, Now and private generator conventions.
+	Diagnostics *observe.HTTPDiagnostics
 
 	// Static bounds, used when Bound is nil.
 	MaxRequestBytes int64
@@ -137,28 +144,37 @@ func (h *InboundHandler) now() time.Time {
 }
 
 func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// The terminal timer starts at handler entry, before owned generation, so
-	// the observed duration includes any work the generator itself performs.
-	started := h.now()
-	// internalID is generated independently of client input; the client value is
-	// echoed on the wire but never used as a log identity.
-	internalID := h.generator()
+	// The existing outer owner is claimed first; when none is present (a
+	// standalone inner deployment) the handler claims through its own lazily
+	// built fallback owner using the same logger, clock and generator.
+	diagnostics := h.diagnostics()
+	writer, r, lease := diagnostics.Claim(w, r)
+	if lease.OwnsCompletion() {
+		// The claimant lease finalizes the single terminal record on normal
+		// return and panic unwinding alike: no recover, no synthetic 500.
+		defer lease.Finish()
+	}
 
 	var captured *bodyCapture
 	var bounded *limitObserver
-	status := &statusWriter{ResponseWriter: w}
+
+	// The first decisive admission rejection, recorded exactly at the boundary
+	// that rejected the request, in the legacy stage/reason vocabulary.
+	var rejection legacyRejection
 
 	// Owned failure state, set exactly at the boundary of failure.
-	finalReason := "none"
-	finalStage := "none"
 	counted := false // Track whether metrics should be recorded (not for early 404)
 
+	// The legacy summarisation defer is registered after claimant Finish so
+	// LIFO unwinding runs it first: it reads the SAME owner observation the
+	// body/delivery classifiers use, then contributes legacy evidence.
 	defer func() {
 		// Metrics: only for routed requests (not early 404).
 		// "early404 previously returned before metrics defer; new logging must not silently start counting it."
 		if h.metrics != nil && counted {
+			obs := observe.HTTPResponseObservation(r.Context())
 			outcome := "success"
-			if status.status >= http.StatusBadRequest {
+			if obs.Status >= http.StatusBadRequest || obs.WriteFailure != observe.HTTPWriteNone {
 				outcome = "failure"
 			}
 			operation := inboundOperation(captured)
@@ -166,117 +182,22 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if h.logger != nil {
-			elapsed := h.now().Sub(started)
-			observedStatus := status.status
-			// Severity follows the known owned cause, not the raw status
-			// class: admission rejections are warn even at 5xx (session
-			// capacity 503), and only unclassified internal failures are
-			// error.
-			level := "info"
-			switch finalStage {
-			case "http_route", "host_admission", "origin_admission", "client_auth",
-				"session_admission", "request_limits":
-				level = "warn"
-			case "response_delivery":
-				if finalReason == "client_disconnected" {
-					level = "warn"
-				} else {
-					level = "error"
-				}
-			default:
-				if observedStatus >= http.StatusBadRequest {
-					if observedStatus >= 500 {
-						level = "error"
-					} else {
-						level = "warn"
-					}
-				}
-			}
+			obs := observe.HTTPResponseObservation(r.Context())
+			// Legacy classification from the owner observation.
+			legacyStage, legacyReason, operation := h.legacyClassification(r, obs, captured, rejection)
 
-			// http_outcome
-			httpOutcome := "success"
-			if status.writeErr != nil {
-				// An observed delegated write failure means the response was
-				// not fully delivered, regardless of the committed status.
-				httpOutcome = "incomplete"
-			} else if observedStatus >= http.StatusBadRequest {
-				httpOutcome = "failure"
-			}
-			if observedStatus == 0 {
-				httpOutcome = "unknown"
-			}
-
-			// Byte bucket
-			bucket := "empty"
-			switch {
-			case status.bytes == 0:
-				bucket = "empty"
-			case status.bytes <= 1024:
-				bucket = "le_1k"
-			case status.bytes <= 16384:
-				bucket = "le_16k"
-			case status.bytes <= 262144:
-				bucket = "le_256k"
-			case status.bytes <= 1048576:
-				bucket = "le_1m"
-			default:
-				bucket = "gt_1m"
-			}
-
-			var httpStatus any
-			if observedStatus >= 100 && observedStatus <= 599 {
-				httpStatus = observedStatus
-			}
-
-			route := "mcp"
-			if r.URL.Path != "/mcp" {
-				route = "not_found"
-			}
-
-			operation := inboundOperation(captured)
-
-			// Upgraded HTTP terminals carry no tool/backend/server execution
-			// identity: the record is boundary-scoped. Legacy diagnostics and
-			// metrics keep their own server attribution elsewhere.
-			// The terminal outcome vocabulary has no incomplete scalar: an
-			// observed incomplete delivery is an overall failure, while the
-			// HTTP-specific field keeps the finer incomplete value.
-			outcome := httpOutcome
-			if outcome == "incomplete" {
-				outcome = "failure"
-			}
-
-			fields := map[string]any{
-				"http_status":       httpStatus,
-				"http_method":       r.Method,
-				"route":             route,
-				"http_outcome":      httpOutcome,
-				"stage":             finalStage,
-				"timing_scope":      "http",
-				"http_bytes_bucket": bucket,
-			}
-			if internalID == "" {
-				// The owned generator produced no identity: report the state
-				// honestly instead of minting a replacement owned ID.
-				fields["correlation_state"] = "unavailable"
-			}
-			h.logger.Log(observe.Entry{
-				Level:     level,
-				Event:     "http_complete",
-				RequestID: internalID,
-				Operation: operation,
-				Duration:  elapsed,
-				Outcome:   outcome,
-				Reason:    finalReason,
-				Fields:    fields,
+			observe.ContributeLegacyEvidence(r.Context(), observe.HTTPLegacyEvidence{
+				Stage: legacyStage, Reason: legacyReason, Operation: operation,
 			})
 		}
 	}()
 
 	if r.URL.Path != "/mcp" {
-		finalStage = "http_route"
-		finalReason = "route_not_found"
-		http.NotFound(status, r)
+		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+			FailureStage: "route", FailureReason: "route_not_found",
+			AuthMode: "none",
+		})
+		http.NotFound(writer, r)
 		return
 	}
 
@@ -284,42 +205,52 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	counted = true
 	requestID := observe.CorrelationID(r.Header.Get("X-Request-ID"))
 	r.Header.Set("X-Request-ID", requestID)
-	status.Header().Set("X-Request-ID", requestID)
+	writer.Header().Set("X-Request-ID", requestID)
 	captured = captureRequestMethod(r)
 
 	bounds := h.bounds()
 	if !hostAllowed(bounds.AllowedHosts, r.Host) {
-		finalStage = "host_admission"
-		finalReason = "host_rejected"
-		http.Error(status, "forbidden", http.StatusForbidden)
+		rejection = legacyRejection{"host_admission", "host_rejected"}
+		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+			FailureStage: "host", FailureReason: "host_rejected",
+		})
+		http.Error(writer, "forbidden", http.StatusForbidden)
 		return
 	}
 	if !originAllowed(bounds.AllowedOrigins, r.Header.Get("Origin")) {
-		finalStage = "origin_admission"
-		finalReason = "origin_rejected"
-		http.Error(status, "forbidden", http.StatusForbidden)
+		rejection = legacyRejection{"origin_admission", "origin_rejected"}
+		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+			FailureStage: "origin", FailureReason: "origin_rejected",
+		})
+		http.Error(writer, "forbidden", http.StatusForbidden)
 		return
 	}
 	if limits := bounds.MaxRequestBytes; limits > 0 {
 		if declared := r.ContentLength; declared > limits {
-			finalStage = "request_limits"
-			finalReason = "request_too_large"
-			http.Error(status, "request too large", http.StatusRequestEntityTooLarge)
+			rejection = legacyRejection{"request_limits", "request_too_large"}
+			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+				FailureStage: "body_limit", FailureReason: "request_too_large",
+			})
+			http.Error(writer, "request too large", http.StatusRequestEntityTooLarge)
 			return
 		}
-		// The native writer (not the tracking wrapper) is passed so net/http's
+		// The native writer (not the facade) is passed so net/http's
 		// close-on-limit signalling reaches the connection directly; the typed
 		// limit error is observed as it passes through without extra reads.
-		bounded = &limitObserver{ReadCloser: http.MaxBytesReader(w, r.Body, limits)}
+		bounded = &limitObserver{ReadCloser: http.MaxBytesReader(observe.NativeHTTPWriter(r.Context(), writer), r.Body, limits)}
 		r.Body = bounded
 	}
 
 	tokenHash, ok := h.authenticate(r)
 	if !ok {
-		status.Header().Set("WWW-Authenticate", "Bearer")
-		finalStage = "client_auth"
-		finalReason = "client_auth_failed"
-		http.Error(status, "unauthorized", http.StatusUnauthorized)
+		writer.Header().Set("WWW-Authenticate", "Bearer")
+		rejection = legacyRejection{"client_auth", "client_auth_failed"}
+		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+			FailureStage: "inner_credential", FailureReason: "static_invalid",
+			AuthMode: "static", CredentialState: "rejected",
+			SessionState: sessionStateForAuth(r),
+		})
+		http.Error(writer, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
@@ -336,10 +267,13 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		h.mu.Unlock()
 		if !valid {
-			status.Header().Set("WWW-Authenticate", "Bearer")
-			finalStage = "session_admission"
-			finalReason = "session_auth_failed"
-			http.Error(status, "unauthorized", http.StatusUnauthorized)
+			writer.Header().Set("WWW-Authenticate", "Bearer")
+			rejection = legacyRejection{"session_admission", "session_auth_failed"}
+			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+				FailureStage: "session", FailureReason: "session_fingerprint_mismatch",
+				SessionState: "existing",
+			})
+			http.Error(writer, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 	} else {
@@ -350,9 +284,11 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			h.reapExpiredLocked(now)
 			if len(h.sessions) >= maximum {
 				h.mu.Unlock()
-				finalStage = "session_admission"
-				finalReason = "session_capacity"
-				http.Error(status, "session cap reached", http.StatusServiceUnavailable)
+				rejection = legacyRejection{"session_admission", "session_capacity"}
+				observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+					FailureStage: "capacity", FailureReason: "session_capacity",
+				})
+				http.Error(writer, "session cap reached", http.StatusServiceUnavailable)
 				return
 			}
 			h.mu.Unlock()
@@ -365,32 +301,32 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// as an identity and is replaced only by the owned generated one.
 	rClone := r.Clone(r.Context())
 	rClone.Header.Del("X-Mcp-Bridge-Internal-Request-Id")
-	if internalID != "" {
+	if internalID := observe.HTTPRequestID(r.Context()); internalID != "" {
 		rClone.Header.Set("X-Mcp-Bridge-Internal-Request-Id", internalID)
 	}
-	h.next.ServeHTTP(status, rClone)
+	h.next.ServeHTTP(writer, rClone)
 	var maxBytes *http.MaxBytesError
 	if bounded != nil && errors.As(bounded.observed, &maxBytes) {
 		// The typed limit error was observed while the delegated handler read
 		// the body: the first decisive cause is the admission bound, not the
 		// rejected dispatch status it produced.
-		finalStage = "request_limits"
-		finalReason = "request_too_large"
-	} else if status.writeErr != nil {
-		// Only an actual delegated write failure establishes the delivery
-		// stage; observing a normal Write or Flush is not a failure and a
-		// successful delivery keeps stage "none".
-		finalStage = "response_delivery"
-		finalReason = writeFailureReason(status.writeErr)
-	} else if status.status >= http.StatusBadRequest {
-		// The delegated dispatch produced a rejected response; the fact was
-		// established at the dispatch boundary.
-		finalStage = "mcp_dispatch"
+		rejection = legacyRejection{"request_limits", "request_too_large"}
+		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+			FailureStage: "body_limit", FailureReason: "request_too_large",
+		})
 	} else {
-		finalStage = "none"
+		obs := observe.HTTPResponseObservation(r.Context())
+		if obs.WriteFailure != observe.HTTPWriteNone {
+			// Only an actual delegated write failure establishes the delivery
+			// stage; observing a normal Write or Flush is not a failure and a
+			// successful delivery keeps stage "none".
+			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+				FailureStage: "unavailable", FailureReason: writeFailureReasonFrom(obs.WriteFailure),
+			})
+		}
 	}
 
-	if issuedID := status.Header().Get(sessionIDHeader); issuedID != "" {
+	if issuedID := writer.Header().Get(sessionIDHeader); issuedID != "" {
 		h.mu.Lock()
 		h.sessions[issuedID] = sessionRecord{token: tokenHash, lastSeen: h.now()}
 		h.mu.Unlock()
@@ -402,20 +338,77 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// writeFailureReason classifies an observed delegated write failure into the
-// finite terminal reason vocabulary. Classification is typed only: the raw
+// diagnostics returns the shared outer owner when composed, or lazily builds
+// the standalone fallback owner once. The fallback reuses the handler's
+// logger, clock and generator conventions, never per-request state.
+func (h *InboundHandler) diagnostics() *observe.HTTPDiagnostics {
+	if h.options.Diagnostics != nil {
+		return h.options.Diagnostics
+	}
+	h.diagOnce.Do(func() {
+		h.fallbackDiagnostics = observe.NewHTTPDiagnostics(h.logger, observe.HTTPDiagnosticsOptions{
+			Now:   h.options.Now,
+			NewID: h.generator,
+		})
+	})
+	return h.fallbackDiagnostics
+}
+
+// sessionStateForAuth reports the truthful session evaluation state at the
+// inner credential rejection point: a supplied session header was evaluated
+// before credential acceptance, an absent one was not.
+func sessionStateForAuth(r *http.Request) string {
+	if r.Header.Get(sessionIDHeader) != "" {
+		return "existing"
+	}
+	return "not_evaluated"
+}
+
+// legacyRejection records the legacy stage/reason of the first decisive
+// admission rejection, in the summarised legacy vocabulary.
+type legacyRejection struct {
+	stage, reason string
+}
+
+// legacyClassification computes the summarised legacy stage/reason/operation
+// from the owner observation and the recorded decisive rejection, mirroring
+// the branch order of the previous inner-only terminal defer.
+func (h *InboundHandler) legacyClassification(r *http.Request, obs observe.HTTPObservation, captured *bodyCapture, rejection legacyRejection) (stage, reason, operation string) {
+	operation = inboundOperation(captured)
+	if r.URL.Path != "/mcp" {
+		return "http_route", "route_not_found", operation
+	}
+	if rejection.stage != "" {
+		// Legacy precedence: a decisive admission rejection (declared-limit
+		// rejection or an observed MaxBytesError) classifies as
+		// request_limits/request_too_large even when the write then failed.
+		return rejection.stage, rejection.reason, operation
+	}
+	if obs.WriteFailure != observe.HTTPWriteNone {
+		return "response_delivery", writeFailureReasonFrom(obs.WriteFailure), operation
+	}
+	if obs.Status >= http.StatusBadRequest {
+		// The delegated dispatch produced a rejected response; the fact was
+		// established at the dispatch boundary.
+		return "mcp_dispatch", "none", operation
+	}
+	return "none", "none", operation
+}
+
+// writeFailureReasonFrom maps an owner write-failure class into the finite
+// legacy terminal reason vocabulary. Classification is typed only: the raw
 // error text is never parsed, retained, or emitted.
-func writeFailureReason(err error) string {
-	if errors.Is(err, net.ErrClosed) {
+func writeFailureReasonFrom(class string) string {
+	switch class {
+	case observe.HTTPWriteDisconnected:
 		return "client_disconnected"
-	}
-	if errors.Is(err, context.Canceled) {
+	case observe.HTTPWriteCancelled:
 		return "request_cancelled"
-	}
-	if errors.Is(err, context.DeadlineExceeded) {
+	case observe.HTTPWriteDeadline:
 		return "deadline_exceeded"
+	default:
+		return "unknown"
 	}
-	return "unknown"
 }
 
 // reapExpiredLocked removes sessions whose idle window has elapsed. Caller
@@ -436,25 +429,6 @@ func (h *InboundHandler) reapExpiredLocked(now time.Time) {
 		}
 	}
 }
-
-type statusWriter struct {
-	http.ResponseWriter
-	status   int
-	bytes    int64
-	writeErr error
-}
-
-func (w *statusWriter) WriteHeader(status int) {
-	if w.status != 0 {
-		// The first status is the response's status; forwarding a second one
-		// would only log a superfluous call.
-		return
-	}
-	w.status = status
-	w.ResponseWriter.WriteHeader(status)
-}
-
-func (w *statusWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 
 // limitObserver records the error returned by the bounded request reader so
 // the terminal record can classify an over-limit body from its typed error
@@ -574,30 +548,6 @@ func originAllowed(allowed []string, origin string) bool {
 		}
 	}
 	return false
-}
-
-func (w *statusWriter) Flush() {
-	if w.status == 0 {
-		w.WriteHeader(http.StatusOK)
-	}
-	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
-		flusher.Flush()
-	}
-}
-
-// Write records the implicit 200 status of the first write, exactly as net/http
-// does, so a handler that streams a body without naming a status never makes
-// Flush emit a second, superfluous header.
-func (w *statusWriter) Write(p []byte) (int, error) {
-	if w.status == 0 {
-		w.status = http.StatusOK
-	}
-	n, err := w.ResponseWriter.Write(p)
-	w.bytes += int64(n)
-	if w.writeErr == nil {
-		w.writeErr = err
-	}
-	return n, err
 }
 
 func (h *InboundHandler) authenticate(r *http.Request) ([32]byte, bool) {

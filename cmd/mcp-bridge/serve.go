@@ -36,6 +36,10 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 	defer cancel()
 
 	logger := observe.NewLogger(stdout)
+	diagnostics := observe.NewHTTPDiagnostics(logger, observe.HTTPDiagnosticsOptions{
+		Now:     diagnosticNowFromContext(ctx),
+		NewID:   diagnosticNewIDFromContext(ctx),
+	})
 	holder := newConfigHolder()
 	load := func() (*config.Config, error) {
 		candidate, err := config.ParseFile(path)
@@ -131,6 +135,7 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 	inbound := service.NewInboundHandler(service.NewStreamableHandler(server), candidate.ClientTokenHashes(), service.InboundOptions{
 		Logger:          logger,
 		Metrics:         metrics,
+		Diagnostics:     diagnostics,
 		MaxRequestBytes: settings.MaxRequestBytes,
 		MaxSessions:     settings.MaxSessions,
 		SessionIdle:     settings.SessionIdle,
@@ -159,7 +164,7 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 		_, _ = w.Write([]byte("ok\n"))
 	})
 	inboundMux.Handle("/readyz", service.NewOperationsHandler(readiness, nil))
-	authMiddleware := auth.NewAuthMiddleware(authCfg, jwksCache, auth.WithStaticFallback(true))
+	authMiddleware := auth.NewAuthMiddleware(authCfg, jwksCache, auth.WithStaticFallback(true), auth.WithNow(diagnosticNowFromContext(ctx)))
 	inboundMux.Handle("/mcp", authMiddleware(inbound))
 	inboundMux.Handle("/", inbound)
 
@@ -210,7 +215,7 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 	}
 	defer operationsListener.Close()
 
-	inboundServer := &http.Server{Handler: inboundMux, ReadHeaderTimeout: readHeaderTimeout}
+	inboundServer := &http.Server{Handler: diagnostics.Wrap(inboundMux), ReadHeaderTimeout: readHeaderTimeout}
 	operationsServer := &http.Server{
 		Handler: service.RateLimit(
 			service.NewOperationsHandler(readiness, metrics.Handler()),

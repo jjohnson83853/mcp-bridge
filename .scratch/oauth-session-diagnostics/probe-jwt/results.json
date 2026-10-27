@@ -1,0 +1,139 @@
+{
+  "cases": [
+    {
+      "case": "valid_control",
+      "accepted": true,
+      "errors_is_token_expired": false,
+      "errors_is_token_not_yet_valid": false,
+      "errors_is_invalid_issuer": false,
+      "errors_is_invalid_jwt": false,
+      "is_validation_error": false,
+      "is_verification_error": false,
+      "classification": "accepted"
+    },
+    {
+      "case": "expired_beyond_60s",
+      "accepted": false,
+      "errors_is_token_expired": true,
+      "errors_is_token_not_yet_valid": false,
+      "errors_is_invalid_issuer": false,
+      "errors_is_invalid_jwt": false,
+      "is_validation_error": true,
+      "is_verification_error": false,
+      "classification": "jwt_expired"
+    },
+    {
+      "case": "expired_within_tolerance_30s",
+      "accepted": true,
+      "errors_is_token_expired": false,
+      "errors_is_token_not_yet_valid": false,
+      "errors_is_invalid_issuer": false,
+      "errors_is_invalid_jwt": false,
+      "is_validation_error": false,
+      "is_verification_error": false,
+      "classification": "accepted"
+    },
+    {
+      "case": "future_nbf_beyond_60s",
+      "accepted": false,
+      "errors_is_token_expired": false,
+      "errors_is_token_not_yet_valid": true,
+      "errors_is_invalid_issuer": false,
+      "errors_is_invalid_jwt": false,
+      "is_validation_error": true,
+      "is_verification_error": false,
+      "classification": "jwt_not_yet_valid"
+    },
+    {
+      "case": "wrong_issuer",
+      "accepted": false,
+      "errors_is_token_expired": false,
+      "errors_is_token_not_yet_valid": false,
+      "errors_is_invalid_issuer": true,
+      "errors_is_invalid_jwt": false,
+      "is_validation_error": true,
+      "is_verification_error": false,
+      "classification": "jwt_issuer_invalid"
+    },
+    {
+      "case": "wrong_signing_key",
+      "accepted": false,
+      "errors_is_token_expired": false,
+      "errors_is_token_not_yet_valid": false,
+      "errors_is_invalid_issuer": false,
+      "errors_is_invalid_jwt": false,
+      "is_validation_error": false,
+      "is_verification_error": true,
+      "classification": "jwt_invalid_other",
+      "note": "verification family only; narrow signature cause not provable by this probe"
+    },
+    {
+      "case": "unknown_key_selection",
+      "accepted": false,
+      "errors_is_token_expired": false,
+      "errors_is_token_not_yet_valid": false,
+      "errors_is_invalid_issuer": false,
+      "errors_is_invalid_jwt": false,
+      "is_validation_error": false,
+      "is_verification_error": false,
+      "classification": "jwt_invalid_other",
+      "note": "no authoritative classification available from this bounded probe"
+    },
+    {
+      "case": "compound_expired_wrong_issuer",
+      "accepted": false,
+      "errors_is_token_expired": true,
+      "errors_is_token_not_yet_valid": false,
+      "errors_is_invalid_issuer": false,
+      "errors_is_invalid_jwt": false,
+      "is_validation_error": true,
+      "is_verification_error": false,
+      "classification": "jwt_expired"
+    },
+    {
+      "case": "compound_expired_wrong_key",
+      "accepted": false,
+      "errors_is_token_expired": false,
+      "errors_is_token_not_yet_valid": false,
+      "errors_is_invalid_issuer": false,
+      "errors_is_invalid_jwt": false,
+      "is_validation_error": false,
+      "is_verification_error": true,
+      "classification": "jwt_invalid_other",
+      "note": "verification family only; narrow signature cause not provable by this probe"
+    },
+    {
+      "case": "unparseable_token",
+      "accepted": false,
+      "errors_is_token_expired": false,
+      "errors_is_token_not_yet_valid": false,
+      "errors_is_invalid_issuer": false,
+      "errors_is_invalid_jwt": true,
+      "is_validation_error": false,
+      "is_verification_error": false,
+      "classification": "jwt_invalid_format"
+    }
+  ],
+  "classification_rule": "Derived probe annotations only: a single matching recorded specific sentinel names the observed returned error; otherwise jwt_invalid_other. These annotations are not approved canonical enums. Family predicates do not prove a narrow signature cause or universal precedence.",
+  "controlled_clock": "jwt.ClockFunc fixed instant, value withheld",
+  "go_version": "go1.25.0",
+  "jwx_version": "v2.1.7",
+  "no_network": true,
+  "no_real_keyset_fetch": true,
+  "parse_options": [
+    "jwt.WithKeySet(set)",
+    "jwt.WithValidate(true)",
+    "jwt.WithIssuer(configured issuer, value withheld)",
+    "jwt.WithAcceptableSkew(60s)",
+    "jwt.WithClock(jwt.ClockFunc(fixed now))"
+  ],
+  "run_command": "go run .scratch/oauth-session-diagnostics/probe-jwt/main.go",
+  "synthetic_only": true,
+  "evidence_qualifications": [
+    "Representative synthetic Parse predicates only; not an exhaustive mutually exclusive taxonomy or universal parser/validation order",
+    "compound_expired_wrong_issuer actually matched only the expiry sentinel and is annotated jwt_expired, contrary to worker prose saying all compound cases remain generic",
+    "jwt_invalid_format and other derived labels are probe annotations, not changes to the approved diagnostic contract",
+    "Final successful run followed reported two compile corrections and three fixture-authoring iterations; no permanent code or application verification claim",
+    "Independent Go review APPROVE-WITH-QUALIFICATIONS; reported runtime not independently rerun"
+  ]
+}

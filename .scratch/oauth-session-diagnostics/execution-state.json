@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "feature": "OAUTH-DIAG",
+  "revision": "OAUTH-DIAG-r6-tasks-a1",
+  "checkpointRevisions": {
+    "approvals.requirements": "OAUTH-DIAG-r6",
+    "approvals.design": "OAUTH-DIAG-r6",
+    "approvals.tasks": "OAUTH-DIAG-r6-tasks-a1",
+    "reviews.specification": "OAUTH-DIAG-r6",
+    "reviews.tasks": "OAUTH-DIAG-r6-tasks-a1"
+  },
+  "approvals": {
+    "requirements": {"revision": "OAUTH-DIAG-r6", "evidence": "review.md"},
+    "design": {"revision": "OAUTH-DIAG-r6", "evidence": "review.md"},
+    "tasks": {"revision": "OAUTH-DIAG-r6-tasks-a1", "evidence": "review.md"}
+  },
+  "reviews": {
+    "specification": {"revision": "OAUTH-DIAG-r6", "evidence": "review.md"},
+    "tasks": {"revision": "OAUTH-DIAG-r6-tasks-a1", "evidence": "review.md"}
+  },
+  "tasks": [
+    {"id": "01", "stage": "research", "status": "done", "blockedBy": [], "requires": ["authenticated-source-read"]},
+    {"id": "02", "stage": "implementation", "status": "done", "blockedBy": ["01"], "requires": ["engineer", "go", "authenticated-source-read"]},
+    {"id": "03", "stage": "implementation", "status": "pending", "blockedBy": ["02"], "requires": ["engineer", "go", "authenticated-source-read"]},
+    {"id": "04", "stage": "implementation", "status": "pending", "blockedBy": ["02"], "requires": ["engineer", "go", "authenticated-source-read"]},
+    {"id": "05", "stage": "external", "status": "blocked", "blockedBy": ["03", "04"], "requires": ["authorized-live-capture", "collector-read"]}
+  ],
+  "availableCapabilities": ["local-file-read", "local-file-write", "node", "go", "engineer", "authenticated-source-read"],
+  "blockers": [
+    {
+      "id": "ticket02-evidence",
+      "taskId": "02",
+      "reason": "Completed 2026-10-26. Evidence: full suite 12/12 ok + -race 12/12 ok (-count=1, sequential); go build/vet clean; canonical covcheck gate 90.0% (4442/4935) gate:true; runtime smoke PASS (RESULT.md) after all fixes; code review APPROVE (no CRITICAL/HIGH; residual MEDIUM budget-charge undercount and legacy-precedence drift FIXED with RED/GREEN budget regression TestChargedBytesEqualEncodedRecord; stale comment fixed); security review APPROVE (no CRITICAL/HIGH; kidTolerantKeyProvider preserves signature validation; LOW pre-existing notes only); two-reviewer docs rehearsal FAIL->corrections applied (stage/operation=unknown in 5 example rows, diag_duration_ms wording, widened elision note); operator docs README Outer-rejection-examples + new CHANGELOG.md [Unreleased]. Local env gap: incomplete toolchain module lacks covdata binary -> go test -coverprofile ./... exits 1 building the no-test generator package's synthetic coverage binary (0 test FAILs; CI toolchain owns that step). Remote HEAD baseline: see handoff/commit record; local-only changes not deployed.",
+      "clearWhen": "n/a (informational completion record)",
+      "evidence": "runtime-smoke/RESULT.md; reviews in session record; .github/workflows/verify.yml:47-51"
+    },
+    {
+      "id": "sdk-protocol-cause",
+      "taskId": "03",
+      "reason": "Authorized pinned-SDK inspection established the actual old-protocol pre-initialization rejection, which occurs before public receiving middleware and has no typed rejection error. Its supported authoritative bridge observation remains unavailable. Ticket03's owned observations/control/lifecycle implementation may advance after02 using approved generic/unavailable states, but03 full acceptance and exhaustive AC-D2 claims remain blocked; outer-only02 is unaffected.",
+      "clearWhen": "Establish an authorized authoritative SDK rejection observation path without status/error-prose inference or acceptance weakening. Preserve generic/unavailable states and the distinction between implementable owned observations and exhaustive acceptance until then.",
+      "evidence": "branch-inventory.md:26-37; spec.md:160,209,229,280; auth-seam-evidence.md:95-102"
+    },
+    {
+      "id": "external-evidence",
+      "taskId": "05",
+      "reason": "Live synthetic capture and collector/client/proxy evidence lack separate authorization and accountable owners. This does not gate independently eligible local work.",
+      "clearWhen": "Identify authorized owners and obtain the separately scoped live capture/collection evidence required by ticket 05 after its implementation dependencies complete.",
+      "evidence": "issues/05-deployed-loki-verification.md"
+    }
+  ],
+  "gate": {
+    "markerPath": "../../.superpowers/sdd/GATE_OPEN",
+    "feature": "OAUTH-DIAG",
+    "revision": "OAUTH-DIAG-r6-tasks-a1",
+    "extensionPath": "../../.omp/extensions/sdd-gate.ts",
+    "loadEvidencePath": "gate-load-evidence.json"
+  }
+}

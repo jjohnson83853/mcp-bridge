@@ -70,25 +70,74 @@ func TestNormalizedRefreshReasonUsesFiniteFallback(t *testing.T) {
 	}
 }
 
-func TestStatusWriterPreservesFirstStatusAndImplicitOK(t *testing.T) {
-	raw := httptest.NewRecorder()
-	w := &statusWriter{ResponseWriter: raw}
-	w.WriteHeader(http.StatusBadGateway)
-	w.WriteHeader(http.StatusCreated)
-	if got := w.Unwrap(); got != raw {
-		t.Fatal("Unwrap did not return underlying writer")
+// TestInboundTerminalObservesFirstStatusAndImplicitOK replaces the obsolete
+// direct statusWriter implementation test with a consumer-behavior matrix: the
+// terminal record must observe the first named status and the implicit 200 of
+// a first write, while the response carries no second superfluous header.
+func TestInboundTerminalObservesFirstStatusAndImplicitOK(t *testing.T) {
+	cases := []struct {
+		name       string
+		next       http.HandlerFunc
+		wantStatus any // nil means the record's http_status key must be absent
+		wantWire   int // the status actually forwarded to the writer
+	}{
+		{
+			name: "FirstStatusWins",
+			next: func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusTeapot)
+				w.WriteHeader(http.StatusCreated)
+			},
+			wantStatus: float64(http.StatusTeapot),
+			wantWire:   http.StatusTeapot,
+		},
+		{
+			name: "ImplicitOKOnFirstWrite",
+			next: func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = w.Write([]byte("stream"))
+			},
+			wantStatus: float64(http.StatusOK),
+			wantWire:   http.StatusOK,
+		},
 	}
-	if raw.Code != http.StatusBadGateway || w.status != http.StatusBadGateway {
-		t.Fatalf("recorded/forwarded status = %d/%d", w.status, raw.Code)
-	}
-
-	implicitRaw := httptest.NewRecorder()
-	implicit := &statusWriter{ResponseWriter: implicitRaw}
-	if n, err := implicit.Write([]byte("stream")); err != nil || n != len("stream") {
-		t.Fatalf("Write() = (%d, %v)", n, err)
-	}
-	if implicit.status != http.StatusOK || implicitRaw.Code != http.StatusOK || implicitRaw.Body.String() != "stream" {
-		t.Fatalf("implicit response = status %d/%d body %q", implicit.status, implicitRaw.Code, implicitRaw.Body.String())
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			captured := &bytes.Buffer{}
+			hash := sha256.Sum256([]byte("token"))
+			h := NewInboundHandler(tc.next, [][32]byte{hash}, InboundOptions{Logger: observe.NewLogger(captured)})
+			r := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"x"}`))
+			r.Header.Set("Authorization", "Bearer token")
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, r)
+			if rec.Code != tc.wantWire {
+				t.Fatalf("forwarded status = %d; want %d", rec.Code, tc.wantWire)
+			}
+			var terminal map[string]any
+			for _, line := range strings.Split(strings.TrimSpace(captured.String()), "\n") {
+				var record map[string]any
+				if err := json.Unmarshal([]byte(line), &record); err != nil {
+					t.Fatalf("decode terminal line: %v", err)
+				}
+				if record["event"] == "http_complete" {
+					if terminal != nil {
+						t.Fatal("more than one terminal record for one request")
+					}
+					terminal = record
+				}
+			}
+			if terminal == nil {
+				t.Fatal("no terminal record emitted")
+			}
+			got, ok := terminal["http_status"]
+			if tc.wantStatus == nil {
+				if ok && got != nil {
+					t.Fatalf("http_status = %v; want absent", got)
+				}
+				return
+			}
+			if got != tc.wantStatus {
+				t.Fatalf("observed http_status = %v; want %v", got, tc.wantStatus)
+			}
+		})
 	}
 }
 

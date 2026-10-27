@@ -379,28 +379,53 @@ name, query, URL, or token.
 
 ### HTTP request diagnostics
 
-Every HTTP request reaching the inbound listener produces exactly one terminal
-structured JSON record (`event: http_complete`) on standard output:
+Every HTTP request reaching the inbound listener produces one terminal
+structured JSON record (`event: http_complete`) on standard output. The
+completion is owned by one private outer observer composed around the entire
+public mux, so it also covers early OAuth rejections, metadata and health
+responses, and unmatched routes — not only the protected MCP path. It is
+attempted on normal handler return or panic unwind. One terminal write is
+attempted per request; abrupt process loss or a broken/short stdout write can
+lose the record, and broken sinks do not self-report:
 
 - **Base envelope:** `time` (UTC RFC3339Nano), `level` (`info` for successes,
   `warn` for rejections/client errors, `error` for internal errors), `service`
   (`mcp-bridge`), `environment` (`unspecified`), `version` (`unspecified`),
-  and fixed `message: "http request completed"`.
+  and fixed `message: "http request completed"`. Actual typed tool errors
+  under an observed 200 promote the HTTP completion to `warn`, and an
+  unavailable response promotes `info` to `warn`; existing `warn`/`error`
+  severities are never downgraded and no duplicate failure stream exists.
 - **Transport fields:** `http_method` (`GET`, `POST`, `DELETE`, `HEAD`,
   `OPTIONS`, `PUT`, `PATCH`, `OTHER`), `route` (`mcp`, `not_found`),
   `http_status` (observed integer `100`–`599`, or explicit JSON `null` when no
   response evidence exists), `http_outcome` (`success`, `failure`, `incomplete`,
   `unknown`), `http_bytes_bucket` (`empty`, `le_1k`, `le_16k`, `le_256k`,
-  `le_1m`, `gt_1m`, `unavailable`), and `duration_ms` (elapsed milliseconds from
-  handler entry through terminal emission). Raw paths, queries, and arbitrary
-  verbs are never reflected.
+  `le_1m`, `gt_1m`, `unavailable`), and `duration_ms` (signed elapsed
+  milliseconds from outer-owner entry — before routing, OAuth evaluation, and
+  correlation-ID generation — through handler return/unwind; this is wider
+  than the former inner-handler interval). A separate bounded
+  `diag_duration_ms` field (`0`–`86400000`, with `duration_capped: true` when
+  clamped, including negative clock deltas clamped to `0`) measures the same
+  interval within the semantic bounds. Existing Prometheus metrics and counts
+  remain unchanged. Raw paths, queries, and arbitrary verbs are never
+  reflected.
 - **Internal correlation:** `request_id` is an internal lowercase 32-hex ID
   minted independently of caller-supplied identifiers; `correlation_state`
-  reports `available` or `unavailable`. Public `X-Request-ID` headers are
-  preserved on responses but never used as internal logging identities.
+  reports `available` or `unavailable`. The same owned ID is returned to the
+  caller as a `Mcp-Diagnostic-Id` response header, installed before routing
+  and any write — including 401/403 responses and metadata/health when
+  available. Callers cannot choose this value; caller-supplied public,
+  internal, or diagnostic headers never supply identity. When request entropy
+  fails, `correlation_state` becomes `unavailable`, `request_id` is absent,
+  and the diagnostic header is omitted — no caller/time/counter/hash
+  fallback or retry. Public `X-Request-ID` response behavior remains unchanged
+  where the inner handler already echoes it, including on request-entropy
+  failure; it is never an internal logging identity or trusted diagnostic join.
 - **Finite admission stages and reasons:**
   - `client_auth` / `client_auth_failed`: missing or invalid client Bearer token.
-  - `session_admission` / `session_auth_failed`: missing or unbound session ID.
+  - `session_admission` / `session_auth_failed`: an absent session entry or
+    existing bearer-binding mismatch; omitting the session header alone is
+    not an owned rejection, and fresh initialization can be legal.
   - `session_admission` / `session_capacity`: active sessions exceed `max_sessions`.
   - `host_admission` / `host_rejected`: Host header not allowed by `allowed_hosts`.
   - `origin_admission` / `origin_rejected`: Origin header not allowed by
@@ -408,13 +433,91 @@ structured JSON record (`event: http_complete`) on standard output:
   - `request_limits` / `request_too_large`: body exceeds `max_request_body_bytes`
     (returns 413 with native transport close-on-limit).
   - `http_route` / `route_not_found`: unmatched path or unusual verb.
+- **Outer OAuth rejection reasons (typed):** Early OAuth failures are mapped
+  to authoritative finite reasons — missing credentials to
+  `credentials_missing`, a wrong Bearer scheme to `bearer_malformed`,
+  explicitly unusable keyset to `jwt_key_unavailable`, explicit verified
+  audience denial to `jwt_audience_invalid`, and scope denial to
+  `scope_insufficient` (403 with its existing challenge). Parser failures,
+  including those without an authoritative specific typed classification, use
+  `jwt_invalid_other`; a generic JWT outcome proves neither expiry nor a
+  particular signature/key failure. Any
+  outer denial records the session as `not_evaluated` and the upstream as
+  `not_attempted`. The first actual decisive rejection is immutable — later
+  operation or delivery evidence cannot overwrite it.
+- **Outer rejection examples:** The rows below are synthetic, abbreviated
+  (core envelope fields such as `time`, `message`, `service`, `environment`,
+  `version`, and `generation` elided, along with conditional and
+  always-present typed slots not shown, e.g. `duration_capped`, `path_class`,
+  `route_outcome`, `status_state`, `challenge_*`, `process_*`) and
+  illustrative only; the accepted
+  severity policy is unchanged (`info` for accepted requests, `warn` for
+  expected 4xx rejections, `error` for actual dependency/internal 5xx, `warn`
+  when no response evidence is available). A rejected request has no
+  downstream side effect: `session_state` stays `not_evaluated` and
+  `upstream_state` stays `not_attempted`, and the existing status, challenge,
+  and response body are unchanged by the diagnostics.
+
+  Missing credentials (no Bearer token; 401 resource-metadata challenge):
+
+  ```json
+  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"unknown","stage":"unknown","failure_stage":"outer_oauth","failure_reason":"credentials_missing","http_status":401,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":3,"diag_duration_ms":1,"credential_state":"missing","scope_state":"not_evaluated","session_state":"not_evaluated","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"0123456789abcdef0123456789abcdef","correlation_state":"available","diag_schema":"oauth_diag_v1"}
+  ```
+
+  Malformed credentials (wrong Bearer scheme; 401 challenge unchanged):
+
+  ```json
+  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"unknown","stage":"unknown","failure_stage":"outer_oauth","failure_reason":"bearer_malformed","http_status":401,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":2,"diag_duration_ms":1,"credential_state":"rejected","scope_state":"not_evaluated","session_state":"not_evaluated","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"a1b2c3d4e5f60102030405060708090a","correlation_state":"available","diag_schema":"oauth_diag_v1"}
+  ```
+
+  Authoritative JWT failure classes (all 401; generic parser rejections stay
+  `jwt_invalid_other`, which proves neither expiry nor a specific signature
+  or key failure):
+
+  ```json
+  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"unknown","stage":"unknown","failure_stage":"outer_oauth","failure_reason":"jwt_key_unavailable","http_status":401,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":5,"diag_duration_ms":1,"credential_state":"rejected","scope_state":"not_evaluated","session_state":"not_evaluated","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"b7e0f11a2233445566778899aabbccdd","correlation_state":"available","diag_schema":"oauth_diag_v1"}
+  ```
+
+  ```json
+  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"unknown","stage":"unknown","failure_stage":"outer_oauth","failure_reason":"jwt_audience_invalid","http_status":401,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":4,"diag_duration_ms":1,"credential_state":"rejected","scope_state":"not_evaluated","session_state":"not_evaluated","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"c9d8e7f6050403020110aabbccddeeff","correlation_state":"available","diag_schema":"oauth_diag_v1"}
+  ```
+
+  Scope denial (credentials accepted, scope rejected; 403 with the existing
+  insufficient-scope challenge — no session or downstream evaluation):
+
+  ```json
+  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"unknown","stage":"unknown","failure_stage":"outer_oauth","failure_reason":"scope_insufficient","http_status":403,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":6,"diag_duration_ms":2,"credential_state":"accepted","scope_state":"rejected","session_state":"not_evaluated","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"ddeeff00112233445566778899aabb01","correlation_state":"available","diag_schema":"oauth_diag_v1"}
+  ```
+
+- **Privacy and byte bounds:** Each record is a closed typed allowlist with no
+  arbitrary maps or extras: no credentials, JWTs, claims, identities, raw
+  session IDs, header/path/query/URL/payload values, or error prose appear.
+  Core output is bounded at 3584 bytes; the complete record including the
+  trailing newline is bounded at 4096 bytes. One sink write is attempted —
+  failed or short writes are not retried, and no recursive logging occurs.
 - **Collection and delivery boundary:** Records are emitted as single-line JSON
   to stdout. Standard container/service stdout collection is the shipping boundary.
   Stdout write failures are nonfatal and do not fail requests, retry, or recurse;
   no durable buffer or delivery guarantee is provided. When routing to Loki or
   similar systems, index only low-cardinality metadata (`level`, `event`,
   `service`, `http_method`, `route`, `stage`, `reason`); keep high-cardinality
-  identifiers (`request_id`, session IDs, client addresses) out of label indexes.
+  identifiers such as `request_id` out of label indexes; raw session IDs and
+  client addresses are not part of the typed record at all.
+- **Correlating responses with log records:** An exact join parses the
+  response `Mcp-Diagnostic-Id` (32 lowercase hex), finds the parsed
+  `http_complete` record with the same `request_id` from the same service and
+  `oauth_diag_v1` schema, and requires exact equality — arbitrary header text,
+  labels, or timestamps never substitute. A hidden header (origin absence,
+  transit stripping, CORS invisibility, wrapper hiding) cannot be joined by
+  time coincidence or wrapper traces; classify it as unobserved rather than
+  guessing. There are no CORS or proxy changes to make the header readable to
+  browsers or wrappers, and no guarantee it survives them.
+- **Not established by this diagnostics:** The cause of any past session
+  failure, deployment/source/effective-policy provenance, real client renewal
+  behavior, and actual deployed collector/query behavior are not proven by
+  this logging foundation; absence of a diagnostic field is absence of
+  evidence, never a positive diagnosis (e.g. a missing header is not proof of
+  expiry).
 - **Metrics unchanged:** Prometheus metrics, exposition formats, label names,
   and cardinality remain unchanged; new logging classifications do not alter
   metric series.
