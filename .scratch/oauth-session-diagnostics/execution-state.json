@@ -21,12 +21,19 @@
   "tasks": [
     {"id": "01", "stage": "research", "status": "done", "blockedBy": [], "requires": ["authenticated-source-read"]},
     {"id": "02", "stage": "implementation", "status": "done", "blockedBy": ["01"], "requires": ["engineer", "go", "authenticated-source-read"]},
-    {"id": "03", "stage": "implementation", "status": "pending", "blockedBy": ["02"], "requires": ["engineer", "go", "authenticated-source-read"]},
+    {"id": "03", "stage": "implementation", "status": "done", "blockedBy": ["02"], "requires": ["engineer", "go", "authenticated-source-read"]},
     {"id": "04", "stage": "implementation", "status": "pending", "blockedBy": ["02"], "requires": ["engineer", "go", "authenticated-source-read"]},
     {"id": "05", "stage": "external", "status": "blocked", "blockedBy": ["03", "04"], "requires": ["authorized-live-capture", "collector-read"]}
   ],
   "availableCapabilities": ["local-file-read", "local-file-write", "node", "go", "engineer", "authenticated-source-read"],
   "blockers": [
+    {
+      "id": "ticket03-evidence",
+      "taskId": "03",
+      "reason": "Completed 2026-10-26 on a49c0dc (uncommitted at record time). Owned observations/lifecycle DONE; U-D6 exhaustive AC-D2 specificity remains blocked (sdk-protocol-cause). Evidence: session admission split absent vs existing/mismatch (inbound.go:326-350) both 401/bare Bearer, identical challenge; session ref crypto/rand 128-bit draw-once, deleted with session (DELETE/reap), never in responses (leak-scan tests); session_header_missing negative assertion (session_diag_test.go:401-403); synthetic A/B + 8-worker isolation + expired/scope negatives; RED->GREEN observations; entropy/sink injection no-substitute. Main gate on settled code: suite 12/12 + race 12/12 + build/vet clean + covcheck 90.5% (4505/4977) gate:true; security review APPROVE (LOW inherent absent-vs-mismatch comparator short-circuit only); code review APPROVE, MEDIUM doc-vs-code conflict FIXED (README ref replacement-deletion claim corrected to actual two-live-session behavior; session_capacity not_evaluated note added; CHANGELOG wording verified accurate). Known: one non-reproducing pre-existing timing suspect in serve_endpoint_rebind_test.go:232 (absent in 3x solo, 2x full, race reruns). Docs: README session-outcome section + CHANGELOG; OMP/Gemini smoke NOT RUN. Remote HEAD a49c0dc; changes local-only.",
+      "clearWhen": "n/a (informational completion record)",
+      "evidence": "session_diag_test.go; session_slot_diag_test.go; README session-outcome section; reviews in session record"
+    },
     {
       "id": "ticket02-evidence",
       "taskId": "02",

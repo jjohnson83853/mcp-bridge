@@ -489,6 +489,82 @@ lose the record, and broken sinks do not self-report:
   {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"unknown","stage":"unknown","failure_stage":"outer_oauth","failure_reason":"scope_insufficient","http_status":403,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":6,"diag_duration_ms":2,"credential_state":"accepted","scope_state":"rejected","session_state":"not_evaluated","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"ddeeff00112233445566778899aabb01","correlation_state":"available","diag_schema":"oauth_diag_v1"}
   ```
 
+- **Session outcomes (`failure_stage: session`, both 401 with the bare
+  `Bearer` challenge, unchanged).** The inner session admission distinguishes
+  an absent session entry from an existing-entry bearer-binding mismatch —
+  independently of the HTTP status:
+
+  Missing/reaped entry: valid credentials plus a session header that has no
+  stored entry (`session_absent`; the comparator never ran and the session
+  reference was deleted with the session):
+
+  ```json
+  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"session_auth_failed","stage":"session_admission","failure_stage":"session","failure_reason":"session_absent","http_status":401,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":4,"diag_duration_ms":2,"credential_state":"accepted","scope_state":"accepted","session_header":"present","session_state":"absent","binding_relation":"not_evaluated","session_ref_state":"not_applicable","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"11ff22ee33dd44cc55bb66aa7799cc00","correlation_state":"available","diag_schema":"oauth_diag_v1"}
+  ```
+
+  Existing entry, different bearer binding (comparator mismatch; the live
+  `session_ref` appears in the server record only, never in any response):
+
+  ```json
+  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"session_auth_failed","stage":"session_admission","failure_stage":"session","failure_reason":"session_fingerprint_mismatch","http_status":401,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":3,"diag_duration_ms":1,"credential_state":"accepted","scope_state":"accepted","session_header":"present","session_state":"existing","binding_relation":"mismatch","session_ref_state":"available","session_ref":"7f3a9c1e552b40d6a8c1e93b7742d015","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"aabb0011ccdd22ee33ff445566778899","correlation_state":"available","diag_schema":"oauth_diag_v1"}
+  ```
+
+  Successful session creation (initialize without a header; legal, never a
+  rejection) and ordinary sessionless traffic:
+
+  ```json
+  {"event":"http_complete","level":"info","operation":"unknown","outcome":"success","reason":"none","stage":"none","failure_stage":"none","failure_reason":"none","http_status":200,"http_method":"POST","route":"mcp","http_outcome":"success","duration_ms":12,"diag_duration_ms":11,"credential_state":"accepted","scope_state":"accepted","session_header":"absent","session_state":"created","binding_relation":"not_evaluated","session_ref_state":"available","session_ref":"0d47a2c9b1e6f83d55a04c2e91b7f660","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"5566778899aabbccddeeff0011223344","correlation_state":"available","diag_schema":"oauth_diag_v1"}
+  ```
+
+  A request that proceeds without any supplied or issued session records
+  `session_state: not_supplied` with `session_ref_state: not_applicable`. A
+  `session_capacity` rejection runs no session lookup or comparator, so its
+  record reports `session_state: not_evaluated` and
+  `binding_relation: not_evaluated`.
+
+  Successful use of a retained session (`binding_relation: match`; the same
+  reference the session was created with, in the server record only):
+
+  ```json
+  {"event":"http_complete","level":"info","operation":"unknown","outcome":"success","reason":"none","stage":"none","failure_stage":"none","failure_reason":"none","http_status":200,"http_method":"POST","route":"mcp","http_outcome":"success","duration_ms":9,"diag_duration_ms":8,"credential_state":"accepted","scope_state":"accepted","session_header":"present","session_state":"existing","binding_relation":"match","session_ref_state":"available","session_ref":"0d47a2c9b1e6f83d55a04c2e91b7f660","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"8899aabbccddeeff0011223344556677","correlation_state":"available","diag_schema":"oauth_diag_v1"}
+  ```
+
+- **Session reference (`session_ref`) handling.** When an admitted live session
+  is created, the server draws one independent cryptographically random
+  128-bit reference (32 lowercase hex) and retains it only with that session;
+  it is deleted with the session (DELETE or idle reaping). If the upstream
+  issues a new session ID while an existing matched session is still live,
+  both sessions and their distinct references remain until each is deleted
+  or reaped; no replacement deletion occurs. Large records may omit it for
+  size, recording
+  `session_ref_state: omitted_for_budget`; records never drop the session
+  state or reason to fit the budget. Treat it
+  as a stable pseudonym for one server-side session incarnation:
+  - Include `session_ref` in operator examples or incident bundles only when
+    it is necessary to pair control requests with session observations;
+    otherwise omit it from shared material and mark the omission explicitly
+    `omitted_for_privacy` in operator notes (a shared-artifact annotation, not
+    a record value — not `unavailable`, which is the entropy-failure state the
+    record itself uses).
+  - A changed reference establishes changed server session state only.
+    Absence or change alone cannot distinguish token expiry, process loss,
+    eviction, or unknown client input. A reconnect may replace both the
+    credentials and the session.
+  - The reference is not a session credential, not a lookup key, and never
+    appears in a response. No raw session ID, credential/session digest,
+    tombstone, or per-request correlation map is retained.
+- **Missing session headers.** Header absence alone is not a rejection and
+  never produces `session_header_missing`: that reason is reserved for actual
+  session-required branches with an authoritative protocol cause. The pinned
+  SDK's pre-dispatch initialization rejection is not yet observable through a
+  supported typed path, so no missing-header reason is emitted on that path;
+  no status or error text is inferred to manufacture one.
+- **Not established by session observations:** Real OMP/Gemini smoke is NOT
+  RUN; all examples above are synthetic. These records separate observations
+  (a rejected binding, an absent entry, a created session) from refresh and
+  expiry hypotheses: no record proves why a client's credentials or session
+  changed, and nothing here labels identical real identities or proves actual
+  client renewal.
 - **Privacy and byte bounds:** Each record is a closed typed allowlist with no
   arbitrary maps or extras: no credentials, JWTs, claims, identities, raw
   session IDs, header/path/query/URL/payload values, or error prose appear.

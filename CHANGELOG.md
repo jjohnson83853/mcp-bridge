@@ -7,6 +7,23 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Session outcome diagnostics (`oauth_diag_v1`).** The inner session
+  admission now distinguishes absent session entries from existing-session
+  bearer-binding mismatches in the terminal `http_complete` record:
+  `failure_stage: session` with `session_absent` (401, `session_state: absent`,
+  `binding_relation: not_evaluated`, no session reference) versus
+  `session_fingerprint_mismatch` (401, `session_state: existing`,
+  `binding_relation: mismatch`, the live reference in the server record only).
+  Legal headerless initialization records `session_state: created` with an
+  independent cryptographically random 128-bit `session_ref` (32 lowercase
+  hex) retained only with the session and deleted with it; ordinary
+  sessionless traffic records `session_state: not_supplied`; an entropy
+  failure records `session_ref_state: unavailable` with no retry or derived
+  fallback. Missing-session-header reasons are reserved for actual
+  session-required branches with an authoritative cause and are not emitted
+  from header absence alone. Statuses, challenges and response bodies are
+  unchanged; the reference never appears in a response and no raw session ID,
+  digest or correlation map is retained. Real OMP/Gemini smoke NOT RUN.
 - **Outer OAuth rejection diagnostics (`oauth_diag_v1`).** Early OAuth
   rejections now carry authoritative typed reasons in the terminal
   `http_complete` log record: `credentials_missing` (401 resource challenge),
@@ -22,6 +39,11 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Session state at the inner credential gate.** An inner static-credential
+  rejection now records `session_state: not_evaluated` truthfully for a
+  supplied session header (previously `existing`), because the stored-entry
+  lookup and comparator run after credential acceptance; header presence
+  remains its own independent `session_header` slot.
 - **`duration_ms` measurement boundary.** The latency-log field now measures
   outer-owner entry — before routing, OAuth evaluation, and correlation-ID
   generation — through handler return/unwind, not the former inner-handler

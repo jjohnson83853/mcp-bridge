@@ -1,8 +1,10 @@
 package service
 
 import (
+	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -44,6 +46,10 @@ type InboundHandler struct {
 type sessionRecord struct {
 	token    [32]byte
 	lastSeen time.Time
+	// ref is the 32 lowercase hexadecimal diagnostic reference drawn once
+	// when the live session was admitted; empty means the reference is
+	// explicitly unavailable. It is retained only with the session.
+	ref string
 }
 
 // InboundBounds are the admission bounds of the currently published generation.
@@ -84,6 +90,12 @@ type InboundOptions struct {
 	Tokens func() [][32]byte
 	// Now is the reaping/expiry clock; nil means time.Now.
 	Now func() time.Time
+
+	// NewSessionRef draws one independent diagnostic reference for a newly
+	// admitted live session. nil uses cryptographic generation. An error or
+	// malformed value leaves the reference explicitly unavailable: no retry,
+	// no derived fallback, no substitute identity.
+	NewSessionRef func() (string, error)
 }
 
 // NewInboundHandler exposes exactly /mcp and authenticates every method. Tokens
@@ -141,6 +153,44 @@ func (h *InboundHandler) now() time.Time {
 		return h.options.Now()
 	}
 	return time.Now()
+}
+
+// defaultSessionRef draws one independent 128-bit reference cryptographically.
+func defaultSessionRef() (string, error) {
+	var random [16]byte
+	if _, err := rand.Read(random[:]); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(random[:]), nil
+}
+
+// newSessionRef draws the diagnostic reference for a newly admitted live
+// session. One entropy failure or malformed draw leaves it explicitly
+// unavailable: no retry, no recursive logging, no derived fallback.
+func (h *InboundHandler) newSessionRef() (string, bool) {
+	generate := h.options.NewSessionRef
+	if generate == nil {
+		generate = defaultSessionRef
+	}
+	ref, err := generate()
+	if err != nil || !validDiagnosticRefShape(ref) {
+		return "", false
+	}
+	return ref, true
+}
+
+// validDiagnosticRefShape reports whether the value is the only reference
+// shape the typed schema allows: 32 lowercase hexadecimal characters.
+func validDiagnosticRefShape(value string) bool {
+	if len(value) != 32 {
+		return false
+	}
+	for _, c := range value {
+		if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f') {
+			return false
+		}
+	}
+	return true
 }
 
 func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -248,7 +298,9 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
 			FailureStage: "inner_credential", FailureReason: "static_invalid",
 			AuthMode: "static", CredentialState: "rejected",
-			SessionState: sessionStateForAuth(r),
+			// The session entry and comparator were not evaluated at this
+			// boundary; only header presence (its own slot) is observed.
+			SessionState: "not_evaluated",
 		})
 		http.Error(writer, "unauthorized", http.StatusUnauthorized)
 		return
@@ -260,22 +312,50 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		now := h.now()
 		h.reapExpiredLocked(now)
 		bound, exists := h.sessions[sessionID]
-		valid := exists && subtle.ConstantTimeCompare(bound.token[:], tokenHash[:]) == 1
-		if valid {
-			// Idle is inactivity, so an accepted request refreshes the record.
-			h.sessions[sessionID] = sessionRecord{token: bound.token, lastSeen: now}
+		bindingMatch := exists && subtle.ConstantTimeCompare(bound.token[:], tokenHash[:]) == 1
+		if bindingMatch {
+			// Idle is inactivity, so an accepted request refreshes the record
+			// without replacing its diagnostic reference.
+			h.sessions[sessionID] = sessionRecord{token: bound.token, lastSeen: now, ref: bound.ref}
 		}
 		h.mu.Unlock()
-		if !valid {
+		if !bindingMatch {
+			if !exists {
+				// A supplied session header with no stored entry: the entry is
+				// absent and the comparator never ran. The reference was
+				// deleted with the session, so nothing is retained here.
+				observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+					FailureStage: "session", FailureReason: "session_absent",
+					SessionState: "absent", BindingRelation: "not_evaluated",
+				})
+				observe.ContributeSessionEvidence(r.Context(), observe.HTTPSessionEvidence{
+					RefState: "not_applicable", State: "absent", Binding: "not_evaluated",
+				})
+			} else {
+				// An existing entry bound to a different bearer: the comparator
+				// mismatched. The live reference appears in the server record
+				// only; it is never written to the response.
+				observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+					FailureStage: "session", FailureReason: "session_fingerprint_mismatch",
+					SessionState: "existing", BindingRelation: "mismatch",
+				})
+				observe.ContributeSessionEvidence(r.Context(), observe.HTTPSessionEvidence{
+					RefState: diagnosticRefState(bound.ref), Ref: bound.ref,
+					State: "existing", Binding: "mismatch",
+				})
+			}
 			writer.Header().Set("WWW-Authenticate", "Bearer")
 			rejection = legacyRejection{"session_admission", "session_auth_failed"}
-			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
-				FailureStage: "session", FailureReason: "session_fingerprint_mismatch",
-				SessionState: "existing",
-			})
 			http.Error(writer, "unauthorized", http.StatusUnauthorized)
 			return
 		}
+		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+			SessionState: "existing", BindingRelation: "match",
+		})
+		observe.ContributeSessionEvidence(r.Context(), observe.HTTPSessionEvidence{
+			RefState: diagnosticRefState(bound.ref), Ref: bound.ref,
+			State: "existing", Binding: "match",
+		})
 	} else {
 		// Creating a new session: enforce the session cap after reaping.
 		if maximum := bounds.MaxSessions; maximum > 0 {
@@ -328,8 +408,43 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if issuedID := writer.Header().Get(sessionIDHeader); issuedID != "" {
 		h.mu.Lock()
-		h.sessions[issuedID] = sessionRecord{token: tokenHash, lastSeen: h.now()}
+		record, exists := h.sessions[issuedID]
+		created := !exists
+		var ref string
+		refAvailable := true
+		if exists {
+			// A response-issued identifier for an already tracked session
+			// replaces the record without redrawing its reference.
+			record.token = tokenHash
+			record.lastSeen = h.now()
+			ref = record.ref
+		} else {
+			// An admitted live session was created: draw its one independent
+			// diagnostic reference and retain it only with this session.
+			ref, refAvailable = h.newSessionRef()
+			record = sessionRecord{token: tokenHash, lastSeen: h.now(), ref: ref}
+		}
+		h.sessions[issuedID] = record
 		h.mu.Unlock()
+		if created && sessionID == "" {
+			// Terminal created evidence; no comparator ran, and the reference
+			// is the pseudonym recorded with the new session only.
+			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+				SessionState: "created", BindingRelation: "not_evaluated",
+			})
+			observe.ContributeSessionEvidence(r.Context(), observe.HTTPSessionEvidence{
+				RefState: refEvidenceState(ref, refAvailable), Ref: ref,
+				State: "created", Binding: "not_evaluated",
+			})
+		}
+	} else if sessionID == "" {
+		// The request proceeded without a supplied or issued session.
+		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+			SessionState: "not_supplied", BindingRelation: "not_evaluated",
+		})
+		observe.ContributeSessionEvidence(r.Context(), observe.HTTPSessionEvidence{
+			RefState: "not_applicable", State: "not_supplied", Binding: "not_evaluated",
+		})
 	}
 	if r.Method == http.MethodDelete && sessionID != "" {
 		h.mu.Lock()
@@ -354,20 +469,27 @@ func (h *InboundHandler) diagnostics() *observe.HTTPDiagnostics {
 	return h.fallbackDiagnostics
 }
 
-// sessionStateForAuth reports the truthful session evaluation state at the
-// inner credential rejection point: a supplied session header was evaluated
-// before credential acceptance, an absent one was not.
-func sessionStateForAuth(r *http.Request) string {
-	if r.Header.Get(sessionIDHeader) != "" {
-		return "existing"
-	}
-	return "not_evaluated"
-}
-
 // legacyRejection records the legacy stage/reason of the first decisive
 // admission rejection, in the summarised legacy vocabulary.
 type legacyRejection struct {
 	stage, reason string
+}
+
+// diagnosticRefState reports the truthful reference state of a retained
+// session record.
+func diagnosticRefState(ref string) string {
+	if validDiagnosticRefShape(ref) {
+		return "available"
+	}
+	return "unavailable"
+}
+
+// refEvidenceState reports the reference state of a newly drawn reference.
+func refEvidenceState(ref string, drawn bool) string {
+	if drawn && validDiagnosticRefShape(ref) {
+		return "available"
+	}
+	return "unavailable"
 }
 
 // legacyClassification computes the summarised legacy stage/reason/operation
