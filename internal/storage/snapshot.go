@@ -14,11 +14,18 @@ import (
 	"time"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/catalog"
+	"github.com/jjohnson83853/mcp-bridge/internal/core"
 )
 
-// SchemaVersion is the flat on-disk snapshot schema. No namespace-era schema
-// ever existed, so there is no migration shim (plan §4.9).
-const SchemaVersion = 1
+// Schema version constants of the flat on-disk snapshot schema. Version 1 is
+// the frozen pre-tool-metadata representation (snapshot_v1.go); the writer
+// publishes version 2, which adds optional source metadata. The new reader
+// strictly verifies both with version-specific checksums; old binaries never
+// receive schema 2 (approved design decisions 13-15).
+const (
+	schemaVersionLegacy = 1
+	SchemaVersion       = 2
+)
 
 // Catalog status vocabulary (plan §4.7).
 const (
@@ -75,6 +82,10 @@ type Tool struct {
 	EmbeddingContentHash string          `json:"embedding_content_hash"`
 	InputSchema          json.RawMessage `json:"input_schema,omitempty"`
 	OutputSchema         json.RawMessage `json:"output_schema,omitempty"`
+	// Metadata is the persisted source metadata (schema 2 only). nil is the
+	// metadata-absent form and serializes to nothing, so a schema-2 document
+	// without metadata keeps the exact schema-1 byte layout of its rows.
+	Metadata *core.ToolMetadata `json:"metadata,omitempty"`
 }
 
 // Embedding is one non-secret embedding record for a tool content identity.
@@ -250,7 +261,17 @@ func stampServerRow(s *Snapshot, serverID string, at time.Time, transition func(
 // Validate checks bounds, version, identity, schemas and vectors. A snapshot
 // that fails validation is never published and never trusted.
 func (s *Snapshot) Validate() error {
-	if s.SchemaVersion != SchemaVersion {
+	switch s.SchemaVersion {
+	case schemaVersionLegacy:
+		// A legacy snapshot in canonical memory must be metadata-absent: the
+		// frozen schema-1 representation cannot carry metadata.
+		for _, tool := range s.Tools {
+			if tool.Metadata != nil {
+				return fmt.Errorf("storage: schema_version 1 tool %q carries metadata", tool.PublicName)
+			}
+		}
+	case SchemaVersion:
+	default:
 		return fmt.Errorf("storage: unsupported schema_version %d", s.SchemaVersion)
 	}
 	if !revisionPattern.MatchString(s.CatalogRevision) {
@@ -325,6 +346,11 @@ func (s *Snapshot) Validate() error {
 		}
 		if !hexDigest(tool.EmbeddingContentHash) {
 			return fmt.Errorf("storage: tool %q has no embedding content hash", tool.PublicName)
+		}
+		if tool.Metadata != nil {
+			if err := tool.Metadata.Validate(); err != nil {
+				return fmt.Errorf("storage: tool %q metadata: %w", tool.PublicName, err)
+			}
 		}
 		for _, schema := range []struct {
 			label string

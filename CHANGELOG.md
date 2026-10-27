@@ -7,6 +7,66 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Exact-tool metadata exceptions (`tool_metadata.tools`).** A server's
+  `tool_metadata` mapping may carry a `tools` mapping of exact raw tool names
+  to patches, layered above that server's defaults with precedence upstream
+  source → server defaults → exact-tool exception. Entries must name tools
+  pinned on the same server (no wildcard/cross-server selectors); unknown
+  targets, invalid names, unsupported members and duplicate entries reject
+  the whole candidate atomically through the typed, redacted diagnostics.
+  Exceptions join the public configuration fingerprint (never the credential
+  identity), publish through the existing reload path, report
+  `layer: "tool"` provenance in `describe_tool`'s
+  `metadata_override_fields`, and removing a patch on reload reverts that
+  tool to the current defaults or source. Corrections are never persisted as
+  upstream truth. See "Exact-tool exceptions" in the README for the
+  mixed-service risk and client-policy boundary.
+- **Server-scoped metadata defaults (`tool_metadata.defaults`).** Any
+  configured server may declare a `defaults` patch (`description`, `title`,
+  `icons`, `annotations`, `_meta`) that is applied — after the upstream's
+  SDK-normalized source values — to that server's configured pins only.
+  Object members merge recursively, arrays and scalars replace outright, and
+  explicit `false`/empty/`null` members are retained as values. Invalid or
+  unknown members reject the whole candidate atomically through the typed,
+  redacted config diagnostics. Defaults change the public configuration
+  fingerprint (never the credential identity), publish through the existing
+  candidate/reload path (`tools/list` serves the effective descriptor;
+  `describe_tool` adds `metadata` and `metadata_override_fields` with
+  `server_default` provenance while `upstream_metadata` stays the source
+  view), and removing them on reload reverts the same session to the current
+  source values. Corrections are never persisted as upstream truth. See
+  "Server metadata defaults" in the README for the mixed-service
+  misclassification risk.
+- **Upstream tool metadata preservation (schema 2).** Discovery now converts
+  each upstream tool's SDK-normalized metadata — title, icons, the annotation
+  object (title plus the four standard hints, with explicit `false` pointer
+  hints preserved as false rather than dropped), and supported `_meta` keys —
+  into the catalog definition. Pinned tools publish it on the wire
+  (`tools/list` carries annotations, title and icons; `describe_tool` reports
+  `upstream_metadata`), and a metadata-only upstream change moves the
+  definition digest and catalog revision, triggering republish while
+  metadata-absent definitions keep their frozen legacy digests. Metadata is
+  advisory claims from the upstream, never authorization.
+- **Snapshot schema 2 with a strict schema-1-or-2 reader.** The durable
+  snapshot writer publishes `schema_version: 2` with optional per-tool source
+  metadata; the reader selects the decoder by document version and strictly
+  verifies schema 1 through its frozen legacy representation (unchanged
+  checksum semantics) and schema 2 through the canonical representation,
+  rejecting unknown fields, trailing data, checksum mismatches, tampered
+  metadata and unsupported versions. Loading legacy state never rewrites it;
+  the next accepted save publishes schema 2. Rollback remains restore, not
+  reverse migration: stop the new process, retain the newer state separately,
+  and restore a validated pre-upgrade schema-1 snapshot with its matching
+  config before starting an old binary.
+
+- **Built-in tool annotations.** The three bridge-owned tools now declare
+  standard MCP tool annotations on the wire: `search_tools` and `describe_tool`
+  are read-only, idempotent, open-world discovery (no destructive hint);
+  `call_tool` remains potentially mutating, potentially destructive,
+  non-idempotent, and open-world. Annotations are advisory client hints — not
+  authorization, not a prompt-suppression guarantee, and never a trust bypass.
+  No name, schema, auth, dispatch, or initialize behavior changed.
+
 - **Runtime provenance and safe route context (`oauth_diag_v1`).** The
   terminal `http_complete` record now carries the process incarnation
   (`process_id`/`process_state`: one independent cryptographically random

@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "feature": "METADATA",
+  "revision": "METADATA-r7",
+  "checkpointRevisions": {
+    "approvals.requirements": "METADATA-r4",
+    "approvals.design": "METADATA-r5",
+    "approvals.tasks": "METADATA-r7",
+    "reviews.specification": "METADATA-r4",
+    "reviews.tasks": "METADATA-r7"
+  },
+  "approvals": {
+    "requirements": {
+      "revision": "METADATA-r4",
+      "evidence": "spec.md"
+    },
+    "design": {
+      "revision": "METADATA-r5",
+      "evidence": "spec.md"
+    },
+    "tasks": {
+      "revision": "METADATA-r7",
+      "evidence": "spec.md"
+    }
+  },
+  "reviews": {
+    "specification": {
+      "revision": "METADATA-r4",
+      "evidence": "spec.md"
+    },
+    "tasks": {
+      "revision": "METADATA-r7",
+      "evidence": "critic-tasks-r7.md"
+    }
+  },
+  "tasks": [
+    {
+      "id": "01",
+      "stage": "research",
+      "status": "done",
+      "blockedBy": [],
+      "requires": [
+        "authenticated-source-read"
+      ]
+    },
+    {
+      "id": "02",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [
+        "engineer",
+        "go"
+      ]
+    },
+    {
+      "id": "03",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "01"
+      ],
+      "requires": [
+        "engineer",
+        "go",
+        "authenticated-source-read"
+      ]
+    },
+    {
+      "id": "04",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "03"
+      ],
+      "requires": [
+        "engineer",
+        "go",
+        "authenticated-source-read"
+      ]
+    },
+    {
+      "id": "05",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "04"
+      ],
+      "requires": [
+        "engineer",
+        "go",
+        "authenticated-source-read"
+      ]
+    },
+    {
+      "id": "06",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "02",
+        "05"
+      ],
+      "requires": [
+        "engineer",
+        "go"
+      ]
+    }
+  ],
+  "availableCapabilities": [
+    "local-file-read",
+    "local-file-write",
+    "go",
+    "engineer",
+    "authenticated-source-read"
+  ],
+  "blockers": [],
+  "gate": {
+    "markerPath": "../../.superpowers/sdd/GATE_OPEN",
+    "feature": "METADATA",
+    "revision": "METADATA-r7",
+    "extensionPath": "../../.omp/extensions/sdd-gate.ts",
+    "loadEvidencePath": "gate-load-evidence.json"
+  }
+}

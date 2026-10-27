@@ -29,6 +29,9 @@ type ToolDefinition struct {
 	Description  string
 	InputSchema  json.RawMessage
 	OutputSchema json.RawMessage
+	// Metadata is the SDK-normalized upstream metadata. The zero value is the
+	// metadata-absent form and must not move the definition digest.
+	Metadata ToolMetadata
 }
 
 // UpstreamOutcome reports upstream-execution shape beyond a raw result.
@@ -129,10 +132,12 @@ func (b *Bridge) Register(serverID, endpoint string, defs []ToolDefinition) erro
 		return fmt.Errorf("core.Register: server %q already bound to %q, rejecting rebind to %q", serverID, existing, endpoint)
 	}
 	candidate := map[string]*Binding{}
-	for _, def := range defs {
+	for index := range defs {
+		def := defs[index]
 		if def.RawName == "" {
 			return fmt.Errorf("core.Register: server %q: empty raw tool name", serverID)
 		}
+		def.Metadata = def.Metadata.Clone()
 		pub := PublicName(serverID, def.RawName)
 		if _, ok := candidate[pub]; ok {
 			return fmt.Errorf("core.Register: server %q: duplicate raw tool name %q", serverID, def.RawName)
@@ -179,6 +184,9 @@ type revisionEntry struct {
 	Description string          `json:"description"`
 	Input       json.RawMessage `json:"input_schema"`
 	Output      json.RawMessage `json:"output_schema"`
+	// Metadata is the canonical metadata serialization; nil when absent, so
+	// metadata-absent entries keep their frozen pre-ticket-03 encoding.
+	Metadata json.RawMessage `json:"metadata,omitempty"`
 }
 
 // Revision returns the deterministic global catalog revision: SHA-256 over the
@@ -196,6 +204,7 @@ func (b *Bridge) Revision() string {
 			Description: bind.Def.Description,
 			Input:       canonicalSchema(bind.Def.InputSchema),
 			Output:      canonicalSchema(bind.Def.OutputSchema),
+			Metadata:    bind.Def.Metadata.canonical(),
 		})
 	}
 	sort.Slice(entries, func(i, j int) bool {
@@ -224,6 +233,7 @@ func DefinitionDigest(serverID, rawName string, def ToolDefinition) string {
 		Description: def.Description,
 		Input:       canonicalSchema(def.InputSchema),
 		Output:      canonicalSchema(def.OutputSchema),
+		Metadata:    def.Metadata.canonical(),
 	}
 	blob, err := json.Marshal(entry)
 	if err != nil {

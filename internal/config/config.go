@@ -35,11 +35,12 @@ var envNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 var pinToolNamePattern = regexp.MustCompile("^[a-zA-Z0-9_-]+$")
 
 type Server struct {
-	ID              string         `yaml:"id"`
-	Endpoint        string         `yaml:"endpoint"`
-	PromptsDisabled bool           `yaml:"prompts_disabled"`
-	Credentials     map[string]any `yaml:"credentials,omitempty"`
-	Limits          map[string]any `yaml:"limits,omitempty"`
+	ID              string              `yaml:"id"`
+	Endpoint        string              `yaml:"endpoint"`
+	PromptsDisabled bool                `yaml:"prompts_disabled"`
+	Credentials     map[string]any      `yaml:"credentials,omitempty"`
+	Limits          map[string]any      `yaml:"limits,omitempty"`
+	ToolMetadata    *ToolMetadataConfig `yaml:"tool_metadata,omitempty"`
 }
 
 type Config struct {
@@ -244,18 +245,18 @@ func Parse(data []byte, configPath string) (*Config, error) {
 			return nil, single(Diagnostic{
 				Path: configPath, Key: fmt.Sprintf("pins[%d].tool", index),
 				Code: "pin_tool_name", Property: "tool", Shape: "invalid_chars",
-				Reason: "pin tool name must contain only standard identifier characters",
+				Reason:    "pin tool name must contain only standard identifier characters",
 				PinServer: pin["server"],
-				PinTool: tool,
+				PinTool:   tool,
 			})
 		}
 		if len(tool) > 94 || len(pin["server"])+2+len(tool) > 128 {
 			return nil, single(Diagnostic{
 				Path: configPath, Key: fmt.Sprintf("pins[%d].tool", index),
 				Code: "pin_tool_name", Property: "tool", Shape: "too_long",
-				Reason: "pin tool name exceeds 94 characters or wire name exceeds 128 characters",
+				Reason:    "pin tool name exceeds 94 characters or wire name exceeds 128 characters",
 				PinServer: pin["server"],
-				PinTool: tool,
+				PinTool:   tool,
 			})
 		}
 		key := pin["server"] + "\x00" + pin["tool"]
@@ -270,6 +271,21 @@ func Parse(data []byte, configPath string) (*Config, error) {
 			})
 		}
 		seenPins[key] = index
+	}
+	// Exact-tool metadata exceptions must name configured pins of their own
+	// server; the join runs once pins are fully validated (spec ticket-05).
+	for index, server := range cfg.Servers {
+		if server.ToolMetadata == nil {
+			continue
+		}
+		if err := server.ToolMetadata.ValidatePins(server.ID, cfg.Pins); err != nil {
+			return nil, single(Diagnostic{
+				Path: configPath,
+				Key:  fmt.Sprintf("servers[%d].tool_metadata.tools", index), Server: server.ID,
+				Code: "tool_metadata_tool_unknown", Property: "tool_metadata", Shape: "unknown_tool",
+				Reason: err.Error(),
+			})
+		}
 	}
 	if diags := validateBounds(root.Content[0], configPath); diags != nil {
 		return nil, diags
@@ -577,8 +593,10 @@ var fields = map[string]map[string]bool{
 	"embedding":         set("provider model model_revision base_url dimensions api_key timeout max_concurrency batch_size max_response_bytes"),
 	"client_auth":       set("bearer_tokens"),
 	"upstream_defaults": set("connect_timeout call_timeout refresh_timeout max_concurrent_calls max_event_bytes max_response_bytes breaker"),
-	"server":            set("id endpoint prompts_disabled credentials limits"), "credentials": set("bearer headers"),
-	"limits": set("max_concurrent_calls call_timeout"), "breaker": set("consecutive_failures open_duration half_open_probes"),
+	"server":            set("id endpoint prompts_disabled credentials limits tool_metadata"), "credentials": set("bearer headers"),
+	"tool_metadata": set("defaults tools"),
+	"defaults":      set("description title icons annotations _meta"),
+	"limits":        set("max_concurrent_calls call_timeout"), "breaker": set("consecutive_failures open_duration half_open_probes"),
 	"pin": set("server tool"), "secret": set("env file"),
 }
 
@@ -607,7 +625,7 @@ func (v *docValidator) fail(record Diagnostic) *Diagnostics {
 // sequence or scalar in their place is attributed before the typed decode so
 // the record names the section from the parsed node, never decoder prose
 // (spec §5.2 C-1 wrong-section-type row).
-var mappingOnlySections = set("http operations storage catalog search embedding client_auth upstream_defaults credentials limits breaker headers")
+var mappingOnlySections = set("http operations storage catalog search embedding client_auth upstream_defaults credentials limits breaker headers tool_metadata defaults tools")
 
 func (v *docValidator) validateNode(node *yaml.Node, path, section, server string) *Diagnostics {
 	if section == "headers" {
@@ -660,6 +678,35 @@ func (v *docValidator) validateNode(node *yaml.Node, path, section, server strin
 			})
 		}
 		seen[key.Value] = firstKey{path: childPath, line: key.Line, column: key.Column}
+		if section == "tool_metadata" && key.Value == "tools" {
+			if value.Kind != yaml.MappingNode {
+				return v.fail(Diagnostic{
+					Key: childPath, Server: server, Line: value.Line, Column: value.Column,
+					Code: "tool_metadata_value", Property: "tool_metadata", Shape: shapeOf(value),
+					Reason: "tools must be a mapping of exact raw tool names to patches",
+				})
+			}
+			for i := 0; i+1 < len(value.Content); i += 2 {
+				name := value.Content[i]
+				if name.Kind != yaml.ScalarNode || name.Tag != "!!str" || !pinToolNamePattern.MatchString(name.Value) {
+					return v.fail(Diagnostic{
+						Key: childPath, Server: server, Line: name.Line, Column: name.Column,
+						Code: "tool_metadata_tool_name", Property: "tool_metadata", Shape: shapeOf(name),
+						Reason: "tools entry name must be a nonempty standard identifier",
+					})
+				}
+				if err := v.validateNode(value.Content[i+1], joinKey(childPath, name.Value), "defaults", server); err != nil {
+					return err
+				}
+			}
+			continue
+		}
+		if section == "defaults" {
+			if err := v.validateDefaultsValue(childPath, key.Value, value, server); err != nil {
+				return err
+			}
+			continue
+		}
 		allowed, ok := fields[section]
 		if !ok || !allowed[key.Value] {
 			// The offending key text is withheld; the parent location and the
@@ -778,6 +825,10 @@ func childSection(section, key string) string {
 		return "credentials"
 	case section == "server" && key == "limits":
 		return "limits"
+	case section == "server" && key == "tool_metadata":
+		return "tool_metadata"
+	case section == "tool_metadata" && key == "defaults":
+		return "defaults"
 	case section == "upstream_defaults" && key == "breaker":
 		return "breaker"
 	case section == "credentials" && key == "bearer":

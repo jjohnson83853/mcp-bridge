@@ -142,6 +142,10 @@ func (s *Store) SavePrompts(prompts *PromptSnapshot) error {
 
 // Load reads and fully re-validates the published snapshot. A missing file is
 // ErrNoSnapshot; every rejection is ErrCorrupt and leaves the file untouched.
+// The decoder is selected by the document's schema version: schema 1 is
+// verified through the frozen legacy representation with schema-1 checksum
+// semantics, schema 2 through the canonical representation with schema-2
+// checksum semantics (approved design decision 13).
 func (s *Store) Load() (*Snapshot, error) {
 	raw, err := os.ReadFile(s.Path())
 	if err != nil {
@@ -150,21 +154,38 @@ func (s *Store) Load() (*Snapshot, error) {
 		}
 		return nil, fmt.Errorf("storage: read snapshot: %w", err)
 	}
-	snapshot := &Snapshot{}
-	decoder := json.NewDecoder(bytes.NewReader(raw))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(snapshot); err != nil {
-		return nil, fmt.Errorf("%w: decode: %v", ErrCorrupt, err)
+	var probe struct {
+		SchemaVersion int `json:"schema_version"`
 	}
-	if err := decoder.Decode(new(struct{})); !errors.Is(err, io.EOF) {
-		return nil, fmt.Errorf("%w: trailing data after snapshot", ErrCorrupt)
+	if err := json.Unmarshal(raw, &probe); err != nil {
+		return nil, fmt.Errorf("%w: decode envelope: %v", ErrCorrupt, err)
 	}
-	checksum, err := snapshot.Checksum()
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrCorrupt, err)
-	}
-	if snapshot.Envelope.SnapshotChecksum != checksum {
-		return nil, fmt.Errorf("%w: checksum mismatch", ErrCorrupt)
+	var snapshot *Snapshot
+	switch probe.SchemaVersion {
+	case schemaVersionLegacy:
+		snapshot, err = decodeSnapshotV1(raw)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrCorrupt, err)
+		}
+	case SchemaVersion:
+		snapshot = &Snapshot{}
+		decoder := json.NewDecoder(bytes.NewReader(raw))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(snapshot); err != nil {
+			return nil, fmt.Errorf("%w: decode: %v", ErrCorrupt, err)
+		}
+		if err := decoder.Decode(new(struct{})); !errors.Is(err, io.EOF) {
+			return nil, fmt.Errorf("%w: trailing data after snapshot", ErrCorrupt)
+		}
+		checksum, err := snapshot.Checksum()
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrCorrupt, err)
+		}
+		if snapshot.Envelope.SnapshotChecksum != checksum {
+			return nil, fmt.Errorf("%w: checksum mismatch", ErrCorrupt)
+		}
+	default:
+		return nil, fmt.Errorf("%w: unsupported schema_version %d", ErrCorrupt, probe.SchemaVersion)
 	}
 	if err := snapshot.Validate(); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrCorrupt, err)
@@ -184,6 +205,11 @@ func (s *Store) Save(snapshot *Snapshot) error {
 	if snapshot == nil {
 		return errors.New("storage: nil snapshot")
 	}
+	// The writer publishes the current schema: a snapshot admitted from
+	// legacy state is upgraded to schema 2 by its next accepted save
+	// (approved design decision 14). The stamp precedes validation so the
+	// published document is validated exactly as written.
+	snapshot.SchemaVersion = SchemaVersion
 	if err := snapshot.Validate(); err != nil {
 		return err
 	}

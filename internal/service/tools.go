@@ -63,6 +63,10 @@ func NewToolSurface(runtime *Runtime, cfg ToolSurfaceConfig) (*ToolSurface, erro
 	return &ToolSurface{runtime: runtime, cfg: cfg, logger: cfg.Logger, pinnedTools: make(map[string]core.ResolvedPin)}, nil
 }
 
+// boolPtr returns a fresh pointer for an advisory hint literal, so callers
+// never share a mutable hint value.
+func boolPtr(value bool) *bool { return &value }
+
 // Register installs exactly the three bridge tools on server with the exact
 // §4.4 input schemas. It is not safe for concurrent use with tool calls.
 func (t *ToolSurface) Register(server *mcp.Server) error {
@@ -76,16 +80,31 @@ func (t *ToolSurface) Register(server *mcp.Server) error {
 		Name:        catalog.ToolSearchTools,
 		Description: "Search the bridge's indexed tools.",
 		InputSchema: catalog.SearchToolsInputSchema(),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint:   true,
+			IdempotentHint: true,
+			OpenWorldHint:  boolPtr(true),
+		},
 	}, t.searchTools)
 	server.AddTool(&mcp.Tool{
 		Name:        catalog.ToolDescribeTool,
 		Description: "Describe one indexed tool with its exact stored schema.",
 		InputSchema: catalog.DescribeToolInputSchema(),
+		Annotations: &mcp.ToolAnnotations{
+			ReadOnlyHint:   true,
+			IdempotentHint: true,
+			OpenWorldHint:  boolPtr(true),
+		},
 	}, t.describeTool)
 	server.AddTool(&mcp.Tool{
 		Name:        catalog.ToolCallTool,
 		Description: "Call one indexed upstream tool through the bridge.",
 		InputSchema: catalog.CallToolInputSchema(),
+		Annotations: &mcp.ToolAnnotations{
+			DestructiveHint: boolPtr(true),
+			IdempotentHint:  false,
+			OpenWorldHint:   boolPtr(true),
+		},
 	}, t.callTool)
 	return nil
 }
@@ -122,14 +141,33 @@ func (t *ToolSurface) Published(assembly *Assembly) {
 			}
 		}
 	}
+	descriptors := make(map[string]*mcp.Tool, len(next))
 	for name, pin := range next {
-		def := pin.Binding.Def
-		t.server.AddTool(&mcp.Tool{
-			Name:        name,
-			Description: def.Description,
-			InputSchema: json.RawMessage(def.InputSchema),
-		}, t.callPinnedTool)
-		t.pinnedTools[name] = pin
+		descriptor, err := sdkToolDescriptor(name, pin.Binding.Def)
+		if err != nil {
+			// One invalid descriptor rejects the whole candidate generation:
+			// the published surface must never be a partial tool set with a
+			// pinned tool silently missing, so nothing from this assembly is
+			// registered and the previous generation stays published.
+			if t.logger != nil {
+				t.logger.Log(observe.Entry{
+					Level:     "warn",
+					Event:     "reload",
+					RequestID: "",
+					Operation: "publish",
+					Duration:  0,
+					Outcome:   "rejected",
+					Reason:    "invalid_metadata",
+					Fields:    map[string]any{"reason": "invalid_metadata"},
+				})
+			}
+			return
+		}
+		descriptors[name] = descriptor
+	}
+	for name, descriptor := range descriptors {
+		t.server.AddTool(descriptor, t.callPinnedTool)
+		t.pinnedTools[name] = next[name]
 	}
 }
 
@@ -492,6 +530,21 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 		"pinned":            assembly.PinnedNames()[pub],
 		"last_success_at":   timestamp(health.LastSuccessAt),
 		"validation_status": "supported",
+	}
+	if metadata := upstreamMetadataValue(binding.Def.Metadata); metadata != nil {
+		payload["upstream_metadata"] = metadata
+	}
+	if assembly.PinnedNames()[pub] {
+		// Pinned tools answer with the generation's effective view: the
+		// server defaults applied over the source, plus the provenance of
+		// every winning field path. An empty list means no correction.
+		effective, overrides, ok := assembly.PinMetadataView(binding.ServerID, binding.RawName)
+		if ok {
+			payload["metadata_override_fields"] = overrides
+			if effectiveView := upstreamMetadataValue(effective); effectiveView != nil {
+				payload["metadata"] = effectiveView
+			}
+		}
 	}
 	if schema := binding.Def.InputSchema; len(schema) > 0 {
 		if err := catalog.ValidateSchemaDocument(string(schema)); err != nil {

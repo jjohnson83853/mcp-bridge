@@ -36,11 +36,12 @@ type publicProjection struct {
 }
 
 type projectedServer struct {
-	ID              string         `json:"id"`
-	Endpoint        string         `json:"endpoint"`
-	Limits          map[string]any `json:"limits,omitempty"`
-	PromptsDisabled bool           `json:"prompts_disabled"`
-	Credentials     map[string]any `json:"credentials,omitempty"`
+	ID              string              `json:"id"`
+	Endpoint        string              `json:"endpoint"`
+	Limits          map[string]any      `json:"limits,omitempty"`
+	PromptsDisabled bool                `json:"prompts_disabled"`
+	Credentials     map[string]any      `json:"credentials,omitempty"`
+	ToolMetadata    *ToolMetadataConfig `json:"tool_metadata,omitempty"`
 }
 
 // Fingerprint returns the stable public identity of the configuration: a
@@ -69,6 +70,7 @@ func (c Config) Fingerprint() string {
 			PromptsDisabled: server.PromptsDisabled,
 			Limits:          server.Limits,
 			Credentials:     server.Credentials,
+			ToolMetadata:    server.ToolMetadata,
 		})
 	}
 	if projection.Servers == nil {

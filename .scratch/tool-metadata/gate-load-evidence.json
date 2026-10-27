@@ -1,0 +1,9 @@
+{
+  "feature": "METADATA",
+  "revision": "METADATA-r7",
+  "verified": "2026-10-26",
+  "extensionPath": "../../.omp/extensions/sdd-gate.ts",
+  "extensionStatus": "ABSENT — verified by filesystem check of /home/opencode/projects/default/.omp/extensions and /home/opencode/.omp/extensions (no sdd-gate.ts found in either location on 2026-10-26). Hard runtime enforcement is NOT available; the machine gate cannot refuse engineer dispatches. Per project policy, missing enforcement never waives approval requirements: the r7 approvals (requirements r4, design r5, tasks r7) and critic PASS stand on their recorded evidence. This mirrors the OAUTH-DIAG execution-state record (project extension/load evidence unavailable).",
+  "markerPath": "../../.superpowers/sdd/GATE_OPEN",
+  "markerNote": "Appended METADATA-r7 line references feature METADATA and revision METADATA-r7."
+}

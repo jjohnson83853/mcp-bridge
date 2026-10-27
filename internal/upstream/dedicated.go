@@ -100,11 +100,16 @@ func (d *Dedicated) Discover(ctx context.Context) ([]core.ToolDefinition, error)
 			if err != nil {
 				return nil, fmt.Errorf("upstream: discover %s tool %s: %w", d.client.ID, tool.Name, err)
 			}
+			metadata, err := metadataFromSDKTool(tool)
+			if err != nil {
+				return nil, fmt.Errorf("upstream: discover %s tool %s: %w", d.client.ID, tool.Name, err)
+			}
 			defs = append(defs, core.ToolDefinition{
 				RawName:      tool.Name,
 				Description:  tool.Description,
 				InputSchema:  inputSchema,
 				OutputSchema: outputSchema,
+				Metadata:     metadata,
 			})
 		}
 		if page.NextCursor == "" {

@@ -2,6 +2,7 @@ package storage_test
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,7 +20,7 @@ func TestSnapshotRejectsSchemaVersionAndMalformedDocuments(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cases := []struct{ name, content string }{{"version", strings.Replace(string(original), `"schema_version":1`, `"schema_version":99`, 1)}, {"unknown field", strings.TrimSuffix(string(original), "}") + `,"mystery":true}`}, {"truncated", `{"schema_version":1`}, {"oversized", strings.Repeat("x", 2<<20)}}
+	cases := []struct{ name, content string }{{"version", strings.Replace(string(original), fmt.Sprintf(`"schema_version":%d`, storage.SchemaVersion), `"schema_version":99`, 1)}, {"unknown field", strings.TrimSuffix(string(original), "}") + `,"mystery":true}`}, {"truncated", `{"schema_version":1`}, {"oversized", strings.Repeat("x", 2<<20)}}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			if err := os.WriteFile(s.Path(), []byte(tc.content), 0600); err != nil {

@@ -15,7 +15,7 @@ import (
 func indexedToolRows(serverID string, defs []core.ToolDefinition) []storage.Tool {
 	rows := make([]storage.Tool, 0, len(defs))
 	for _, def := range defs {
-		rows = append(rows, storage.Tool{
+		row := storage.Tool{
 			ServerID:             serverID,
 			RawName:              def.RawName,
 			PublicName:           core.PublicName(serverID, def.RawName),
@@ -24,7 +24,12 @@ func indexedToolRows(serverID string, defs []core.ToolDefinition) []storage.Tool
 			EmbeddingContentHash: search.ContentHash(def.RawName, def.Description),
 			InputSchema:          def.InputSchema,
 			OutputSchema:         def.OutputSchema,
-		})
+		}
+		if !def.Metadata.IsZero() {
+			metadata := def.Metadata.Clone()
+			row.Metadata = &metadata
+		}
+		rows = append(rows, row)
 	}
 	return rows
 }

@@ -78,6 +78,33 @@ type Assembly struct {
 	pins        []core.ResolvedPin
 	snapshot    *storage.Snapshot
 	prompts     []storage.Prompt
+	// pinMetadata is the per-pin effective metadata view this generation
+	// derived from the server defaults, keyed by serverID + "\x00" + rawName.
+	// It is immutable after publication and nil when no defaults are configured.
+	pinMetadata map[string]pinMetadataEntry
+}
+
+// pinMetadataEntry is one pinned tool's effective metadata view and the
+// provenance of every winning override field.
+type pinMetadataEntry struct {
+	Effective      core.ToolMetadata
+	OverrideFields []MetadataOverrideField
+}
+
+// PinMetadataView returns one pinned tool's effective metadata and the sorted
+// winning override paths, or false when the generation derived no effective
+// view for that pin (no configured defaults, or a startup generation whose
+// pins are still deferred). The returned metadata is the generation's own
+// immutable view and must never be mutated by callers.
+func (a *Assembly) PinMetadataView(serverID, rawName string) (core.ToolMetadata, []MetadataOverrideField, bool) {
+	if a == nil || len(a.pinMetadata) == 0 {
+		return core.ToolMetadata{}, nil, false
+	}
+	entry, ok := a.pinMetadata[serverID+"\x00"+rawName]
+	if !ok {
+		return core.ToolMetadata{}, nil, false
+	}
+	return entry.Effective, entry.OverrideFields, true
 }
 
 // Generation is the monotonic publication counter of this assembly.
@@ -523,7 +550,10 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 		if err != nil {
 			return nil, fmt.Errorf("service: %s pins: %w", in.mode, err)
 		}
-		next.pins = resolvedPins
+		next.pins, next.pinMetadata, err = applyServerMetadataDefaults(in.candidate, resolvedPins, in.mode)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	snapshot, err := storage.Reconcile(in.reconcileBase(previous), storage.ReconcileInput{
@@ -656,12 +686,16 @@ func definitionsFromSnapshot(snapshot *storage.Snapshot, serverID string, endpoi
 		if row.ServerID != serverID {
 			continue
 		}
-		defs = append(defs, core.ToolDefinition{
+		def := core.ToolDefinition{
 			RawName:      row.RawName,
 			Description:  row.Description,
 			InputSchema:  row.InputSchema,
 			OutputSchema: row.OutputSchema,
-		})
+		}
+		if row.Metadata != nil {
+			def.Metadata = row.Metadata.Clone()
+		}
+		defs = append(defs, def)
 	}
 	return defs
 }

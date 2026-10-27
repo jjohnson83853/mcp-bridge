@@ -316,16 +316,131 @@ One MCP server, three tools:
 | `describe_tool` | exact schema for one tool name, with validation status |
 | `call_tool` | one forwarded execution, carrying the expected `catalog_revision` |
 
+All three declare standard MCP tool annotations (advisory hints — never
+authorization and never a promise of zero confirmation prompts):
+
+| Tool | `readOnlyHint` | `destructiveHint` | `idempotentHint` | `openWorldHint` |
+| --- | --- | --- | --- | --- |
+| `search_tools` | true | unset | true | true |
+| `describe_tool` | true | unset | true | true |
+| `call_tool` | false | true | false | true |
+
+`search_tools`/`describe_tool` are read-only, idempotent discovery over the
+bridge's own catalog and dispatch nothing upstream. The generic `call_tool`
+forwards execution to an arbitrary upstream tool: it may mutate, may be
+destructive, is not idempotent, and interacts with the open world of configured
+upstream servers. The annotations carry no guarantee that a client will skip
+its permission prompts — clients decide independently — and they never grant
+execution authority or bypass any policy.
+
 Names are server-derived and stable: `t_` plus unpadded lowercase base32 of
 `SHA-256([server_id, raw_name])` (RFC 4648 §6). A schema change moves the catalog
 revision without moving the public name.
 
 The catalog revision is **global**: it hashes the sorted bound server identities
-and their exact definitions (schemas compared whitespace-insensitively). Search
+and their exact definitions (schemas compared whitespace-insensitively), plus
+each definition's upstream metadata (title, icons, annotations, `_meta`). A
+metadata-only upstream change therefore moves the revision without moving the
+public name. Search
 returns it with every result, and `describe_tool`/`call_tool` require it. A
 mismatch — including one caused by an unrelated server's definition changing — is
 `catalog_changed` with zero dispatch; refresh explicitly rather than relying on
 implicit rerouting.
+
+### Server metadata defaults
+
+Any configured server may own an optional `tool_metadata` mapping whose
+`defaults` patch is applied to **that server's configured pins only**:
+
+```yaml
+servers:
+  - id: alpha
+    endpoint: https://alpha.internal/mcp
+    tool_metadata:
+      defaults:
+        title: Corrected read
+        description: Advisory read description
+        annotations:
+          readOnlyHint: true
+          destructiveHint: false
+        icons:
+          - {source: "https://example.internal/read.svg", mime_type: "image/svg+xml"}
+        _meta:
+          policy: strict
+```
+
+The supported patch members are `description`, `title`, `icons`,
+`annotations` (the SDK annotation inventory: `title` plus
+`readOnlyHint`/`destructiveHint`/`idempotentHint`/`openWorldHint`) and
+`_meta`. Object members merge recursively; arrays and scalars replace
+outright; explicit `false`, empty members and nested `null` values are
+retained as values, never treated as deletions. Unknown members, wrong value
+shapes and duplicate mapping keys reject the whole candidate with a typed,
+redacted configuration diagnostic before anything is published.
+
+Defaults change the public configuration fingerprint, so a config-only edit
+reloads; they never change credential identity. Effective values ride the
+same publication path as any definition change: `tools/list` serves the
+effective descriptor for pinned tools, and `describe_tool` reports the
+source view as `upstream_metadata`, the effective view as `metadata`, and the
+winning field paths with `layer: "server_default"` in
+`metadata_override_fields` (an empty list means no correction). Only source
+metadata is persisted; corrections never become upstream truth, and removing
+a defaults member (or the whole `tool_metadata` block) on reload reverts the
+same session to the current source values.
+
+Defaults apply only to the owning server's pins: another server sharing the
+same raw tool name, unpinned descriptors, the bridge built-ins and generic
+`call_tool` are unaffected. A server with no pins may still declare defaults;
+they simply have no effect. **Risk:** a server-wide assertion such as
+`readOnlyHint: true` misclassifies every pinned tool of a mixed read/write
+server, and clients may suppress their own warnings on the strength of it.
+Defaults are advisory claims, not authorization, and a blanket read-only
+default is never installed automatically.
+
+### Exact-tool exceptions
+
+A server's `tool_metadata` mapping may also carry a `tools` mapping of exact
+raw tool names to patches. Each entry is layered **above** that server's
+defaults for that one pinned tool only — precedence is upstream source →
+server defaults → exact-tool exception, highest wins:
+
+```yaml
+    tool_metadata:
+      defaults:
+        annotations:
+          readOnlyHint: true
+      tools:
+        write:
+          annotations:
+            readOnlyHint: false
+            destructiveHint: true
+            idempotentHint: false
+```
+
+There are no wildcard or cross-server selectors: every `tools` entry must
+name a raw tool actually pinned on the same server, and an entry that matches
+no configured pin rejects the whole candidate with a typed, redacted
+diagnostic (`tool_metadata_tool_unknown`), as do invalid tool names,
+unsupported patch members and duplicate entries. The shared merge semantics
+apply to exception patches exactly as to defaults: object members merge
+recursively, arrays and scalars replace outright, and explicit `false`, empty
+members and nested `null` values are retained. A path both layers touch
+records the exception as the winner; `describe_tool` provenance then reports
+that path with `layer: "tool"` while paths won only by the defaults keep
+`layer: "server_default"`.
+
+Exceptions change the public configuration fingerprint (never the credential
+identity) and publish through the same reload path. Removing a member or the
+entire tool patch on reload reverts that tool to the current defaults (or, if
+no defaults remain, to the source values); removing the defaults while a
+tool patch remains keeps the patch in force, and upstream source changes
+never overwrite an explicit patch. Corrections are never persisted as
+upstream truth. **Risk:** the same mixed-service caveat applies — an
+exception is a per-tool advisory claim, not authorization, and overriding a
+read-only default back to `false` for a write tool restores honest client
+warnings, while the inverse direction can suppress them.
+
 
 Executions return the upstream result unaltered inside a provenance envelope:
 `structuredContent.upstream_result` is the complete original `CallToolResult`
