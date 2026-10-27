@@ -4,7 +4,7 @@
 
 **Blocked by:** 02: Make outer OAuth rejections diagnosable.
 
-**Status:** ready-for-agent
+**Status:** complete
 **Execution:** see [authoritative current execution state](../execution-state.json). The publication label does not override dependencies or grant dispatch authority.
 
 **Type:** task

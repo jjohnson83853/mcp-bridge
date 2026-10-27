@@ -4,7 +4,7 @@
 
 **Blocked by:** 03: Distinguish missing sessions from token-binding mismatches; 04: Add runtime provenance to the existing diagnostic chain.
 
-**Status:** ready-for-agent
+**Status:** needs-triage
 **Execution:** see [authoritative current execution state](../execution-state.json). Implementation approvals do not authorize release/live capture or waive external acceptance.
 
 **Type:** task
