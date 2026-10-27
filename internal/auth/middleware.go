@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 	"time"
@@ -122,6 +123,47 @@ func (f keyProviderFunc) FetchKeys(ctx context.Context, sink jws.KeySink, sig *j
 	return f(ctx, sink, sig, msg)
 }
 
+// AcceptableSkewSeconds is the fixed token timestamp validation tolerance the
+// middleware applies; it is recorded in diagnostics only when the trusted
+// startup wiring attests exactly this value.
+const AcceptableSkewSeconds = 60
+
+// wellKnownMetadataPath is the exact root path the composed server registers
+// for the protected-resource metadata document.
+const wellKnownMetadataPath = "/.well-known/oauth-protected-resource"
+
+// resourcePathBearing reports whether the resource URL carries a non-root
+// path. Only the classification leaves this function; the URL itself never
+// enters diagnostics.
+func resourcePathBearing(resourceURL string) bool {
+	parsed, err := url.Parse(resourceURL)
+	if err != nil {
+		return false
+	}
+	return strings.Trim(parsed.Path, "/") != ""
+}
+
+// challengeClassification reports the finite target class of the challenge
+// actually written (from the same derivation the written URL uses) and
+// whether that target is registered in the composed server's route table.
+// Registration is an exact allowlisted comparison and is not proof of public
+// reachability.
+func challengeClassification(resourceURL string) (target, registered string) {
+	if resourcePathBearing(resourceURL) {
+		return "path_appended_well_known", "no"
+	}
+	return "root_well_known", "yes"
+}
+
+// ResourcePathMode classifies the resource URL as origin_only or path_bearing
+// for the typed diagnostic provenance, without emitting the URL.
+func ResourcePathMode(resourceURL string) string {
+	if resourcePathBearing(resourceURL) {
+		return "path_bearing"
+	}
+	return "origin_only"
+}
+
 // NewAuthMiddleware returns middleware that verifies bearer JWTs against the
 // supplied KeySetProvider, validates issuer, audience and scope, and injects
 // the resulting Claims into the request context.
@@ -130,6 +172,9 @@ func NewAuthMiddleware(cfg Config, keys KeySetProvider, opts ...Option) func(htt
 	for _, opt := range opts {
 		opt(options)
 	}
+	// The challenge classification is derived from the same URL derivation
+	// the written challenge uses; it is finite and carries no URL values.
+	challengeTarget, metadataRegistered := challengeClassification(cfg.MCPResourceURL)
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -153,8 +198,9 @@ func NewAuthMiddleware(cfg Config, keys KeySetProvider, opts ...Option) func(htt
 				contribute(observe.HTTPDecision{
 					FailureStage: "outer_oauth", FailureReason: "credentials_missing",
 					AuthMode: "oauth", CredentialState: "missing",
-					ChallengeKind: "resource_metadata", ChallengeTarget: "root_well_known",
-					RouteOutcome: "oauth_protected",
+					ChallengeKind: "resource_metadata", ChallengeTarget: challengeTarget,
+					MetadataTargetRegistered: metadataRegistered,
+					RouteOutcome:             "oauth_protected",
 				})
 				emit401()
 				return
@@ -163,8 +209,9 @@ func NewAuthMiddleware(cfg Config, keys KeySetProvider, opts ...Option) func(htt
 				contribute(observe.HTTPDecision{
 					FailureStage: "outer_oauth", FailureReason: "bearer_malformed",
 					AuthMode: "oauth", CredentialState: "rejected",
-					ChallengeKind: "resource_metadata", ChallengeTarget: "root_well_known",
-					RouteOutcome: "oauth_protected",
+					ChallengeKind: "resource_metadata", ChallengeTarget: challengeTarget,
+					MetadataTargetRegistered: metadataRegistered,
+					RouteOutcome:             "oauth_protected",
 				})
 				emit401()
 				return
@@ -179,8 +226,9 @@ func NewAuthMiddleware(cfg Config, keys KeySetProvider, opts ...Option) func(htt
 				contribute(observe.HTTPDecision{
 					FailureStage: "outer_oauth", FailureReason: "jwt_malformed",
 					AuthMode: "oauth", CredentialState: "rejected",
-					ChallengeKind: "resource_metadata", ChallengeTarget: "root_well_known",
-					RouteOutcome: "oauth_protected",
+					ChallengeKind: "resource_metadata", ChallengeTarget: challengeTarget,
+					MetadataTargetRegistered: metadataRegistered,
+					RouteOutcome:             "oauth_protected",
 				})
 				emit401()
 				return
@@ -191,8 +239,9 @@ func NewAuthMiddleware(cfg Config, keys KeySetProvider, opts ...Option) func(htt
 				contribute(observe.HTTPDecision{
 					FailureStage: "outer_oauth", FailureReason: "jwt_key_unavailable",
 					AuthMode: "oauth", CredentialState: "rejected",
-					ChallengeKind: "resource_metadata", ChallengeTarget: "root_well_known",
-					RouteOutcome: "oauth_protected",
+					ChallengeKind: "resource_metadata", ChallengeTarget: challengeTarget,
+					MetadataTargetRegistered: metadataRegistered,
+					RouteOutcome:             "oauth_protected",
 				})
 				emit401()
 				return
@@ -202,7 +251,7 @@ func NewAuthMiddleware(cfg Config, keys KeySetProvider, opts ...Option) func(htt
 				jwt.WithKeyProvider(kidTolerantKeyProvider(set)),
 				jwt.WithValidate(true),
 				jwt.WithIssuer(cfg.PocketIDIssuer),
-				jwt.WithAcceptableSkew(time.Minute),
+				jwt.WithAcceptableSkew(AcceptableSkewSeconds * time.Second),
 			}
 			if options.now != nil {
 				parseOptions = append(parseOptions, jwt.WithClock(jwt.ClockFunc(options.now)))
@@ -215,8 +264,9 @@ func NewAuthMiddleware(cfg Config, keys KeySetProvider, opts ...Option) func(htt
 				contribute(observe.HTTPDecision{
 					FailureStage: "outer_oauth", FailureReason: "jwt_invalid_other",
 					AuthMode: "oauth", CredentialState: "rejected",
-					ChallengeKind: "resource_metadata", ChallengeTarget: "root_well_known",
-					RouteOutcome: "oauth_protected",
+					ChallengeKind: "resource_metadata", ChallengeTarget: challengeTarget,
+					MetadataTargetRegistered: metadataRegistered,
+					RouteOutcome:             "oauth_protected",
 				})
 				emit401()
 				return
@@ -226,8 +276,9 @@ func NewAuthMiddleware(cfg Config, keys KeySetProvider, opts ...Option) func(htt
 				contribute(observe.HTTPDecision{
 					FailureStage: "outer_oauth", FailureReason: "jwt_audience_invalid",
 					AuthMode: "oauth", CredentialState: "rejected",
-					ChallengeKind: "resource_metadata", ChallengeTarget: "root_well_known",
-					RouteOutcome: "oauth_protected",
+					ChallengeKind: "resource_metadata", ChallengeTarget: challengeTarget,
+					MetadataTargetRegistered: metadataRegistered,
+					RouteOutcome:             "oauth_protected",
 				})
 				emit401()
 				return

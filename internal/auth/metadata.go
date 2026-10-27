@@ -3,6 +3,8 @@ package auth
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 )
 
 // Metadata is the OAuth 2.0 Protected Resource metadata document served at
@@ -30,6 +32,9 @@ func NewProtectedResourceHandler(cfg Config) http.Handler {
 	payload, _ := json.Marshal(meta)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Dispatch classification: this handler actually served the request.
+		// Contribution is a no-op without a completion owner in the context.
+		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{RouteOutcome: "metadata"})
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return

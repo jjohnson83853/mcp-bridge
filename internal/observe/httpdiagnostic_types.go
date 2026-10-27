@@ -13,6 +13,26 @@ type HTTPProcessContext struct {
 	ID    string
 }
 
+// HTTPProvenance is the safe runtime provenance captured once at trusted
+// startup wiring from authoritative existing interfaces. Every string field
+// is a closed finite value or empty for its truthful unavailable state; the
+// policy revision never hashes secret-bearing configuration and the source
+// revision is a verified immutable VCS revision, separate from the process
+// incarnation and from mutable deployment tags.
+type HTTPProvenance struct {
+	Environment                  string
+	SourceRevision               string
+	BuildState                   string
+	PolicySource                 string
+	OAuthEnabled                 *bool
+	StaticConfigured             *bool
+	ScopeRequired                *bool
+	ClockSkewSeconds             *int
+	EffectivePolicyRevisionState string
+	EffectivePolicyRevision      string
+	ResourcePathMode             string
+}
+
 // Read-only write-failure classes of the terminal observation. The raw error
 // is retained internally and never serialized.
 const (

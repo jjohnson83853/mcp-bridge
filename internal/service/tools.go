@@ -176,11 +176,11 @@ func (t *ToolSurface) callPinnedTool(ctx context.Context, req *mcp.CallToolReque
 		}
 	}
 	if !found {
-		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "unknown_tool")
+		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "unknown_tool")
 		return errorResult(codeUnknownTool, "unknown preloaded tool", core.ExecutionNotStarted), nil
 	}
 	if assembly == nil {
-		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "backend_unavailable")
+		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "backend_unavailable")
 		return errorResult(codeBackendUnavailable, "no catalog generation is published", core.ExecutionNotStarted), nil
 	}
 	binding := pin.Binding
@@ -190,19 +190,19 @@ func (t *ToolSurface) callPinnedTool(ctx context.Context, req *mcp.CallToolReque
 	}
 	if len(binding.Def.InputSchema) > 0 {
 		if err := catalog.ValidateSchemaDocument(string(binding.Def.InputSchema)); err != nil {
-			t.logToolAdmissionFailure(requestID, operationID, corrState, start, "invalid_arguments")
+			t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "invalid_arguments")
 			return errorResult(search.CodeInvalidArguments, "arguments do not satisfy the tool's stored input schema", core.ExecutionNotStarted), nil
 		}
 		if err := catalog.ValidateSchema(string(binding.Def.InputSchema), string(args)); err != nil {
 			// The validator's own text may quote submitted values, so the
 			// rejection is answered with a fixed, payload-free message.
-			t.logToolAdmissionFailure(requestID, operationID, corrState, start, "invalid_arguments")
+			t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "invalid_arguments")
 			return errorResult(search.CodeInvalidArguments, "arguments do not satisfy the tool's stored input schema", core.ExecutionNotStarted), nil
 		}
 	}
 	lease, ok := assembly.Acquire(binding.ServerID)
 	if !ok {
-		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "backend_busy")
+		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "backend_busy")
 		return errorResult(codeBackendUnavailable, "the server of this tool is draining", core.ExecutionNotStarted), nil
 	}
 	defer lease.Release()
@@ -254,9 +254,17 @@ func (t *ToolSurface) callPinnedTool(ctx context.Context, req *mcp.CallToolReque
 				},
 			})
 		}
+		t.contributeOperation(requestID, operationID, upstreamStateFromDispatchCode(dispatchErr.Code))
 		return errorResult(dispatchErr.Code, dispatchMessage(dispatchErr.Code), dispatchErr.ExecutionState), nil
 	}
 	upstream := decodeUpstreamResult(envelope.UpstreamResult)
+	// A healthy transport delivering a tool-reported failure keeps the
+	// classes distinct: upstream succeeded transporting, the tool errored.
+	if upstream.IsError {
+		t.contributeOperation(requestID, operationID, "tool_error")
+	} else {
+		t.contributeOperation(requestID, operationID, "succeeded")
+	}
 	uCount, uText, uStructured := summarizeShape(upstream.Content, upstream.StructuredContent)
 	if t.logger != nil {
 		// The admitted dispatch is terminal evidence of its own boundary:
@@ -522,7 +530,11 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 // logToolAdmissionFailure terminates the tools/call operation at the
 // tool_admission stage: exactly one mcp_complete record per rejected call,
 // emitted before any upstream dispatch is attempted.
-func (t *ToolSurface) logToolAdmissionFailure(requestID, operationID, corrState string, start time.Time, reason string) {
+func (t *ToolSurface) logToolAdmissionFailure(ctx context.Context, requestID, operationID, corrState string, start time.Time, reason string) {
+	// The operation ran its admission boundary without an upstream attempt;
+	// the terminal record links this decoded operation with the truthful
+	// no-upstream state regardless of logging availability.
+	t.contributeOperation(requestID, operationID, "not_attempted")
 	if t.logger == nil {
 		return
 	}
@@ -582,28 +594,28 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 		Arguments       json.RawMessage `json:"arguments"`
 	}
 	if err := decodeStrict(rawArguments(req), &wire); err != nil {
-		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "invalid_arguments")
+		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "invalid_arguments")
 		return errorResult(search.CodeInvalidArguments, "call arguments are not a valid call request", core.ExecutionNotStarted), nil
 	}
 	assembly := t.runtime.Current()
 	if assembly == nil {
-		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "backend_unavailable")
+		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "backend_unavailable")
 		return errorResult(codeBackendUnavailable, "no catalog generation is published", core.ExecutionNotStarted), nil
 	}
 	// Revision admission precedes every other check, so a stale expected
 	// revision is never answered with a schema verdict about the new catalog.
 	if wire.CatalogRevision != assembly.CatalogRevision() {
-		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "catalog_changed")
+		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "catalog_changed")
 		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
 	}
 	binding, pub, ok := resolveBinding(assembly.catalog, wire.ToolName)
 	if !ok {
-		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "unknown_tool")
+		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "unknown_tool")
 		return errorResult(codeUnknownTool, "no such tool in the published catalog", core.ExecutionNotStarted), nil
 	}
 	health, _ := assembly.Health(binding.ServerID)
 	if health.Availability != AvailabilityAvailable {
-		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "backend_unavailable")
+		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "backend_unavailable")
 		return errorResult(codeBackendUnavailable, "the server of this tool is not available", core.ExecutionNotStarted), nil
 	}
 	args := wire.Arguments
@@ -612,20 +624,20 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 	}
 	if len(binding.Def.InputSchema) > 0 {
 		if err := catalog.ValidateSchemaDocument(string(binding.Def.InputSchema)); err != nil {
-			t.logToolAdmissionFailure(requestID, operationID, corrState, start, "unsupported_schema")
+			t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "unsupported_schema")
 			return errorResult(codeUnsupportedSchema, "the stored input schema cannot be applied", core.ExecutionNotStarted), nil
 		}
 		if err := catalog.ValidateSchema(string(binding.Def.InputSchema), string(args)); err != nil {
 			// The validator's own text may quote submitted values, so the
 			// rejection is answered with a fixed, payload-free message.
-			t.logToolAdmissionFailure(requestID, operationID, corrState, start, "invalid_arguments")
+			t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "invalid_arguments")
 			return errorResult(search.CodeInvalidArguments, "arguments do not satisfy the tool's stored input schema", core.ExecutionNotStarted), nil
 		}
 	}
 
 	lease, ok := assembly.Acquire(binding.ServerID)
 	if !ok {
-		t.logToolAdmissionFailure(requestID, operationID, corrState, start, "backend_busy")
+		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "backend_busy")
 		return errorResult(codeBackendUnavailable, "the server of this tool is draining", core.ExecutionNotStarted), nil
 	}
 	defer lease.Release()
@@ -677,9 +689,17 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 				},
 			})
 		}
+		t.contributeOperation(requestID, operationID, upstreamStateFromDispatchCode(dispatchErr.Code))
 		return errorResult(dispatchErr.Code, dispatchMessage(dispatchErr.Code), dispatchErr.ExecutionState), nil
 	}
 	upstream := decodeUpstreamResult(envelope.UpstreamResult)
+	// A healthy transport delivering a tool-reported failure keeps the
+	// classes distinct: upstream succeeded transporting, the tool errored.
+	if upstream.IsError {
+		t.contributeOperation(requestID, operationID, "tool_error")
+	} else {
+		t.contributeOperation(requestID, operationID, "succeeded")
+	}
 	uCount, uText, uStructured := summarizeShape(upstream.Content, upstream.StructuredContent)
 	if t.logger != nil {
 		// The admitted dispatch is terminal evidence of its own boundary:
@@ -857,6 +877,32 @@ const (
 	codeUnsupportedSchema  = "unsupported_schema"
 	codeInternalError      = "internal_error"
 )
+
+// contributeOperation links the terminal HTTP completion record to this
+// decoded operation through the existing server-owned operation identity and
+// the actual upstream outcome class. The contribution is a no-op without an
+// in-flight owner and never trusts caller-supplied identities.
+func (t *ToolSurface) contributeOperation(requestID, operationID, upstream string) {
+	observe.ContributeOperationEvidenceByID(requestID, observe.HTTPOperationEvidence{
+		Relation: "single", IDState: "available", ID: operationID, Upstream: upstream,
+	})
+}
+
+// upstreamStateFromDispatchCode maps an actual existing typed dispatch
+// failure code onto the finite upstream evidence classes. Unmapped codes stay
+// explicitly unavailable rather than being rewritten into a supported
+// certainty.
+func upstreamStateFromDispatchCode(code string) string {
+	switch code {
+	case "backend_auth_failed":
+		return "auth_failed"
+	case "backend_unavailable", "backend_busy", "deadline_exceeded",
+		"upstream_protocol_error":
+		return "transport_failed"
+	default:
+		return "unavailable"
+	}
+}
 
 // failureResult maps a search-layer failure onto the tool-layer error shape.
 func failureResult(err error) *mcp.CallToolResult {

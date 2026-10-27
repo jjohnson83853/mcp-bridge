@@ -7,6 +7,32 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Runtime provenance and safe route context (`oauth_diag_v1`).** The
+  terminal `http_complete` record now carries the process incarnation
+  (`process_id`/`process_state`: one independent cryptographically random
+  128-bit value per process, stable across reloads, explicitly unavailable on
+  entropy failure with no derived fallback), the verified immutable source
+  revision (`source_revision`/`build_state`: 40–64 lowercase hex from the
+  binary's VCS stamp only when clean and stamped; a locally modified build
+  reports `unavailable` and never claims deployment), the effective policy
+  provenance (`effective_policy_revision`/`effective_policy_revision_state`:
+  an attested nonsecret artifact identifier when one exists, otherwise
+  explicitly unavailable — no secret-bearing configuration is hashed; the
+  fixed `diagnostic_policy_revision` identifies the diagnostic contract only),
+  the nonsecret policy tuple (`policy_source`, `oauth_enabled`,
+  `static_configured`, `scope_required`, `clock_skew_seconds`,
+  `resource_path_mode`), finite route and challenge context
+  (`path_class`, `route_outcome` by actual dispatch, `challenge_kind`,
+  `challenge_target`, `metadata_target_registered`) with no path, query, URL,
+  realm, scope or header values, and truthful operation linkage
+  (`operation_relation` none/single/multiple/unavailable with one eligible
+  server-owned `operation_id` only for a single linked operation, plus the
+  actual `upstream_state` classes — a tool-error envelope under HTTP 200
+  records `tool_error` and stays distinct from admission rejection). Statuses,
+  challenges, response bodies, metrics, label names and cardinality are
+  unchanged; the record is still a closed typed allowlist within the same
+  byte budgets. See the README "Runtime provenance and safe route context"
+  section for operator guidance. Real OMP/Gemini smoke NOT RUN.
 - **Session outcome diagnostics (`oauth_diag_v1`).** The inner session
   admission now distinguishes absent session entries from existing-session
   bearer-binding mismatches in the terminal `http_complete` record:

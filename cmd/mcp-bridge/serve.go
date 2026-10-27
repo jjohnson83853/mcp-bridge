@@ -36,10 +36,6 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 	defer cancel()
 
 	logger := observe.NewLogger(stdout)
-	diagnostics := observe.NewHTTPDiagnostics(logger, observe.HTTPDiagnosticsOptions{
-		Now:     diagnosticNowFromContext(ctx),
-		NewID:   diagnosticNewIDFromContext(ctx),
-	})
 	holder := newConfigHolder()
 	load := func() (*config.Config, error) {
 		candidate, err := config.ParseFile(path)
@@ -75,6 +71,14 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 		return fmt.Errorf("configuration: %w", err)
 	}
 	settings := holder.settings()
+	authCfg := auth.NewConfigFromEnv()
+	diagnostics := observe.NewHTTPDiagnostics(logger, observe.HTTPDiagnosticsOptions{
+		Now: diagnosticNowFromContext(ctx),
+		NewID: diagnosticNewIDFromContext(ctx),
+		Provenance: buildDiagnosticProvenance(
+			authCfg, len(candidate.ClientTokenHashes()) > 0,
+		),
+	})
 	metrics := observe.NewMetrics(configuredServerIDs(candidate))
 
 	store, err := storage.Open(settings.StorageDirectory)
@@ -83,7 +87,6 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 	}
 	defer store.Close()
 
-	authCfg := auth.NewConfigFromEnv()
 	jwksCache, err := auth.NewJWKSCache(ctx, authCfg.PocketIDJWKSURL)
 	if err != nil {
 		return fmt.Errorf("jwks cache: %w", err)
@@ -153,12 +156,14 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 
 	inboundMux := http.NewServeMux()
 	inboundMux.Handle("/.well-known/oauth-protected-resource", auth.NewProtectedResourceHandler(authCfg))
-	inboundMux.HandleFunc("/livez", func(w http.ResponseWriter, _ *http.Request) {
+	inboundMux.HandleFunc("/livez", func(w http.ResponseWriter, r *http.Request) {
+		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{RouteOutcome: "health"})
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("live\n"))
 	})
-	inboundMux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+	inboundMux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{RouteOutcome: "health"})
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok\n"))

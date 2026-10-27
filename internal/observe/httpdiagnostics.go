@@ -13,29 +13,32 @@ import (
 // server-created owner per request holds the bounded state, the native
 // writer and the sole response observation.
 type HTTPDiagnostics struct {
-	logger  *Logger
-	now     func() time.Time
-	newID   func() string
-	process HTTPProcessContext
+	logger     *Logger
+	now        func() time.Time
+	newID      func() string
+	process    HTTPProcessContext
+	provenance HTTPProvenance
 }
 
 // HTTPDiagnosticsOptions configures the diagnostics owner. Production
 // defaults are time.Now, cryptographic generation and a shared process
 // context; the fields exist for trusted startup wiring and tests only.
 type HTTPDiagnosticsOptions struct {
-	Now     func() time.Time
-	NewID   func() string
-	Process HTTPProcessContext
+	Now        func() time.Time
+	NewID      func() string
+	Process    HTTPProcessContext
+	Provenance HTTPProvenance
 }
 
 // NewHTTPDiagnostics builds the completion owner. A nil Process opts into the
 // one shared process-scoped incarnation, not an incarnation per constructor.
 func NewHTTPDiagnostics(logger *Logger, opts HTTPDiagnosticsOptions) *HTTPDiagnostics {
 	diagnostics := &HTTPDiagnostics{
-		logger:  logger,
-		now:     opts.Now,
-		newID:   opts.NewID,
-		process: opts.Process,
+		logger:     logger,
+		now:        opts.Now,
+		newID:      opts.NewID,
+		process:    opts.Process,
+		provenance: resolveProvenance(opts.Provenance),
 	}
 	if diagnostics.now == nil {
 		diagnostics.now = time.Now
@@ -68,6 +71,88 @@ func sharedProcessContext() HTTPProcessContext {
 		sharedProcess = HTTPProcessContext{State: "available", ID: hex.EncodeToString(random[:])}
 	})
 	return sharedProcess
+}
+
+// resolveProvenance validates the trusted startup provenance. Unverifiable
+// values fall back to their explicit unavailable/absent states; nothing is
+// derived, rewritten or substituted. A source revision counts as verified
+// only when it is 40–64 lowercase hexadecimal characters; mutable tags,
+// arbitrary hash-shaped values and dirty (unpushed) builds stay unavailable.
+func resolveProvenance(p HTTPProvenance) HTTPProvenance {
+	resolved := HTTPProvenance{
+		SourceRevision:               "unavailable",
+		BuildState:                   "unavailable",
+		PolicySource:                 "unavailable",
+		EffectivePolicyRevisionState: "unavailable",
+		ResourcePathMode:             "unavailable",
+	}
+	if value, ok := safeEnvironmentValue(p.Environment); ok {
+		resolved.Environment = value
+	}
+	if validRevisionShape(p.SourceRevision) {
+		resolved.SourceRevision = p.SourceRevision
+		resolved.BuildState = "verified"
+	}
+	if value, ok := finiteEnum(httpPolicySourceValues, p.PolicySource); ok {
+		resolved.PolicySource = value
+	}
+	resolved.OAuthEnabled = p.OAuthEnabled
+	resolved.StaticConfigured = p.StaticConfigured
+	resolved.ScopeRequired = p.ScopeRequired
+	if p.ClockSkewSeconds != nil && *p.ClockSkewSeconds == verifiedClockSkewSeconds {
+		skew := *p.ClockSkewSeconds
+		resolved.ClockSkewSeconds = &skew
+	}
+	if p.EffectivePolicyRevisionState == "verified" && validRevisionShape(p.EffectivePolicyRevision) {
+		resolved.EffectivePolicyRevisionState = "verified"
+		resolved.EffectivePolicyRevision = p.EffectivePolicyRevision
+	}
+	if value, ok := finiteEnum(httpPathModeValues, p.ResourcePathMode); ok {
+		resolved.ResourcePathMode = value
+	}
+	return resolved
+}
+
+// verifiedClockSkewSeconds is the middleware's fixed validation tolerance,
+// recorded only when the trusted wiring attests exactly this value.
+const verifiedClockSkewSeconds = 60
+
+// validRevisionShape reports whether the value is 40–64 lowercase hexadecimal
+// characters: the accepted shape of a verified source revision and of an
+// attested nonsecret policy-content artifact identifier.
+func validRevisionShape(value string) bool {
+	if len(value) < 40 || len(value) > 64 {
+		return false
+	}
+	for _, r := range value {
+		if !(r >= '0' && r <= '9' || r >= 'a' && r <= 'f') {
+			return false
+		}
+	}
+	return true
+}
+
+// ValidSourceRevision reports whether the value is the only accepted verified
+// immutable source revision shape: 40–64 lowercase hexadecimal characters.
+func ValidSourceRevision(value string) bool {
+	return validRevisionShape(value)
+}
+
+// safeEnvironmentValue bounds the environment alias alphabet: 1–32 lowercase
+// letters, digits, underscore and hyphen, or the explicit unavailable marker.
+func safeEnvironmentValue(value string) (string, bool) {
+	if value == "unavailable" {
+		return value, true
+	}
+	if len(value) == 0 || len(value) > 32 {
+		return "", false
+	}
+	for _, c := range value {
+		if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || c == '-') {
+			return "", false
+		}
+	}
+	return value, true
 }
 
 // resolveProcessContext validates an explicit or shared process context.
@@ -165,6 +250,7 @@ func (d *HTTPDiagnostics) Claim(w http.ResponseWriter, r *http.Request) (http.Re
 	r.Header.Del("X-Internal-Request-Id")
 	if validHexID(requestID) {
 		w.Header().Set("Mcp-Diagnostic-Id", requestID)
+		registerOwner(requestID, owner)
 	}
 	// An entropy or format failure records the unavailable state honestly:
 	// no substitute identity, no retry, no caller/time/counter/hash fallback.
@@ -238,6 +324,68 @@ func ContributeOperationEvidence(ctx context.Context, evidence HTTPOperationEvid
 		owner.applyOperationEvidence(evidence)
 	}
 }
+
+// registerOwner records one in-flight owner under its owned request identity.
+func registerOwner(requestID string, owner *httpOwner) {
+	ownerRegistryMu.Lock()
+	if ownerRegistry == nil {
+		ownerRegistry = make(map[string]*httpOwner)
+	}
+	ownerRegistry[requestID] = owner
+	ownerRegistryMu.Unlock()
+}
+
+// removeOwner drops the in-flight entry exactly at finalization; the registry
+// never outlives the request.
+func removeOwner(requestID string) {
+	ownerRegistryMu.Lock()
+	delete(ownerRegistry, requestID)
+	ownerRegistryMu.Unlock()
+}
+
+// ownerForRequestID returns the in-flight owner that generated this exact
+// server-owned request identity, or nil. A malformed value can never match:
+// caller-supplied or JSON-RPC identities are not eligible linkage keys.
+func ownerForRequestID(requestID string) *httpOwner {
+	if !validHexID(requestID) {
+		return nil
+	}
+	ownerRegistryMu.Lock()
+	defer ownerRegistryMu.Unlock()
+	return ownerRegistry[requestID]
+}
+
+// ContributeOperationEvidenceByID links actual downstream operation evidence
+// to the terminal record of the request that minted this owned request
+// identity. The layer that decodes MCP operations runs inside the pinned SDK
+// session whose context is detached from the per-request context, so the
+// in-flight owner lookup is the only truthful join. It is a no-op without an
+// in-flight owner, after finalization, or for any non-owned identity.
+func ContributeOperationEvidenceByID(requestID string, evidence HTTPOperationEvidence) {
+	owner := ownerForRequestID(requestID)
+	if owner == nil {
+		return
+	}
+	// Concurrent JSON-RPC batch operations arrive on separate goroutines; the
+	// finished check and the owner-state mutation are one atomic step under
+	// the same lock finish() takes, so a late contribution can never race a
+	// finalizing snapshot and no update is ever lost.
+	ownerStateMu.Lock()
+	defer ownerStateMu.Unlock()
+	if !owner.finished {
+		owner.applyOperationEvidence(evidence)
+	}
+}
+
+// ownerStateMu serializes owner evidence mutation against finalization for
+// the detached request-identity path. The registry mutex covers only the
+// in-flight map; owner field state needs its own ordering point.
+var ownerStateMu sync.Mutex
+
+var (
+	ownerRegistryMu sync.Mutex
+	ownerRegistry   map[string]*httpOwner
+)
 
 // ContributeLegacyEvidence applies the summarised legacy classification the
 // inner edge computed at its boundaries.
@@ -343,20 +491,76 @@ func (o *httpOwner) applySessionEvidence(e HTTPSessionEvidence) {
 	if value, ok := finiteEnum(httpBindingValues, e.Binding); ok {
 		o.bindingRelation = value
 	}
+	// The established binding comparator's mechanism label: once an actual
+	// match/mismatch comparison ran, the fixed mechanism name is established.
+	// It is a label, never a token digest.
+	if e.Binding == "match" || e.Binding == "mismatch" {
+		o.sessionBinding = "bearer_sha256"
+	}
 }
 
+// applyOperationEvidence applies actual downstream operation linkage and
+// outcome evidence. The relation is derived from distinct server-owned
+// operation identities the owner actually observed, so it stays truthful:
+// none until evidence arrives, single on one eligible ID, multiple on
+// several. Unsafe ID values count as observed operations but are never
+// emitted or rewritten into supported certainty.
 func (o *httpOwner) applyOperationEvidence(e HTTPOperationEvidence) {
-	if value, ok := finiteEnum(httpRelationValues, e.Relation); ok {
-		o.operationRelation = value
+	eligible := validHexID(e.ID)
+	switch {
+	case eligible:
+		if o.operationCount == 0 {
+			o.operationFirstID = e.ID
+			o.operationCount = 1
+		} else if e.ID != o.operationFirstID {
+			o.operationCount++
+		}
+	case e.ID != "":
+		o.unsafeOperationID = true
 	}
-	if value, ok := finiteEnum(httpOperationIDStateValues, e.IDState); ok {
-		o.operationIDState = value
+	if value, ok := finiteEnum(httpUpstreamValues, e.Upstream); ok && value != "not_attempted" {
+		if o.upstreamFirst == "" {
+			o.upstreamFirst = value
+		} else if value != o.upstreamFirst {
+			o.upstreamDiverged = true
+		}
 	}
-	if validHexID(e.ID) {
-		o.operationID = e.ID
+	o.reconcileOperationState(e)
+}
+
+// reconcileOperationState derives the emitted relation/ID state from the
+// observed operation identities, keeping an explicitly contributed finite
+// relation as evidence when no ID observation contradicts it.
+func (o *httpOwner) reconcileOperationState(e HTTPOperationEvidence) {
+	switch {
+	case o.operationCount > 1 || (o.unsafeOperationID && o.operationCount > 0):
+		o.operationRelation = "multiple"
+		o.operationIDState = "not_applicable"
+		o.operationID = ""
+	case o.operationCount == 1:
+		o.operationRelation = "single"
+		o.operationIDState = "available"
+		o.operationID = o.operationFirstID
+	case o.unsafeOperationID:
+		// Only unsafe identities were observed: the operation linkage stays
+		// single if the contribution says so, but the ID is unavailable.
+		if value, ok := finiteEnum(httpRelationValues, e.Relation); ok {
+			o.operationRelation = value
+		}
+		o.operationIDState = "unavailable"
+		o.operationID = ""
+	default:
+		if value, ok := finiteEnum(httpRelationValues, e.Relation); ok {
+			o.operationRelation = value
+		}
+		if value, ok := finiteEnum(httpOperationIDStateValues, e.IDState); ok {
+			o.operationIDState = value
+		}
 	}
-	if value, ok := finiteEnum(httpUpstreamValues, e.Upstream); ok {
-		o.upstreamState = value
+	if o.upstreamDiverged {
+		o.upstreamState = "multiple"
+	} else if o.upstreamFirst != "" {
+		o.upstreamState = o.upstreamFirst
 	}
 }
 
@@ -417,10 +621,19 @@ const maxDiagnosticDurationMS = 86400000
 // finish snapshots the actual observed state and attempts the one terminal
 // record. The finished guard prevents any double sink attempt.
 func (o *httpOwner) finish() {
+	// The finished flag and the final mutation window share ownerStateMu with
+	// the detached evidence path: once the flag is set, no late contribution
+	// can interleave between it and the snapshot read.
+	ownerStateMu.Lock()
 	if o.finished || o.diagnostics == nil {
+		ownerStateMu.Unlock()
 		return
 	}
 	o.finished = true
+	ownerStateMu.Unlock()
+	// The registry entry dies with the completed request: later contributions
+	// can never mutate a terminal record.
+	removeOwner(o.requestID)
 	entry, diagnostic := o.buildSnapshot()
 	if o.diagnostics.logger == nil {
 		return
@@ -503,7 +716,9 @@ func (o *httpOwner) buildSnapshot() (legacyEntry, *HTTPDiagnostic) {
 		StatusState:     statusState,
 		CorrelationState: orDefault(o.correlationState, CorrelationUnavailable),
 		DiagSchema:      "oauth_diag_v1",
-		BuildState:      "unavailable",
+		DiagEnvironment: o.diagnostics.provenance.Environment,
+		SourceRevision:  o.diagnostics.provenance.SourceRevision,
+		BuildState:      o.diagnostics.provenance.BuildState,
 		ProcessState:    o.diagnostics.process.State,
 		ProcessID:       o.diagnostics.process.ID,
 		OperationRelation: orDefault(o.operationRelation, "none"),
@@ -525,10 +740,15 @@ func (o *httpOwner) buildSnapshot() (legacyEntry, *HTTPDiagnostic) {
 		ChallengeTarget: orDefault(o.challengeTarget, "none"),
 		MetadataTargetRegistered: orDefault(o.metadataRegistered, "not_applicable"),
 		DiagnosticPolicyRevision: "oauth-diag-policy-v1",
-		EffectivePolicyRevisionState: "unavailable",
-		PolicySource:    "unavailable",
-		ResourcePathMode: "unavailable",
-		SessionBinding:  "unavailable",
+		EffectivePolicyRevisionState: o.diagnostics.provenance.EffectivePolicyRevisionState,
+		EffectivePolicyRevision:      o.diagnostics.provenance.EffectivePolicyRevision,
+		PolicySource:                 o.diagnostics.provenance.PolicySource,
+		OAuthEnabled:                 o.diagnostics.provenance.OAuthEnabled,
+		StaticConfigured:             o.diagnostics.provenance.StaticConfigured,
+		ScopeRequired:                o.diagnostics.provenance.ScopeRequired,
+		ResourcePathMode:             o.diagnostics.provenance.ResourcePathMode,
+		SessionBinding:  orDefault(o.sessionBinding, "unavailable"),
+		ClockSkewSeconds: o.diagnostics.provenance.ClockSkewSeconds,
 		UpstreamState:   orDefault(o.upstreamState, "not_attempted"),
 		ErrorDetailState: orDefault(o.errorDetailState, "not_applicable"),
 		ErrorDetail:     o.errorDetail,

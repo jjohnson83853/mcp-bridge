@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -89,9 +90,13 @@ func startOAuthHarness(t *testing.T) *oauthTestHarness {
 	}))
 	t.Cleanup(jwks.Close)
 
+	if _, exists := os.LookupEnv("MCP_RESOURCE_URL"); !exists {
+		// Default origin-only resource fixture; a caller may preset a
+		// path-bearing resource URL to observe the conditional challenge.
+		t.Setenv("MCP_RESOURCE_URL", oauthResource)
+	}
 	t.Setenv("POCKET_ID_JWKS_URL", jwks.URL+"/.well-known/jwks.json")
 	t.Setenv("POCKET_ID_ISSUER", oauthIssuer)
-	t.Setenv("MCP_RESOURCE_URL", oauthResource)
 	t.Setenv("MCP_REQUIRED_SCOPE", oauthScope)
 	t.Setenv("SERVE_CLIENT_TOKEN", serveClientToken)
 	t.Setenv("SERVE_EMBEDDING_KEY", serveEmbeddingKey)

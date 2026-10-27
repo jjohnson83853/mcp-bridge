@@ -22,11 +22,18 @@
     {"id": "01", "stage": "research", "status": "done", "blockedBy": [], "requires": ["authenticated-source-read"]},
     {"id": "02", "stage": "implementation", "status": "done", "blockedBy": ["01"], "requires": ["engineer", "go", "authenticated-source-read"]},
     {"id": "03", "stage": "implementation", "status": "done", "blockedBy": ["02"], "requires": ["engineer", "go", "authenticated-source-read"]},
-    {"id": "04", "stage": "implementation", "status": "pending", "blockedBy": ["02"], "requires": ["engineer", "go", "authenticated-source-read"]},
+    {"id": "04", "stage": "implementation", "status": "done", "blockedBy": ["02"], "requires": ["engineer", "go", "authenticated-source-read"]},
     {"id": "05", "stage": "external", "status": "blocked", "blockedBy": ["03", "04"], "requires": ["authorized-live-capture", "collector-read"]}
   ],
   "availableCapabilities": ["local-file-read", "local-file-write", "node", "go", "engineer", "authenticated-source-read"],
   "blockers": [
+    {
+      "id": "ticket04-evidence",
+      "taskId": "04",
+      "reason": "Completed 2026-10-26 on 9003023 (uncommitted at record time). Provenance fields on existing records (process_id crypto 128-bit once-per-process explicit-unavailable; source_revision/build_state from VCS stamp only, unpushed never claims deployed; effective_policy_revision attested-or-unavailable with no secret hashing; policy tuple + resource_path_mode + finite route/challenge classification from the same URL derivation as the written challenge); operation linkage via bounded in-flight owner registry keyed by server-minted 32-hex request ID (caller/JSON-RPC IDs never trusted; unsafe IDs unavailable not rewritten; truthful none/single/multiple; tool_error under 200 distinct from admission rejection). RED demonstrated by revert cycle (challenge_target, source_revision nil, tool-error completions 0). Main gate on settled code: build/vet clean; suite 12/12 + race 12/12 (-count=1, sequential); covcheck 90.9% (4654/5122) gate:true. Security review APPROVE (registry self-cleaning, no DoS path, no config hashing, no raw URL emission; LOW in-depth-mitigated header note; NOTE startup-snapshot). Code review APPROVE; MEDIUM unsynchronized owner mutation FIXED with package ownerStateMu serializing EvidenceByID vs finish(), deterministic -race RED (DATA RACE + lost updates: relation none despite 16 contributions) -> GREEN (multiple, 5x16 iterations); LOW startup-snapshot tuple documented in README. Known pre-existing timing flakes (pass isolated + sequential, fail only under concurrent load): TestServeHybridSIGHUPReload, TestPromptPassThroughCT07, TestBridgeRebindsServerEndpointOnRestartAndReload. Docs: README runtime-provenance section + CHANGELOG. Remote HEAD 9003023; changes local-only.",
+      "clearWhen": "n/a (informational completion record)",
+      "evidence": "cmd/mcp-bridge/provenance.go; internal/observe/httpdiagnostic_provenance_test.go; httpdiagnostic_evidence_byid_concurrency_test.go; reviews in session record"
+    },
     {
       "id": "ticket03-evidence",
       "taskId": "03",

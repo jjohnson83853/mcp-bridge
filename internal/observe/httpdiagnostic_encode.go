@@ -419,9 +419,10 @@ func (e *httpEncoder) build(entry Entry) bool {
 		return false
 	}
 	e.slots[45] = httpSlotValue{present: true, str: diag.EffectivePolicyRevisionState}
-	// 46 effective_policy_revision (conditional)
+	// 46 effective_policy_revision (conditional): an attested nonsecret
+	// immutable policy-artifact identifier, 40–64 lowercase hex.
 	if diag.EffectivePolicyRevisionState == "verified" {
-		if len(diag.EffectivePolicyRevision) == 0 || len(diag.EffectivePolicyRevision) > 64 {
+		if !validRevisionShape(diag.EffectivePolicyRevision) {
 			return false
 		}
 		e.slots[46] = httpSlotValue{present: true, str: diag.EffectivePolicyRevision}
@@ -482,9 +483,11 @@ func (e *httpEncoder) build(entry Entry) bool {
 		}
 		e.slots[56] = httpSlotValue{present: true, kind: slotErrorDetail, obj: detail}
 	}
-	// 57 operation_id (optional)
+	// 57 operation_id (optional): emitted only for a single eligible owned
+	// operation; multiple operations keep their per-operation records and no
+	// terminal ID.
 	if diag.OperationID != "" {
-		if !validHexID(diag.OperationID) {
+		if !validHexID(diag.OperationID) || relation != "single" || idState != "available" {
 			return false
 		}
 		e.slots[57] = httpSlotValue{present: true, str: diag.OperationID}

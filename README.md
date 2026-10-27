@@ -565,6 +565,65 @@ lose the record, and broken sinks do not self-report:
   expiry hypotheses: no record proves why a client's credentials or session
   changed, and nothing here labels identical real identities or proves actual
   client renewal.
+- **Runtime provenance and safe route context.** Each record carries three
+  distinct identities that must never be conflated:
+  - `process_id` — the process incarnation: one independent cryptographically
+    random 128-bit value (32 lowercase hex) drawn once per process and stable
+    across configuration reloads. It changes on every restart. **A changed
+    process incarnation alone is not incident-cause proof and is not a
+    recommendation to restart**; it only lets you tell records from different
+    process lifetimes apart.
+  - `source_revision` / `build_state` — the verified immutable source revision
+    of the running binary (40–64 lowercase hex from its VCS stamp), separate
+    from the process identity and from mutable image tags. `build_state` is
+    `verified` only when a clean, stamped revision was read; a locally
+    modified (unpushed) build reports `unavailable` and emits no revision —
+    unpushed local diagnostics never claim to be deployed, and a mutable
+    tag or arbitrary hash-shaped value is never accepted as provenance.
+  - `effective_policy_revision` / `effective_policy_revision_state` — an
+    attested nonsecret policy-content artifact identifier, `verified` only
+    when such an attestation exists; otherwise explicitly `unavailable`. The
+    fixed `diagnostic_policy_revision` (`oauth-diag-policy-v1`) identifies the
+    diagnostic contract only and never proves that authorization policy
+    content is unchanged. No secret-bearing configuration is hashed, and no
+    hidden issuer, principal, client or audience equality is inferred.
+  The safe nonsecret policy tuple is `policy_source` (`defaults`,
+  `environment`, `file`, `mixed`, `unavailable`), `oauth_enabled`,
+  `static_configured`, `scope_required` (booleans or explicit `null`), and
+  `clock_skew_seconds` (`60` when the verified validation tolerance applies,
+  otherwise absent). `resource_path_mode` classifies the resource URL as
+  `origin_only` or `path_bearing` without emitting any URL. This tuple is a
+  startup snapshot built once from the then-current environment and
+  configuration: a `SIGHUP` reload that adds or removes client token hashes
+  or other policy inputs is not reflected in it until the next restart.
+  Safe route and challenge context is finite classification only — never raw
+  paths, queries, URLs, realms, scopes or headers: `path_class`
+  (`mcp`/`metadata_root`/`health`/`other`), `route_outcome` by actual
+  dispatch (`oauth_protected`, `inbound_direct`, `metadata`, `health`,
+  `not_found`, `other`, `unavailable`), `challenge_kind` and
+  `challenge_target` from what was actually selected and written
+  (`root_well_known` versus `path_appended_well_known`), and
+  `metadata_target_registered` (`yes`/`no`/`not_applicable`/`unavailable`)
+  from an exact registration comparison — which is **not** proof of public
+  reachability.
+  Operation linkage: `operation_relation` (`none`/`single`/`multiple`/
+  `unavailable`) counts only server-owned operation identities actually
+  observed; a single eligible `operation_id` (32 lowercase hex) is emitted
+  only for a single linked operation, several operations keep their own
+  per-operation records (no unbounded terminal ID list), caller-supplied or
+  JSON-RPC identifiers are never trusted, and unsafe IDs stay
+  `unavailable` rather than being rewritten into certainty.
+  `upstream_state` reports the actual downstream classes observed
+  (`not_attempted`, `succeeded`, `transport_failed`, `auth_failed`,
+  `tool_error`, `multiple`, `unavailable`) — a tool-error envelope under HTTP
+  200 records `tool_error` with the completion promoted to `warn`, staying
+  distinct from admission rejection; an HTTP 200 never invents downstream
+  success. A tool-error example (synthetic):
+
+  ```json
+  {"event":"http_complete","level":"warn","outcome":"success","reason":"none","stage":"none","failure_stage":"none","failure_reason":"none","http_status":200,"http_method":"POST","route":"mcp","http_outcome":"success","duration_ms":210,"diag_duration_ms":209,"credential_state":"accepted","scope_state":"accepted","session_header":"absent","session_state":"not_supplied","binding_relation":"not_evaluated","session_ref_state":"not_applicable","upstream_state":"tool_error","operation_relation":"single","operation_id_state":"available","operation_id":"4f1d2c9b55a04c2e91b7f6600d47a2c9","auth_mode":"oauth","process_state":"available","process_id":"8c2f4e6a1b3d5f7e9a0c2e4b6d8f0a2c","source_revision":"e621622397298bb4eb44a9b0f5ff1a00d6f16300aa11bb22cc33dd44ee55ff66","build_state":"verified","effective_policy_revision_state":"unavailable","policy_source":"environment","oauth_enabled":true,"static_configured":true,"scope_required":true,"clock_skew_seconds":60,"resource_path_mode":"origin_only","path_class":"mcp","route_outcome":"oauth_protected","request_id":"99aabbcdddeeff001122334455667700","correlation_state":"available","diag_schema":"oauth_diag_v1"}
+  ```
+
 - **Privacy and byte bounds:** Each record is a closed typed allowlist with no
   arbitrary maps or extras: no credentials, JWTs, claims, identities, raw
   session IDs, header/path/query/URL/payload values, or error prose appear.
@@ -589,9 +648,11 @@ lose the record, and broken sinks do not self-report:
   guessing. There are no CORS or proxy changes to make the header readable to
   browsers or wrappers, and no guarantee it survives them.
 - **Not established by this diagnostics:** The cause of any past session
-  failure, deployment/source/effective-policy provenance, real client renewal
-  behavior, and actual deployed collector/query behavior are not proven by
-  this logging foundation; absence of a diagnostic field is absence of
+  failure, real client renewal behavior, and actual deployed collector/query
+  behavior are not proven by this logging foundation; the provenance fields
+  report what the running process can verify about itself and never prove
+  what is actually deployed or why an incident happened. Absence of a
+  diagnostic field is absence of
   evidence, never a positive diagnosis (e.g. a missing header is not proof of
   expiry).
 - **Metrics unchanged:** Prometheus metrics, exposition formats, label names,

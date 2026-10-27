@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"golang.org/x/time/rate"
+
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 )
 
 type serverReadiness struct {
@@ -103,7 +105,12 @@ func NewOperationsHandler(state *ReadinessState, metrics http.Handler) http.Hand
 		metrics = http.NotFoundHandler()
 	}
 	mux.Handle("/metrics", metrics)
-	return mux
+	// Dispatch classification for the composed inbound listener's health
+	// route; a no-op on the separate operations listener (no owner there).
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{RouteOutcome: "health"})
+		mux.ServeHTTP(w, r)
+	})
 }
 
 // RateLimit applies one bounded listener-wide token bucket to operational routes.

@@ -204,6 +204,10 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// return and panic unwinding alike: no recover, no synthetic 500.
 		defer lease.Finish()
 	}
+	// Actual dispatch classification: requests reaching this handler that were
+	// not already classified as OAuth-protected were dispatched directly to
+	// the inbound edge. First-wins keeps the earlier oauth_protected label.
+	observe.ContributeHTTP(r.Context(), observe.HTTPDecision{RouteOutcome: "inbound_direct"})
 
 	var captured *bodyCapture
 	var bounded *limitObserver

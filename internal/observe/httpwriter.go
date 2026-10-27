@@ -153,6 +153,7 @@ type httpOwner struct {
 	bindingRelation    string
 	sessionRefState    string
 	sessionRef         string
+	sessionBinding     string
 	challengeKind      string
 	challengeTarget    string
 	metadataRegistered string
@@ -161,6 +162,11 @@ type httpOwner struct {
 	operationRelation  string
 	operationIDState   string
 	operationID        string
+	operationCount     int
+	operationFirstID   string
+	unsafeOperationID  bool
+	upstreamFirst      string
+	upstreamDiverged   bool
 	upstreamState      string
 	errorDetailState   string
 	errorDetail        *HTTPDiagnosticErrorDetail
