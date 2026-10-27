@@ -126,7 +126,7 @@ func TestSessionBoundToTokenFingerprint(t *testing.T) {
 	for _, tc := range []struct {
 		token string
 		want  int
-	}{{"token-two", http.StatusUnauthorized}, {"token-one", http.StatusAccepted}} {
+	}{{"token-two", http.StatusNotFound}, {"token-one", http.StatusAccepted}} {
 		req, err := http.NewRequest(http.MethodPost, server.URL+"/mcp", bytes.NewBufferString(notify))
 		if err != nil {
 			t.Fatal(err)
@@ -329,8 +329,8 @@ func TestInboundHandlerContextClaimsBypass(t *testing.T) {
 		}
 		_, _ = io.Copy(io.Discard, response.Body)
 		_ = response.Body.Close()
-		if response.StatusCode != http.StatusUnauthorized {
-			t.Fatalf("token mismatch status=%d, want 401", response.StatusCode)
+		if response.StatusCode != http.StatusNotFound {
+			t.Fatalf("token mismatch status=%d, want 404", response.StatusCode)
 		}
 	})
 }

@@ -168,21 +168,30 @@ func TestSessionAbsentDistinguishedFromMismatch(t *testing.T) {
 
 	// Valid credentials plus an unknown entry: session_absent.
 	absent := sessionPost(t, fixture.handler, sessionDiagControl, "token-a", "unknown-entry-id")
-	if absent.Code != http.StatusUnauthorized {
-		t.Fatalf("unknown entry status=%d, want 401", absent.Code)
+	if absent.Code != http.StatusNotFound {
+		t.Fatalf("unknown entry status=%d, want 404", absent.Code)
 	}
-	if challenge := absent.Header().Get("WWW-Authenticate"); challenge != "Bearer" {
-		t.Fatalf("unknown entry challenge=%q, want bare Bearer", challenge)
+	if challenge := absent.Header().Get("WWW-Authenticate"); challenge != "" {
+		t.Fatalf("unknown entry challenge=%q, want no challenge", challenge)
+	}
+	if absent.Header().Get(sessionIDHeader) != "" {
+		t.Fatal("unknown entry response leaked a session reference header")
+	}
+	if body := absent.Body.String(); body != "session not found\n" {
+		t.Fatalf("unknown entry body=%q, want %q", body, "session not found\n")
 	}
 
 	// Valid credentials plus an existing entry bound to a different bearer:
 	// binding mismatch with the live reference in the server record only.
 	mismatch := sessionPost(t, fixture.handler, sessionDiagControl, "token-b", sessionID)
-	if mismatch.Code != http.StatusUnauthorized {
-		t.Fatalf("mismatch status=%d, want 401", mismatch.Code)
+	if mismatch.Code != http.StatusNotFound {
+		t.Fatalf("mismatch status=%d, want 404", mismatch.Code)
 	}
-	if challenge := mismatch.Header().Get("WWW-Authenticate"); challenge != "Bearer" {
-		t.Fatalf("mismatch challenge=%q, want bare Bearer", challenge)
+	if challenge := mismatch.Header().Get("WWW-Authenticate"); challenge != "" {
+		t.Fatalf("mismatch challenge=%q, want no challenge", challenge)
+	}
+	if mismatch.Header().Get(sessionIDHeader) != "" {
+		t.Fatal("mismatch response leaked a session reference header")
 	}
 
 	records := typedRecords(t, fixture.sink)
@@ -311,11 +320,11 @@ func TestControlledClockReapingReportsSessionAbsent(t *testing.T) {
 	sessionID := first.Header().Get(sessionIDHeader)
 	clock = base.Add(2 * time.Minute)
 	reaped := sessionPost(t, fixture.handler, sessionDiagControl, "token-a", sessionID)
-	if reaped.Code != http.StatusUnauthorized {
-		t.Fatalf("reaped session status=%d, want 401", reaped.Code)
+	if reaped.Code != http.StatusNotFound {
+		t.Fatalf("reaped session status=%d, want 404", reaped.Code)
 	}
-	if challenge := reaped.Header().Get("WWW-Authenticate"); challenge != "Bearer" {
-		t.Fatalf("reaped challenge=%q, want bare Bearer", challenge)
+	if challenge := reaped.Header().Get("WWW-Authenticate"); challenge != "" {
+		t.Fatalf("reaped challenge=%q, want no challenge", challenge)
 	}
 
 	records := typedRecords(t, fixture.sink)
@@ -442,7 +451,7 @@ func TestConcurrentProfilesStayIsolated(t *testing.T) {
 			if token == "token-q" {
 				foreign = sessionPost(t, fixture.handler, sessionDiagControl, "token-p", sessionID)
 			}
-			if foreign.Code != http.StatusUnauthorized {
+			if foreign.Code != http.StatusNotFound {
 				errs <- fmt.Errorf("worker %d foreign status=%d", i, foreign.Code)
 			}
 		}(i)
@@ -486,8 +495,8 @@ func TestStaticTokensCannotInheritAnotherSession(t *testing.T) {
 	sessionID := first.Header().Get(sessionIDHeader)
 
 	stolen := sessionPost(t, fixture.handler, sessionDiagControl, "token-two", sessionID)
-	if stolen.Code != http.StatusUnauthorized {
-		t.Fatalf("token-two with token-one session status=%d, want 401", stolen.Code)
+	if stolen.Code != http.StatusNotFound {
+		t.Fatalf("token-two with token-one session status=%d, want 404", stolen.Code)
 	}
 	fresh := sessionPost(t, fixture.handler, sessionDiagInitialize, "token-two", "")
 	if fresh.Code != http.StatusNoContent {
@@ -629,11 +638,11 @@ func TestComposedOAuthSyntheticABSessionDiagnostics(t *testing.T) {
 	// Different valid principal B on A's retained session: OAuth accepts, the
 	// existing-session bearer binding rejects.
 	bMismatch := do(t, http.MethodPost, `{"jsonrpc":"2.0","id":3,"method":"tools/list"}`, tokenB, sessionA)
-	if bMismatch.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("B on retained A session status=%d, want 401", bMismatch.StatusCode)
+	if bMismatch.StatusCode != http.StatusNotFound {
+		t.Fatalf("B on retained A session status=%d, want 404", bMismatch.StatusCode)
 	}
-	if challenge := bMismatch.Header.Get("WWW-Authenticate"); challenge != "Bearer" {
-		t.Fatalf("B mismatch challenge=%q, want bare Bearer", challenge)
+	if challenge := bMismatch.Header.Get("WWW-Authenticate"); challenge != "" {
+		t.Fatalf("B mismatch challenge=%q, want no challenge", challenge)
 	}
 	if bMismatch.Header.Get("Mcp-Session-Id") != "" {
 		t.Fatal("mismatch response leaked a session reference header")

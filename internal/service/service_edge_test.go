@@ -270,7 +270,7 @@ func TestInboundUnknownSessionAndDeleteReleaseTracking(t *testing.T) {
 	}
 	unknown := httptest.NewRecorder()
 	h.ServeHTTP(unknown, request(http.MethodPost, "not-issued"))
-	if unknown.Code != http.StatusUnauthorized {
+	if unknown.Code != http.StatusNotFound {
 		t.Fatalf("unknown session status = %d", unknown.Code)
 	}
 	created := httptest.NewRecorder()

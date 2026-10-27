@@ -58,18 +58,6 @@ func tokenHashFor(token string) [][32]byte {
 	return [][32]byte{sha256.Sum256([]byte(token))}
 }
 
-// assertBearerAuth asserts a bare 401 carrying exactly one challenge, so these
-// tests fail on any unrelated regression.
-func assertBearerAuth(t *testing.T, rec *httptest.ResponseRecorder) {
-	t.Helper()
-	if rec.Code != http.StatusUnauthorized {
-		t.Fatalf("response: %v", rec)
-	}
-	if len(rec.Header().Values("WWW-Authenticate")) != 1 {
-		t.Fatalf("response: %v", rec)
-	}
-}
-
 // requestFor builds an authenticated POST/GET with an optional session id.
 func requestFor(method, sessionID, body string) *http.Request {
 	req := httptest.NewRequest(method, "/mcp", strings.NewReader(body))
@@ -193,7 +181,12 @@ func TestSessionIdleExpiry(t *testing.T) {
 	// The session expires after the idle window and is refused, not re-created.
 	clock = clock.Add(time.Minute + time.Second)
 	rec = serve(inbound, requestFor(http.MethodPost, id, ""))
-	assertBearerAuth(t, rec)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("response: %v", rec)
+	}
+	if len(rec.Header().Values("WWW-Authenticate")) != 0 {
+		t.Fatalf("response: %v", rec)
+	}
 	if rec.Header().Get(sessionIDHeader) != "" {
 		t.Fatalf("response: %v", rec)
 	}

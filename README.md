@@ -539,7 +539,9 @@ lose the record, and broken sinks do not self-report:
 - **Finite admission stages and reasons:**
   - `client_auth` / `client_auth_failed`: missing or invalid client Bearer token.
   - `session_admission` / `session_auth_failed`: an absent session entry or
-    existing bearer-binding mismatch; omitting the session header alone is
+    existing bearer-binding mismatch; returns 404 with no `Bearer` challenge
+    and no session ID, so clients treat the session as lost/unusable,
+    reinitialize, and retry. Omitting the session header alone is
     not an owned rejection, and fresh initialization can be legal.
   - `session_admission` / `session_capacity`: active sessions exceed `max_sessions`.
   - `host_admission` / `host_rejected`: Host header not allowed by `allowed_hosts`.
@@ -604,8 +606,8 @@ lose the record, and broken sinks do not self-report:
   {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"unknown","stage":"unknown","failure_stage":"outer_oauth","failure_reason":"scope_insufficient","http_status":403,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":6,"diag_duration_ms":2,"credential_state":"accepted","scope_state":"rejected","session_state":"not_evaluated","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"ddeeff00112233445566778899aabb01","correlation_state":"available","diag_schema":"oauth_diag_v1"}
   ```
 
-- **Session outcomes (`failure_stage: session`, both 401 with the bare
-  `Bearer` challenge, unchanged).** The inner session admission distinguishes
+- **Session outcomes (`failure_stage: session`, both 404 with no challenge,
+  unchanged diagnostics).** The inner session admission distinguishes
   an absent session entry from an existing-entry bearer-binding mismatch —
   independently of the HTTP status:
 
@@ -614,14 +616,14 @@ lose the record, and broken sinks do not self-report:
   reference was deleted with the session):
 
   ```json
-  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"session_auth_failed","stage":"session_admission","failure_stage":"session","failure_reason":"session_absent","http_status":401,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":4,"diag_duration_ms":2,"credential_state":"accepted","scope_state":"accepted","session_header":"present","session_state":"absent","binding_relation":"not_evaluated","session_ref_state":"not_applicable","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"11ff22ee33dd44cc55bb66aa7799cc00","correlation_state":"available","diag_schema":"oauth_diag_v1"}
+  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"session_auth_failed","stage":"session_admission","failure_stage":"session","failure_reason":"session_absent","http_status":404,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":4,"diag_duration_ms":2,"credential_state":"accepted","scope_state":"accepted","session_header":"present","session_state":"absent","binding_relation":"not_evaluated","session_ref_state":"not_applicable","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"11ff22ee33dd44cc55bb66aa7799cc00","correlation_state":"available","diag_schema":"oauth_diag_v1"}
   ```
 
   Existing entry, different bearer binding (comparator mismatch; the live
   `session_ref` appears in the server record only, never in any response):
 
   ```json
-  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"session_auth_failed","stage":"session_admission","failure_stage":"session","failure_reason":"session_fingerprint_mismatch","http_status":401,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":3,"diag_duration_ms":1,"credential_state":"accepted","scope_state":"accepted","session_header":"present","session_state":"existing","binding_relation":"mismatch","session_ref_state":"available","session_ref":"7f3a9c1e552b40d6a8c1e93b7742d015","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"aabb0011ccdd22ee33ff445566778899","correlation_state":"available","diag_schema":"oauth_diag_v1"}
+  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"session_auth_failed","stage":"session_admission","failure_stage":"session","failure_reason":"session_fingerprint_mismatch","http_status":404,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":3,"diag_duration_ms":1,"credential_state":"accepted","scope_state":"accepted","session_header":"present","session_state":"existing","binding_relation":"mismatch","session_ref_state":"available","session_ref":"7f3a9c1e552b40d6a8c1e93b7742d015","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"aabb0011ccdd22ee33ff445566778899","correlation_state":"available","diag_schema":"oauth_diag_v1"}
   ```
 
   Successful session creation (initialize without a header; legal, never a

@@ -105,7 +105,7 @@ func TestServeLoggingHTTP(t *testing.T) {
 		{name: "UnmatchedUnusualMethod", method: "SECRETVERB", path: "/private-path-secret?token=query-secret", body: `{}`, route: "not_found", stage: "http_route", reason: "route_not_found", status: 404},
 		{name: "Initialize", method: "POST", path: "/mcp", body: `{"jsonrpc":"2.0","id":"rpc-secret","method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"client-secret","version":"1"}}}`, route: "mcp", stage: "none", reason: "none", status: 200},
 		{name: "OversizedBody", method: "POST", path: "/mcp", body: strings.Repeat("body-secret", 104858), route: "mcp", stage: "request_limits", reason: "request_too_large", status: 413},
-		{name: "SessionBinding", method: "POST", path: "/mcp", body: `{}`, route: "mcp", stage: "session_admission", reason: "session_auth_failed", session: "unbound-session-secret", status: 401},
+		{name: "SessionBinding", method: "POST", path: "/mcp", body: `{}`, route: "mcp", stage: "session_admission", reason: "session_auth_failed", session: "unbound-session-secret", status: 404},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, httpURL, stdout, stop := startHTTPLoggingBridge(t)
@@ -140,9 +140,6 @@ func TestServeLoggingHTTP(t *testing.T) {
 				t.Fatalf("public status = %d; want %d", response.StatusCode, tc.status)
 			}
 			wantChallenge := ""
-			if tc.name == "SessionBinding" {
-				wantChallenge = "Bearer"
-			}
 			if got := response.Header.Get("WWW-Authenticate"); got != wantChallenge {
 				t.Fatalf("public challenge = %q; want %q", got, wantChallenge)
 			}

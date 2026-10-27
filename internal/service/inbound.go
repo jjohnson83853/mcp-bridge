@@ -348,9 +348,11 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					State: "existing", Binding: "mismatch",
 				})
 			}
-			writer.Header().Set("WWW-Authenticate", "Bearer")
+			// Session admission failures (absent entry or binding mismatch)
+			// return 404 without a Bearer challenge so MCP clients treat the
+			// session as lost or unusable, reinitialize, and retry.
 			rejection = legacyRejection{"session_admission", "session_auth_failed"}
-			http.Error(writer, "unauthorized", http.StatusUnauthorized)
+			http.Error(writer, "session not found", http.StatusNotFound)
 			return
 		}
 		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
