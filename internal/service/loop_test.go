@@ -2,14 +2,20 @@ package service_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http/httptest"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
+	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/search"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
@@ -60,6 +66,13 @@ func (l *loopLog) rejectionReasons() []string {
 	}
 	return reasons
 }
+
+func (l *loopLog) outcomesSnapshot() [][2]string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return append([][2]string(nil), l.outcomes...)
+}
+
 
 func (l *loopLog) count() int {
 	l.mu.Lock()
@@ -117,7 +130,10 @@ func loopHarnessWith(t *testing.T, h *reloadHarness, candidate *candidateHolder,
 		Signals:       signals,
 		Logf:          log.logf,
 		ReloadMetrics: log.reloadOutcome,
-		Published:     h.recordPublished,
+		Published: func(assembly *service.Assembly) error {
+			h.recordPublished(assembly)
+			return nil
+		},
 	})
 	if err != nil {
 		t.Fatalf("new loop: %v", err)
@@ -232,6 +248,318 @@ func TestLoopKeepsThePublishedGenerationWhenTheCandidateIsRejected(t *testing.T)
 		t.Fatalf("closed = %d; want no client churn on a rejected candidate", len(h.closedClients()))
 	}
 }
+
+// TestLoopReportsMetadataPublicationFailureAfterAcceptingRuntime pins the
+// post-accept boundary: failed metadata reconciliation is reported, but the
+// accepted runtime advances while the last complete tool projection remains.
+func TestLoopReportsMetadataPublicationFailureAfterAcceptingRuntime(t *testing.T) {
+	h := newReloadHarness(t)
+	reloadEnv(t)
+	candidate := parseReloadConfig(t, reloadTwoServers)
+	candidateWithPin := *candidate
+	candidateWithPin.Pins = []map[string]string{{"server": "alpha", "tool": "good"}}
+	candidate = &candidateWithPin
+	h.setDefs("alpha", core.ToolDefinition{
+		RawName:     "good",
+		Description: "good",
+		InputSchema: json.RawMessage(`{"type":"object"}`),
+	})
+
+	surface, err := service.NewToolSurface(h.runtime, service.ToolSurfaceConfig{
+		Model: search.ModelIdentity{Dimensions: 1},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := service.NewMCPServer()
+	if err := surface.Register(server); err != nil {
+		t.Fatal(err)
+	}
+
+	log := &loopLog{}
+	loop, err := service.NewLoop(h.runtime, service.LoopOptions{
+		Load: func() (*config.Config, error) { return candidate, nil },
+		Deps: refreshDeps(h),
+		Published: func(assembly *service.Assembly) error {
+			h.recordPublished(assembly)
+			return surface.Published(assembly)
+		},
+		ReloadMetrics: log.reloadOutcome,
+		Logf:          log.logf,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := loop.Reload(); err != nil {
+		t.Fatalf("initial reload: %v", err)
+	}
+	before := log.outcomesSnapshot()
+	if len(before) != 1 || before[0] != [2]string{"success", ""} {
+		t.Fatalf("initial reload outcomes = %v; want one successful admission", before)
+	}
+	previous := h.runtime.Current()
+	previousGeneration := previous.Generation()
+
+	h.setDefs("alpha", core.ToolDefinition{
+		RawName:     "good",
+		Description: "broken",
+		InputSchema: json.RawMessage(`{"type":"object"}`),
+		Metadata:    core.ToolMetadata{Icons: json.RawMessage(`[123]`)},
+	})
+	err = loop.Reload()
+	if err == nil {
+		t.Fatal("reload succeeded after metadata projection publication failed")
+	}
+	if !errors.Is(err, service.ErrPublicationFailed) {
+		t.Fatalf("reload error = %v; want publication failure", err)
+	}
+	if got := log.outcomesSnapshot(); len(got) != len(before) {
+		t.Fatalf("reload outcomes after publication failure = %v; want no new outcome after %v", got, before)
+	}
+
+	accepted := h.runtime.Current()
+	if accepted == previous || accepted.Generation() <= previousGeneration {
+		t.Fatalf("accepted runtime generation = %d; want advancement beyond %d", accepted.Generation(), previousGeneration)
+	}
+	httpServer := httptest.NewServer(service.NewStreamableHandler(server))
+	t.Cleanup(httpServer.Close)
+	client := mcp.NewClient(&mcp.Implementation{Name: "loop-test", Version: "1"}, nil)
+	session, err := client.Connect(context.Background(), &mcp.StreamableClientTransport{
+		Endpoint:   httpServer.URL,
+		MaxRetries: -1,
+	}, &mcp.ClientSessionOptions{ProtocolVersion: "2025-11-25"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = session.Close() })
+	page, err := session.ListTools(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := make(map[string]bool, len(page.Tools))
+	descriptions := make(map[string]string, len(page.Tools))
+	for _, tool := range page.Tools {
+		names[tool.Name] = true
+		descriptions[tool.Name] = tool.Description
+	}
+	if !names["alpha__good"] || names["alpha__broken"] {
+		t.Fatalf("tool projection after failed reconciliation = %v; want the last complete projection", names)
+	}
+	if got := descriptions["alpha__good"]; got != "good" {
+		t.Fatalf("alpha__good description after failed reconciliation = %q; want last complete description %q, not candidate description %q", got, "good", "broken")
+	}
+}
+
+func TestLoopReportsStartupPublicationFailureAfterAcceptingRuntime(t *testing.T) {
+	h := newReloadHarness(t)
+	reloadEnv(t)
+	candidate := parseReloadConfig(t, reloadTwoServers)
+	candidateWithPin := *candidate
+	candidateWithPin.Pins = []map[string]string{{"server": "alpha", "tool": "good"}}
+	candidate = &candidateWithPin
+	h.setDefs("alpha", core.ToolDefinition{
+		RawName:     "good",
+		Description: "good",
+		InputSchema: json.RawMessage(`{"type":"object"}`),
+	})
+
+	surface, err := service.NewToolSurface(h.runtime, service.ToolSurfaceConfig{
+		Model: search.ModelIdentity{Dimensions: 1},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cause := errors.New("startup metadata publication failed")
+	log := &loopLog{}
+	loop, err := service.NewLoop(h.runtime, service.LoopOptions{
+		Load: func() (*config.Config, error) { return candidate, nil },
+		Deps: refreshDeps(h),
+		Published: func(assembly *service.Assembly) error {
+			h.recordPublished(assembly)
+			if err := surface.Published(assembly); err != nil {
+				return err
+			}
+			return cause
+		},
+		ReloadMetrics: log.reloadOutcome,
+		Logf:          log.logf,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = loop.Start(context.Background())
+	if err == nil {
+		t.Fatal("startup succeeded after metadata publication failed")
+	}
+	if !errors.Is(err, service.ErrPublicationFailed) {
+		t.Fatalf("startup error = %v; want publication failure", err)
+	}
+	if !errors.Is(err, cause) {
+		t.Fatalf("startup error = %v; want to preserve publication cause %v", err, cause)
+	}
+	if !strings.Contains(err.Error(), cause.Error()) {
+		t.Fatalf("startup error = %v; want publication cause %q", err, cause)
+	}
+	accepted := h.runtime.Current()
+	if accepted == nil || accepted.Generation() == 0 {
+		t.Fatal("startup publication failure rolled back the admitted runtime")
+	}
+	if got := log.outcomesSnapshot(); len(got) != 0 {
+		t.Fatalf("startup outcomes after publication failure = %v; want no metric outcome", got)
+	}
+	h.mu.Lock()
+	acceptedClients := append([]*fakeClient(nil), h.clients["alpha"]...)
+	acceptedClients = append(acceptedClients, h.clients["beta"]...)
+	h.mu.Unlock()
+	if len(acceptedClients) != 2 {
+		t.Fatalf("accepted clients = %d; want one client for each configured server", len(acceptedClients))
+	}
+	for _, client := range acceptedClients {
+		waitClosed(t, h, client)
+	}
+	h.mu.Lock()
+	closedClients := append([]*fakeClient(nil), h.closed...)
+	h.mu.Unlock()
+	if len(closedClients) != len(acceptedClients) {
+		t.Fatalf("closed clients = %d; want every accepted client closed exactly once (%d)", len(closedClients), len(acceptedClients))
+	}
+	for _, client := range acceptedClients {
+		closeCount := 0
+		for _, closedClient := range closedClients {
+			if closedClient == client {
+				closeCount++
+			}
+		}
+		if closeCount != 1 {
+			t.Errorf("client %q close calls = %d; want exactly 1", client.name, closeCount)
+		}
+	}
+}
+
+func TestLoopLogsPostAcceptPublicationFailuresWithoutFalseSuccessMetrics(t *testing.T) {
+	h := newReloadHarness(t)
+	reloadEnv(t)
+	candidate := newCandidateHolder(parseReloadConfig(t, reloadTwoServers))
+	signals := make(chan struct{}, 1)
+	log := &loopLog{}
+	refreshCause := errors.New("refresh metadata publication failed")
+	signalCause := errors.New("signal metadata publication failed")
+	publications := make(chan uint64, 2)
+	metrics := make(chan [3]string, 8)
+	publicationCalls := 0
+
+	loop, err := service.NewLoop(h.runtime, service.LoopOptions{
+		Load:     func() (*config.Config, error) { return candidate.get(), nil },
+		Deps:     refreshDeps(h),
+		Interval: 0,
+		Signals:  signals,
+		Metrics: func(serverID, status, reason string) {
+			metrics <- [3]string{serverID, status, reason}
+		},
+		ReloadMetrics: log.reloadOutcome,
+		Logf:          log.logf,
+		Published: func(assembly *service.Assembly) error {
+			h.recordPublished(assembly)
+			publicationCalls++
+			switch publicationCalls {
+			case 1:
+				return nil
+			case 2:
+				publications <- assembly.Generation()
+				return refreshCause
+			default:
+				publications <- assembly.Generation()
+				return signalCause
+			}
+		},
+	})
+	if err != nil {
+		t.Fatalf("new loop: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := startLoop(t, ctx, loop)
+	defer func() {
+		cancel()
+		if err := <-done; err != nil {
+			t.Errorf("loop shutdown: %v", err)
+		}
+	}()
+	hasLog := func(cause string) bool {
+		log.mu.Lock()
+		defer log.mu.Unlock()
+		for _, line := range log.lines {
+			if strings.Contains(line, cause) {
+				return true
+			}
+		}
+		return false
+	}
+
+	var refreshGeneration uint64
+	select {
+	case refreshGeneration = <-publications:
+	case <-time.After(5 * time.Second):
+		t.Fatal("startup probe did not reach post-accept publication")
+	}
+	waitFor(t, "the failed refresh pass", func() bool { return loop.Refresher().Passes() == 1 })
+	if !hasLog(refreshCause.Error()) {
+		t.Fatalf("refresh publication cause %q was not logged", refreshCause)
+	}
+	if current := h.runtime.Current(); current == nil || current.Generation() != refreshGeneration {
+		t.Fatalf("runtime after refresh publication failure = %v; want accepted generation %d", current, refreshGeneration)
+	}
+	if len(metrics) != 0 {
+		t.Fatalf("per-server metrics after refresh publication failure = %d; want no false success metrics", len(metrics))
+	}
+
+	candidate.set(parseReloadConfig(t, reloadAlphaOnly))
+	signals <- struct{}{}
+	var signalGeneration uint64
+	select {
+	case signalGeneration = <-publications:
+	case <-time.After(5 * time.Second):
+		t.Fatal("signal reload did not reach post-accept publication")
+	}
+	waitFor(t, "the signal publication failure log", func() bool {
+		return hasLog(signalCause.Error())
+	})
+	if signalGeneration <= refreshGeneration {
+		t.Fatalf("signal generation = %d; want an accepted successor of %d", signalGeneration, refreshGeneration)
+	}
+	if current := h.runtime.Current(); current == nil || current.Generation() != signalGeneration {
+		t.Fatalf("runtime after signal publication failure = %v; want accepted generation %d", current, signalGeneration)
+	}
+	if got := log.rejections(); got != 0 {
+		t.Fatalf("reload rejection metrics = %d; want no rejection for an accepted generation", got)
+	}
+	if len(metrics) != 0 {
+		t.Fatalf("per-server metrics after signal reload = %d; want no false success metrics", len(metrics))
+	}
+
+	log.mu.Lock()
+	lines := append([]string(nil), log.lines...)
+	log.mu.Unlock()
+	var refreshLogged, signalLogged bool
+	for _, line := range lines {
+		if strings.Contains(line, refreshCause.Error()) {
+			refreshLogged = true
+		}
+		if strings.Contains(line, signalCause.Error()) {
+			signalLogged = true
+			if strings.Contains(strings.ToLower(line), "rejected") {
+				t.Fatalf("accepted signal generation was logged as rejected: %q", line)
+			}
+		}
+	}
+	if !refreshLogged {
+		t.Fatalf("refresh publication cause %q was not logged: %v", refreshCause, lines)
+	}
+	if !signalLogged {
+		t.Fatalf("signal publication cause %q was not logged: %v", signalCause, lines)
+	}
+}
+
 
 // TestLoopAdmitsASignalCandidateAndDrainsTheRemovedServer pins the atomic swap:
 // one signal publishes exactly one new generation, a server the candidate

@@ -162,3 +162,41 @@ func TestStoreMetadataAtomicUpgrade(t *testing.T) {
 		t.Fatal("schema-2 bytes decoded under the frozen schema-1 shape; old readers must reject them")
 	}
 }
+
+// Save must not mutate the caller's snapshot in place: the schema-version
+// stamp and the published checksum belong to the owned copy, so the caller
+// keeps its original values after the save returns.
+func TestStoreSaveDoesNotMutateCallerSnapshot(t *testing.T) {
+	directory := t.TempDir()
+	store := openStore(t, directory)
+	snapshot := metadataSnapshot()
+	originalVersion := snapshot.SchemaVersion
+	originalChecksum := snapshot.Envelope.SnapshotChecksum
+
+	if err := store.Save(snapshot); err != nil {
+		t.Fatalf("Save snapshot: %v", err)
+	}
+	if snapshot.SchemaVersion != originalVersion {
+		t.Fatalf("caller schema_version mutated to %d; want %d", snapshot.SchemaVersion, originalVersion)
+	}
+	if got := snapshot.Envelope.SnapshotChecksum; got != originalChecksum {
+		t.Fatalf("caller snapshot_checksum mutated to %q; want %q", got, originalChecksum)
+	}
+
+	// The published document is the current schema and its recorded checksum
+	// is the canonical one, even though the caller's struct was untouched.
+	loaded, err := store.Load()
+	if err != nil {
+		t.Fatalf("Load published snapshot: %v", err)
+	}
+	if loaded.SchemaVersion != 2 {
+		t.Fatalf("published schema_version = %d; want 2", loaded.SchemaVersion)
+	}
+	checksum, err := loaded.Checksum()
+	if err != nil {
+		t.Fatalf("recompute published checksum: %v", err)
+	}
+	if loaded.Envelope.SnapshotChecksum != checksum {
+		t.Fatalf("published checksum %q; want canonical %q", loaded.Envelope.SnapshotChecksum, checksum)
+	}
+}

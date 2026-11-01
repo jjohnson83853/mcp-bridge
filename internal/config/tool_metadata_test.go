@@ -51,9 +51,12 @@ func TestToolMetadataDefaultsParse(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Parse rejected tool_metadata defaults: %v", err)
 	}
-	patch := cfg.ToolMetadataDefaults("alpha")
-	if patch == nil {
-		t.Fatal("ToolMetadataDefaults(alpha) = nil; want the configured patch")
+	if cfg.Servers[0].ToolMetadata == nil {
+		t.Fatal("Parse dropped the tool_metadata defaults")
+	}
+	patch := cfg.Servers[0].ToolMetadata.Defaults
+	if len(patch) == 0 {
+		t.Fatal("Parse dropped the configured defaults patch")
 	}
 	if raw := string(patch["title"]); raw != `"Corrected read"` {
 		t.Fatalf("defaults title = %s; want quoted JSON string", raw)
@@ -66,14 +69,6 @@ func TestToolMetadataDefaultsParse(t *testing.T) {
 	}
 	if raw := string(patch["icons"]); !strings.Contains(raw, `"source":"https://example.test/read.svg"`) {
 		t.Fatalf("defaults icons lost members: %s", raw)
-	}
-	if other := cfg.ToolMetadataDefaults("beta"); other != nil {
-		t.Fatalf("ToolMetadataDefaults(beta) = %v; want nil for a server without defaults", other)
-	}
-	clone := patch.Clone()
-	clone["title"] = []byte(`"mutated"`)
-	if string(cfg.ToolMetadataDefaults("alpha")["title"]) != `"Corrected read"` {
-		t.Fatal("Clone aliased the stored patch")
 	}
 
 	// A server with no pins may retain defaults without affecting unpinned
@@ -94,7 +89,7 @@ func TestToolMetadataDefaultsParse(t *testing.T) {
 	if pinned {
 		t.Fatal("alpha unexpectedly retained its pin")
 	}
-	if patch := cfg.ToolMetadataDefaults("alpha"); patch == nil || !strings.Contains(string(patch["annotations"]), "{}") {
+	if patch := cfg.Servers[0].ToolMetadata.Defaults; patch == nil || !strings.Contains(string(patch["annotations"]), "{}") {
 		t.Fatalf("empty defaults members not retained: %v", patch)
 	}
 	// An explicit false annotation value is retained, never dropped.
@@ -106,7 +101,7 @@ func TestToolMetadataDefaultsParse(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Parse rejected explicit false hint: %v", err)
 	}
-	if patch := cfg.ToolMetadataDefaults("alpha"); patch == nil || !strings.Contains(string(patch["annotations"]), `"openWorldHint":false`) {
+	if patch := cfg.Servers[0].ToolMetadata.Defaults; patch == nil || !strings.Contains(string(patch["annotations"]), `"openWorldHint":false`) {
 		t.Fatalf("explicit false annotation not retained: %v", patch)
 	}
 }
@@ -142,6 +137,21 @@ func TestToolMetadataDefaultsValidation(t *testing.T) {
       defaults:
         _meta: scalar
 `, "tool_metadata_value"},
+		{"unknown annotation key", `    tool_metadata:
+      defaults:
+        annotations:
+          audience: user
+`, "tool_metadata_value"},
+		{"annotation hint not boolean", `    tool_metadata:
+      defaults:
+        annotations:
+          readOnlyHint: "yes"
+`, "tool_metadata_value"},
+		{"annotation title not string", `    tool_metadata:
+      defaults:
+        annotations:
+          title: true
+`, "tool_metadata_value"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -176,6 +186,52 @@ func TestToolMetadataDefaultsValidation(t *testing.T) {
 		if record.Code == "tool_metadata_unknown_member" {
 			t.Fatalf("duplicate key surfaced as an unknown member instead of the duplicate policy: %v", diags)
 		}
+	}
+}
+
+// TestToolMetadataAnnotationsShape verifies the config layer enforces the
+// build layer's annotation contract at parse time: only the SDK annotation
+// inventory (title plus the four hints) is admitted, the title is a string
+// and the hints are booleans, and a valid title-plus-hint patch is accepted.
+func TestToolMetadataAnnotationsShape(t *testing.T) {
+	requireClientSecret(t)
+	cfg, err := Parse([]byte(metadataDefaultsConfig(`    tool_metadata:
+      defaults:
+        annotations:
+          title: Read
+          readOnlyHint: true
+`)), ".")
+	if err != nil {
+		t.Fatalf("Parse rejected a valid annotation patch: %v", err)
+	}
+	if cfg.Servers[0].ToolMetadata == nil || len(cfg.Servers[0].ToolMetadata.Defaults) == 0 {
+		t.Fatal("Parse dropped the defaults patch")
+	}
+	raw := string(cfg.Servers[0].ToolMetadata.Defaults["annotations"])
+	if !strings.Contains(raw, `"title":"Read"`) || !strings.Contains(raw, `"readOnlyHint":true`) {
+		t.Fatalf("valid annotation patch lost members: %s", raw)
+	}
+}
+
+// TestValidateMetadataMemberAnnotations verifies the programmatic shape gate
+// mirrors the parse-time annotation contract: unknown keys, non-string
+// titles and non-boolean hints are rejected.
+func TestValidateMetadataMemberAnnotations(t *testing.T) {
+	cases := []struct {
+		name   string
+		member map[string]any
+	}{
+		{"unknown key", map[string]any{"audience": "user"}},
+		{"non-string title", map[string]any{"title": true}},
+		{"non-boolean hint", map[string]any{"readOnlyHint": "yes"}},
+	}
+	for _, tc := range cases {
+		if err := validateMetadataMember("annotations", tc.member); err == nil {
+			t.Errorf("%s: programmatic gate accepted an unsupported annotation member", tc.name)
+		}
+	}
+	if err := validateMetadataMember("annotations", map[string]any{"title": "Read", "readOnlyHint": true}); err != nil {
+		t.Fatalf("programmatic gate rejected a valid annotation mapping: %v", err)
 	}
 }
 
@@ -264,29 +320,23 @@ func TestToolMetadataExceptionsParse(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Parse rejected tool_metadata tools exceptions: %v (RED)", err)
 	}
-	_ = cfg
-	// The configured exception is retrievable per raw tool name, and the
-	// accessors never alias the stored configuration.
-	patch := cfg.ToolMetadataToolPatch("alpha", "write")
+	// The configured exception parses onto the owning server's exact-tools
+	// mapping, retrievable per raw tool name.
+	if cfg.Servers[0].ToolMetadata == nil {
+		t.Fatal("Parse dropped the tool_metadata exceptions")
+	}
+	patch := cfg.Servers[0].ToolMetadata.Tools["write"]
 	if patch == nil {
-		t.Fatal("ToolMetadataToolPatch(alpha, write) = nil; want the configured exception")
+		t.Fatal("Parse dropped the configured write exception")
 	}
 	if raw := string(patch["annotations"]); !strings.Contains(raw, `"readOnlyHint":false`) {
 		t.Fatalf("exception annotations = %s; want the explicit false values", raw)
 	}
-	clone := patch.Clone()
-	clone["annotations"] = []byte(`{}`)
-	if got := cfg.ToolMetadataToolPatch("alpha", "write"); !strings.Contains(string(got["annotations"]), `"readOnlyHint":false`) {
-		t.Fatal("ToolMetadataToolPatch aliased the stored configuration")
+	if _, ok := cfg.Servers[0].ToolMetadata.Tools["read"]; ok {
+		t.Fatal("Parse retained an exception for a tool without one")
 	}
-	if cfg.ToolMetadataToolPatch("alpha", "read") != nil {
-		t.Fatal("ToolMetadataToolPatch(alpha, read) = a patch; want nil for a tool without an exception")
-	}
-	if tools := cfg.ToolMetadataTools("alpha"); len(tools) != 1 || tools["write"] == nil {
-		t.Fatalf("ToolMetadataTools(alpha) = %v; want the configured write exception", tools)
-	}
-	if other := cfg.ToolMetadataTools("beta"); other != nil {
-		t.Fatalf("ToolMetadataTools(beta) = %v; want nil for a server without exceptions", other)
+	if len(cfg.Servers[0].ToolMetadata.Tools) != 1 {
+		t.Fatalf("tools mapping = %d entries; want the single configured write exception", len(cfg.Servers[0].ToolMetadata.Tools))
 	}
 	// A tool-only patch without any defaults block is valid.
 	toolOnly := strings.Replace(exceptionsConfig(`    tool_metadata:
@@ -309,23 +359,13 @@ func TestToolMetadataExceptionsParse(t *testing.T) {
 	}
 }
 
-// TestToolMetadataExceptionsValidation verifies the exact-tools mapping
-// validates with the typed, metadata-only diagnostics contract: unknown
-// targets, cross-server targets and invalid tool names reject the whole
-// candidate atomically, unsupported patch members reject with the shared
-// vocabulary, and duplicate tool entries follow the existing duplicate key
-// policy.
+// TestToolMetadataExceptionsValidation verifies invalid tool-name shapes and
+// patch values reject the whole config with typed metadata-only diagnostics.
+// Exact selector membership is checked later against the accepted candidate
+// catalog, because config parsing has no live tool inventory.
 func TestToolMetadataExceptionsValidation(t *testing.T) {
 	requireClientSecret(t)
 	cases := []struct{ name, metadata, wantCode string }{
-		{"unknown target", exceptionsDefaults + `      tools:
-        delete_everything:
-          title: Nope
-`, "tool_metadata_tool_unknown"},
-		{"cross-server target", exceptionsDefaults + `      tools:
-        beta_only:
-          title: Nope
-`, "tool_metadata_tool_unknown"},
 		{"invalid tool name", exceptionsDefaults + `      tools:
         "bad name!":
           title: Nope
@@ -416,5 +456,28 @@ func TestToolMetadataExceptionsPublicFingerprint(t *testing.T) {
 	}
 	if changed, _ := withOtherException.ServerCredentialFingerprint("alpha"); changed != before {
 		t.Fatal("credential identity changed with a metadata-only config edit (RED)")
+	}
+}
+// TestProgressiveMetadataEligibility accepts an exact same-server selector
+// even when the config does not pin the target; the accepted candidate
+// catalog validates that selector later.
+func TestProgressiveMetadataEligibility(t *testing.T) {
+	requireClientSecret(t)
+	document := metadataDefaultsConfig(`    tool_metadata:
+      tools:
+        read:
+          title: Corrected read
+`)
+	document = strings.Replace(document, "pins:\n  - {server: alpha, tool: read}\n", "pins: []\n", 1)
+
+	cfg, err := Parse([]byte(document), ".")
+	if err != nil {
+		t.Fatalf("Parse rejected an exact unpinned metadata selector: %v", err)
+	}
+	if len(cfg.Pins) != 0 {
+		t.Fatalf("metadata selector revealed or pinned a tool: %v", cfg.Pins)
+	}
+	if patch := cfg.Servers[0].ToolMetadata.Tools["read"]; string(patch["title"]) != `"Corrected read"` {
+		t.Fatalf("exact unpinned selector was not retained: %v", patch)
 	}
 }

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -67,8 +68,11 @@ type RefresherOptions struct {
 	// advanced and the finite failure reason otherwise.
 	Metrics func(serverID, status, reason string)
 	// Published observes each generation a pass publishes, so the command layer
-	// can report per-server catalog state without reading internals.
-	Published func(assembly *Assembly)
+	// can report per-server catalog state without reading internals. It returns
+	// reconciliation failures after the runtime has accepted that generation.
+	Published func(assembly *Assembly) error
+	// Logf reports a post-accept publication callback failure.
+	Logf func(format string, args ...any)
 }
 
 // Refresher drives periodic and notification triggered refresh passes for one
@@ -81,7 +85,8 @@ type Refresher struct {
 	deps      RefreshDeps
 	interval  time.Duration
 	metrics   func(serverID, status, reason string)
-	published func(assembly *Assembly)
+	published func(assembly *Assembly) error
+	logf      func(format string, args ...any)
 
 	pending chan struct{}
 	running atomic.Bool
@@ -103,6 +108,7 @@ func NewRefresher(runtime *Runtime, current func() *config.Config, deps RefreshD
 		interval:  options.Interval,
 		metrics:   options.Metrics,
 		published: options.Published,
+		logf:      options.Logf,
 		pending:   make(chan struct{}, 1),
 	}
 }
@@ -198,12 +204,17 @@ func (r *Refresher) runPass() {
 	r.passes.Add(1)
 }
 
-// report publishes one pass's per-server outcome to the metrics hook. A rejected
-// pass reports every configured server as stale, which is exactly what the
-// published generation then proves.
+// report publishes one pass's per-server outcome to the metrics hook. A failed
+// publication callback suppresses per-server metrics because the projection
+// was not committed.
 func (r *Refresher) report(assembly *Assembly, err error) {
 	if err == nil && assembly != nil && r.published != nil {
-		r.published(assembly)
+		if publicationErr := r.published(assembly); publicationErr != nil {
+			if r.logf != nil {
+				r.logf("refresh publication failed after runtime acceptance: %v", fmt.Errorf("%w: %w", ErrPublicationFailed, publicationErr))
+			}
+			return
+		}
 	}
 	if r.metrics == nil {
 		return

@@ -730,13 +730,34 @@ func TestInboundSessionReaperThrottlesSmallSweeps(t *testing.T) {
 		t.Fatal("expired session survived next sweep")
 	}
 }
+
 func TestDescribeToolReturnsStoredOutputSchemaAndUnknownTool(t *testing.T) {
-	surface, assembly := newToolEdgeSurface(t, &toolEdgeClient{})
-	request := func(name string) *mcp.CallToolRequest {
-		return &mcp.CallToolRequest{Params: &mcp.CallToolParamsRaw{Arguments: []byte(fmt.Sprintf("{\"tool_name\":%q,\"catalog_revision\":%q}", name, assembly.CatalogRevision()))}}
+	upstream := &toolEdgeClient{}
+	surface, assembly := newToolEdgeSurface(t, upstream)
+	server := NewMCPServer()
+	if err := surface.Register(server); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	if err := surface.Published(assembly); err != nil {
+		t.Fatalf("Published: %v", err)
+	}
+	const token = "client-token"
+	inbound := NewInboundHandler(
+		NewStreamableHandler(server),
+		[][32]byte{sha256.Sum256([]byte(token))},
+		InboundOptions{ToolSurface: surface},
+	)
+	httpServer := httptest.NewServer(inbound)
+	t.Cleanup(httpServer.Close)
+	session := connectProgressiveDiscoveryClient(t, httpServer, token)
+	request := func(name string) *mcp.CallToolParams {
+		return &mcp.CallToolParams{
+			Name:      "describe_tool",
+			Arguments: json.RawMessage(fmt.Sprintf("{\"tool_name\":%q,\"catalog_revision\":%q}", name, assembly.CatalogRevision())),
+		}
 	}
 	read := core.PublicName("alpha", "read")
-	described, err := surface.describeTool(context.Background(), request(read))
+	described, err := session.CallTool(context.Background(), request(read))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -744,12 +765,15 @@ func TestDescribeToolReturnsStoredOutputSchemaAndUnknownTool(t *testing.T) {
 	if schema, ok := payload["output_schema"].(map[string]any); !ok || schema["type"] != "object" {
 		t.Fatalf("output schema = %#v", payload["output_schema"])
 	}
-	unknown, err := surface.describeTool(context.Background(), request("missing"))
+	unknown, err := session.CallTool(context.Background(), request("missing"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got := unknown.StructuredContent.(map[string]any)["code"]; got != codeUnknownTool {
 		t.Fatalf("unknown describe code = %#v", got)
+	}
+	if upstream.calls != 0 {
+		t.Fatalf("upstream calls = %d, want 0", upstream.calls)
 	}
 }
 

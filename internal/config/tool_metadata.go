@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
 
 	"gopkg.in/yaml.v3"
 )
@@ -15,9 +14,9 @@ import (
 // a null is a value, never a deletion instruction.
 type MetadataPatch map[string]json.RawMessage
 
-// ToolMetadataConfig is the optional server-owned tool_metadata mapping: the
-// defaults patch every configured pin of the owning server inherits, plus the
-// exact raw-tool-name exception patches layered above those defaults.
+// ToolMetadataConfig is the optional server-owned tool_metadata mapping:
+// defaults patch eligible targets of the owning server, with exact
+// raw-tool-name exception patches layered above those defaults.
 type ToolMetadataConfig struct {
 	Defaults MetadataPatch            `yaml:"defaults" json:"defaults,omitempty"`
 	Tools    map[string]MetadataPatch `yaml:"tools" json:"tools,omitempty"`
@@ -27,16 +26,11 @@ type ToolMetadataConfig struct {
 // this contract admits; anything else rejects the whole candidate.
 var supportedMetadataPatchMembers = set("description title icons annotations _meta")
 
-// sortedKeys lists a patch's member names in sorted order so validation and
-// hashing are deterministic regardless of document order.
-func sortedKeys(patch MetadataPatch) []string {
-	keys := make([]string, 0, len(patch))
-	for key := range patch {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
-}
+// supportedAnnotationKeys mirrors the build layer's annotation inventory in
+// core.ToolMetadata.Validate: the SDK ToolAnnotation fields only, so a claim
+// the SDK cannot represent rejects at the config layer instead of surfacing
+// as a swallowed publication error.
+var supportedAnnotationKeys = set("title readOnlyHint destructiveHint idempotentHint openWorldHint")
 
 // UnmarshalYAML converts one patch mapping into owned JSON bytes without
 // imposing shape here: structural validation is the typed node walk, so the
@@ -63,112 +57,10 @@ func (p *MetadataPatch) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
 
-// Validate admits only the supported patch shape on the JSON values. It is
-// the programmatic counterpart of the parse-time node walk for patches that
-// reach the package outside a document parse.
-func (p MetadataPatch) Validate() error {
-	for _, key := range sortedKeys(p) {
-		if !supportedMetadataPatchMembers[key] {
-			return fmt.Errorf("unsupported metadata patch member")
-		}
-		var value any
-		if err := json.Unmarshal(p[key], &value); err != nil {
-			return fmt.Errorf("metadata patch member is not valid JSON")
-		}
-		if err := validateMetadataMember(key, value); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Clone returns an owned deep copy of the patch: no returned byte slice
-// aliases the receiver or its callers.
-func (p MetadataPatch) Clone() MetadataPatch {
-	clone := make(MetadataPatch, len(p))
-	for key, value := range p {
-		clone[key] = append(json.RawMessage(nil), value...)
-	}
-	return clone
-}
-
-// ValidatePins admits one server's exact-tools mapping only when every entry
-// names a tool actually pinned on that same server. Wildcard or cross-server
-// selectors do not exist: an entry that matches no configured pin of the
-// owning server rejects the whole candidate. Duplicate mapping entries are
-// already the existing duplicate-key policy; the tool-name shape gate runs at
-// parse time.
-func (m *ToolMetadataConfig) ValidatePins(serverID string, pins []map[string]string) error {
-	if m == nil || len(m.Tools) == 0 {
-		return nil
-	}
-	configured := make(map[string]bool, len(pins))
-	for _, pin := range pins {
-		if pin["server"] == serverID {
-			configured[pin["tool"]] = true
-		}
-	}
-	for _, name := range sortedToolNames(m.Tools) {
-		if !configured[name] {
-			return fmt.Errorf("tool_metadata tools entry must match a configured pin of this server")
-		}
-	}
-	return nil
-}
-
-// ToolMetadataTools returns an owned copy of one server's exact-tools
-// exception mapping, or nil when the server declares none. Neither the
-// returned map nor its patches alias the stored configuration.
-func (c Config) ToolMetadataTools(serverID string) map[string]MetadataPatch {
-	for _, server := range c.Servers {
-		if server.ID == serverID && server.ToolMetadata != nil && len(server.ToolMetadata.Tools) > 0 {
-			tools := make(map[string]MetadataPatch, len(server.ToolMetadata.Tools))
-			for name, patch := range server.ToolMetadata.Tools {
-				tools[name] = patch.Clone()
-			}
-			return tools
-		}
-	}
-	return nil
-}
-
-// ToolMetadataToolPatch returns an owned copy of one exact-tool exception
-// patch, or nil when the server declares none for that raw tool name.
-func (c Config) ToolMetadataToolPatch(serverID, rawName string) MetadataPatch {
-	for _, server := range c.Servers {
-		if server.ID == serverID && server.ToolMetadata != nil {
-			if patch, ok := server.ToolMetadata.Tools[rawName]; ok && len(patch) > 0 {
-				return patch.Clone()
-			}
-			return nil
-		}
-	}
-	return nil
-}
-
-// sortedToolNames lists the tools mapping entries in sorted order so
-// validation is deterministic regardless of document order.
-func sortedToolNames(tools map[string]MetadataPatch) []string {
-	names := make([]string, 0, len(tools))
-	for name := range tools {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
-}
-
-// ToolMetadataDefaults returns an owned copy of one server's configured
-// metadata defaults patch, or nil when the server declares none. The returned
-// patch never aliases the stored configuration.
-func (c Config) ToolMetadataDefaults(serverID string) MetadataPatch {
-	for _, server := range c.Servers {
-		if server.ID == serverID {
-			if server.ToolMetadata == nil || len(server.ToolMetadata.Defaults) == 0 {
-				return nil
-			}
-			return server.ToolMetadata.Defaults.Clone()
-		}
-	}
+// ValidatePins keeps config parsing independent of the live tool catalog.
+// Exact selector membership is validated against an accepted candidate
+// catalog during service reload, after discovery has identified raw names.
+func (m *ToolMetadataConfig) ValidatePins(_ string, _ []map[string]string) error {
 	return nil
 }
 
@@ -220,11 +112,29 @@ func (v *docValidator) validateDefaultsValue(path, key string, node *yaml.Node, 
 		}
 		for i := 0; i+1 < len(node.Content); i += 2 {
 			member := node.Content[i+1]
-			if member.Kind != yaml.ScalarNode || (member.Tag != "!!str" && member.Tag != "!!bool") {
+			if !supportedAnnotationKeys[node.Content[i].Value] {
+				return v.fail(Diagnostic{
+					Key: joinKey(path, node.Content[i].Value), Server: server,
+					Line: node.Content[i].Line, Column: node.Content[i].Column,
+					Code: "tool_metadata_value", Property: "tool_metadata", Shape: "unknown_key",
+					Reason: "unsupported annotation key",
+				})
+			}
+			if node.Content[i].Value == "title" {
+				if member.Kind != yaml.ScalarNode || member.Tag != "!!str" {
+					return v.fail(Diagnostic{
+						Key: joinKey(path, "title"), Server: server, Line: member.Line, Column: member.Column,
+						Code: "tool_metadata_value", Property: "tool_metadata", Shape: shapeOf(member),
+						Reason: "annotation title must be a string",
+					})
+				}
+				continue
+			}
+			if member.Kind != yaml.ScalarNode || member.Tag != "!!bool" {
 				return v.fail(Diagnostic{
 					Key: joinKey(path, node.Content[i].Value), Server: server, Line: member.Line, Column: member.Column,
 					Code: "tool_metadata_value", Property: "tool_metadata", Shape: shapeOf(member),
-					Reason: "annotation hints must be strings or booleans",
+					Reason: "annotation hints must be booleans",
 				})
 			}
 		}
@@ -240,7 +150,9 @@ func (v *docValidator) validateDefaultsValue(path, key string, node *yaml.Node, 
 	return nil
 }
 
-// validateMetadataMember is the programmatic shape gate used by Validate.
+// validateMetadataMember is the programmatic shape gate for one decoded
+// patch member, mirroring the parse-time node walk's member inventory and
+// value types.
 func validateMetadataMember(key string, value any) error {
 	switch key {
 	case "title", "description":
@@ -262,11 +174,18 @@ func validateMetadataMember(key string, value any) error {
 		if !ok {
 			return fmt.Errorf("must be a mapping of annotation hints")
 		}
-		for _, member := range members {
-			switch member.(type) {
-			case string, bool:
-			default:
-				return fmt.Errorf("annotation hints must be strings or booleans")
+		for key, member := range members {
+			if !supportedAnnotationKeys[key] {
+				return fmt.Errorf("unsupported annotation key")
+			}
+			if key == "title" {
+				if _, ok := member.(string); !ok {
+					return fmt.Errorf("annotation title must be a string")
+				}
+				continue
+			}
+			if _, ok := member.(bool); !ok {
+				return fmt.Errorf("annotation hints must be booleans")
 			}
 		}
 	case "_meta":

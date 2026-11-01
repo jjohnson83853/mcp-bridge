@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
@@ -84,7 +86,7 @@ func TestMetadataDescriptorCarriesSource(t *testing.T) {
 // one tool while publishing the rest (fail-closed, like the derivation gate).
 func TestPublishedRejectsCandidateWhenDescriptorFails(t *testing.T) {
 	server := NewMCPServer()
-	surface := &ToolSurface{runtime: NewRuntime(), pinnedTools: make(map[string]core.ResolvedPin)}
+	surface := &ToolSurface{runtime: NewRuntime()}
 	if err := surface.Register(server); err != nil {
 		t.Fatal(err)
 	}
@@ -359,7 +361,8 @@ func TestMetadataExactToolPrecedence(t *testing.T) {
 `)
 	write := core.ToolDefinition{RawName: "write", Description: "Write a file", InputSchema: json.RawMessage(`{"type":"object"}`)}
 	read := core.ToolDefinition{RawName: "read", Description: "Read a file", InputSchema: json.RawMessage(`{"type":"object"}`)}
-	_, views, err := applyServerMetadataDefaults(candidate, exceptionPins(read, write), buildReload)
+	definitions := map[string][]core.ToolDefinition{"alpha": {read, write}}
+	_, views, err := applyServerMetadataDefaults(candidate, exceptionPins(read, write), definitions, buildReload)
 	if err != nil {
 		t.Fatalf("applyServerMetadataDefaults: %v (RED)", err)
 	}
@@ -406,18 +409,161 @@ func TestMetadataExactToolPrecedence(t *testing.T) {
             readOnlyHint: false
 `)
 	source := core.ToolDefinition{RawName: "write", Description: "Write a file", InputSchema: json.RawMessage(`{"type":"object"}`), Metadata: core.ToolMetadata{Annotations: json.RawMessage(`{"readOnlyHint":true}`)}}
-	_, views, err = applyServerMetadataDefaults(toolOnly, []core.ResolvedPin{{PinnedTool: core.PinnedTool{ServerID: "alpha", RawName: "write"}, Binding: &core.Binding{ServerID: "alpha", RawName: "write", Def: source}}}, buildReload)
+	toolDefinitions := map[string][]core.ToolDefinition{"alpha": {source}}
+	_, views, err = applyServerMetadataDefaults(toolOnly, []core.ResolvedPin{{PinnedTool: core.PinnedTool{ServerID: "alpha", RawName: "write"}, Binding: &core.Binding{ServerID: "alpha", RawName: "write", Def: source}}}, toolDefinitions, buildReload)
 	if err != nil {
 		t.Fatalf("applyServerMetadataDefaults tool-only: %v (RED)", err)
 	}
 	if hintValue(t, annotationsFor(t, views["alpha\x00write"].Effective), "readOnlyHint") {
 		t.Fatalf("tool-only exception not applied to the source: %s (RED)", views["alpha\x00write"].Effective.Annotations)
 	}
-	_, views, err = applyServerMetadataDefaults(toolOnly, []core.ResolvedPin{{PinnedTool: core.PinnedTool{ServerID: "alpha", RawName: "read"}, Binding: &core.Binding{ServerID: "alpha", RawName: "read", Def: source}}}, buildReload)
+	readSource := core.ToolDefinition{RawName: "read", Description: "Read a file", InputSchema: json.RawMessage(`{"type":"object"}`)}
+	readDefinitions := map[string][]core.ToolDefinition{"alpha": {source, readSource}}
+	_, views, err = applyServerMetadataDefaults(toolOnly, []core.ResolvedPin{{PinnedTool: core.PinnedTool{ServerID: "alpha", RawName: "read"}, Binding: &core.Binding{ServerID: "alpha", RawName: "read", Def: readSource}}}, readDefinitions, buildReload)
 	if err != nil {
 		t.Fatalf("applyServerMetadataDefaults unpatched pin: %v (RED)", err)
 	}
 	if entry, ok := views["alpha\x00read"]; ok && len(entry.OverrideFields) != 0 {
 		t.Fatalf("unpatched pin gained provenance %v (RED)", entry.OverrideFields)
+	}
+}
+
+// TestUpstreamMetadataValueOmitsEmptyTitle verifies the describe view emits
+// the "title" member only when the metadata carries a non-empty title:
+// icons-only metadata must not publish an empty title member.
+func TestUpstreamMetadataValueOmitsEmptyTitle(t *testing.T) {
+	value := upstreamMetadataValue(core.ToolMetadata{
+		Title: "Read",
+		Icons: json.RawMessage(`[{"src":"https://example.test/read.svg"}]`),
+	})
+	if got, _ := value["title"].(string); got != "Read" {
+		t.Fatalf("titled metadata lost its title: %v", value)
+	}
+	iconsOnly := upstreamMetadataValue(core.ToolMetadata{
+		Icons: json.RawMessage(`[{"src":"https://example.test/read.svg"}]`),
+	})
+	if iconsOnly == nil {
+		t.Fatal("icons-only metadata rendered as nil")
+	}
+	if _, present := iconsOnly["title"]; present {
+		t.Fatalf("icons-only metadata emitted an empty title member: %v", iconsOnly)
+	}
+	if iconsOnly["icons"] == nil {
+		t.Fatalf("icons-only metadata lost its icons: %v", iconsOnly)
+	}
+}
+// TestProgressiveMetadataParity verifies an unpinned exact target uses the
+// same source → defaults → exact-tool derivation and winning provenance as a
+// pinned target, without changing the source definition or its schemas.
+func TestProgressiveMetadataParity(t *testing.T) {
+	t.Setenv("TEST_CLIENT_SECRET", "private-client-value")
+	metadata := `    tool_metadata:
+      defaults:
+        title: Default title
+        description: Default description
+        annotations:
+          readOnlyHint: true
+          destructiveHint: true
+          idempotentHint: false
+      tools:
+        read:
+          title: Exact title
+          annotations:
+            readOnlyHint: false
+            destructiveHint: false
+`
+	pinnedCandidate := exceptionsConfigYAML(t, metadata)
+	document := `schema_version: 1
+servers:
+  - id: alpha
+    endpoint: https://alpha.invalid/mcp
+` + metadata + `client_auth:
+  bearer_tokens:
+    - {env: TEST_CLIENT_SECRET}
+pins: []
+`
+	revealedCandidate, err := config.Parse([]byte(document), ".")
+	if err != nil {
+		t.Fatalf("Parse rejected the unpinned candidate config: %v", err)
+	}
+	if len(revealedCandidate.Pins) != 0 {
+		t.Fatalf("exact metadata selector revealed or pinned a tool: %v", revealedCandidate.Pins)
+	}
+
+	source := metadataDefinition()
+	source.OutputSchema = json.RawMessage(`{"type":"object","properties":{"content":{"type":"string"}}}`)
+	sourceBefore := source
+	sourceBefore.InputSchema = append(json.RawMessage(nil), source.InputSchema...)
+	sourceBefore.OutputSchema = append(json.RawMessage(nil), source.OutputSchema...)
+	sourceBefore.Metadata = source.Metadata.Clone()
+	definitions := map[string][]core.ToolDefinition{"alpha": {source}}
+	unpinned, unpinnedViews, err := applyServerMetadataDefaults(revealedCandidate, nil, definitions, buildReload)
+	if err != nil {
+		t.Fatalf("catalog rejected an exact same-server unpinned selector: %v", err)
+	}
+	if len(unpinned) != 0 || len(unpinnedViews) != 0 {
+		t.Fatalf("metadata configuration revealed an unpinned tool: pins=%v views=%v", unpinned, unpinnedViews)
+	}
+	if _, _, err := applyServerMetadataDefaults(revealedCandidate, nil, map[string][]core.ToolDefinition{"beta": {source}}, buildReload); err == nil {
+		t.Fatal("catalog accepted a same raw name belonging only to another server")
+	}
+	unmatchedDocument := strings.Replace(document, "            destructiveHint: false\n", "            destructiveHint: false\n        absent:\n          title: Unknown\n", 1)
+	unmatchedCandidate, err := config.Parse([]byte(unmatchedDocument), ".")
+	if err != nil {
+		t.Fatalf("Parse rejected a well-shaped selector before catalog validation: %v", err)
+	}
+	unmatchedPins, unmatchedViews, err := applyServerMetadataDefaults(unmatchedCandidate, nil, definitions, buildReload)
+	if err == nil {
+		t.Fatal("candidate with a selector absent from its same-server catalog was accepted")
+	}
+	if unmatchedPins != nil || unmatchedViews != nil {
+		t.Fatalf("unmatched selector partially applied metadata: pins=%v views=%v", unmatchedPins, unmatchedViews)
+	}
+	resolved := []core.ResolvedPin{{
+		PinnedTool: core.PinnedTool{ServerID: "alpha", RawName: "read"},
+		Binding:    &core.Binding{ServerID: "alpha", RawName: "read", Def: source},
+	}}
+	pinned, views, err := applyServerMetadataDefaults(pinnedCandidate, resolved, definitions, buildReload)
+	if err != nil {
+		t.Fatalf("applyServerMetadataDefaults: %v", err)
+	}
+	toolMetadata := revealedCandidate.Servers[0].ToolMetadata
+	revealed, err := deriveToolMetadata(source, toolMetadata.Defaults, toolMetadata.Tools["read"])
+	if err != nil {
+		t.Fatalf("deriveToolMetadata for revealed target: %v", err)
+	}
+	if !reflect.DeepEqual(pinned[0].Binding.Def, revealed.Definition) {
+		t.Fatalf("pinned and revealed effective definitions differ:\npinned:  %+v\nrevealed: %+v", pinned[0].Binding.Def, revealed.Definition)
+	}
+	pinnedFields := views["alpha\x00read"].OverrideFields
+	if !reflect.DeepEqual(pinnedFields, revealed.OverrideFields) {
+		t.Fatalf("pinned and revealed provenance differs: %v vs %v", pinnedFields, revealed.OverrideFields)
+	}
+	wantLayers := map[string]string{
+		"title":                         "tool",
+		"description":                  "server_default",
+		"annotations.readOnlyHint":     "tool",
+		"annotations.destructiveHint":  "tool",
+		"annotations.idempotentHint":   "server_default",
+	}
+	gotLayers := make(map[string]string, len(revealed.OverrideFields))
+	for _, field := range revealed.OverrideFields {
+		gotLayers[field.Path] = field.Layer
+	}
+	if !reflect.DeepEqual(gotLayers, wantLayers) {
+		t.Fatalf("winning provenance = %v; want %v", gotLayers, wantLayers)
+	}
+	if revealed.Definition.Description != "Default description" || revealed.Definition.Metadata.Title != "Exact title" {
+		t.Fatalf("source/default/exact precedence was not preserved: %+v", revealed.Definition)
+	}
+	if hintValue(t, annotationsFor(t, revealed.Definition.Metadata), "readOnlyHint") ||
+		hintValue(t, annotationsFor(t, revealed.Definition.Metadata), "destructiveHint") ||
+		hintValue(t, annotationsFor(t, revealed.Definition.Metadata), "idempotentHint") {
+		t.Fatalf("explicit false or default hint precedence was lost: %s", revealed.Definition.Metadata.Annotations)
+	}
+	if !reflect.DeepEqual(source, sourceBefore) ||
+		string(revealed.Definition.InputSchema) != string(source.InputSchema) ||
+		string(revealed.Definition.OutputSchema) != string(source.OutputSchema) {
+		t.Fatal("progressive metadata derivation mutated source data or schemas")
 	}
 }

@@ -11,6 +11,9 @@ import (
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
 
+// ErrPublicationFailed marks a publication callback failure after the runtime has accepted a generation.
+var ErrPublicationFailed = errors.New("service: post-accept publication failed")
+
 // LoopOptions composes the drivers one operator configuration implies: the
 // candidate loader, the per-server collaborators, the catalog interval, and the
 // SIGHUP channel an operator's signal handler feeds (plan §4.7/§4.10/§4.12).
@@ -33,14 +36,13 @@ type LoopOptions struct {
 	Signals <-chan struct{}
 	// Metrics reports one server's status per refresh pass.
 	Metrics func(serverID, status, reason string)
-	// ReloadMetrics reports one reload admission outcome: "success", or
+	// ReloadMetrics reports one reload outcome: "success", or
 	// "rejected" with the finite failure reason.
 	ReloadMetrics func(outcome, reason string)
-	// Published observes each generation this loop publishes, including the
-	// startup admission, so the command layer can report per-server state.
-	Published func(assembly *Assembly)
-	// Logf records one operator-facing line. It is the only place a rejected
-	// candidate is reported, and it never carries a secret value.
+	// Published reconciles and observes each accepted generation, including
+	// startup admission. It returns post-accept reconciliation failures.
+	Published func(assembly *Assembly) error
+	// Logf records operator-facing diagnostics without carrying secret values.
 	Logf func(format string, args ...any)
 }
 
@@ -74,6 +76,7 @@ func NewLoop(runtime *Runtime, options LoopOptions) (*Loop, error) {
 		Interval:  options.Interval,
 		Metrics:   options.Metrics,
 		Published: options.Published,
+		Logf:      options.Logf,
 	})
 	return loop, nil
 }
@@ -90,7 +93,8 @@ func (l *Loop) Reloads() int {
 
 // Reload admits the configuration the loader currently returns. A candidate that
 // cannot be loaded or admitted leaves the published generation, its catalog, its
-// clients, and the durable snapshot exactly as they were (AC-17).
+// clients, and the durable snapshot exactly as they were (AC-17). A post-accept
+// publication failure returns an error without rolling back the accepted runtime.
 func (l *Loop) Reload() error {
 	candidate, err := l.options.Load()
 	if err != nil {
@@ -102,13 +106,15 @@ func (l *Loop) Reload() error {
 		l.reportReload("rejected", "admission_failed")
 		return err
 	}
-	if l.options.Published != nil {
-		l.options.Published(assembly)
-	}
 	l.mu.Lock()
 	l.candidate = candidate
 	l.reloads++
 	l.mu.Unlock()
+	if l.options.Published != nil {
+		if err := l.options.Published(assembly); err != nil {
+			return fmt.Errorf("%w: reload publication: %w", ErrPublicationFailed, err)
+		}
+	}
 	l.reportReload("success", "")
 	return nil
 }
@@ -120,8 +126,9 @@ func (l *Loop) Reload() error {
 // Startup never waits for every upstream (plan §4.7): each server publishes
 // from the durable snapshot this process can reuse and is advanced by its own
 // bounded probe, so an unreachable upstream leaves that server stale or empty
-// while the rest of the bridge serves. A configuration that cannot be read,
-// admitted, or reconciled is fatal and publishes nothing.
+// while the rest of the bridge serves. A configuration that cannot be read or
+// admitted is fatal; post-accept reconciliation failure is also fatal but does
+// not roll back the accepted runtime generation.
 func (l *Loop) Start(ctx context.Context) error {
 	candidate, err := l.options.Load()
 	if err != nil {
@@ -149,7 +156,10 @@ func (l *Loop) Start(ctx context.Context) error {
 		return err
 	}
 	if l.options.Published != nil {
-		l.options.Published(assembly)
+		if err := l.options.Published(assembly); err != nil {
+			l.runtime.Drain(l.options.Deps.ReloadDeps)
+			return fmt.Errorf("%w: startup publication: %w", ErrPublicationFailed, err)
+		}
 	}
 	l.reportReload("success", "")
 	// The local generation is already published; probe every server right
@@ -188,7 +198,11 @@ func (l *Loop) watch(ctx context.Context) {
 			return
 		case <-l.options.Signals:
 			if err := l.Reload(); err != nil {
-				l.logf("configuration reload rejected: %v", err)
+				if errors.Is(err, ErrPublicationFailed) {
+					l.logf("configuration reload publication failed after runtime acceptance: %v", err)
+				} else {
+					l.logf("configuration reload rejected: %v", err)
+				}
 			}
 		}
 	}

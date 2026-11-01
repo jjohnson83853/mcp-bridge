@@ -27,11 +27,18 @@ const (
 	shutdownTimeout   = 10 * time.Second
 )
 
+var testServeNow func() time.Time
+
+
 // serve is the composition root: it turns one operator document into the
 // serving bridge of plan §4.2 — the inbound edge with its bounds and tokens,
 // the local catalog, the operations listener, the refresh/reload loop, and the
 // reload signal edge.
 func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
+	return serveWithToolPageSize(ctx, path, stdout, stderr, 0)
+}
+
+func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.Writer, pageSize int) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -73,7 +80,7 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 	settings := holder.settings()
 	authCfg := auth.NewConfigFromEnv()
 	diagnostics := observe.NewHTTPDiagnostics(logger, observe.HTTPDiagnosticsOptions{
-		Now: diagnosticNowFromContext(ctx),
+		Now:   diagnosticNowFromContext(ctx),
 		NewID: diagnosticNewIDFromContext(ctx),
 		Provenance: buildDiagnosticProvenance(
 			authCfg, len(candidate.ClientTokenHashes()) > 0,
@@ -104,6 +111,7 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 		Search:   searchSettings(settings.Search),
 		Provider: provider,
 		Model:    model,
+		PageSize: pageSize,
 		Logger:   logger,
 	})
 	if err != nil {
@@ -137,7 +145,9 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 	}
 	inbound := service.NewInboundHandler(service.NewStreamableHandler(server), candidate.ClientTokenHashes(), service.InboundOptions{
 		Logger:          logger,
+		Now:             testServeNow,
 		Metrics:         metrics,
+		ToolSurface:     surface,
 		Diagnostics:     diagnostics,
 		MaxRequestBytes: settings.MaxRequestBytes,
 		MaxSessions:     settings.MaxSessions,
@@ -198,10 +208,8 @@ func serve(ctx context.Context, path string, stdout, stderr io.Writer) error {
 		Signals:       reloads,
 		Metrics:       func(serverID, status, reason string) { metrics.RecordRefresh(serverID, status, reason) },
 		ReloadMetrics: func(outcome, reason string) { metrics.RecordReload(outcome, orNone(reason)) },
-		Published: func(assembly *service.Assembly) {
-			promptSurface.Published(assembly)
-			surface.Published(assembly)
-			published(assembly)
+		Published: func(assembly *service.Assembly) error {
+			return publishAcceptedAssembly(assembly, promptSurface.Published, surface.Published, published)
 		},
 		Logf: operatorLog(logger),
 	})
@@ -314,4 +322,15 @@ func firstError(first, second error) error {
 		return first
 	}
 	return second
+}
+func publishAcceptedAssembly(
+	assembly *service.Assembly,
+	publishPrompts func(*service.Assembly),
+	publishProjection func(*service.Assembly) error,
+	publishObserver func(*service.Assembly),
+) error {
+	publishPrompts(assembly)
+	err := publishProjection(assembly)
+	publishObserver(assembly)
+	return err
 }

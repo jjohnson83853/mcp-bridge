@@ -1,0 +1,32 @@
+ M .superpowers/sdd/GATE_OPEN
+ M cmd/mcp-bridge/serve.go
+ M cmd/mcp-bridge/serve_edge_test.go
+ M cmd/mcp-bridge/wiring.go
+ M internal/config/tool_metadata.go
+ M internal/config/tool_metadata_test.go
+ M internal/service/inbound.go
+ M internal/service/loop.go
+ M internal/service/loop_test.go
+ M internal/service/refresh.go
+ M internal/service/refresh_test.go
+ M internal/service/reload.go
+ M internal/service/tool_metadata.go
+ M internal/service/tool_metadata_test.go
+ M internal/service/tools.go
+ M internal/storage/snapshot_v1.go
+ M internal/storage/snapshot_v1_compat_test.go
+ M internal/storage/store.go
+ M internal/storage/store_metadata_test.go
+?? .omp/plans/execution-state.json
+?? .scratch/progressive-metadata-reveal/
+?? .scratch/session-expiry-recovery/
+?? cmd/mcp-bridge/serve_hybrid_progressive_session_test.go
+?? functions.read
+?? internal/service/direct_execution.go
+?? internal/service/pinned_tool_benchmark_test.go
+?? internal/service/progressive_direct_execution_test.go
+?? internal/service/progressive_projection_test.go
+?? internal/service/progressive_session_test.go
+?? internal/service/projection.go
+?? internal/service/session_exposure.go
+?? internal/service/tools_publish_atomic_test.go

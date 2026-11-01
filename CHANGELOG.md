@@ -7,6 +7,15 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Progressive metadata reveal and session-scoped projections.** Initial
+  `tools/list` exposure serves built-ins and configured pins. Calls to
+  `search_tools` and `describe_tool` dynamically commit unpinned tools to the
+  calling session's local projection with full metadata defaults and exact
+  exception parity. Includes URL-safe 57-byte HMAC-SHA256 pagination cursors
+  (-32602 on stale or invalid cursors) and session lifecycle retirement on
+  HTTP DELETE or idle expiry with in-flight direct execution lease
+  preservation.
+
 - **Exact-tool metadata exceptions (`tool_metadata.tools`).** A server's
   `tool_metadata` mapping may carry a `tools` mapping of exact raw tool names
   to patches, layered above that server's defaults with precedence upstream
@@ -124,6 +133,12 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   section for example records and operator guidance.
 
 ### Changed
+
+- **Metadata defaults and exceptions apply to revealed tools.**
+  `tool_metadata.defaults` and `tool_metadata.tools` exception patches apply
+  to unpinned tools discovered via `search_tools` or `describe_tool`, matching
+  pinned-tool metadata parity and provenance reporting
+  (`server_default`, `tool`).
 
 - **Session state at the inner credential gate.** An inner static-credential
   rejection now records `session_state: not_evaluated` truthfully for a

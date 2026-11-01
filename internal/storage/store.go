@@ -208,20 +208,22 @@ func (s *Store) Save(snapshot *Snapshot) error {
 	// The writer publishes the current schema: a snapshot admitted from
 	// legacy state is upgraded to schema 2 by its next accepted save
 	// (approved design decision 14). The stamp precedes validation so the
-	// published document is validated exactly as written.
-	snapshot.SchemaVersion = SchemaVersion
-	if err := snapshot.Validate(); err != nil {
+	// published document is validated exactly as written. The stamps apply
+	// to an owned copy: the caller's snapshot is never mutated in place.
+	owned := *snapshot
+	owned.SchemaVersion = SchemaVersion
+	if err := owned.Validate(); err != nil {
 		return err
 	}
 	if err := s.ensureReplaceable(); err != nil {
 		return err
 	}
-	checksum, err := snapshot.Checksum()
+	checksum, err := owned.Checksum()
 	if err != nil {
 		return err
 	}
-	snapshot.Envelope.SnapshotChecksum = checksum
-	encoded, err := json.Marshal(snapshot)
+	owned.Envelope.SnapshotChecksum = checksum
+	encoded, err := json.Marshal(&owned)
 	if err != nil {
 		return fmt.Errorf("storage: encode snapshot: %w", err)
 	}

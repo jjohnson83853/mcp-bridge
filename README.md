@@ -389,14 +389,16 @@ metadata is persisted; corrections never become upstream truth, and removing
 a defaults member (or the whole `tool_metadata` block) on reload reverts the
 same session to the current source values.
 
-Defaults apply only to the owning server's pins: another server sharing the
-same raw tool name, unpinned descriptors, the bridge built-ins and generic
-`call_tool` are unaffected. A server with no pins may still declare defaults;
-they simply have no effect. **Risk:** a server-wide assertion such as
-`readOnlyHint: true` misclassifies every pinned tool of a mixed read/write
-server, and clients may suppress their own warnings on the strength of it.
-Defaults are advisory claims, not authorization, and a blanket read-only
-default is never installed automatically.
+Defaults apply to the owning server's pins and to that server's unpinned tools
+when progressively revealed through `search_tools` or `describe_tool`; their
+winning paths report `layer: "server_default"`. Another server sharing the
+same raw tool name, the bridge built-ins and generic `call_tool` are
+unaffected. A server with no pins may still declare defaults; they apply if
+an unpinned tool from that server is revealed. **Risk:** a server-wide
+assertion such as `readOnlyHint: true` misclassifies every pinned tool of a
+mixed read/write server, and clients may suppress their own warnings on the
+strength of it. Defaults are advisory claims, not authorization, and a
+blanket read-only default is never installed automatically.
 
 ### Exact-tool exceptions
 
@@ -418,11 +420,14 @@ server defaults → exact-tool exception, highest wins:
             idempotentHint: false
 ```
 
-There are no wildcard or cross-server selectors: every `tools` entry must
-name a raw tool actually pinned on the same server, and an entry that matches
-no configured pin rejects the whole candidate with a typed, redacted
-diagnostic (`tool_metadata_tool_unknown`), as do invalid tool names,
-unsupported patch members and duplicate entries. The shared merge semantics
+There are no wildcard or cross-server selectors: a `tools` entry may name any
+valid raw tool on the same server, including an unpinned one. An unpinned
+entry is accepted without auto-revealing the tool; when that tool is
+progressively discovered, its patch is layered above defaults and winning
+paths report `layer: "tool"`. Unknown tool names reject the whole candidate
+with a typed, redacted diagnostic (`tool_metadata_tool_unknown`), as do
+invalid tool names, unsupported patch members and duplicate entries. The
+shared merge semantics
 apply to exception patches exactly as to defaults: object members merge
 recursively, arrays and scalars replace outright, and explicit `false`, empty
 members and nested `null` values are retained. A path both layers touch
@@ -441,6 +446,32 @@ exception is a per-tool advisory claim, not authorization, and overriding a
 read-only default back to `false` for a write tool restores honest client
 warnings, while the inverse direction can suppress them.
 
+
+### Progressive metadata reveal and session projections
+
+New sessions initially expose exactly the three bridge built-ins
+(`search_tools`, `describe_tool`, and `call_tool`) plus configured pins.
+
+Successful `search_tools` and `describe_tool` discovery commits discovered
+unpinned tools to that session's projection before returning success, so an
+immediate `tools/list` re-list or direct call in the same session succeeds.
+Projections are session-local: a tool discovered in session A is not visible
+in session B, even when both sessions use the same bearer token.
+
+`tools/list` supports pagination with a default page size of 1000 or a
+configured positive page size. Its URL-safe base64 cursors are 57 bytes and
+are signed with process-transient HMAC-SHA256. Stale or tampered cursors,
+including those used after a catalog reload or process restart, return JSON-RPC
+error -32602 (`invalid cursor`).
+
+HTTP `DELETE /mcp` or idle timeout retires the session projection and its
+union references. In-flight direct-call leases survive `DELETE` until
+execution completes.
+
+Metadata annotations are advisory claims, not authorization. Clients receive
+best-effort asynchronous `tools/list_changed` notifications and must
+explicitly re-list; no zero-prompt behavior is promised for any client
+(Gemini CLI 0.18.13.x is user-reported).
 
 Executions return the upstream result unaltered inside a provenance envelope:
 `structuredContent.upstream_result` is the complete original `CallToolResult`

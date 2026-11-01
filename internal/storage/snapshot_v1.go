@@ -5,7 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"time"
 )
 
@@ -137,7 +139,7 @@ func decodeSnapshotV1(raw []byte) (*Snapshot, error) {
 	if err := decoder.Decode(snapshot); err != nil {
 		return nil, err
 	}
-	if err := decoder.Decode(new(struct{})); err == nil {
+	if err := decoder.Decode(new(struct{})); !errors.Is(err, io.EOF) {
 		return nil, fmt.Errorf("trailing data after schema-1 snapshot")
 	}
 	checksum, err := snapshot.checksum()

@@ -1,0 +1,1286 @@
+{
+  "schemaVersion": 2,
+  "feature": "progressive-metadata-reveal",
+  "revision": "cursor-choice-reconciliation-7-session-admission",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/spec.md",
+    "sha256": "0f369a144d6f1de4b34f1313b4b2be1c5563ea0a7e98155b5f236513778c6679",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "cursor-choice-reconciliation-7-session-admission",
+        "sha256": "5c50ebe9abe7adbaf41f7a5ae09b6e3c103ba8f32707dc92ecffdd3ec52d0dd3"
+      },
+      "design": {
+        "revision": "cursor-choice-reconciliation-7-session-admission",
+        "sha256": "e8c8393f7ae26776dddc644100fbcf7f2c57f8c84dbc885f3560d27a929bdedc"
+      },
+      "tasks": {
+        "revision": "cursor-choice-reconciliation-7-task-ledger-1",
+        "sha256": "8f8e1cdec0662d2f375851597e2834367ce48ed19f957a95854a1f5de501a6a4"
+      },
+      "envelope": {
+        "revision": "cursor-choice-reconciliation-7-task-ledger-1",
+        "sha256": "0e88d487db72899e66b3871a994befdec2d2c59f4564302c8e691f95582b6cc3"
+      }
+    }
+  },
+  "packet": {
+    "digest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+    "branches": [
+      {
+        "id": "approved-progressive-metadata-ledger",
+        "answerIds": [],
+        "taskIds": [
+          "PR-T1",
+          "PR-T2",
+          "PR-T3",
+          "PR-T4",
+          "PR-T5",
+          "PR-T6",
+          "PR-T7",
+          "PR-T8",
+          "PR-T9"
+        ],
+        "envelopeId": "approved-progressive-metadata-ledger",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "cursor-choice-reconciliation-7-session-admission",
+            "sha256": "5c50ebe9abe7adbaf41f7a5ae09b6e3c103ba8f32707dc92ecffdd3ec52d0dd3"
+          },
+          "design": {
+            "revision": "cursor-choice-reconciliation-7-session-admission",
+            "sha256": "e8c8393f7ae26776dddc644100fbcf7f2c57f8c84dbc885f3560d27a929bdedc"
+          },
+          "tasks": {
+            "revision": "cursor-choice-reconciliation-7-task-ledger-1",
+            "sha256": "8f8e1cdec0662d2f375851597e2834367ce48ed19f957a95854a1f5de501a6a4"
+          },
+          "envelope": {
+            "revision": "cursor-choice-reconciliation-7-task-ledger-1",
+            "sha256": "0e88d487db72899e66b3871a994befdec2d2c59f4564302c8e691f95582b6cc3"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "approved-progressive-metadata-ledger"
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": []
+  },
+  "requirements": [
+    {
+      "id": "PR-R1"
+    },
+    {
+      "id": "PR-R2"
+    },
+    {
+      "id": "PR-R3"
+    },
+    {
+      "id": "PR-R4"
+    },
+    {
+      "id": "PR-R5"
+    },
+    {
+      "id": "PR-R6"
+    },
+    {
+      "id": "PR-R7"
+    },
+    {
+      "id": "PR-R8"
+    },
+    {
+      "id": "PR-R9"
+    },
+    {
+      "id": "PR-R10"
+    },
+    {
+      "id": "PR-R11"
+    },
+    {
+      "id": "PR-R12"
+    }
+  ],
+  "authorization": {
+    "mode": "legacy",
+    "checkpointRevisions": {
+      "approvals.requirements": "cursor-choice-reconciliation-7-session-admission",
+      "approvals.design": "cursor-choice-reconciliation-7-session-admission",
+      "approvals.tasks": "cursor-choice-reconciliation-7-task-ledger-1",
+      "reviews.specification": "cursor-choice-reconciliation-7-session-admission",
+      "reviews.tasks": "cursor-choice-reconciliation-7-task-ledger-1"
+    },
+    "approvals": {
+      "requirements": {
+        "revision": "cursor-choice-reconciliation-7-session-admission",
+        "evidence": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/requirements-approval-r7.md"
+      },
+      "design": {
+        "revision": "cursor-choice-reconciliation-7-session-admission",
+        "evidence": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/design-approval-r7.md"
+      },
+      "tasks": {
+        "revision": "cursor-choice-reconciliation-7-task-ledger-1",
+        "evidence": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/task-approval-r7-ledger-1.md"
+      }
+    }
+  },
+  "reviews": {
+    "specification": {
+      "verdict": "pass",
+      "reviewerId": "ReviewSessionReconciliation",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "receipt": {
+        "sourceId": "critic-r7",
+        "recordedAt": "2026-10-29T01:11:01.898Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    },
+    "tasks": {
+      "verdict": "pass",
+      "reviewerId": "ReviewRevealTaskLedger",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "receipt": {
+        "sourceId": "task-critic-r7-ledger-1",
+        "recordedAt": "2026-10-29T01:49:13.326Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    }
+  },
+  "sources": [
+    {
+      "id": "critic-r7",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/review-r7.md",
+        "sha256": "2bc1c515ac9cecec7e9d70a559efcad36ee3f42e6df06a87e3d55072b7e7fe9f"
+      },
+      "locator": "agent://ReviewSessionReconciliation; requirements/design PASS for canonical SHA-256 30b0738e55711d634101f8b32eec89d1d2a84101bdb34d70fa40109172118e6b",
+      "recordedAt": "2026-10-29T01:11:01.898Z"
+    },
+    {
+      "id": "requirements-approval-r7",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/requirements-approval-r7.md",
+        "sha256": "3a03ce2b0864aa60a668d07dfc89ec080d84e053fb2e76e10ae0e98259e19ada"
+      },
+      "locator": "Current conversation: owner replied “approved” to the immediately preceding requirements-checkpoint approval request; receipt records requirements only.",
+      "recordedAt": "2026-10-29T01:14:20.570Z"
+    },
+    {
+      "id": "design-approval-r7",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/design-approval-r7.md",
+        "sha256": "1e300bd9f6e2e93fb70fcaf491829db75dc6c6db26d857c368e0f8eb52c53f0c"
+      },
+      "locator": "Current conversation: owner selected “Approve design checkpoint”; scoped to task-ledger preparation/review, not implementation.",
+      "recordedAt": "2026-10-29T01:21:17.991Z"
+    },
+    {
+      "id": "task-critic-r7-ledger-1",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/task-review-r7-ledger-1.md",
+        "sha256": "4f5eae7c9696c5088d3a16b1cc9862644133f1f858f064551f8cc6e507a0a069"
+      },
+      "locator": "agent://ReviewRevealTaskLedger; independent task ledger PASS only",
+      "recordedAt": "2026-10-29T01:49:13.326Z"
+    },
+    {
+      "id": "task-approval-r7-ledger-1",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/task-approval-r7-ledger-1.md",
+        "sha256": "5cc82cee88f34c75d69a1398d54291c9c3fcb557a66c450c0a490be5d8d5c6ba"
+      },
+      "locator": "Current conversation: owner replied “approved” to the execution-task checkpoint request; see task-approval-r7-ledger-1.md.",
+      "recordedAt": "2026-10-29T02:02:21Z"
+    },
+    {
+      "id": "owner-role-grant-pr-t4-20261031T174748Z",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t4-code-reviewer-role-authorization.md",
+        "sha256": "a7a977de6635a61393e5462348255fe8182429ba460ca38b6621310b251ad343"
+      },
+      "locator": "Current conversation: owner explicitly authorized adding code-reviewer to PR-T4's role grant.",
+      "recordedAt": "2026-10-31T17:47:48Z"
+    },
+    {
+      "id": "owner-role-grant-pr-t5-20261031T201700Z",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t5-code-reviewer-role-authorization.md",
+        "sha256": "6d4322a20c2e595842b176a185dc076e61adabe9896fa82e317e83cda7125c5b"
+      },
+      "locator": "Current conversation: owner explicitly authorized adding code-reviewer to PR-T5's role grant.",
+      "recordedAt": "2026-10-31T20:17:00Z"
+    },
+    {
+      "id": "owner-role-grant-pr-t6-20261101T000500Z",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t6-code-reviewer-role-authorization.md",
+        "sha256": "d3fc808d2f8111f854f6c737aaceff1e54f787aec2e8b66f33eca26d2452f175"
+      },
+      "locator": "Current conversation: owner explicitly authorized adding code-reviewer to PR-T6's role grant.",
+      "recordedAt": "2026-11-01T00:05:00Z"
+    },
+    {
+      "id": "owner-role-grant-pr-t7-20261101T010000Z",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t7-code-reviewer-role-authorization.md",
+        "sha256": "4d9c7f1865a47e2c51d87f533de991eaa2b913d16b8dfa27eb991b13dcbc49c7"
+      },
+      "locator": "Current conversation: owner explicitly authorized adding code-reviewer to PR-T7's role grant.",
+      "recordedAt": "2026-11-01T01:00:00Z"
+    }
+  ],
+  "decisions": [],
+  "envelope": {
+    "id": "approved-progressive-metadata-ledger",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "PR-T1",
+      "PR-T2",
+      "PR-T3",
+      "PR-T4",
+      "PR-T5",
+      "PR-T6",
+      "PR-T7",
+      "PR-T8",
+      "PR-T9"
+    ],
+    "readPaths": [
+      "/home/opencode/projects/default/mcp-bridge"
+    ],
+    "writePaths": [
+      "internal/config",
+      "internal/service",
+      "cmd/mcp-bridge",
+      "README.md",
+      "CHANGELOG.md",
+      ".scratch/progressive-metadata-reveal",
+      "coverage.out"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "PR-T1",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/serve_hybrid_metadata_defaults_test.go",
+          "internal/config/tool_metadata.go",
+          "internal/config/tool_metadata_test.go",
+          "internal/service/reload.go",
+          "internal/service/tool_metadata.go",
+          "internal/service/tool_metadata_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "PR-AC2",
+        "PR-AC3",
+        "PR-AC4",
+        "PR-AC10",
+        "PR-AC12"
+      ],
+      "evidenceIds": [
+        "PR-T1-TEST-OBS-1",
+        "PR-T1-REVIEW-OBS-1"
+      ],
+      "agentRoles": [
+        "engineer",
+        "code-reviewer",
+        "go-reviewer"
+      ]
+    },
+    {
+      "id": "PR-T2",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [
+        "PR-T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service",
+          "cmd/mcp-bridge"
+        ]
+      },
+      "acceptanceIds": [
+        "PR-AC6",
+        "PR-AC8",
+        "PR-AC9",
+        "PR-AC12"
+      ],
+      "evidenceIds": [
+        "PR-T2-TEST-OBS-1",
+        "PR-T2-REVIEW-OBS-1"
+      ],
+      "agentRoles": [
+        "engineer",
+        "code-reviewer",
+        "tdd-guide",
+        "go-reviewer"
+      ]
+    },
+    {
+      "id": "PR-T3",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [
+        "PR-T2"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service",
+          "cmd/mcp-bridge"
+        ]
+      },
+      "acceptanceIds": [
+        "PR-AC1",
+        "PR-AC7",
+        "PR-AC8",
+        "PR-AC9",
+        "PR-AC10",
+        "PR-AC5",
+        "PR-AC12"
+      ],
+      "evidenceIds": [
+        "PR-T3-TEST-OBS-1",
+        "PR-T3-REVIEW-OBS-1"
+      ],
+      "agentRoles": [
+        "engineer",
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "PR-T4",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [
+        "PR-T3"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service",
+          "cmd/mcp-bridge"
+        ]
+      },
+      "acceptanceIds": [
+        "PR-AC6",
+        "PR-AC7",
+        "PR-AC9",
+        "PR-AC12"
+      ],
+      "evidenceIds": [
+        "PR-T4-TEST-OBS-1",
+        "PR-T4-REVIEW-OBS-1"
+      ],
+      "agentRoles": [
+        "engineer",
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "PR-T5",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [
+        "PR-T4"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service",
+          "cmd/mcp-bridge"
+        ]
+      },
+      "acceptanceIds": [
+        "PR-AC1",
+        "PR-AC2",
+        "PR-AC3",
+        "PR-AC4",
+        "PR-AC5",
+        "PR-AC6",
+        "PR-AC7",
+        "PR-AC8",
+        "PR-AC9",
+        "PR-AC10",
+        "PR-AC11",
+        "PR-AC12"
+      ],
+      "evidenceIds": [
+        "PR-T5-TEST-OBS-1",
+        "PR-T5-REVIEW-OBS-1"
+      ],
+      "agentRoles": [
+        "engineer",
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "PR-T6",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [
+        "PR-T5"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service",
+          "cmd/mcp-bridge"
+        ]
+      },
+      "acceptanceIds": [
+        "PR-AC8",
+        "PR-AC9",
+        "PR-AC12"
+      ],
+      "evidenceIds": [
+        "PR-T6-TEST-OBS-1",
+        "PR-T6-REVIEW-OBS-1"
+      ],
+      "agentRoles": [
+        "engineer",
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "PR-T7",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [
+        "PR-T6"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service",
+          "cmd/mcp-bridge"
+        ]
+      },
+      "acceptanceIds": [
+        "PR-AC1",
+        "PR-AC2",
+        "PR-AC3",
+        "PR-AC4",
+        "PR-AC6",
+        "PR-AC7",
+        "PR-AC8",
+        "PR-AC9",
+        "PR-AC10",
+        "PR-AC5",
+        "PR-AC11",
+        "PR-AC12"
+      ],
+      "evidenceIds": [
+        "PR-T7-TEST-OBS-1",
+        "PR-T7-REVIEW-OBS-1"
+      ],
+      "agentRoles": [
+        "engineer",
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "PR-T8",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [
+        "PR-T7"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "README.md",
+          "CHANGELOG.md"
+        ]
+      },
+      "acceptanceIds": [
+        "PR-AC11",
+        "PR-AC12"
+      ],
+      "evidenceIds": [
+        "PR-T8-INSP-OBS-1"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "PR-T9",
+      "stage": "verification",
+      "status": "done",
+      "blockedBy": [
+        "PR-T8"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/config",
+          "internal/service",
+          "cmd/mcp-bridge",
+          "README.md",
+          "CHANGELOG.md",
+          "coverage.out",
+          ".scratch/progressive-metadata-reveal"
+        ]
+      },
+      "acceptanceIds": [
+        "PR-AC1",
+        "PR-AC2",
+        "PR-AC3",
+        "PR-AC4",
+        "PR-AC5",
+        "PR-AC6",
+        "PR-AC7",
+        "PR-AC8",
+        "PR-AC9",
+        "PR-AC10",
+        "PR-AC11",
+        "PR-AC12"
+      ],
+      "evidenceIds": [
+        "PR-T9-VERIF-OBS-1",
+        "PR-T9-INSP-OBS-1"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "PR-AC1",
+      "requirementIds": [
+        "PR-R1"
+      ],
+      "ownerTaskIds": [
+        "PR-T3",
+        "PR-T5",
+        "PR-T7",
+        "PR-T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "PR-AC2",
+      "requirementIds": [
+        "PR-R2"
+      ],
+      "ownerTaskIds": [
+        "PR-T1",
+        "PR-T5",
+        "PR-T7",
+        "PR-T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "PR-AC3",
+      "requirementIds": [
+        "PR-R2",
+        "PR-R9"
+      ],
+      "ownerTaskIds": [
+        "PR-T1",
+        "PR-T5",
+        "PR-T7",
+        "PR-T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "PR-AC4",
+      "requirementIds": [
+        "PR-R3"
+      ],
+      "ownerTaskIds": [
+        "PR-T1",
+        "PR-T5",
+        "PR-T7",
+        "PR-T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "PR-AC5",
+      "requirementIds": [
+        "PR-R4"
+      ],
+      "ownerTaskIds": [
+        "PR-T3",
+        "PR-T5",
+        "PR-T7",
+        "PR-T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "PR-AC6",
+      "requirementIds": [
+        "PR-R5",
+        "PR-R8"
+      ],
+      "ownerTaskIds": [
+        "PR-T2",
+        "PR-T4",
+        "PR-T5",
+        "PR-T7",
+        "PR-T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "PR-AC7",
+      "requirementIds": [
+        "PR-R1",
+        "PR-R6"
+      ],
+      "ownerTaskIds": [
+        "PR-T3",
+        "PR-T4",
+        "PR-T5",
+        "PR-T7",
+        "PR-T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "PR-AC8",
+      "requirementIds": [
+        "PR-R7"
+      ],
+      "ownerTaskIds": [
+        "PR-T2",
+        "PR-T3",
+        "PR-T5",
+        "PR-T6",
+        "PR-T7",
+        "PR-T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "PR-AC9",
+      "requirementIds": [
+        "PR-R6",
+        "PR-R7",
+        "PR-R8"
+      ],
+      "ownerTaskIds": [
+        "PR-T2",
+        "PR-T3",
+        "PR-T4",
+        "PR-T5",
+        "PR-T6",
+        "PR-T7",
+        "PR-T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "PR-AC10",
+      "requirementIds": [
+        "PR-R1",
+        "PR-R9"
+      ],
+      "ownerTaskIds": [
+        "PR-T1",
+        "PR-T3",
+        "PR-T5",
+        "PR-T7",
+        "PR-T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "PR-AC11",
+      "requirementIds": [
+        "PR-R10"
+      ],
+      "ownerTaskIds": [
+        "PR-T5",
+        "PR-T7",
+        "PR-T8",
+        "PR-T9"
+      ],
+      "method": "inspection",
+      "requiredEvidenceKinds": [
+        "inspection"
+      ]
+    },
+    {
+      "id": "PR-AC12",
+      "requirementIds": [
+        "PR-R11",
+        "PR-R12"
+      ],
+      "ownerTaskIds": [
+        "PR-T1",
+        "PR-T2",
+        "PR-T3",
+        "PR-T4",
+        "PR-T5",
+        "PR-T6",
+        "PR-T7",
+        "PR-T8",
+        "PR-T9"
+      ],
+      "method": "inspection",
+      "requiredEvidenceKinds": [
+        "inspection"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "PR-T1-TEST-OBS-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t1-test-observations.md",
+        "sha256": "5b3e7411204cf98fdea2433010d3575503ccccfc388db339febb747da98e9ecc"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T1"
+      ],
+      "acceptanceIds": [
+        "PR-AC2",
+        "PR-AC3",
+        "PR-AC4",
+        "PR-AC10"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-10-30T00:32:11Z",
+      "producer": "coordinator",
+      "details": {
+        "command": "go test ./internal/config ./internal/service -run '^TestProgressiveMetadata(Eligibility|Parity)$' -count=1 && go test ./internal/config ./internal/service -run 'ToolMetadata|Metadata' -count=1",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "PR-T1-REVIEW-OBS-1",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t1-review-observations.md",
+        "sha256": "2ec54c22cf1d2a01bce0196e457d697d488229340ee7534b89ddaab7776c5bf2"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T1"
+      ],
+      "acceptanceIds": [
+        "PR-AC12"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-10-30T00:32:11Z",
+      "producer": "coordinator; reports by code-reviewer and go-reviewer",
+      "details": {
+        "rubric": "PR-T1-scoped code and Go reviews; required review gate clears with no CRITICAL or HIGH findings.",
+        "observedOutcome": "go-reviewer APPROVE; code-reviewer COMMENT with no CRITICAL/HIGH and specification-conformance PASS. Non-blocking comments are retained in the artifact; this is only the PR-T1 contribution to PR-AC12."
+      }
+    },
+    {
+      "id": "PR-T2-TEST-OBS-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t2-test-observations.md",
+        "sha256": "72d49cc5a7fe5244f40f303fa8c7e2d5aa887f1bbd5dc087486a4c4db4a7164c"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T2"
+      ],
+      "acceptanceIds": [
+        "PR-AC6",
+        "PR-AC8",
+        "PR-AC9"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-10-30T20:45:16Z",
+      "producer": "coordinator",
+      "details": {
+        "command": "go test ./internal/service -run '^TestProgressiveMetadata(ProjectionPublication|UnionReferences)$' -count=1\ngo test ./cmd/mcp-bridge -run '^TestRefreshPublicationFailureClassificationThroughLoop$' -count=1\ngo test -race ./internal/service -run '^TestProgressiveMetadata(ProjectionPublication|UnionReferences)$' -count=1\ngo test -race ./cmd/mcp-bridge -run '^TestRefreshPublicationFailureClassificationThroughLoop$' -count=1",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "PR-T2-REVIEW-OBS-1",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t2-review-observations.md",
+        "sha256": "4d8710ba18ea0d90bf438415d8f0d7ca8430a426345bd0abfc3167153689effc"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T2"
+      ],
+      "acceptanceIds": [
+        "PR-AC12"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-10-30T20:45:16Z",
+      "producer": "coordinator; reports by code-reviewer and go-reviewer",
+      "details": {
+        "rubric": "PR-T2-scoped code and Go reviews; required review gate clears with no blocking findings.",
+        "observedOutcome": "Both reviewers APPROVE with no actionable findings. Code reviewer used bounded MCP and LSP. Go reviewer used bounded MCP; it reported LSP unavailable and independent SDK-source inspection access-blocked, relying on supplied SDK evidence. Both skipped Graphify because the worktree is dirty. Reviews are limited to PR-T2, not full PR-AC6/8/9 or later tasks."
+      }
+    },
+    {
+      "id": "PR-T3-TEST-OBS-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t3-test-observations.md",
+        "sha256": "2baef64b9bc9b0abfc20a43b3dc928d95e89a1672d8b17ef668f31466ce9f35b"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T3"
+      ],
+      "acceptanceIds": [
+        "PR-AC1",
+        "PR-AC5",
+        "PR-AC7",
+        "PR-AC8",
+        "PR-AC9",
+        "PR-AC10"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-10-31T02:24:05Z",
+      "producer": "coordinator",
+      "details": {
+        "command": "go test ./internal/service -run '^TestProgressiveMetadataSession(Carrier|Enrollment)$' -count=1\ngo test ./cmd/mcp-bridge -run '^TestServeHybridProgressiveRevealSessionAdmission$' -count=1\ngo test -race ./internal/service -run '^TestProgressiveMetadataSession(Carrier|Enrollment)$' -count=1\ngo test -race ./cmd/mcp-bridge -run '^TestServeHybridProgressiveRevealSessionAdmission$' -count=1\ngo test ./cmd/mcp-bridge -run '^TestServeHybridDirectPreloadedToolExecution$' -count=1\ngo test -race ./cmd/mcp-bridge -run '^TestServeHybridDirectPreloadedToolExecution$' -count=1",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "PR-T3-REVIEW-OBS-1",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t3-review-observations.md",
+        "sha256": "54070937a1818ecbe8732ad53d2c3a9ffed00b9908d8a46b408fdc1175667ed6"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T3"
+      ],
+      "acceptanceIds": [
+        "PR-AC12"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-10-31T02:26:35Z",
+      "producer": "coordinator; existing scoped review report PRT3StandardsReviewAdditional2",
+      "details": {
+        "rubric": "PR-T3-scoped inspection against spec.md:288-298 and the bound review packet.",
+        "observedOutcome": "PRT3StandardsReviewAdditional2 APPROVE, zero reported issues; PRT3StandardsReviewAdditional1 COMMENT with no confirmed defects but provenance/LSP limitations. Owner chat directive removes the Go-review requirement for PR-T3 only; no Go-reviewer dispatch or report is required. Review is limited to PR-T3 and PR-T2 prerequisite APIs; no full PR-AC or PR-T7 completion claim."
+      }
+    },
+    {
+      "id": "PR-T4-TEST-OBS-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t4-test-observations.md",
+        "sha256": "a3a98aad6e163ade6e947b18fa46932a6db2bc6948dda1c4a2b2a288276ac3f3"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T4"
+      ],
+      "acceptanceIds": [
+        "PR-AC6",
+        "PR-AC7",
+        "PR-AC9"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-10-31T18:22:15Z",
+      "producer": "coordinator",
+      "details": {
+        "command": "go test ./internal/service -run '^TestProgressiveMetadata(CapturedDirectExecution|DirectLeaseOwnership)$' -count=1\ngo test -race ./internal/service -run '^TestProgressiveMetadata(CapturedDirectExecution|DirectLeaseOwnership)$' -count=1",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "PR-T4-REVIEW-OBS-1",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t4-review-observations.md",
+        "sha256": "933e9fbb2b78fd7f5145aceac9ef84907d857b5cbfb89460d8985475efa7ba22"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T4"
+      ],
+      "acceptanceIds": [
+        "PR-AC12"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-10-31T18:22:15Z",
+      "producer": "coordinator; independent code-reviewer",
+      "details": {
+        "rubric": "PR-T4 scoped inspection against spec.md:213-216,219,304-310; no blocking review findings.",
+        "observedOutcome": "code-reviewer COMMENT with zero findings and no source changes requested; comment concerned its unavailable LSP/diff/hash verification. Coordinator-run focused/race tests, LSP OK, and review-artifact hash are separately recorded. No Go reviewer was dispatched. This passes only PR-T4's scoped PR-AC12 contribution; feature-wide docs/changelog, full-suite, integration/E2E and coverage remain outstanding."
+      }
+    },
+    {
+      "id": "PR-T5-TEST-OBS-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t5-test-observations.md",
+        "sha256": "fc35a3a3b8a2f9d7e7ca424678f7191587933b8e6a9e213d9f13ffc444665f3c"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T5"
+      ],
+      "acceptanceIds": [
+        "PR-AC1",
+        "PR-AC2",
+        "PR-AC3",
+        "PR-AC4",
+        "PR-AC5",
+        "PR-AC6",
+        "PR-AC7",
+        "PR-AC8",
+        "PR-AC9",
+        "PR-AC10"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-10-31T20:45:00Z",
+      "producer": "coordinator",
+      "details": {
+        "command": "go test ./internal/service -run '^TestProgressiveMetadataDiscovery' -count=1\ngo test -race ./internal/service -run '^TestProgressiveMetadataDiscovery' -count=1\ngo test ./cmd/mcp-bridge -run '^TestServeHybridProgressiveRevealDiscovery$' -count=1\ngo test ./cmd/mcp-bridge -run '^(TestServeHybridMetadata.*|TestServeHybridPreloadedToolsListExposure|TestServeHybridCoexistence|TestServeHybridSIGHUPReload)$' -count=1",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "PR-T5-REVIEW-OBS-1",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t5-review-observations.md",
+        "sha256": "5c952bfb9df799e4fb3ad7a449f93ef977bedeab099c831565df87af7d250a3f"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T5"
+      ],
+      "acceptanceIds": [
+        "PR-AC11",
+        "PR-AC12"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-10-31T20:45:00Z",
+      "producer": "coordinator; independent code-reviewer",
+      "details": {
+        "rubric": "PR-T5 scoped inspection against spec.md:312-324, PR-AC11, and PR-AC12; no blocking review findings.",
+        "observedOutcome": "code-reviewer COMMENT with 0 CRITICAL, 0 HIGH, 1 MEDIUM (nonblocking wire test matrix extension assigned to PR-T7); all 3 prior review findings verified resolved; PR-AC11 advisory-only behavior verified."
+      }
+    },
+    {
+      "id": "PR-T6-TEST-OBS-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t6-test-observations.md",
+        "sha256": "748ea5cbe5ed017cd4c732ab79831c27daf710fd3e283accfc9acfcbb4665e0d"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T6"
+      ],
+      "acceptanceIds": [
+        "PR-AC8",
+        "PR-AC9"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-01T00:15:00Z",
+      "producer": "coordinator",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^TestServeHybridProgressiveRevealPages$' -count=1\ngo test -race ./cmd/mcp-bridge -run '^TestServeHybridProgressiveRevealPages$' -count=1\ngo test ./internal/service -run '^TestProgressiveMetadataCursorValidation$' -count=1\ngo test -race ./internal/service -run '^TestProgressiveMetadataCursorValidation$' -count=1\ngo test ./cmd/mcp-bridge -run '^(TestServeHybridMetadata.*|TestServeHybridPreloadedToolsListExposure|TestServeHybridCoexistence|TestServeHybridSIGHUPReload|TestServeHybridProgressiveRevealDiscovery|TestServeHybridProgressiveRevealPages)$' -count=1",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "PR-T6-REVIEW-OBS-1",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t6-review-observations.md",
+        "sha256": "7c2837eb52a3c55372d59151ccc4e4109ac78957a28883457055d3b4ab169b15"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T6"
+      ],
+      "acceptanceIds": [
+        "PR-AC12"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-01T00:15:00Z",
+      "producer": "coordinator; independent code-reviewer",
+      "details": {
+        "rubric": "PR-T6 scoped inspection against spec.md:326-336, §4.7, PR-AC8, PR-AC9, and PR-AC12; no blocking review findings.",
+        "observedOutcome": "code-reviewer COMMENT with 0 CRITICAL, 0 HIGH, 4 MEDIUM, 2 LOW; §4.7 cursor format, constant-time HMAC-SHA256, and -32602 invalid cursor mapping confirmed; nonblocking medium findings assigned to PR-T7."
+      }
+    },
+    {
+      "id": "PR-T7-TEST-OBS-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t7-test-observations.md",
+        "sha256": "a5c25a72078cf3e45b29677d1221b26ca745d44ba2dddb04c08a5d88e68686b7"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T7"
+      ],
+      "acceptanceIds": [
+        "PR-AC1",
+        "PR-AC2",
+        "PR-AC3",
+        "PR-AC4",
+        "PR-AC5",
+        "PR-AC6",
+        "PR-AC7",
+        "PR-AC8",
+        "PR-AC9",
+        "PR-AC10"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-01T08:55:00Z",
+      "producer": "coordinator",
+      "details": {
+        "command": "go test ./internal/service -run '^TestProgressiveMetadataRetirementRaces$' -count=1\ngo test -race ./internal/service -run '^TestProgressiveMetadataConcurrencyAndLifecycle$' -count=1\ngo test -race ./cmd/mcp-bridge -run '^TestServeHybridProgressiveRevealLifecycle$' -count=1\ngo test -race ./internal/service ./cmd/mcp-bridge -run 'ProgressiveMetadata|ProgressiveReveal' -count=1\ngo run ./cmd/covcheck",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "PR-T7-REVIEW-OBS-1",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t7-review-observations.md",
+        "sha256": "1cff1bb3f52b2e54440ce66b0c70f174ad0218606a74cfb9f280656f0fb1eafb"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T7"
+      ],
+      "acceptanceIds": [
+        "PR-AC11",
+        "PR-AC12"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-01T09:00:00Z",
+      "producer": "coordinator; independent code-reviewer (ReviewPRT7Final)",
+      "details": {
+        "rubric": "PR-T7 scoped inspection against §6.2 matrix, Option 1 lifecycle invariants, race-freedom, and PR-AC11/12.",
+        "observedOutcome": "code-reviewer COMMENT with 0 CRITICAL, 0 HIGH, 2 MEDIUM, 0 LOW; Option 1 transport termination on DELETE verified; post-stamp error code -32600 confirmed; lazy retirement verified with mutex clock; no auth/policy bypass."
+      }
+    },
+    {
+      "id": "PR-T8-INSP-OBS-1",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t8-inspection-observations.md",
+        "sha256": "72485b5014aade8c37774fa4ad251f8720382dfa5f20b690b802d02b4a97d1cc"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T8"
+      ],
+      "acceptanceIds": [
+        "PR-AC11",
+        "PR-AC12"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-01T16:53:21.245Z",
+      "producer": "coordinator",
+      "details": {
+        "rubric": "Complete PR-R11 and spec.md §6.2 PR-T8 operator documentation and changelog checklist verification.",
+        "observedOutcome": "README.md updated with Progressive metadata reveal and session projections section, unpinned metadata parity; CHANGELOG.md updated under Added and Changed; all 10 checklist items verified pass."
+      }
+    },
+    {
+      "id": "PR-T9-VERIF-OBS-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t9-verification-report.md",
+        "sha256": "67ddee98f9536466e556a9ead98b79c75e544de82876a7370ec421213a670af8"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T9"
+      ],
+      "acceptanceIds": [
+        "PR-AC1",
+        "PR-AC2",
+        "PR-AC3",
+        "PR-AC4",
+        "PR-AC5",
+        "PR-AC6",
+        "PR-AC7",
+        "PR-AC8",
+        "PR-AC9",
+        "PR-AC10",
+        "PR-AC11",
+        "PR-AC12"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-01T16:59:36.688Z",
+      "producer": "coordinator",
+      "details": {
+        "command": "go test -race ./internal/service -count=1\ngo test ./cmd/mcp-bridge -count=1\ngo test -race ./cmd/mcp-bridge -run '^(TestServeHybridMetadata.*|TestServeHybridPreloadedToolsListExposure|TestServeHybridCoexistence|TestServeHybridProgressiveReveal.*|TestServeCompositionRoot.*)$' -count=1\ngo vet ./...\ngo run ./cmd/covcheck",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "PR-T9-INSP-OBS-1",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/pr-t9-inspection-observations.md",
+        "sha256": "c77d0204d8b17986545b02d8955568bed89554efb9ac174879a2df75fde9b4cc"
+      },
+      "feature": "progressive-metadata-reveal",
+      "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+      "selectedBranchId": "approved-progressive-metadata-ledger",
+      "taskIds": [
+        "PR-T9"
+      ],
+      "acceptanceIds": [
+        "PR-AC11",
+        "PR-AC12"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-01T17:01:13.151Z",
+      "producer": "coordinator",
+      "details": {
+        "rubric": "Consolidated security, advisory-only boundaries, documentation, and quality inspection per PR-AC11/12.",
+        "observedOutcome": "Advisory hints confirmed strictly non-authorizing; no auth bypass; Gemini CLI 0.18.13.x accurately documented; source-line coverage 90.1% confirmed."
+      }
+    }
+  ],
+  "blockers": [],
+  "gate": {
+    "markerPath": ".scratch/progressive-metadata-reveal/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}

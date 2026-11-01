@@ -2,9 +2,12 @@ package service_test
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"strings"
 	"sync"
@@ -80,8 +83,6 @@ type toolHarness struct {
 	surface    *service.ToolSurface
 	server     *mcp.Server
 	session    *mcp.ClientSession
-	cancel     context.CancelFunc
-	runDone    chan struct{}
 	serverInit *mcp.Implementation
 }
 
@@ -133,7 +134,7 @@ func newAdmittedToolHarness(t *testing.T, cfg *config.Config, surfaceCfg service
 	return startToolHarness(t, runtime, assembly, upstream, surfaceCfg)
 }
 
-// startToolHarness registers the surface on a live in-memory MCP server and
+// startToolHarness registers the surface on an authenticated inbound server and
 // connects a client session to it.
 func startToolHarness(t *testing.T, runtime *service.Runtime, assembly *service.Assembly, upstream *recordingClient, surfaceCfg service.ToolSurfaceConfig) *toolHarness {
 	t.Helper()
@@ -156,28 +157,45 @@ func startToolHarness(t *testing.T, runtime *service.Runtime, assembly *service.
 		t.Fatalf("Register: %v", err)
 	}
 	harness.server = server
+	if err := surface.Published(assembly); err != nil {
+		t.Fatalf("Published: %v", err)
+	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	harness.cancel = cancel
-	serverTransport, clientTransport := mcp.NewInMemoryTransports()
-	harness.runDone = make(chan struct{})
-	go func() {
-		defer close(harness.runDone)
-		_ = server.Run(ctx, serverTransport)
-	}()
+	const token = "tool-harness-test-token"
+	inbound := service.NewInboundHandler(
+		service.NewStreamableHandler(server),
+		[][32]byte{sha256.Sum256([]byte(token))},
+		service.InboundOptions{ToolSurface: surface},
+	)
+	httpServer := httptest.NewServer(inbound)
+	t.Cleanup(httpServer.Close)
+
 	client := mcp.NewClient(&mcp.Implementation{Name: "test-client", Version: "test"}, nil)
-	session, err := client.Connect(ctx, clientTransport, nil)
+	transport := &mcp.StreamableClientTransport{
+		Endpoint:   httpServer.URL + "/mcp",
+		HTTPClient: &http.Client{Transport: toolHarnessAuthTransport{base: http.DefaultTransport, token: token}},
+		MaxRetries: -1,
+	}
+	session, err := client.Connect(context.Background(), transport, &mcp.ClientSessionOptions{ProtocolVersion: "2025-11-25"})
 	if err != nil {
-		cancel()
 		t.Fatalf("Connect: %v", err)
 	}
 	harness.session = session
-	t.Cleanup(func() {
-		_ = session.Close()
-		cancel()
-		<-harness.runDone
-	})
+	t.Cleanup(func() { _ = session.Close() })
 	return harness
+}
+
+type toolHarnessAuthTransport struct {
+	base  http.RoundTripper
+	token string
+}
+
+func (transport toolHarnessAuthTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	authorized := request.Clone(request.Context())
+	authorized.Header = request.Header.Clone()
+	authorized.Header.Set("Authorization", "Bearer "+transport.token)
+	return transport.base.RoundTrip(authorized)
+
 }
 
 func (h *toolHarness) call(t *testing.T, name string, args map[string]any) *mcp.CallToolResult {
@@ -229,8 +247,43 @@ func canonical(t *testing.T, value any) string {
 	return string(raw)
 }
 
-// The bridge advertises exactly its own three tools with the exact schemas of
-// plan §4.4, whether or not configured tools exist (T-05b).
+// The bridge advertises its three built-ins with the exact schemas, plus its configured
+// pin (PR-R7/PR-AC1).
+func assertAdvertisedBuiltinsAndPin(t *testing.T, tools []*mcp.Tool, pinName string) {
+	t.Helper()
+
+	wantBuiltins := map[string]map[string]any{
+		catalog.ToolSearchTools:  catalog.SearchToolsInputSchema(),
+		catalog.ToolDescribeTool: catalog.DescribeToolInputSchema(),
+		catalog.ToolCallTool:     catalog.CallToolInputSchema(),
+	}
+	seen := make(map[string]bool, len(tools))
+	for _, tool := range tools {
+		if seen[tool.Name] {
+			t.Fatalf("advertised tool %q more than once", tool.Name)
+		}
+		seen[tool.Name] = true
+
+		schema, builtin := wantBuiltins[tool.Name]
+		if !builtin && tool.Name != pinName {
+			t.Fatalf("unexpected advertised tool %q", tool.Name)
+		}
+		if builtin {
+			if got := canonical(t, tool.InputSchema); got != canonical(t, schema) {
+				t.Fatalf("%s inputSchema = %s; want %s", tool.Name, got, canonical(t, schema))
+			}
+		}
+	}
+	for name := range wantBuiltins {
+		if !seen[name] {
+			t.Errorf("missing advertised built-in %q", name)
+		}
+	}
+	if !seen[pinName] {
+		t.Errorf("missing advertised pinned tool %q", pinName)
+	}
+}
+
 func TestToolSurfaceAdvertisesExactlyItsThreeTools(t *testing.T) {
 	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")
 	t.Setenv("TOOLS_CLIENT_TOKEN", "client-token")
@@ -242,27 +295,7 @@ func TestToolSurfaceAdvertisesExactlyItsThreeTools(t *testing.T) {
 	if err != nil {
 		t.Fatalf("tools/list: %v", err)
 	}
-	if len(listed.Tools) != 3 {
-		t.Fatalf("advertised %d tools; want exactly 3", len(listed.Tools))
-	}
-	want := map[string]map[string]any{
-		catalog.ToolSearchTools:  catalog.SearchToolsInputSchema(),
-		catalog.ToolDescribeTool: catalog.DescribeToolInputSchema(),
-		catalog.ToolCallTool:     catalog.CallToolInputSchema(),
-	}
-	for _, tool := range listed.Tools {
-		schema, ok := want[tool.Name]
-		if !ok {
-			t.Fatalf("unexpected advertised tool %q", tool.Name)
-		}
-		if got := canonical(t, tool.InputSchema); got != canonical(t, schema) {
-			t.Fatalf("%s inputSchema = %s; want %s", tool.Name, got, canonical(t, schema))
-		}
-		delete(want, tool.Name)
-	}
-	if len(want) != 0 {
-		t.Fatalf("missing advertised tools: %v", want)
-	}
+	assertAdvertisedBuiltinsAndPin(t, listed.Tools, config.WireToolName("alpha", "read"))
 }
 
 // call_tool wraps exactly one upstream execution in the provenance envelope and
@@ -526,8 +559,8 @@ func TestToolSurfaceSearchToolsReturnsRankedProvenance(t *testing.T) {
 	}
 }
 
-// The advertised tool list is stable across a reload: the same three tools with
-// the same schemas, never one per generation.
+// The advertised tool list remains stable across reload, with one of each built-in
+// plus its configured pin.
 func TestToolSurfaceSurvivesReloadWithoutDuplicatingTools(t *testing.T) {
 	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")
 	t.Setenv("TOOLS_CLIENT_TOKEN", "client-token")
@@ -545,9 +578,7 @@ func TestToolSurfaceSurvivesReloadWithoutDuplicatingTools(t *testing.T) {
 	if !reflect.DeepEqual(before.Tools, after.Tools) {
 		t.Fatal("the advertised tool list changed without a reload")
 	}
-	if len(after.Tools) != 3 {
-		t.Fatalf("advertised %d tools after reload; want 3", len(after.Tools))
-	}
+	assertAdvertisedBuiltinsAndPin(t, after.Tools, config.WireToolName("alpha", "read"))
 }
 func TestToolSurfaceDescribeToolReturnsTextContent(t *testing.T) {
 	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")

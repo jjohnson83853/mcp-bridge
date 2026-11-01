@@ -82,6 +82,9 @@ type Assembly struct {
 	// derived from the server defaults, keyed by serverID + "\x00" + rawName.
 	// It is immutable after publication and nil when no defaults are configured.
 	pinMetadata map[string]pinMetadataEntry
+	// toolMetadata is the immutable accepted defaults/exact overlay per server.
+	// Dynamic projections apply these patches only after a target is interested.
+	toolMetadata map[string]serverToolMetadata
 }
 
 // pinMetadataEntry is one pinned tool's effective metadata view and the
@@ -227,7 +230,12 @@ func (a *Assembly) Acquire(serverID string) (*Lease, bool) {
 // Runtime is the single publication point of the bridge runtime. Every request
 // reads one Assembly through it; a reload replaces that pointer once.
 type Runtime struct {
-	current atomic.Pointer[Assembly]
+	// commitMu serializes durable candidate writes with runtime acceptance.
+	// Serving and projection admission use the separate coordinator barrier.
+	commitMu        sync.Mutex
+	current         atomic.Pointer[Assembly]
+	coordinatorOnce sync.Once
+	coordinator     *projectionCoordinator
 }
 
 // NewRuntime returns an empty runtime with no published generation.
@@ -238,8 +246,11 @@ func (r *Runtime) Current() *Assembly { return r.current.Load() }
 
 // Acquire pins the published generation for one call to serverID.
 func (r *Runtime) Acquire(serverID string) (*Lease, bool) {
+	c := r.progressiveCoordinator()
+	c.barrier.Lock()
+	defer c.barrier.Unlock()
 	assembly := r.current.Load()
-	if assembly == nil {
+	if assembly == nil || (c.acceptedKnown && c.acceptedGeneration != assembly.Generation()) {
 		return nil, false
 	}
 	return assembly.Acquire(serverID)
@@ -402,6 +413,7 @@ func (r *Runtime) AdmitStartup(candidate *config.Config, deps ReloadDeps, durabl
 	}
 	return r.build(buildInput{
 		mode:      buildStartup,
+		previous:  r.current.Load(),
 		candidate: candidate,
 		deps:      deps,
 		durable:   durable,
@@ -414,11 +426,12 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 	previous := in.previous
 	at := in.deps.Now().UTC()
 	next := &Assembly{
-		generation:  1,
-		fingerprint: in.candidate.Fingerprint(),
-		auth:        in.candidate.ClientTokenHashes(),
-		catalog:     core.NewBridge(),
-		servers:     make(map[string]ServerRuntime, len(in.candidate.Servers)),
+		generation:   1,
+		fingerprint:  in.candidate.Fingerprint(),
+		auth:         in.candidate.ClientTokenHashes(),
+		catalog:      core.NewBridge(),
+		servers:      make(map[string]ServerRuntime, len(in.candidate.Servers)),
+		toolMetadata: cloneServerToolMetadata(in.candidate),
 	}
 	if previous != nil {
 		next.generation = previous.generation + 1
@@ -550,7 +563,7 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 		if err != nil {
 			return nil, fmt.Errorf("service: %s pins: %w", in.mode, err)
 		}
-		next.pins, next.pinMetadata, err = applyServerMetadataDefaults(in.candidate, resolvedPins, in.mode)
+		next.pins, next.pinMetadata, err = applyServerMetadataDefaults(in.candidate, resolvedPins, definitions, in.mode)
 		if err != nil {
 			return nil, err
 		}
@@ -597,6 +610,14 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 		// embedding provider either; the first refresh completes the vectors.
 		snapshot = in.fillVectors(snapshot)
 	}
+	// Keep slow persistence outside the serving barrier, but serialize it with
+	// admission so a candidate that lost the expected-generation race is never
+	// persisted.
+	r.commitMu.Lock()
+	defer r.commitMu.Unlock()
+	if err := r.validateAcceptance(previous); err != nil {
+		return nil, fmt.Errorf("service: %s accept runtime: %w", in.mode, err)
+	}
 	if in.deps.Persist != nil {
 		if err := in.deps.Persist(snapshot); err != nil {
 			return nil, fmt.Errorf("service: %s persist: %w", in.mode, err)
@@ -610,7 +631,9 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 	}
 	next.snapshot = snapshot
 
-	r.current.Store(next)
+	if err := r.accept(next, previous); err != nil {
+		return nil, fmt.Errorf("service: %s accept runtime: %w", in.mode, err)
+	}
 	published = true
 	retirePrevious(previous, next, in.deps)
 	return next, nil

@@ -9,6 +9,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -46,6 +47,7 @@ type InboundHandler struct {
 type sessionRecord struct {
 	token    [32]byte
 	lastSeen time.Time
+	epoch    uint64
 	// ref is the 32 lowercase hexadecimal diagnostic reference drawn once
 	// when the live session was admitted; empty means the reference is
 	// explicitly unavailable. It is retained only with the session.
@@ -96,6 +98,10 @@ type InboundOptions struct {
 	// malformed value leaves the reference explicitly unavailable: no retry,
 	// no derived fallback, no substitute identity.
 	NewSessionRef func() (string, error)
+
+	// ToolSurface owns the process-local projection incarnation associated
+	// with each ordinary response-issued session.
+	ToolSurface *ToolSurface
 }
 
 // NewInboundHandler exposes exactly /mcp and authenticates every method. Tokens
@@ -105,7 +111,7 @@ func NewInboundHandler(next http.Handler, tokenHashes [][32]byte, options ...Inb
 	if len(options) > 0 {
 		opts = options[0]
 	}
-	return &InboundHandler{
+	handler := &InboundHandler{
 		next:        next,
 		tokenHashes: append([][32]byte(nil), tokenHashes...),
 		options:     opts,
@@ -116,6 +122,10 @@ func NewInboundHandler(next http.Handler, tokenHashes [][32]byte, options ...Inb
 			return observe.CorrelationID("")
 		},
 	}
+	if opts.ToolSurface != nil {
+		opts.ToolSurface.registerReceivingMiddleware()
+	}
+	return handler
 }
 
 func (h *InboundHandler) bounds() InboundBounds {
@@ -194,6 +204,9 @@ func validDiagnosticRefShape(value string) bool {
 }
 
 func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Work on a request-local clone so diagnostic and admission header
+	// normalization never mutates the caller's request.
+	r = r.Clone(r.Context())
 	// The existing outer owner is claimed first; when none is present (a
 	// standalone inner deployment) the handler claims through its own lazily
 	// built fallback owner using the same logger, clock and generator.
@@ -311,18 +324,25 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionID := r.Header.Get(sessionIDHeader)
+	rClone := r.Clone(r.Context())
+	removeHeaderCaseInsensitive(rClone.Header, exposureEpochHeaderName)
 	if sessionID != "" {
 		h.mu.Lock()
 		now := h.now()
-		h.reapExpiredLocked(now)
+		retiredOwners := h.reapExpiredLocked(now)
 		bound, exists := h.sessions[sessionID]
 		bindingMatch := exists && subtle.ConstantTimeCompare(bound.token[:], tokenHash[:]) == 1
 		if bindingMatch {
 			// Idle is inactivity, so an accepted request refreshes the record
-			// without replacing its diagnostic reference.
-			h.sessions[sessionID] = sessionRecord{token: bound.token, lastSeen: now, ref: bound.ref}
+			// without replacing its diagnostic reference or incarnation.
+			sessionEpoch := bound.epoch
+			h.sessions[sessionID] = sessionRecord{token: bound.token, lastSeen: now, ref: bound.ref, epoch: sessionEpoch}
+			if sessionEpoch != 0 {
+				rClone.Header.Set(exposureEpochHeaderName, strconv.FormatUint(sessionEpoch, 10))
+			}
 		}
 		h.mu.Unlock()
+		h.cleanupRetiredOwners(retiredOwners)
 		if !bindingMatch {
 			if !exists {
 				// A supplied session header with no stored entry: the entry is
@@ -367,9 +387,11 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if maximum := bounds.MaxSessions; maximum > 0 {
 			h.mu.Lock()
 			now := h.now()
-			h.reapExpiredLocked(now)
-			if len(h.sessions) >= maximum {
-				h.mu.Unlock()
+			retiredOwners := h.reapExpiredLocked(now)
+			atCapacity := len(h.sessions) >= maximum
+			h.mu.Unlock()
+			h.cleanupRetiredOwners(retiredOwners)
+			if atCapacity {
 				rejection = legacyRejection{"session_admission", "session_capacity"}
 				observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
 					FailureStage: "capacity", FailureReason: "session_capacity",
@@ -377,15 +399,10 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				http.Error(writer, "session cap reached", http.StatusServiceUnavailable)
 				return
 			}
-			h.mu.Unlock()
 		}
 	}
 
-	// The next stage receives a shallow clone with a copied header map, so
-	// mutations here never leak into the caller's request while identity
-	// hygiene stays intact: a client-supplied internal header is never trusted
-	// as an identity and is replaced only by the owned generated one.
-	rClone := r.Clone(r.Context())
+	// Preserve the existing server-owned correlation ID hygiene on the clone.
 	rClone.Header.Del("X-Mcp-Bridge-Internal-Request-Id")
 	if internalID := observe.HTTPRequestID(r.Context()); internalID != "" {
 		rClone.Header.Set("X-Mcp-Bridge-Internal-Request-Id", internalID)
@@ -412,7 +429,7 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if issuedID := writer.Header().Get(sessionIDHeader); issuedID != "" {
+	if issuedID := writer.Header().Get(sessionIDHeader); issuedID != "" && r.Method != http.MethodDelete {
 		h.mu.Lock()
 		record, exists := h.sessions[issuedID]
 		created := !exists
@@ -420,7 +437,7 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		refAvailable := true
 		if exists {
 			// A response-issued identifier for an already tracked session
-			// replaces the record without redrawing its reference.
+			// replaces the record without redrawing its reference or epoch.
 			record.token = tokenHash
 			record.lastSeen = h.now()
 			ref = record.ref
@@ -429,6 +446,13 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// diagnostic reference and retain it only with this session.
 			ref, refAvailable = h.newSessionRef()
 			record = sessionRecord{token: tokenHash, lastSeen: h.now(), ref: ref}
+		}
+		if record.epoch == 0 && h.options.ToolSurface != nil {
+			owner, err := h.options.ToolSurface.newLiveOwner(issuedID)
+			if err != nil {
+				panic(err)
+			}
+			record.epoch = owner.epoch
 		}
 		h.sessions[issuedID] = record
 		h.mu.Unlock()
@@ -452,10 +476,20 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			RefState: "not_applicable", State: "not_supplied", Binding: "not_evaluated",
 		})
 	}
+
 	if r.Method == http.MethodDelete && sessionID != "" {
 		h.mu.Lock()
+		record, exists := h.sessions[sessionID]
 		delete(h.sessions, sessionID)
+		var retiredOwner projectionOwner
+		if exists && record.epoch != 0 && h.options.ToolSurface != nil {
+			retiredOwner = projectionOwner{kind: projectionSession, sessionID: sessionID, epoch: record.epoch}
+			h.options.ToolSurface.retireLiveOwnerAtInboundLock(retiredOwner)
+		}
 		h.mu.Unlock()
+		if retiredOwner.epoch != 0 {
+			h.options.ToolSurface.cleanupRetiredOwner(retiredOwner)
+		}
 	}
 }
 
@@ -542,18 +576,42 @@ func writeFailureReasonFrom(class string) string {
 // reapExpiredLocked removes sessions whose idle window has elapsed. Caller
 // holds h.mu. Sweeps at most once per second to keep the per-request cost
 // bounded; the sweep clock is the injected reaping clock.
-func (h *InboundHandler) reapExpiredLocked(now time.Time) {
+func (h *InboundHandler) reapExpiredLocked(now time.Time) []projectionOwner {
 	idle := h.bounds().SessionIdle
 	if idle <= 0 {
-		return
+		return nil
 	}
 	if !h.lastSweep.IsZero() && now.Sub(h.lastSweep) < time.Second && len(h.sessions) < 64 {
-		return
+		return nil
 	}
 	h.lastSweep = now
+	var retired []projectionOwner
 	for id, record := range h.sessions {
 		if now.Sub(record.lastSeen) > idle {
 			delete(h.sessions, id)
+			if record.epoch != 0 && h.options.ToolSurface != nil {
+				owner := projectionOwner{kind: projectionSession, sessionID: id, epoch: record.epoch}
+				h.options.ToolSurface.retireLiveOwnerAtInboundLock(owner)
+				retired = append(retired, owner)
+			}
+		}
+	}
+	return retired
+}
+
+func (h *InboundHandler) cleanupRetiredOwners(owners []projectionOwner) {
+	if h.options.ToolSurface == nil {
+		return
+	}
+	for _, owner := range owners {
+		h.options.ToolSurface.cleanupRetiredOwner(owner)
+	}
+}
+
+func removeHeaderCaseInsensitive(header http.Header, name string) {
+	for key := range header {
+		if strings.EqualFold(key, name) {
+			delete(header, key)
 		}
 	}
 }

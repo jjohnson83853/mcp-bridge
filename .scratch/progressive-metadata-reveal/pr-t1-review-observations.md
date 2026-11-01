@@ -1,0 +1,7 @@
+# PR-T1 independent review observations
+
+Observed: 2026-10-30; task-local review only.
+
+- `go-reviewer`: APPROVE; no actionable Go correctness, aliasing, error-propagation, performance, or test-adequacy findings. Reviewed the five modified config/service Go files. No tests/build/lint run by reviewer; coordinator owns verification.
+- `code-reviewer`: COMMENT; specification-conformance stage PASS; no CRITICAL or HIGH findings. Review gate clears with non-blocking comments. Findings retained for follow-up: (1) no-op `ValidatePins` and stale caller/comment (`internal/config/tool_metadata.go:63-65`, caller `internal/config/config.go:281`, outside PR-T1 effect paths); (2) candidate patch ownership is read-only today but lacks an immutability guard (`internal/service/tool_metadata.go:322-327`); (3) `validateMetadataMember` is test-only (`internal/config/tool_metadata.go:156`); (4) startup selector validation occurs only at first refresh (`internal/service/reload.go:549-556`). Open questions: accepted-catalog equivalence relies on current unfiltered registration; duplicate annotation keys remain a pre-existing concern.
+- Scope boundary: no reviewer edits; no out-of-envelope files changed. PR-T1 does not claim revealed-wire integration, which remains assigned to PR-T5/PR-T7. This observation records only the PR-T1 contribution to PR-AC12; the aggregate acceptance remains open through later tasks and PR-T9 verification.

@@ -10,6 +10,7 @@ import (
 
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/search"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
@@ -321,4 +322,187 @@ func waitFor(t *testing.T, what string, condition func() bool) {
 		time.Sleep(time.Millisecond)
 	}
 	t.Fatalf("timed out waiting for %s", what)
+}
+
+func TestRefreshDoesNotPersistAfterConcurrentGenerationWins(t *testing.T) {
+	h := newReloadHarness(t)
+	cfg := refreshConfig(t, reloadTwoServers)
+	initial, err := h.runtime.Reload(cfg, h.deps())
+	if err != nil {
+		t.Fatalf("initial reload: %v", err)
+	}
+
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	var released atomic.Bool
+	releaseLoser := func() {
+		if released.CompareAndSwap(false, true) {
+			close(release)
+		}
+	}
+	loserResult := make(chan error, 1)
+	var loserPersistCalls atomic.Int32
+	loserDeps := refreshDeps(h)
+	loserDeps.ReloadDeps.Persist = func(*storage.Snapshot) error {
+		loserPersistCalls.Add(1)
+		return nil
+	}
+	discover := loserDeps.ReloadDeps.Discover
+	var discoveryCalls atomic.Int32
+	loserDeps.ReloadDeps.Discover = func(server config.Server) ([]core.ToolDefinition, error) {
+		if discoveryCalls.Add(1) == 1 {
+			close(entered)
+			<-release
+		}
+		return discover(server)
+	}
+
+	loserFinished := false
+	defer func() {
+		releaseLoser()
+		if !loserFinished {
+			select {
+			case <-loserResult:
+			case <-time.After(5 * time.Second):
+				t.Error("losing refresh did not finish after release")
+			}
+		}
+	}()
+	go func() {
+		_, err := h.runtime.Refresh(cfg, loserDeps)
+		loserResult <- err
+	}()
+	select {
+	case <-entered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("losing refresh did not enter discovery")
+	}
+
+	winner, err := h.runtime.Refresh(cfg, refreshDeps(h))
+	if err != nil {
+		t.Fatalf("winning refresh: %v", err)
+	}
+	if winner.Generation() != initial.Generation()+1 {
+		t.Fatalf("winner generation = %d; want %d", winner.Generation(), initial.Generation()+1)
+	}
+
+	releaseLoser()
+	loserErr := <-loserResult
+	loserFinished = true
+	if loserErr == nil || !strings.Contains(loserErr.Error(), "generation changed") {
+		t.Fatalf("losing refresh error = %v; want a stale-generation error", loserErr)
+	}
+	if calls := loserPersistCalls.Load(); calls != 0 {
+		t.Fatalf("losing refresh Persist calls = %d; want 0", calls)
+	}
+	if current := h.runtime.Current(); current != winner {
+		t.Fatalf("current generation = %p; want winning generation %p", current, winner)
+	}
+}
+
+func TestRefresherKeepsSuccessMetricsForStaleProjectionNoop(t *testing.T) {
+	cfgText := strings.Replace(reloadAlphaOnly, "pins: []", "pins:\n  - {server: alpha, tool: read}", 1)
+	cfg := refreshConfig(t, cfgText)
+	h := newReloadHarness(t)
+	h.setDefs("alpha", core.ToolDefinition{
+		RawName:     "read",
+		Description: "initial projection",
+		InputSchema: []byte(`{"type":"object"}`),
+	})
+	initial, err := h.runtime.Reload(cfg, h.deps())
+	if err != nil {
+		t.Fatalf("initial reload: %v", err)
+	}
+
+	server := service.NewMCPServer()
+	surface, err := service.NewToolSurface(h.runtime, service.ToolSurfaceConfig{
+		Model: search.ModelIdentity{Dimensions: 1},
+	})
+	if err != nil {
+		t.Fatalf("NewToolSurface: %v", err)
+	}
+	if err := surface.Register(server); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	if err := surface.Published(initial); err != nil {
+		t.Fatalf("publish initial projection: %v", err)
+	}
+
+	h.setDefs("alpha", core.ToolDefinition{
+		RawName:     "read",
+		Description: "stale refresh projection",
+		InputSchema: []byte(`{"type":"object"}`),
+	})
+	type publicationResult struct {
+		newer   *service.Assembly
+		staleErr error
+		err      error
+	}
+	publications := make(chan publicationResult, 1)
+	metrics := make(chan [3]string, 4)
+	refresher := service.NewRefresher(
+		h.runtime,
+		func() *config.Config { return cfg },
+		refreshDeps(h),
+		service.RefresherOptions{
+			Metrics: func(serverID, status, reason string) {
+				metrics <- [3]string{serverID, status, reason}
+			},
+			Published: func(older *service.Assembly) error {
+				h.setDefs("alpha", core.ToolDefinition{
+					RawName:     "read",
+					Description: "newer projection",
+					InputSchema: []byte(`{"type":"object"}`),
+				})
+				newer, err := h.runtime.Reload(cfg, h.deps())
+				if err != nil {
+					publications <- publicationResult{err: err}
+					return err
+				}
+				if err := surface.Published(newer); err != nil {
+					publications <- publicationResult{newer: newer, err: err}
+					return err
+				}
+				staleErr := surface.Published(older)
+				publications <- publicationResult{newer: newer, staleErr: staleErr}
+				return staleErr
+			},
+		},
+	)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		refresher.Run(ctx)
+	}()
+	defer func() {
+		cancel()
+		<-done
+	}()
+	refresher.Trigger()
+	waitFor(t, "stale projection publication", func() bool { return refresher.Passes() == 1 })
+	result := <-publications
+	if result.err != nil {
+		t.Fatalf("newer projection publication: %v", result.err)
+	}
+	if result.staleErr != nil {
+		t.Fatalf("stale projection publication error = %v; want a no-op", result.staleErr)
+	}
+	if current := h.runtime.Current(); current != result.newer {
+		t.Fatalf("current generation = %p; want newer generation %p", current, result.newer)
+	}
+	select {
+	case got := <-metrics:
+		if got != [3]string{"alpha", string(storage.StatusFresh), ""} {
+			t.Fatalf("refresh metrics = %v; want alpha fresh", got)
+		}
+	default:
+		t.Fatal("successful refresh emitted no per-server success metric after the stale projection no-op")
+	}
+	select {
+	case got := <-metrics:
+		t.Fatalf("unexpected additional refresh metric: %v", got)
+	default:
+	}
+
 }

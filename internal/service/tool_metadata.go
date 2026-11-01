@@ -62,7 +62,10 @@ func upstreamMetadataValue(metadata core.ToolMetadata) map[string]any {
 	if metadata.IsZero() {
 		return nil
 	}
-	value := map[string]any{"title": metadata.Title}
+	value := map[string]any{}
+	if metadata.Title != "" {
+		value["title"] = metadata.Title
+	}
 	if len(metadata.Icons) > 0 {
 		value["icons"] = rawValue(metadata.Icons)
 	}
@@ -118,9 +121,12 @@ func deriveToolMetadata(def core.ToolDefinition, defaults, tool config.MetadataP
 			return view, err
 		}
 		for path := range won {
+			// Defaults run before the tool layer, so the assignment here is
+			// unconditional; a path the tool layer also touches is recorded
+			// as the tool layer's win when that layer runs later.
 			if layer.scope == "tool" {
 				layers[path] = "tool"
-			} else if _, wonByTool := layers[path]; !wonByTool {
+			} else {
 				layers[path] = "server_default"
 			}
 		}
@@ -294,14 +300,16 @@ func isJSONObject(raw json.RawMessage) bool {
 	return len(trimmed) > 0 && trimmed[0] == '{'
 }
 
-// applyServerMetadataDefaults derives the effective metadata view of every
-// resolved pin from its source definition, the owning server's configured
-// defaults and that pin's exact raw-tool-name exception (source → defaults →
-// tool). It never touches the catalog: the effective metadata is
-// materialized only on the resolved pin's owned binding copy, and the source
-// values stay the durable truth. A derivation failure rejects the whole
-// candidate before publication.
-func applyServerMetadataDefaults(candidate *config.Config, resolved []core.ResolvedPin, mode buildMode) ([]core.ResolvedPin, map[string]pinMetadataEntry, error) {
+// applyServerMetadataDefaults derives effective metadata for resolved pins
+// using the shared source → defaults → exact-tool function. Exact selectors
+// are validated against the accepted same-server catalog/pins, but unpinned
+// tools remain unrevealed until normal reveal eligibility admits them.
+func applyServerMetadataDefaults(
+	candidate *config.Config,
+	resolved []core.ResolvedPin,
+	definitions map[string][]core.ToolDefinition,
+	mode buildMode,
+) ([]core.ResolvedPin, map[string]pinMetadataEntry, error) {
 	type serverPatches struct {
 		defaults config.MetadataPatch
 		tools    map[string]config.MetadataPatch
@@ -322,22 +330,123 @@ func applyServerMetadataDefaults(candidate *config.Config, resolved []core.Resol
 	if len(patches) == 0 {
 		return resolved, nil, nil
 	}
+	if err := validateMetadataToolTargets(candidate, resolved, definitions, mode); err != nil {
+		return nil, nil, err
+	}
 	views := make(map[string]pinMetadataEntry, len(resolved))
-	for index := range resolved {
-		server, ok := patches[resolved[index].PinnedTool.ServerID]
+	updated := append([]core.ResolvedPin(nil), resolved...)
+	for index := range updated {
+		serverID := updated[index].PinnedTool.ServerID
+		server, ok := patches[serverID]
 		if !ok {
 			continue
 		}
-		view, err := deriveToolMetadata(resolved[index].Binding.Def, server.defaults, server.tools[resolved[index].PinnedTool.RawName])
+		rawName := updated[index].PinnedTool.RawName
+		view, err := deriveToolMetadata(updated[index].Binding.Def, server.defaults, server.tools[rawName])
 		if err != nil {
 			return nil, nil, fmt.Errorf("service: %s metadata overrides for [server=%q,tool=%q]: %w",
-				mode, resolved[index].PinnedTool.ServerID, resolved[index].PinnedTool.RawName, err)
+				mode, serverID, rawName, err)
 		}
-		resolved[index].Binding.Def = view.Definition
-		views[resolved[index].PinnedTool.ServerID+"\x00"+resolved[index].PinnedTool.RawName] = pinMetadataEntry{
+		binding := *updated[index].Binding
+		binding.Def = view.Definition
+		updated[index].Binding = &binding
+		views[serverID+"\x00"+rawName] = pinMetadataEntry{
 			Effective:      view.Definition.Metadata,
 			OverrideFields: view.OverrideFields,
 		}
 	}
-	return resolved, views, nil
+	return updated, views, nil
+}
+
+type serverToolMetadata struct {
+	defaults config.MetadataPatch
+	tools    map[string]config.MetadataPatch
+}
+
+func cloneServerToolMetadata(candidate *config.Config) map[string]serverToolMetadata {
+	if candidate == nil {
+		return nil
+	}
+	var metadata map[string]serverToolMetadata
+	for _, server := range candidate.Servers {
+		if server.ToolMetadata == nil ||
+			(len(server.ToolMetadata.Defaults) == 0 && len(server.ToolMetadata.Tools) == 0) {
+			continue
+		}
+		if metadata == nil {
+			metadata = make(map[string]serverToolMetadata, len(candidate.Servers))
+		}
+		var tools map[string]config.MetadataPatch
+		if len(server.ToolMetadata.Tools) > 0 {
+			tools = make(map[string]config.MetadataPatch, len(server.ToolMetadata.Tools))
+			for rawName, patch := range server.ToolMetadata.Tools {
+				tools[rawName] = cloneMetadataPatch(patch)
+			}
+		}
+		metadata[server.ID] = serverToolMetadata{
+			defaults: cloneMetadataPatch(server.ToolMetadata.Defaults),
+			tools:    tools,
+		}
+	}
+	return metadata
+}
+
+func cloneMetadataPatch(source config.MetadataPatch) config.MetadataPatch {
+	if len(source) == 0 {
+		return nil
+	}
+	clone := make(config.MetadataPatch, len(source))
+	for key, value := range source {
+		clone[key] = append(json.RawMessage(nil), value...)
+	}
+	return clone
+}
+
+// validateMetadataToolTargets checks every exact selector before applying any
+// patch, so a stale or cross-server name rejects the complete candidate.
+func validateMetadataToolTargets(
+	candidate *config.Config,
+	resolved []core.ResolvedPin,
+	definitions map[string][]core.ToolDefinition,
+	mode buildMode,
+) error {
+	for _, server := range candidate.Servers {
+		if server.ToolMetadata == nil {
+			continue
+		}
+		for _, rawName := range sortedMetadataToolNames(server.ToolMetadata.Tools) {
+			if !hasAcceptedMetadataTarget(definitions, resolved, server.ID, rawName) {
+				return fmt.Errorf("service: %s metadata overrides for [server=%q,tool=%q]: selector does not match an accepted candidate tool or pin",
+					mode, server.ID, rawName)
+			}
+		}
+	}
+	return nil
+}
+
+func hasAcceptedMetadataTarget(
+	definitions map[string][]core.ToolDefinition,
+	resolved []core.ResolvedPin,
+	serverID, rawName string,
+) bool {
+	for _, definition := range definitions[serverID] {
+		if definition.RawName == rawName {
+			return true
+		}
+	}
+	for _, pin := range resolved {
+		if pin.PinnedTool.ServerID == serverID && pin.PinnedTool.RawName == rawName {
+			return true
+		}
+	}
+	return false
+}
+
+func sortedMetadataToolNames(tools map[string]config.MetadataPatch) []string {
+	names := make([]string, 0, len(tools))
+	for name := range tools {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "progressive-metadata-reveal",
+  "revision": "cursor-choice-reconciliation-7-session-admission",
+  "requests": [
+    {
+      "name": "PR-T5 Distinct-Bearer Isolation",
+      "taskId": "PR-T5",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service",
+          "cmd/mcp-bridge"
+        ]
+      }
+    }
+  ]
+}

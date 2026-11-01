@@ -73,3 +73,22 @@ func TestSnapshotV1FixtureRejectsMetadataMember(t *testing.T) {
 		t.Fatal("schema-1 document with a metadata member loaded; want rejection")
 	}
 }
+
+// The strict schema-1 reader must reject a document carrying appended
+// non-JSON garbage: only a clean EOF after the single JSON value is accepted,
+// never a mid-parse syntax error that could silently fail open.
+func TestSnapshotV1RejectsTrailingGarbage(t *testing.T) {
+	directory := filepath.Join(t.TempDir(), "state")
+	store := openStore(t, directory)
+	raw, err := os.ReadFile(filepath.Join("testdata", "tool-metadata", "schema1.json"))
+	if err != nil {
+		t.Fatalf("read frozen schema-1 fixture: %v", err)
+	}
+	garbage := append(append([]byte{}, raw...), []byte("\nnot-json")...)
+	if err := os.WriteFile(store.Path(), garbage, 0o600); err != nil {
+		t.Fatalf("stage garbage-appended fixture: %v", err)
+	}
+	if _, err := store.Load(); err == nil {
+		t.Fatal("schema-1 document with trailing garbage loaded; want rejection")
+	}
+}

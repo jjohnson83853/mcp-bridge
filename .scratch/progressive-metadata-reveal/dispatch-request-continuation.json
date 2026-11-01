@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "progressive-metadata-reveal",
+  "revision": "cursor-choice-reconciliation-1",
+  "requests": [
+    {
+      "name": "ResolveBridgeEvidence",
+      "taskId": "resolve-bridge-evidence",
+      "agent": "planner",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/progressive-metadata-reveal/spec.md",
+          ".scratch/tool-metadata/spec.md",
+          "cmd/mcp-bridge/serve.go",
+          "internal/config/tool_metadata.go",
+          "internal/core/tool_metadata.go",
+          "internal/service/tool_metadata.go",
+          "internal/service/tools.go",
+          ".scratch/progressive-metadata-reveal/owner-choice.md",
+          "internal/service/server.go",
+          "internal/service/inbound.go",
+          "internal/service/prompts.go",
+          "internal/upstream/tool_metadata.go"
+        ]
+      }
+    },
+    {
+      "name": "ResolveRuntimeAcceptance",
+      "taskId": "resolve-runtime-acceptance",
+      "agent": "planner",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/progressive-metadata-reveal/spec.md",
+          ".scratch/progressive-metadata-reveal/owner-choice.md",
+          "cmd/mcp-bridge/serve.go",
+          "internal/service/loop.go",
+          "internal/service/refresh.go",
+          "internal/service/reload.go",
+          "internal/storage/store.go",
+          "internal/service/tools.go"
+        ]
+      }
+    },
+    {
+      "name": "ResolveSessionWriter",
+      "taskId": "resolve-session-writer",
+      "agent": "planner",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/progressive-metadata-reveal/spec.md",
+          ".scratch/progressive-metadata-reveal/owner-choice.md",
+          "cmd/mcp-bridge/serve.go",
+          "internal/service/server.go",
+          "internal/service/inbound.go",
+          "internal/observe/httpwriter.go",
+          "internal/observe/httpwriter_facades_generated.go",
+          "internal/observe/httpdiagnostics.go"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 2,
+  "feature": "progressive-metadata-reveal",
+  "revision": "cursor-choice-reconciliation-7-session-admission",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "authorizationId": "c1fe8382f53f20703012a719d2f2756f7470426312b96c8d116f1c8c519b3b92",
+  "envelopeId": "approved-progressive-metadata-ledger",
+  "packetDigest": "aa2052a78b1bb904a4d9df500a86c48efa309dfc64e37d05a4b5fc2d5c9af96c",
+  "selectedBranchId": "approved-progressive-metadata-ledger"
+}

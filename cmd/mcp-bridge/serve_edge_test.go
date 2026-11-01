@@ -3,15 +3,21 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
-	"github.com/jjohnson83853/mcp-bridge/internal/config"
-	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"net"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/jjohnson83853/mcp-bridge/internal/config"
+	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
+	"github.com/jjohnson83853/mcp-bridge/internal/service"
 )
 
 func edgeConfig(t *testing.T, embeddingURL string) string {
@@ -193,5 +199,155 @@ func TestRestartOnlyFieldsAndSmallWiringHelpers(t *testing.T) {
 	operatorLog(observe.NewLogger(&logs))("event")
 	if !strings.Contains(logs.String(), "invalid_config") {
 		t.Fatal("operator log classification")
+	}
+}
+
+func TestOperatorLogPublicationFailureClassification(t *testing.T) {
+	const secret = "publication-error-secret"
+	var logs bytes.Buffer
+	logf := operatorLog(observe.NewLogger(&logs))
+	logf("configuration reload publication failed after runtime acceptance: %v", fmt.Errorf("%w: %s", service.ErrPublicationFailed, secret))
+	publicationLog := logs.String()
+	if !strings.Contains(publicationLog, `"reason":"internal_error"`) {
+		t.Fatalf("publication log = %q; want the redacted post-accept failure class", publicationLog)
+	}
+	if strings.Contains(publicationLog, secret) {
+		t.Fatal("publication log leaked the underlying error")
+	}
+
+	logs.Reset()
+	logf("configuration reload rejected: %s", secret)
+	rejectionLog := logs.String()
+	if !strings.Contains(rejectionLog, `"reason":"invalid_config"`) ||
+		strings.Contains(rejectionLog, `"reason":"internal_error"`) {
+		t.Fatalf("candidate rejection log = %q; want invalid_config only", rejectionLog)
+	}
+	if strings.Contains(rejectionLog, secret) {
+		t.Fatal("candidate rejection log leaked its message")
+	}
+}
+func TestRefreshPublicationFailureClassificationThroughLoop(t *testing.T) {
+	const secret = "refresh-publication-error-secret"
+	var logs bytes.Buffer
+	operator := operatorLog(observe.NewLogger(&logs))
+	logged := make(chan struct{}, 1)
+	logf := func(format string, args ...any) {
+		operator(format, args...)
+		logged <- struct{}{}
+	}
+
+	publicationCalls := 0
+	loop, err := service.NewLoop(service.NewRuntime(), service.LoopOptions{
+		Load: func() (*config.Config, error) { return &config.Config{}, nil },
+		Deps: service.RefreshDeps{ReloadDeps: service.ReloadDeps{
+			Discover:            func(config.Server) ([]core.ToolDefinition, error) { return nil, nil },
+			NewClient:           func(config.Server) (core.Upstream, error) { return nil, nil },
+			ModelIdentityDigest: strings.Repeat("a", 64),
+			Now:                 func() time.Time { return time.Unix(1, 0) },
+		}},
+		Published: func(*service.Assembly) error {
+			publicationCalls++
+			if publicationCalls == 2 {
+				return errors.New(secret)
+			}
+			return nil
+		},
+		Logf: logf,
+	})
+	if err != nil {
+		t.Fatalf("new loop: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- loop.Start(ctx) }()
+	select {
+	case <-logged:
+	case err := <-done:
+		t.Fatalf("loop exited before the refresh publication log: %v", err)
+	case <-time.After(5 * time.Second):
+		cancel()
+		<-done
+		t.Fatal("timed out waiting for the refresh publication log")
+	}
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatalf("loop shutdown: %v", err)
+	}
+
+	publicationLog := logs.String()
+	if !strings.Contains(publicationLog, `"reason":"internal_error"`) {
+		t.Fatalf("refresh publication log = %q; want internal_error", publicationLog)
+	}
+	if strings.Contains(publicationLog, secret) {
+		t.Fatalf("refresh publication log leaked its underlying callback error: %q", publicationLog)
+	}
+	if publicationCalls != 2 {
+		t.Fatalf("publication calls = %d; want startup and refresh callbacks", publicationCalls)
+	}
+}
+
+func TestPublishedFailureKeepsAcceptedAdmissionBounds(t *testing.T) {
+	runtime := service.NewRuntime()
+	accepted, err := runtime.Reload(&config.Config{}, service.ReloadDeps{
+		Discover: func(config.Server) ([]core.ToolDefinition, error) {
+			return nil, nil
+		},
+		NewClient: func(config.Server) (core.Upstream, error) {
+			return nil, nil
+		},
+		ModelIdentityDigest: strings.Repeat("a", 64),
+		Now:                 func() time.Time { return time.Unix(1, 0) },
+	})
+	if err != nil {
+		t.Fatalf("accept runtime assembly: %v", err)
+	}
+	if runtime.Current() != accepted {
+		t.Fatal("runtime did not retain the accepted assembly")
+	}
+
+	holder := newConfigHolder()
+	previousSettings := config.Command{
+		MaxRequestBytes: 1024,
+		MaxSessions:     1,
+		SessionIdle:     time.Second,
+		AllowedHosts:    []string{"previous.example"},
+		AllowedOrigins:  []string{"https://previous.example"},
+	}
+	acceptedSettings := config.Command{
+		MaxRequestBytes: 4096,
+		MaxSessions:     3,
+		SessionIdle:     2 * time.Second,
+		AllowedHosts:    []string{"accepted.example"},
+		AllowedOrigins:  []string{"https://accepted.example"},
+	}
+	holder.stage(&config.Config{}, previousSettings)
+	holder.commit()
+	holder.stage(&config.Config{}, acceptedSettings)
+
+	projectionErr := errors.New("projection failed")
+	err = publishAcceptedAssembly(
+		accepted,
+		func(*service.Assembly) {},
+		func(*service.Assembly) error { return projectionErr },
+		func(*service.Assembly) { holder.commit() },
+	)
+	if !errors.Is(err, projectionErr) {
+		t.Fatalf("publication error = %v, want %v", err, projectionErr)
+	}
+	if runtime.Current() != accepted {
+		t.Fatal("runtime no longer matches the accepted assembly")
+	}
+
+	wantBounds := service.InboundBounds{
+		MaxRequestBytes: acceptedSettings.MaxRequestBytes,
+		MaxSessions:     acceptedSettings.MaxSessions,
+		SessionIdle:     acceptedSettings.SessionIdle,
+		AllowedHosts:    acceptedSettings.AllowedHosts,
+		AllowedOrigins:  acceptedSettings.AllowedOrigins,
+	}
+	if got := holder.bounds(); !reflect.DeepEqual(got, wantBounds) {
+		t.Fatalf("admission bounds = %#v, want accepted assembly bounds %#v", got, wantBounds)
 	}
 }

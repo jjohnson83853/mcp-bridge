@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "progressive-metadata-reveal",
+  "revision": "PR-planning-recovery-2",
+  "requests": [
+    {
+      "name": "resolve-runtime-acceptance",
+      "taskId": "resolve-runtime-acceptance",
+      "agent": "planner",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/progressive-metadata-reveal/spec.md",
+          ".scratch/progressive-metadata-reveal/owner-choice.md",
+          "cmd/mcp-bridge/serve.go",
+          "internal/service/loop.go",
+          "internal/service/refresh.go",
+          "internal/service/reload.go",
+          "internal/storage/store.go",
+          "internal/service/tools.go"
+        ]
+      }
+    },
+    {
+      "name": "resolve-session-writer",
+      "taskId": "resolve-session-writer",
+      "agent": "planner",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/progressive-metadata-reveal/spec.md",
+          ".scratch/progressive-metadata-reveal/owner-choice.md",
+          "cmd/mcp-bridge/serve.go",
+          "internal/service/server.go",
+          "internal/service/inbound.go",
+          "internal/observe/httpwriter.go",
+          "internal/observe/httpwriter_facades_generated.go",
+          "internal/observe/httpdiagnostics.go"
+        ]
+      }
+    }
+  ]
+}

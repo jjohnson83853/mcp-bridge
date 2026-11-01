@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "progressive-metadata-reveal",
+  "revision": "cursor-choice-reconciliation-7-session-admission",
+  "requests": [
+    {
+      "name": "ReviewSessionReconciliation",
+      "taskId": "review-amendment",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/progressive-metadata-reveal/spec.md",
+          ".scratch/tool-metadata/spec.md",
+          ".scratch/progressive-metadata-reveal/owner-choice.md",
+          ".scratch/progressive-metadata-reveal/observability-deferred.md",
+          ".scratch/progressive-metadata-reveal/sdk-middleware-session-evidence-r5.md",
+          ".scratch/progressive-metadata-reveal/sdk-session-cleanup-evidence-r4.md",
+          ".scratch/progressive-metadata-reveal/sdk-registry-evidence-r4.md",
+          ".scratch/progressive-metadata-reveal/sdk-evidence-r3.md",
+          ".scratch/progressive-metadata-reveal/runtime-acceptance-evidence.md",
+          ".scratch/progressive-metadata-reveal/session-writer-evidence.md",
+          ".scratch/progressive-metadata-reveal/bridge-evidence-recovery-2.md",
+          ".scratch/progressive-metadata-reveal/bridge-evidence.md"
+        ]
+      }
+    }
+  ]
+}

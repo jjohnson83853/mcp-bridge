@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 	"sync"
 	"time"
 
@@ -29,6 +28,7 @@ type ToolSurfaceConfig struct {
 	Search   search.Config
 	Provider search.Provider
 	Model    search.ModelIdentity
+	PageSize int
 
 	// Logger receives the tool surface's own terminal observability records.
 	// A nil Logger is a supported configuration: the surface serves with
@@ -40,16 +40,23 @@ type ToolSurfaceConfig struct {
 // reads the published generation at call time, so a reload is observed without
 // re-registering the tool list.
 type ToolSurface struct {
-	runtime *Runtime
-	cfg     ToolSurfaceConfig
-	logger  *observe.Logger
+	runtime       *Runtime
+	cfg           ToolSurfaceConfig
+	logger        *observe.Logger
+	processSecret [32]byte
+	pageSize      int
 
 	cached   *search.Searcher
 	cacheKey string
 
-	mu          sync.Mutex
-	server      *mcp.Server
-	pinnedTools map[string]core.ResolvedPin
+	mu                            sync.Mutex
+	server                        *mcp.Server
+	builtinTools                  []*mcp.Tool
+	receivingMiddlewareRegistered bool
+	testBeforeExposureAdmission   func()
+	projectionOnce                sync.Once
+	coordinator                   *projectionCoordinator
+	publisherOwner                projectionOwner
 }
 
 // NewToolSurface validates the tool surface's own configuration.
@@ -60,7 +67,17 @@ func NewToolSurface(runtime *Runtime, cfg ToolSurfaceConfig) (*ToolSurface, erro
 	if cfg.Model.Dimensions <= 0 {
 		return nil, errors.New("service: tool surface needs the embedding model dimensions")
 	}
-	return &ToolSurface{runtime: runtime, cfg: cfg, logger: cfg.Logger, pinnedTools: make(map[string]core.ResolvedPin)}, nil
+
+	surface := &ToolSurface{runtime: runtime, cfg: cfg, logger: cfg.Logger}
+	if _, err := rand.Read(surface.processSecret[:]); err != nil {
+		return nil, fmt.Errorf("service: process secret initialization: %w", err)
+	}
+	if cfg.PageSize > 0 {
+		surface.pageSize = cfg.PageSize
+	} else {
+		surface.pageSize = mcp.DefaultPageSize
+	}
+	return surface, nil
 }
 
 // boolPtr returns a fresh pointer for an advisory hint literal, so callers
@@ -73,10 +90,16 @@ func (t *ToolSurface) Register(server *mcp.Server) error {
 	if server == nil {
 		return errors.New("service: tool surface needs a server")
 	}
+	c := t.projectionCoordinator()
+	c.publicationMu.Lock()
+	defer c.publicationMu.Unlock()
+	if err := c.attachServer(server); err != nil {
+		return err
+	}
 	t.mu.Lock()
 	t.server = server
 	t.mu.Unlock()
-	server.AddTool(&mcp.Tool{
+	searchTool := &mcp.Tool{
 		Name:        catalog.ToolSearchTools,
 		Description: "Search the bridge's indexed tools.",
 		InputSchema: catalog.SearchToolsInputSchema(),
@@ -85,8 +108,8 @@ func (t *ToolSurface) Register(server *mcp.Server) error {
 			IdempotentHint: true,
 			OpenWorldHint:  boolPtr(true),
 		},
-	}, t.searchTools)
-	server.AddTool(&mcp.Tool{
+	}
+	describeTool := &mcp.Tool{
 		Name:        catalog.ToolDescribeTool,
 		Description: "Describe one indexed tool with its exact stored schema.",
 		InputSchema: catalog.DescribeToolInputSchema(),
@@ -95,8 +118,8 @@ func (t *ToolSurface) Register(server *mcp.Server) error {
 			IdempotentHint: true,
 			OpenWorldHint:  boolPtr(true),
 		},
-	}, t.describeTool)
-	server.AddTool(&mcp.Tool{
+	}
+	callTool := &mcp.Tool{
 		Name:        catalog.ToolCallTool,
 		Description: "Call one indexed upstream tool through the bridge.",
 		InputSchema: catalog.CallToolInputSchema(),
@@ -105,81 +128,49 @@ func (t *ToolSurface) Register(server *mcp.Server) error {
 			IdempotentHint:  false,
 			OpenWorldHint:   boolPtr(true),
 		},
-	}, t.callTool)
+	}
+	t.builtinTools = []*mcp.Tool{searchTool, describeTool, callTool}
+	server.AddTool(searchTool, t.searchTools)
+	server.AddTool(describeTool, t.describeTool)
+	server.AddTool(callTool, t.callTool)
 	return nil
 }
 
-// Published reconciles the inbound SDK tool registry with one immutable
-// publication: pinned prerequisite tools are exposed exactly as configured.
-// It is safe for concurrent use.
-func (t *ToolSurface) Published(assembly *Assembly) {
+// Published rebases pinned projections for every live owner after the runtime
+// accepts an assembly. Reconciliation failures do not roll back accepted
+// runtime state; delayed callbacks cannot regress the complete projection.
+func (t *ToolSurface) Published(assembly *Assembly) error {
 	if assembly == nil {
-		return
+		return nil
 	}
+	t.projectionCoordinator()
 	t.mu.Lock()
-	defer t.mu.Unlock()
-	if t.server == nil {
-		return
+	server := t.server
+	t.mu.Unlock()
+	if server == nil {
+		return nil
 	}
-	pins := assembly.Pins()
-	next := make(map[string]core.ResolvedPin, len(pins))
-	for _, pin := range pins {
-		if pin.Binding == nil {
-			continue
+	if err := t.publishProjection(t.publisherOwner, assembly); err != nil {
+		if t.logger != nil {
+			t.logger.Log(observe.Entry{
+				Level:     "warn",
+				Event:     "reload",
+				RequestID: "",
+				Operation: "publish",
+				Duration:  0,
+				Outcome:   "error",
+				Reason:    "publication_failed",
+				Fields:    map[string]any{"reason": "publication_failed"},
+			})
 		}
-		name := config.WireToolName(pin.PinnedTool.ServerID, pin.PinnedTool.RawName)
-		next[name] = pin
+		return err
 	}
-	for name, previous := range t.pinnedTools {
-		if _, exists := next[name]; !exists {
-			t.server.RemoveTools(name)
-			delete(t.pinnedTools, name)
-		} else {
-			// Idempotency: skip registration when the binding is unchanged.
-			if previous.Binding != nil && reflect.DeepEqual(previous.Binding, next[name].Binding) {
-				delete(next, name)
-			}
-		}
-	}
-	descriptors := make(map[string]*mcp.Tool, len(next))
-	for name, pin := range next {
-		descriptor, err := sdkToolDescriptor(name, pin.Binding.Def)
-		if err != nil {
-			// One invalid descriptor rejects the whole candidate generation:
-			// the published surface must never be a partial tool set with a
-			// pinned tool silently missing, so nothing from this assembly is
-			// registered and the previous generation stays published.
-			if t.logger != nil {
-				t.logger.Log(observe.Entry{
-					Level:     "warn",
-					Event:     "reload",
-					RequestID: "",
-					Operation: "publish",
-					Duration:  0,
-					Outcome:   "rejected",
-					Reason:    "invalid_metadata",
-					Fields:    map[string]any{"reason": "invalid_metadata"},
-				})
-			}
-			return
-		}
-		descriptors[name] = descriptor
-	}
-	for name, descriptor := range descriptors {
-		t.server.AddTool(descriptor, t.callPinnedTool)
-		t.pinnedTools[name] = next[name]
-	}
+	return nil
 }
 
-// callPinnedTool dispatches one direct invocation of a preloaded pinned tool
-// (plan §4.4). The wire tool name selects the pin's binding, the stored input
-// schema validates the arguments, and the dispatch reuses the same upstream
-// execution path as the bridge's own call tool.
-func (t *ToolSurface) callPinnedTool(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	// Observability scope mirrors callTool: the internal request identity
-	// rides the private carrier the inbound edge attached to this POST and is
-	// never caller controlled; the operation identity scopes this decoded
-	// tools/call execution independently.
+// callPinnedTool admits one direct invocation against the authenticated
+// session's current projection and transfers its immutable execution tuple.
+func (t *ToolSurface) callPinnedTool(ctx context.Context, req *mcp.CallToolRequest, registeredName string, registeredDescriptorKey []byte) (*mcp.CallToolResult, error) {
 	var requestID string
 	corrState := "unavailable"
 	if req != nil && req.Extra != nil && req.Extra.Header != nil {
@@ -191,180 +182,118 @@ func (t *ToolSurface) callPinnedTool(ctx context.Context, req *mcp.CallToolReque
 	}
 	operationID := observe.CorrelationID("")
 	start := time.Now()
+	owner, ownerOK := directRequestOwner(req)
 	toolName := ""
 	if req != nil && req.Params != nil {
 		toolName = req.Params.Name
 	}
-
-	// The wire name selects the pin. The registered map is authoritative;
-	// the published assembly's own pins cover a call that races a publication.
-	t.mu.Lock()
-	pin, found := t.pinnedTools[toolName]
-	t.mu.Unlock()
-	assembly := t.runtime.Current()
-	if !found && assembly != nil {
-		for _, candidate := range assembly.Pins() {
-			if candidate.Binding == nil {
-				continue
-			}
-			if config.WireToolName(candidate.PinnedTool.ServerID, candidate.PinnedTool.RawName) == toolName {
-				pin, found = candidate, true
-				break
-			}
-		}
-	}
-	if !found {
-		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "unknown_tool")
-		return errorResult(codeUnknownTool, "unknown preloaded tool", core.ExecutionNotStarted), nil
-	}
-	if assembly == nil {
-		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "backend_unavailable")
-		return errorResult(codeBackendUnavailable, "no catalog generation is published", core.ExecutionNotStarted), nil
-	}
-	binding := pin.Binding
 	args := rawArguments(req)
 	if len(bytes.TrimSpace(args)) == 0 {
 		args = json.RawMessage(`{}`)
 	}
-	if len(binding.Def.InputSchema) > 0 {
-		if err := catalog.ValidateSchemaDocument(string(binding.Def.InputSchema)); err != nil {
-			t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "invalid_arguments")
-			return errorResult(search.CodeInvalidArguments, "arguments do not satisfy the tool's stored input schema", core.ExecutionNotStarted), nil
-		}
-		if err := catalog.ValidateSchema(string(binding.Def.InputSchema), string(args)); err != nil {
-			// The validator's own text may quote submitted values, so the
-			// rejection is answered with a fixed, payload-free message.
-			t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "invalid_arguments")
-			return errorResult(search.CodeInvalidArguments, "arguments do not satisfy the tool's stored input schema", core.ExecutionNotStarted), nil
-		}
+	if !ownerOK {
+		return t.rejectPinnedCall(ctx, requestID, operationID, corrState, start, codeUnknownTool, "unknown preloaded tool", "unknown_tool")
 	}
-	lease, ok := assembly.Acquire(binding.ServerID)
-	if !ok {
-		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "backend_busy")
-		return errorResult(codeBackendUnavailable, "the server of this tool is draining", core.ExecutionNotStarted), nil
-	}
-	defer lease.Release()
-	backendCallID := observe.CorrelationID("")
-	backendStart := time.Now()
-	envelope, dispatchErr := assembly.catalog.Dispatch(ctx, core.PublicName(pin.PinnedTool.ServerID, pin.PinnedTool.RawName), assembly.CatalogRevision(), args, lease.Server().Client)
-	if dispatchErr != nil {
-		if t.logger != nil {
-			outcome := "error"
-			if dispatchErr.Code == "deadline_exceeded" {
-				outcome = "timeout"
+
+	coordinator := t.projectionCoordinator()
+	coordinator.barrier.Lock()
+	assembly := t.runtime.current.Load()
+	var projection *toolProjection
+	var projected projectedTool
+	var lease *Lease
+	failureCode, failureMessage, failureReason := "", "", ""
+	switch {
+	case assembly == nil:
+		failureCode, failureMessage, failureReason = codeBackendUnavailable, "no catalog generation is published", "backend_unavailable"
+	case toolName != registeredName:
+		failureCode, failureMessage, failureReason = codeCatalogChanged, "the catalog revision changed", "catalog_changed"
+	case !coordinator.acceptedKnown || coordinator.acceptedGeneration != assembly.Generation():
+		failureCode, failureMessage, failureReason = codeCatalogChanged, "the catalog revision changed", "catalog_changed"
+	default:
+		_, live := coordinator.liveOwners[owner]
+		projection = coordinator.projections[owner]
+		registration := coordinator.union[toolName]
+		if projection != nil {
+			projected, _ = projectedToolAt(projection, toolName)
+		}
+		switch {
+		case !live || projection == nil || projection.owner != owner || projection.runtimeGeneration != assembly.Generation():
+			failureCode, failureMessage, failureReason = codeCatalogChanged, "the catalog revision changed", "catalog_changed"
+		case registration == nil || projected.binding == nil || !hasProjectionReference(registration, owner):
+			failureCode, failureMessage, failureReason = codeUnknownTool, "unknown preloaded tool", "unknown_tool"
+		case registration.target != projected.target || projected.target.serverID != projected.binding.ServerID || projected.target.rawName != projected.binding.RawName:
+			failureCode, failureMessage, failureReason = codeCatalogChanged, "the catalog revision changed", "catalog_changed"
+		case !sameToolDescriptorKey(registration.descriptorKey, registeredDescriptorKey) || !sameToolDescriptorKey(projected.descriptorKey, registeredDescriptorKey):
+			failureCode, failureMessage, failureReason = codeCatalogChanged, "the catalog revision changed", "catalog_changed"
+		case !bytes.Equal(projected.inputSchema, projected.binding.Def.InputSchema):
+			failureCode, failureMessage, failureReason = codeCatalogChanged, "the catalog revision changed", "catalog_changed"
+		default:
+			var acquired bool
+			lease, acquired = assembly.Acquire(projected.binding.ServerID)
+			if !acquired {
+				failureCode, failureMessage, failureReason = codeBackendUnavailable, "the server of this tool is draining", "backend_busy"
 			}
-			t.logger.Log(observe.Entry{
-				Level:     "warn",
-				Event:     "backend_complete",
-				RequestID: requestID,
-				Server:    binding.ServerID,
-				Operation: "call_tool",
-				Duration:  time.Since(backendStart),
-				Outcome:   outcome,
-				Reason:    dispatchErr.Code,
-				Fields: map[string]any{
-					"request_id":      requestID,
-					"operation_id":    operationID,
-					"backend_call_id": backendCallID,
-					"tool":            core.PublicName(binding.ServerID, binding.RawName),
-					"outcome":         outcome,
-					"reason":          dispatchErr.Code,
-					"duration_ms":     time.Since(backendStart).Milliseconds(),
-				},
-			})
-			t.logger.Log(observe.Entry{
-				Level:     "warn",
-				Event:     "mcp_complete",
-				RequestID: requestID,
-				Operation: "call_tool",
-				Duration:  time.Since(start),
-				Outcome:   "error",
-				Reason:    dispatchErr.Code,
-				Fields: map[string]any{
-					"request_id":       requestID,
-					"operation_id":     operationID,
-					"mcp_method":       "tools_call",
-					"mcp_message_kind": "request",
-					"stage":            "backend_dispatch",
-					"outcome":          "error",
-					"reason":           dispatchErr.Code,
-					"duration_ms":      time.Since(start).Milliseconds(),
-				},
-			})
 		}
-		t.contributeOperation(requestID, operationID, upstreamStateFromDispatchCode(dispatchErr.Code))
-		return errorResult(dispatchErr.Code, dispatchMessage(dispatchErr.Code), dispatchErr.ExecutionState), nil
 	}
-	upstream := decodeUpstreamResult(envelope.UpstreamResult)
-	// A healthy transport delivering a tool-reported failure keeps the
-	// classes distinct: upstream succeeded transporting, the tool errored.
-	if upstream.IsError {
-		t.contributeOperation(requestID, operationID, "tool_error")
-	} else {
-		t.contributeOperation(requestID, operationID, "succeeded")
+	coordinator.barrier.Unlock()
+
+	if failureCode != "" {
+		return t.rejectPinnedCall(ctx, requestID, operationID, corrState, start, failureCode, failureMessage, failureReason)
 	}
-	uCount, uText, uStructured := summarizeShape(upstream.Content, upstream.StructuredContent)
-	if t.logger != nil {
-		// The admitted dispatch is terminal evidence of its own boundary:
-		// one record per actual upstream call, joined to the operation and
-		// request scope by the fresh identities minted above. A healthy
-		// transport delivering a tool-reported failure terminates as error.
-		level, outcome := "info", "success"
-		if upstream.IsError {
-			level, outcome = "warn", "error"
+	execution := boundDirectExecution{
+		surface:      t,
+		assembly:     assembly,
+		target:       projected.target,
+		binding:      projected.binding,
+		inputSchema:  projected.inputSchema,
+		lease:        lease,
+		requestID:    requestID,
+		operationID:  operationID,
+		correlation:  corrState,
+		requestStart: start,
+	}
+	return t.callDirectExecution(ctx, execution, args)
+}
+func (t *ToolSurface) callDirectExecution(ctx context.Context, execution boundDirectExecution, args json.RawMessage) (*mcp.CallToolResult, error) {
+	transferred := false
+	defer func() {
+		if !transferred {
+			execution.lease.Release()
 		}
-		reason := "none"
-		if upstream.IsError {
-			reason = "tool_reported_error"
-		}
-		t.logger.Log(observe.Entry{
-			Level:     level,
-			Event:     "backend_complete",
-			RequestID: requestID,
-			Server:    binding.ServerID,
-			Operation: "call_tool",
-			Duration:  time.Since(backendStart),
-			Outcome:   outcome,
-			Reason:    reason,
-			Fields: map[string]any{
-				"request_id":                   requestID,
-				"operation_id":                 operationID,
-				"correlation_state":            corrState,
-				"backend_call_id":              backendCallID,
-				"tool":                         core.PublicName(binding.ServerID, binding.RawName),
-				"outcome":                      outcome,
-				"reason":                       reason,
-				"upstream_content_count":       uCount,
-				"upstream_text_presence":       uText,
-				"upstream_structured_presence": uStructured,
-				"duration_ms":                  time.Since(backendStart).Milliseconds(),
-			},
-		})
-		t.logger.Log(observe.Entry{
-			Level:     level,
-			Event:     "mcp_complete",
-			RequestID: requestID,
-			Operation: "call_tool",
-			Duration:  time.Since(start),
-			Outcome:   outcome,
-			Reason:    reason,
-			Fields: map[string]any{
-				"request_id":        requestID,
-				"operation_id":      operationID,
-				"correlation_state": corrState,
-				"mcp_method":        "tools_call",
-				"mcp_message_kind":  "request",
-				"outcome":           outcome,
-				"reason":            reason,
-				"duration_ms":       time.Since(start).Milliseconds(),
-			},
-		})
+	}()
+	if coordinator := t.projectionCoordinator(); coordinator.testAfterDirectCapture != nil {
+		coordinator.testAfterDirectCapture()
 	}
-	return &mcp.CallToolResult{
-		Content:           upstream.Content,
-		StructuredContent: upstream.StructuredContent,
-		IsError:           upstream.IsError,
-	}, nil
+	transferred = true
+	return execution.call(ctx, args)
+}
+
+func directRequestOwner(req *mcp.CallToolRequest) (projectionOwner, bool) {
+	if req == nil {
+		return projectionOwner{}, false
+	}
+	session := req.GetSession()
+	epoch, valid := requestExposureEpoch(req)
+	if !valid || session == nil || session.ID() == "" {
+		return projectionOwner{}, false
+	}
+	return projectionOwner{kind: projectionSession, sessionID: session.ID(), epoch: epoch}, true
+}
+
+func hasProjectionReference(registration *unionTool, owner projectionOwner) bool {
+	_, ok := registration.references[owner]
+	return ok
+}
+
+func (t *ToolSurface) rejectPinnedCall(ctx context.Context, requestID, operationID, corrState string, start time.Time, code, message, reason string) (*mcp.CallToolResult, error) {
+	t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, reason)
+	return errorResult(code, message, core.ExecutionNotStarted), nil
+}
+func (t *ToolSurface) pinnedToolHandler(name string, registeredDescriptor *mcp.Tool) func(context.Context, *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	registeredDescriptorKey := marshalToolDescriptor(registeredDescriptor)
+	return func(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		return t.callPinnedTool(ctx, req, name, registeredDescriptorKey)
+	}
 }
 
 // searcher returns the searcher of the published generation, rebuilding it
@@ -459,6 +388,13 @@ func (t *ToolSurface) searchTools(ctx context.Context, req *mcp.CallToolRequest)
 	if assembly == nil {
 		return errorResult(codeBackendUnavailable, "no catalog generation is published", core.ExecutionNotStarted), nil
 	}
+	owner, ownerOK := directRequestOwner(req)
+	if !ownerOK {
+		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
+	}
+	if !t.discoveryOwnerValid(owner, assembly) {
+		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
+	}
 	searcher, err := t.searcher(assembly)
 	if err != nil {
 		return failureResult(err), nil
@@ -467,15 +403,60 @@ func (t *ToolSurface) searchTools(ctx context.Context, req *mcp.CallToolRequest)
 	if err != nil {
 		return failureResult(err), nil
 	}
+	if response.CatalogRevision != assembly.CatalogRevision() {
+		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
+	}
+	targets, err := searchDiscoveryTargets(assembly, response)
+	if err != nil {
+		return failureResult(err), nil
+	}
 	payload := searchPayload(response)
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		return errorResult(codeInternalError, "failed to marshal search response", core.ExecutionNotStarted), nil
 	}
+	if err := t.commitDiscovery(owner, assembly, targets); err != nil {
+		if errors.Is(err, errAcceptedGenerationMismatch) {
+			return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
+		}
+		return failureResult(err), nil
+	}
 	return &mcp.CallToolResult{
 		Content:           []mcp.Content{&mcp.TextContent{Text: string(raw)}},
 		StructuredContent: payload,
 	}, nil
+}
+
+func searchDiscoveryTargets(assembly *Assembly, response search.Response) (map[logicalToolTarget]struct{}, error) {
+	if assembly == nil || assembly.catalog == nil {
+		return nil, errors.New("service: search discovery has no accepted catalog")
+	}
+	if response.CatalogRevision != assembly.CatalogRevision() {
+		return nil, errAcceptedGenerationMismatch
+	}
+	pinnedNames := assembly.PinnedNames()
+	targets := make(map[logicalToolTarget]struct{}, len(response.Results))
+	for _, result := range response.Results {
+		if result.ToolName == "" || result.Server == "" || result.UpstreamName == "" {
+			return nil, errors.New("service: search discovery returned an incomplete tool identity")
+		}
+		expectedName := core.PublicName(result.Server, result.UpstreamName)
+		if result.ToolName != expectedName {
+			return nil, errors.New("service: search discovery tool name does not match its accepted target")
+		}
+		binding, publicName, found := resolveBinding(assembly.catalog, result.ToolName)
+		if !found || publicName != expectedName || binding.ServerID != result.Server || binding.RawName != result.UpstreamName {
+			return nil, errors.New("service: search discovery identity does not match the accepted catalog")
+		}
+		if result.CatalogRevision != response.CatalogRevision {
+			return nil, errAcceptedGenerationMismatch
+		}
+		if result.Pinned != pinnedNames[publicName] {
+			return nil, errors.New("service: search discovery pin state does not match the accepted catalog")
+		}
+		targets[logicalToolTarget{serverID: binding.ServerID, rawName: binding.RawName}] = struct{}{}
+	}
+	return targets, nil
 }
 
 // resolveBinding locates a published binding by either the wire tool name or
@@ -511,7 +492,11 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 	if assembly == nil {
 		return errorResult(codeBackendUnavailable, "no catalog generation is published", core.ExecutionNotStarted), nil
 	}
-	if wire.CatalogRevision != assembly.CatalogRevision() {
+	owner, ownerOK := directRequestOwner(req)
+	if !ownerOK {
+		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
+	}
+	if !t.discoveryOwnerValid(owner, assembly) || wire.CatalogRevision != assembly.CatalogRevision() {
 		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
 	}
 	binding, pub, ok := resolveBinding(assembly.catalog, wire.ToolName)
@@ -519,6 +504,7 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 		return errorResult(codeUnknownTool, "no such tool in the published catalog", core.ExecutionNotStarted), nil
 	}
 	health, _ := assembly.Health(binding.ServerID)
+	pinnedNames := assembly.PinnedNames()
 	payload := map[string]any{
 		"server":            binding.ServerID,
 		"catalog_revision":  assembly.CatalogRevision(),
@@ -527,14 +513,14 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 		"tool_name":         wire.ToolName,
 		"upstream_name":     binding.RawName,
 		"description":       binding.Def.Description,
-		"pinned":            assembly.PinnedNames()[pub],
+		"pinned":            pinnedNames[pub],
 		"last_success_at":   timestamp(health.LastSuccessAt),
 		"validation_status": "supported",
 	}
 	if metadata := upstreamMetadataValue(binding.Def.Metadata); metadata != nil {
 		payload["upstream_metadata"] = metadata
 	}
-	if assembly.PinnedNames()[pub] {
+	if pinnedNames[pub] {
 		// Pinned tools answer with the generation's effective view: the
 		// server defaults applied over the source, plus the provenance of
 		// every winning field path. An empty list means no correction.
@@ -543,6 +529,20 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 			payload["metadata_override_fields"] = overrides
 			if effectiveView := upstreamMetadataValue(effective); effectiveView != nil {
 				payload["metadata"] = effectiveView
+			}
+		}
+	} else if assembly.toolMetadata != nil {
+		if metadata, hasMetadata := assembly.toolMetadata[binding.ServerID]; hasMetadata {
+			toolPatch := metadata.tools[binding.RawName]
+			if len(metadata.defaults) > 0 || len(toolPatch) > 0 {
+				view, err := deriveToolMetadata(binding.Def, metadata.defaults, toolPatch)
+				if err == nil {
+					payload["description"] = view.Definition.Description
+					payload["metadata_override_fields"] = view.OverrideFields
+					if effectiveView := upstreamMetadataValue(view.Definition.Metadata); effectiveView != nil {
+						payload["metadata"] = effectiveView
+					}
+				}
 			}
 		}
 	}
@@ -555,6 +555,17 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 	}
 	if schema := binding.Def.OutputSchema; len(schema) > 0 {
 		payload["output_schema"] = rawValue(schema)
+	}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return errorResult(codeInternalError, "failed to marshal describe response", core.ExecutionNotStarted), nil
+	}
+	target := logicalToolTarget{serverID: binding.ServerID, rawName: binding.RawName}
+	if err := t.commitDiscovery(owner, assembly, map[logicalToolTarget]struct{}{target: {}}); err != nil {
+		if errors.Is(err, errAcceptedGenerationMismatch) {
+			return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
+		}
+		return failureResult(err), nil
 	}
 	if t.logger != nil {
 		t.logger.Log(observe.Entry{
@@ -569,10 +580,6 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 				"reason": "none",
 			},
 		})
-	}
-	raw, err := json.Marshal(payload)
-	if err != nil {
-		return errorResult(codeInternalError, "failed to marshal describe response", core.ExecutionNotStarted), nil
 	}
 	return &mcp.CallToolResult{
 		Content:           []mcp.Content{&mcp.TextContent{Text: string(raw)}},

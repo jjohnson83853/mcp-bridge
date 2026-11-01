@@ -409,12 +409,16 @@ func publishObserver(holder *configHolder, checks *localChecks, state *service.R
 // and finite (plan §4.11), so a rejected candidate is reported by its class: a
 // configuration error can quote the document it rejected.
 func operatorLog(logger *observe.Logger) func(string, ...any) {
-	return func(message string, args ...any) {
+	return func(_ string, args ...any) {
 		var diagnostics *config.Diagnostics
+		publicationFailed := false
 		for _, arg := range args {
 			if err, ok := arg.(error); ok {
 				if errors.As(err, &diagnostics) {
 					break
+				}
+				if errors.Is(err, service.ErrPublicationFailed) {
+					publicationFailed = true
 				}
 			}
 		}
@@ -443,14 +447,17 @@ func operatorLog(logger *observe.Logger) func(string, ...any) {
 			}
 			return
 		}
-		logger.Log(observe.Entry{
+		entry := observe.Entry{
 			Level:   "warn",
 			Event:   "reload",
 			Outcome: "failure",
 			Reason:  "invalid_config",
 			Server:  bridgeServerLabel,
-		})
-		_ = message
+		}
+		if publicationFailed {
+			entry.Reason = "internal_error"
+		}
+		logger.Log(entry)
 	}
 }
 
