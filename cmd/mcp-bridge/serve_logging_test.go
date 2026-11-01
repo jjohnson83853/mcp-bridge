@@ -92,12 +92,12 @@ func TestServeLoggingHTTP(t *testing.T) {
 				t.Errorf("http_complete contains %s despite rejection before MCP execution", key)
 			}
 		}
-		assertHTTPLoggingTerminal(t, captured, http.StatusUnauthorized, "POST", "mcp", "client_auth", "client_auth_failed", publicID, true)
+		assertHTTPLoggingTerminal(t, captured, http.StatusUnauthorized, "POST", "mcp", "client_auth", "client_auth_failed", publicID, "le_1k", true)
 	})
 
 	for _, tc := range []struct {
 		name, host, origin, method, path, body, route, stage, reason, session string
-		status                                                   int
+		status                                                                int
 	}{
 		{name: "HostAdmission", host: "host-secret.invalid", method: "POST", path: "/mcp", body: `{}`, route: "mcp", stage: "host_admission", reason: "host_rejected", status: 403},
 		{name: "OriginAdmission", origin: "https://origin-secret.invalid", method: "POST", path: "/mcp", body: `{}`, route: "mcp", stage: "origin_admission", reason: "origin_rejected", status: 403},
@@ -105,7 +105,7 @@ func TestServeLoggingHTTP(t *testing.T) {
 		{name: "UnmatchedUnusualMethod", method: "SECRETVERB", path: "/private-path-secret?token=query-secret", body: `{}`, route: "not_found", stage: "http_route", reason: "route_not_found", status: 404},
 		{name: "Initialize", method: "POST", path: "/mcp", body: `{"jsonrpc":"2.0","id":"rpc-secret","method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"client-secret","version":"1"}}}`, route: "mcp", stage: "none", reason: "none", status: 200},
 		{name: "OversizedBody", method: "POST", path: "/mcp", body: strings.Repeat("body-secret", 104858), route: "mcp", stage: "request_limits", reason: "request_too_large", status: 413},
-		{name: "SessionBinding", method: "POST", path: "/mcp", body: `{}`, route: "mcp", stage: "session_admission", reason: "session_auth_failed", session: "unbound-session-secret", status: 404},
+		{name: "SessionBinding", method: "POST", path: "/mcp", body: `{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}`, route: "mcp", stage: "none", reason: "none", session: "unbound-session-secret", status: 200},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, httpURL, stdout, stop := startHTTPLoggingBridge(t)
@@ -150,12 +150,22 @@ func TestServeLoggingHTTP(t *testing.T) {
 			if got := response.Header.Get("X-Request-ID"); got != wantPublicID {
 				t.Fatalf("public X-Request-ID = %q; want %q", got, wantPublicID)
 			}
-			if len(body) == 0 || len(body) > 1024 {
-				t.Fatalf("public fixture response bytes = %d; want 1..1024", len(body))
+			maxResponseBytes := 1024
+			if tc.name == "SessionBinding" {
+				maxResponseBytes = 4096
+			}
+			if len(body) == 0 || len(body) > maxResponseBytes {
+				t.Fatalf("public fixture response bytes = %d; want 1..%d", len(body), maxResponseBytes)
 			}
 			if tc.name == "Initialize" {
 				if !strings.Contains(string(body), `"result"`) || !strings.Contains(string(body), `"rpc-secret"`) || strings.Contains(string(body), `"error"`) {
 					t.Fatal("initialize did not return the matching successful JSON-RPC result")
+				}
+			}
+			if tc.name == "SessionBinding" {
+				bodyText := string(body)
+				if !strings.Contains(bodyText, `"id":1`) || !strings.Contains(bodyText, `"result"`) || strings.Contains(bodyText, `"error"`) {
+					t.Fatal("rehydrated tools/list did not return a successful response for client request ID 1")
 				}
 			}
 			t.Logf("public prerequisites passed: status=%d challenge preserved; X-Request-ID preserved; response bytes=%d", response.StatusCode, len(body))
@@ -166,11 +176,25 @@ func TestServeLoggingHTTP(t *testing.T) {
 					t.Error("complete stdout contains a client/session-controlled value")
 				}
 			}
+			if tc.name == "SessionBinding" && (!strings.Contains(captured, `"session_state":"rehydrated"`) || !strings.Contains(captured, `"binding_relation":"not_evaluated"`)) {
+				t.Error("session rehydration diagnostics did not report rehydrated/not_evaluated")
+			}
 			method := tc.method
 			if tc.name == "UnmatchedUnusualMethod" {
 				method = "OTHER"
 			}
-			assertHTTPLoggingTerminal(t, captured, tc.status, method, tc.route, tc.stage, tc.reason, publicID, tc.status != 200)
+			expectedBytesBucket := ""
+			switch {
+			case len(body) <= 0:
+				expectedBytesBucket = "empty"
+			case len(body) <= 1024:
+				expectedBytesBucket = "le_1k"
+			case len(body) <= 16384:
+				expectedBytesBucket = "le_16k"
+			default:
+				expectedBytesBucket = "le_256k"
+			}
+			assertHTTPLoggingTerminal(t, captured, tc.status, method, tc.route, tc.stage, tc.reason, publicID, expectedBytesBucket, tc.status != 200)
 		})
 	}
 	t.Run("SessionCapacity", testHTTPLoggingSessionCapacity)
@@ -248,7 +272,7 @@ func startHTTPLoggingBridgeWithWriter(t *testing.T, capacity string, stdout io.W
 	return ctx, "http://" + httpAddress, "http://" + operationsAddress, stop
 }
 
-func assertHTTPLoggingTerminal(t *testing.T, captured string, status int, method, route, stage, reason, publicID string, rejected bool) {
+func assertHTTPLoggingTerminal(t *testing.T, captured string, status int, method, route, stage, reason, publicID, bytesBucket string, rejected bool) {
 	t.Helper()
 	var completions []map[string]any
 	decoder := json.NewDecoder(strings.NewReader(captured))
@@ -293,7 +317,7 @@ func assertHTTPLoggingTerminal(t *testing.T, captured string, status int, method
 		"service": "mcp-bridge", "environment": "unspecified", "version": "unspecified", "level": severity,
 		"correlation_state": "available", "http_status": float64(status),
 		"http_method": method, "route": route, "http_outcome": outcome,
-		"http_bytes_bucket": "le_1k", "timing_scope": "http", "stage": stage, "reason": reason,
+		"http_bytes_bucket": bytesBucket, "timing_scope": "http", "stage": stage, "reason": reason,
 	} {
 		if got := record[key]; got != want {
 			t.Errorf("http_complete %s = %v; want %v", key, got, want)
@@ -431,5 +455,5 @@ func testHTTPLoggingSessionCapacity(t *testing.T) {
 			}
 		}
 	}
-	assertHTTPLoggingTerminal(t, selected.String(), http.StatusServiceUnavailable, "POST", "mcp", "session_admission", "session_capacity", publicID, true)
+	assertHTTPLoggingTerminal(t, selected.String(), http.StatusServiceUnavailable, "POST", "mcp", "session_admission", "session_capacity", publicID, "le_1k", true)
 }

@@ -7,14 +7,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jjohnson83853/mcp-bridge/internal/observe"
-	"github.com/jjohnson83853/mcp-bridge/internal/search"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
+	"github.com/jjohnson83853/mcp-bridge/internal/search"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
@@ -257,8 +258,21 @@ func TestRefresherDisabledIntervalWaitsForTrigger(t *testing.T) {
 func TestInboundUnknownSessionAndDeleteReleaseTracking(t *testing.T) {
 	hash := sha256.Sum256([]byte("token"))
 	issued := "session-1"
-	h := NewInboundHandler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set(sessionIDHeader, issued)
+	h := NewInboundHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Header.Get("X-Mcp-Bridge-Rehydration") {
+		case "initialize":
+			w.Header().Set(sessionIDHeader, issued)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"jsonrpc":"2.0","id":"rehydrate","result":{"protocolVersion":"2025-06-18","capabilities":{},"serverInfo":{"name":"test","version":"1"}}}`))
+			return
+		case "initialized":
+			w.WriteHeader(http.StatusAccepted)
+			return
+		}
+		if r.Method != http.MethodDelete && r.Header.Get(sessionIDHeader) == "" {
+			w.Header().Set(sessionIDHeader, issued)
+		}
 	}), [][32]byte{hash}, InboundOptions{Bound: func() InboundBounds { return InboundBounds{} }, Tokens: func() [][32]byte { return [][32]byte{hash} }})
 	request := func(method, session string) *http.Request {
 		r := httptest.NewRequest(method, "/mcp", nil)
@@ -270,18 +284,23 @@ func TestInboundUnknownSessionAndDeleteReleaseTracking(t *testing.T) {
 	}
 	unknown := httptest.NewRecorder()
 	h.ServeHTTP(unknown, request(http.MethodPost, "not-issued"))
-	if unknown.Code != http.StatusNotFound {
-		t.Fatalf("unknown session status = %d", unknown.Code)
+	if unknown.Code != http.StatusOK || h.liveSessions() != 1 {
+		t.Fatalf("unknown session status=%d tracked=%d, want 200 and one rehydrated session", unknown.Code, h.liveSessions())
 	}
 	created := httptest.NewRecorder()
 	h.ServeHTTP(created, request(http.MethodPost, ""))
-	if h.liveSessions() != 1 {
-		t.Fatalf("tracked sessions after issue = %d", h.liveSessions())
+	if h.liveSessions() != 2 {
+		t.Fatalf("tracked sessions after issue = %d, want 2", h.liveSessions())
 	}
 	closed := httptest.NewRecorder()
 	h.ServeHTTP(closed, request(http.MethodDelete, issued))
+	if h.liveSessions() != 1 {
+		t.Fatalf("tracked sessions after deleting issued session = %d, want 1", h.liveSessions())
+	}
+	closed = httptest.NewRecorder()
+	h.ServeHTTP(closed, request(http.MethodDelete, "not-issued"))
 	if h.liveSessions() != 0 {
-		t.Fatalf("tracked sessions after DELETE = %d", h.liveSessions())
+		t.Fatalf("tracked sessions after deleting rehydrated session = %d, want 0", h.liveSessions())
 	}
 	missingReq := httptest.NewRequest(http.MethodGet, "/missing", nil)
 	missing := httptest.NewRecorder()

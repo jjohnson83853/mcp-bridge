@@ -22,10 +22,10 @@ import (
 // The writer observes actual logger attempts, not guaranteed delivery. Notification
 // follows capture, so metrics checks never use response EOF as a logging barrier.
 type compatibilityLogWriter struct {
-	mu sync.Mutex
-	buf bytes.Buffer
-	terminals int
-	updates chan struct{}
+	mu           sync.Mutex
+	buf          bytes.Buffer
+	terminals    int
+	updates      chan struct{}
 	failTerminal bool
 }
 
@@ -200,7 +200,7 @@ func testCompatibilityChunkedRequestLimit(t *testing.T) {
 	}
 	stop()
 	compatibilityNoSecrets(t, writer.String(), publicID, "chunked-body-secret", strings.Repeat("x", 64))
-	assertHTTPLoggingTerminal(t, writer.String(), response.StatusCode, "POST", "mcp", "request_limits", "request_too_large", publicID, true)
+	assertHTTPLoggingTerminal(t, writer.String(), response.StatusCode, "POST", "mcp", "request_limits", "request_too_large", publicID, "le_1k", true)
 }
 
 func compatibilityMetrics(t *testing.T, endpoint string) map[string]*dto.MetricFamily {
@@ -296,15 +296,15 @@ func testCompatibilityMetrics(t *testing.T) {
 		}
 	}
 	for name, contract := range map[string]struct {
-		kind dto.MetricType
+		kind   dto.MetricType
 		labels string
 	}{
-		"bridge_requests_total": {dto.MetricType_COUNTER, "operation,outcome,server"},
-		"bridge_catalog_tools": {dto.MetricType_GAUGE, "server"},
-		"bridge_catalog_prompts": {dto.MetricType_GAUGE, ""},
-		"bridge_catalog_age_seconds": {dto.MetricType_GAUGE, "server"},
+		"bridge_requests_total":        {dto.MetricType_COUNTER, "operation,outcome,server"},
+		"bridge_catalog_tools":         {dto.MetricType_GAUGE, "server"},
+		"bridge_catalog_prompts":       {dto.MetricType_GAUGE, ""},
+		"bridge_catalog_age_seconds":   {dto.MetricType_GAUGE, "server"},
 		"bridge_catalog_refresh_total": {dto.MetricType_COUNTER, "outcome,reason,server"},
-		"bridge_readiness": {dto.MetricType_GAUGE, "server"},
+		"bridge_readiness":             {dto.MetricType_GAUGE, "server"},
 	} {
 		family := families[name]
 		if family == nil || family.GetType() != contract.kind || len(family.Metric) == 0 {

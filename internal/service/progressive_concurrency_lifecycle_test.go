@@ -264,8 +264,12 @@ func TestProgressiveMetadataRetirementRaces(t *testing.T) {
 
 		subsequentResponse := harness.send(t, http.MethodPost, sessionID,
 			`{"jsonrpc":"2.0","id":3,"method":"tools/list","params":{}}`, nil)
-		if status := subsequentResponse.Response.StatusCode; status != http.StatusNotFound {
-			t.Fatalf("post-DELETE tools/list status = %d, want 404", status)
+		if status := subsequentResponse.Response.StatusCode; status != http.StatusOK {
+			t.Fatalf("post-DELETE tools/list status = %d, want 200 after rehydration", status)
+		}
+		if len(subsequentResponse.body) == 0 || !bytes.Contains(subsequentResponse.body, []byte(`"result"`)) ||
+			bytes.Contains(subsequentResponse.body, []byte(`"error"`)) {
+			t.Fatalf("post-DELETE tools/list did not return a successful result: %s", subsequentResponse.body)
 		}
 	})
 
@@ -365,8 +369,23 @@ func TestProgressiveMetadataRetirementRaces(t *testing.T) {
 
 		subsequentResponse := harness.send(t, http.MethodPost, sessionID,
 			directCallBody(projected.descriptor.Name, `{}`), nil)
-		if status := subsequentResponse.Response.StatusCode; status != http.StatusNotFound {
-			t.Fatalf("subsequent direct call status = %d, want 404", status)
+		if status := subsequentResponse.Response.StatusCode; status < http.StatusOK || status >= http.StatusMultipleChoices {
+			t.Fatalf("subsequent direct call status = %d, want 2xx after rehydration", status)
+		}
+		if len(subsequentResponse.body) == 0 {
+			t.Fatal("rehydrated direct call returned no MCP response")
+		}
+		secondResult := decodeDirectToolResponse(t, subsequentResponse.body)
+		if secondResult.Result.IsError || len(secondResult.Result.Content) == 0 || secondResult.Result.Content[0].Text != "lease-result" {
+			t.Fatalf("rehydrated direct call content = %#v, want lease-result", secondResult.Result.Content)
+		}
+		select {
+		case secondCall := <-upstream.calls:
+			if secondCall.rawName != projected.binding.RawName {
+				t.Fatalf("second upstream tool = %q, want %q", secondCall.rawName, projected.binding.RawName)
+			}
+		default:
+			t.Fatal("rehydrated direct call did not produce the second upstream call")
 		}
 	})
 }
@@ -393,8 +412,8 @@ func TestProgressiveMetadataIdleExpiryPruning(t *testing.T) {
 	*harness.clock = harness.base.Add(2 * time.Second)
 	response := harness.send(t, http.MethodPost, sessionID,
 		`{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}`, nil)
-	if status := response.Response.StatusCode; status != http.StatusNotFound {
-		t.Fatalf("expired-session tools/list status = %d, want 404", status)
+	if status := response.Response.StatusCode; status != http.StatusOK {
+		t.Fatalf("expired-session rehydration status = %d, want 200 (body=%s)", status, response.body)
 	}
 	assertProgressiveOwnerPruned(t, harness.surface, owner)
 	if err := harness.surface.publishOwnerProjection(owner, harness.assembly); err == nil {

@@ -177,7 +177,7 @@
         "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/requirements-approval-r7.md",
         "sha256": "3a03ce2b0864aa60a668d07dfc89ec080d84e053fb2e76e10ae0e98259e19ada"
       },
-      "locator": "Current conversation: owner replied “approved” to the immediately preceding requirements-checkpoint approval request; receipt records requirements only.",
+      "locator": "Current conversation: owner replied \u201capproved\u201d to the immediately preceding requirements-checkpoint approval request; receipt records requirements only.",
       "recordedAt": "2026-10-29T01:14:20.570Z"
     },
     {
@@ -187,7 +187,7 @@
         "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/design-approval-r7.md",
         "sha256": "1e300bd9f6e2e93fb70fcaf491829db75dc6c6db26d857c368e0f8eb52c53f0c"
       },
-      "locator": "Current conversation: owner selected “Approve design checkpoint”; scoped to task-ledger preparation/review, not implementation.",
+      "locator": "Current conversation: owner selected \u201cApprove design checkpoint\u201d; scoped to task-ledger preparation/review, not implementation.",
       "recordedAt": "2026-10-29T01:21:17.991Z"
     },
     {
@@ -207,7 +207,7 @@
         "path": "/home/opencode/projects/default/mcp-bridge/.scratch/progressive-metadata-reveal/task-approval-r7-ledger-1.md",
         "sha256": "5cc82cee88f34c75d69a1398d54291c9c3fcb557a66c450c0a490be5d8d5c6ba"
       },
-      "locator": "Current conversation: owner replied “approved” to the execution-task checkpoint request; see task-approval-r7-ledger-1.md.",
+      "locator": "Current conversation: owner replied \u201capproved\u201d to the execution-task checkpoint request; see task-approval-r7-ledger-1.md.",
       "recordedAt": "2026-10-29T02:02:21Z"
     },
     {
@@ -249,9 +249,35 @@
       },
       "locator": "Current conversation: owner explicitly authorized adding code-reviewer to PR-T7's role grant.",
       "recordedAt": "2026-11-01T01:00:00Z"
+    },
+    {
+      "id": "owner-session-rehydration-2026-11-01",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/session-rehydration-decisions.md",
+        "sha256": "8b5768fd89d4c4d88b3176dec3a26d2c678949f4100f02273fc792e3b8257a69"
+      },
+      "locator": "owner chat directive 2026-11-01: SessionRehydration defect in mcp-bridge session admission; auto-vivify authenticated absent Mcp-Session-Id; DELETE idempotent; cross-principal rejected; session_state rehydrated; build+push+redeploy",
+      "recordedAt": "2026-11-01T18:45:00.000Z"
     }
   ],
-  "decisions": [],
+  "decisions": [
+    {
+      "id": "owner-amendment:PR-T3-session-rehydration",
+      "inputDigest": "3407006c5ac24799b0417fd892b80953c774482ae169000ebb70c9dec4f0b2c2",
+      "kind": "owner",
+      "status": "resolved",
+      "question": "Approve one-use re-dispatch of PR-T3 with extended effect paths for the owner-directed session rehydration defect fix?",
+      "answer": "Owner explicitly directed the session rehydration fix; PR-T3 is the approved task that owns the session admission code.",
+      "rationale": "explicit-owner-amendment; preserves initial feature authority/reviews/unchanged acceptance",
+      "sourceIds": [
+        "owner-session-rehydration-2026-11-01"
+      ],
+      "affects": [
+        "PR-T3"
+      ]
+    }
+  ],
   "envelope": {
     "id": "approved-progressive-metadata-ledger",
     "root": "/home/opencode/projects/default/mcp-bridge",
@@ -276,7 +302,8 @@
       "README.md",
       "CHANGELOG.md",
       ".scratch/progressive-metadata-reveal",
-      "coverage.out"
+      "coverage.out",
+      "internal/observe"
     ],
     "allowedEffects": [
       "read",
@@ -382,7 +409,9 @@
         "kind": "write",
         "paths": [
           "internal/service",
-          "cmd/mcp-bridge"
+          "cmd/mcp-bridge",
+          "internal/observe",
+          "CHANGELOG.md"
         ]
       },
       "acceptanceIds": [
@@ -1130,8 +1159,8 @@
       "observedAt": "2026-11-01T00:15:00Z",
       "producer": "coordinator; independent code-reviewer",
       "details": {
-        "rubric": "PR-T6 scoped inspection against spec.md:326-336, §4.7, PR-AC8, PR-AC9, and PR-AC12; no blocking review findings.",
-        "observedOutcome": "code-reviewer COMMENT with 0 CRITICAL, 0 HIGH, 4 MEDIUM, 2 LOW; §4.7 cursor format, constant-time HMAC-SHA256, and -32602 invalid cursor mapping confirmed; nonblocking medium findings assigned to PR-T7."
+        "rubric": "PR-T6 scoped inspection against spec.md:326-336, \u00a74.7, PR-AC8, PR-AC9, and PR-AC12; no blocking review findings.",
+        "observedOutcome": "code-reviewer COMMENT with 0 CRITICAL, 0 HIGH, 4 MEDIUM, 2 LOW; \u00a74.7 cursor format, constant-time HMAC-SHA256, and -32602 invalid cursor mapping confirmed; nonblocking medium findings assigned to PR-T7."
       }
     },
     {
@@ -1188,7 +1217,7 @@
       "observedAt": "2026-11-01T09:00:00Z",
       "producer": "coordinator; independent code-reviewer (ReviewPRT7Final)",
       "details": {
-        "rubric": "PR-T7 scoped inspection against §6.2 matrix, Option 1 lifecycle invariants, race-freedom, and PR-AC11/12.",
+        "rubric": "PR-T7 scoped inspection against \u00a76.2 matrix, Option 1 lifecycle invariants, race-freedom, and PR-AC11/12.",
         "observedOutcome": "code-reviewer COMMENT with 0 CRITICAL, 0 HIGH, 2 MEDIUM, 0 LOW; Option 1 transport termination on DELETE verified; post-stamp error code -32600 confirmed; lazy retirement verified with mutex clock; no auth/policy bypass."
       }
     },
@@ -1213,7 +1242,7 @@
       "observedAt": "2026-11-01T16:53:21.245Z",
       "producer": "coordinator",
       "details": {
-        "rubric": "Complete PR-R11 and spec.md §6.2 PR-T8 operator documentation and changelog checklist verification.",
+        "rubric": "Complete PR-R11 and spec.md \u00a76.2 PR-T8 operator documentation and changelog checklist verification.",
         "observedOutcome": "README.md updated with Progressive metadata reveal and session projections section, unpinned metadata parity; CHANGELOG.md updated under Added and Changed; all 10 checklist items verified pass."
       }
     },

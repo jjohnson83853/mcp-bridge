@@ -24,7 +24,7 @@ import (
 
 // This file owns the ticket-03 session outcome diagnostics regressions: the
 // composed HTTP-to-typed-log slice distinguishing legal fresh initialization,
-// missing session headers, absent session entries and existing-session bearer
+// missing session headers, rehydrated entries and existing-session bearer
 // binding mismatches, with a privacy-safe independent diagnostic reference.
 
 // seqSessionRefs returns an injectable deterministic session-reference
@@ -149,16 +149,84 @@ func sessionPost(t *testing.T, handler http.Handler, body, token, sessionID stri
 const sessionDiagInitialize = `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"wire-client","version":"1"}}}`
 const sessionDiagControl = `{"jsonrpc":"2.0","id":2,"method":"notifications/initialized"}`
 
-func TestSessionAbsentDistinguishedFromMismatch(t *testing.T) {
+func TestUnsupportedMethodDoesNotRehydrateUnknownSession(t *testing.T) {
+	for _, method := range []string{http.MethodPut, http.MethodOptions} {
+		t.Run(method, func(t *testing.T) {
+			inbound := NewInboundHandler(
+				NewStreamableHandler(NewMCPServer()),
+				tokenHashForAll([]string{"token-a"}),
+			)
+			request := httptest.NewRequest(method, "/mcp", nil)
+			request.Header.Set("Authorization", "Bearer token-a")
+			request.Header.Set(sessionIDHeader, "unknown-session")
+			response := httptest.NewRecorder()
+
+			inbound.ServeHTTP(response, request)
+
+			if response.Code != http.StatusMethodNotAllowed {
+				t.Fatalf("status=%d, want 405", response.Code)
+			}
+			if len(inbound.sessions) != 0 || len(inbound.sdkSessions) != 0 {
+				t.Fatalf("unsupported method allocated bridge state: sessions=%d SDK sessions=%d",
+					len(inbound.sessions), len(inbound.sdkSessions))
+			}
+		})
+	}
+}
+
+func TestSyntheticBootstrapFailureRollsBackSession(t *testing.T) {
+	const sdkID = "orphan-sdk-session"
+	deletes := 0
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			if r.Header.Get(sessionIDHeader) == "" {
+				w.Header().Set(sessionIDHeader, sdkID)
+				w.WriteHeader(http.StatusOK)
+				_, _ = io.WriteString(w, `{"jsonrpc":"2.0","id":"rehydrate","error":{"code":-1,"message":"initialize failed"}}`)
+				return
+			}
+		case http.MethodDelete:
+			if r.Header.Get(sessionIDHeader) == sdkID {
+				deletes++
+			}
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	})
+	inbound := NewInboundHandler(next, tokenHashForAll([]string{"token-a"}))
+	request := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(
+		`{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}`,
+	))
+	request.Header.Set("Authorization", "Bearer token-a")
+	request.Header.Set(sessionIDHeader, "pre-restart-session")
+	response := httptest.NewRecorder()
+
+	inbound.ServeHTTP(response, request)
+
+	if response.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status=%d, want 503", response.Code)
+	}
+	if len(inbound.sessions) != 0 || len(inbound.sdkSessions) != 0 {
+		t.Fatalf("failed bootstrap retained bridge state: sessions=%d SDK sessions=%d",
+			len(inbound.sessions), len(inbound.sdkSessions))
+	}
+	if deletes != 1 {
+		t.Fatalf("SDK cleanup DELETE count=%d, want 1", deletes)
+	}
+}
+
+func TestSessionRehydrationDistinguishedFromMismatch(t *testing.T) {
 	newRef, refCalls := seqSessionRefs()
 	var acceptAll http.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
 	})
 	fixture := newSessionDiagFixture(t, &sessionIssuingHandler{next: acceptAll}, []string{"token-a", "token-b"}, newRef, nil)
 
 	// Legal initialization without a session: created evidence.
 	first := sessionPost(t, fixture.handler, sessionDiagInitialize, "token-a", "")
-	if first.Code != http.StatusNoContent {
+	if first.Code != http.StatusOK {
 		t.Fatalf("initialize status=%d", first.Code)
 	}
 	sessionID := first.Header().Get(sessionIDHeader)
@@ -166,19 +234,20 @@ func TestSessionAbsentDistinguishedFromMismatch(t *testing.T) {
 		t.Fatal("initialize omitted session ID")
 	}
 
-	// Valid credentials plus an unknown entry: session_absent.
-	absent := sessionPost(t, fixture.handler, sessionDiagControl, "token-a", "unknown-entry-id")
-	if absent.Code != http.StatusNotFound {
-		t.Fatalf("unknown entry status=%d, want 404", absent.Code)
+	// Valid credentials plus an unknown entry: it is rehydrated and bound to
+	// the authenticated bearer.
+	rehydrated := sessionPost(t, fixture.handler, sessionDiagControl, "token-a", "unknown-entry-id")
+	if rehydrated.Code != http.StatusOK {
+		t.Fatalf("unknown entry status=%d, want 200", rehydrated.Code)
 	}
-	if challenge := absent.Header().Get("WWW-Authenticate"); challenge != "" {
-		t.Fatalf("unknown entry challenge=%q, want no challenge", challenge)
+	if challenge := rehydrated.Header().Get("WWW-Authenticate"); challenge != "" {
+		t.Fatalf("rehydrated challenge=%q, want no challenge", challenge)
 	}
-	if absent.Header().Get(sessionIDHeader) != "" {
-		t.Fatal("unknown entry response leaked a session reference header")
+	if rehydrated.Header().Get(sessionIDHeader) != "" {
+		t.Fatal("rehydrated response leaked a session reference header")
 	}
-	if body := absent.Body.String(); body != "session not found\n" {
-		t.Fatalf("unknown entry body=%q, want %q", body, "session not found\n")
+	if rehydrated.Body.Len() != 0 {
+		t.Fatalf("rehydrated notification body=%q, want empty", rehydrated.Body.String())
 	}
 
 	// Valid credentials plus an existing entry bound to a different bearer:
@@ -198,7 +267,7 @@ func TestSessionAbsentDistinguishedFromMismatch(t *testing.T) {
 	if len(records) != 3 {
 		t.Fatalf("records=%d, want 3", len(records))
 	}
-	created, absentRec, mismatchRec := records[0], records[1], records[2]
+	created, rehydratedRec, mismatchRec := records[0], records[1], records[2]
 
 	if recString(created, "failure_reason") != "none" || recString(created, "session_state") != "created" {
 		t.Fatalf("created record reason=%q state=%q", recString(created, "failure_reason"), recString(created, "session_state"))
@@ -207,16 +276,16 @@ func TestSessionAbsentDistinguishedFromMismatch(t *testing.T) {
 		t.Fatalf("created ref state=%q ref=%q", recString(created, "session_ref_state"), recString(created, "session_ref"))
 	}
 	createdRef := recString(created, "session_ref")
+	rehydratedRef := recString(rehydratedRec, "session_ref")
 
-	if recString(absentRec, "failure_stage") != "session" || recString(absentRec, "failure_reason") != "session_absent" {
-		t.Fatalf("absent record failure=%s/%s", recString(absentRec, "failure_stage"), recString(absentRec, "failure_reason"))
+	if recString(rehydratedRec, "failure_stage") != "none" || recString(rehydratedRec, "failure_reason") != "none" {
+		t.Fatalf("rehydrated record failure=%s/%s", recString(rehydratedRec, "failure_stage"), recString(rehydratedRec, "failure_reason"))
 	}
-	if recString(absentRec, "session_state") != "absent" || recString(absentRec, "binding_relation") != "not_evaluated" {
-		t.Fatalf("absent record state=%q binding=%q", recString(absentRec, "session_state"), recString(absentRec, "binding_relation"))
+	if recString(rehydratedRec, "session_state") != "rehydrated" || recString(rehydratedRec, "binding_relation") != "not_evaluated" {
+		t.Fatalf("rehydrated record state=%q binding=%q", recString(rehydratedRec, "session_state"), recString(rehydratedRec, "binding_relation"))
 	}
-	if recString(absentRec, "session_ref_state") != "not_applicable" || recHas(absentRec, "session_ref") {
-		t.Fatalf("absent record must not carry a live session reference: state=%q ref=%q",
-			recString(absentRec, "session_ref_state"), recString(absentRec, "session_ref"))
+	if recString(rehydratedRec, "session_ref_state") != "available" || !validDiagnosticRef(rehydratedRef) || rehydratedRef == createdRef {
+		t.Fatalf("rehydrated ref state=%q ref=%q", recString(rehydratedRec, "session_ref_state"), rehydratedRef)
 	}
 
 	if recString(mismatchRec, "failure_stage") != "session" || recString(mismatchRec, "failure_reason") != "session_fingerprint_mismatch" {
@@ -230,20 +299,20 @@ func TestSessionAbsentDistinguishedFromMismatch(t *testing.T) {
 	}
 
 	// The live reference never leaves the server record: no response carries it.
-	for name, response := range map[string]*httptest.ResponseRecorder{"mismatch": mismatch, "absent": absent, "created": first} {
+	for name, response := range map[string]*httptest.ResponseRecorder{"mismatch": mismatch, "rehydrated": rehydrated, "created": first} {
 		for key, values := range response.Header() {
 			for _, value := range values {
-				if strings.Contains(value, createdRef) {
+				if strings.Contains(value, createdRef) || strings.Contains(value, rehydratedRef) {
 					t.Fatalf("%s response header %q leaked session reference", name, key)
 				}
 			}
 		}
-		if strings.Contains(response.Body.String(), createdRef) {
+		if strings.Contains(response.Body.String(), createdRef) || strings.Contains(response.Body.String(), rehydratedRef) {
 			t.Fatalf("%s response body leaked session reference", name)
 		}
 	}
-	if *refCalls != 1 {
-		t.Fatalf("session reference drawn %d times, want exactly once per created session", *refCalls)
+	if *refCalls != 2 {
+		t.Fatalf("session reference drawn %d times, want once for creation and once for rehydration", *refCalls)
 	}
 }
 
@@ -304,10 +373,10 @@ func TestSessionRefLifecycleStabilityAndDeletion(t *testing.T) {
 	}
 }
 
-func TestControlledClockReapingReportsSessionAbsent(t *testing.T) {
+func TestControlledClockReapingRehydratesSession(t *testing.T) {
 	newRef, _ := seqSessionRefs()
 	acceptAll := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
 	})
 	base := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 	clock := base
@@ -320,8 +389,8 @@ func TestControlledClockReapingReportsSessionAbsent(t *testing.T) {
 	sessionID := first.Header().Get(sessionIDHeader)
 	clock = base.Add(2 * time.Minute)
 	reaped := sessionPost(t, fixture.handler, sessionDiagControl, "token-a", sessionID)
-	if reaped.Code != http.StatusNotFound {
-		t.Fatalf("reaped session status=%d, want 404", reaped.Code)
+	if reaped.Code != http.StatusOK {
+		t.Fatalf("reaped session status=%d, want 200 after rehydration", reaped.Code)
 	}
 	if challenge := reaped.Header().Get("WWW-Authenticate"); challenge != "" {
 		t.Fatalf("reaped challenge=%q, want no challenge", challenge)
@@ -329,12 +398,14 @@ func TestControlledClockReapingReportsSessionAbsent(t *testing.T) {
 
 	records := typedRecords(t, fixture.sink)
 	reapRecord := records[len(records)-1]
-	if recString(reapRecord, "failure_stage") != "session" || recString(reapRecord, "failure_reason") != "session_absent" {
+	if recString(reapRecord, "failure_stage") != "none" || recString(reapRecord, "failure_reason") != "none" {
 		t.Fatalf("reaped record failure=%s/%s", recString(reapRecord, "failure_stage"), recString(reapRecord, "failure_reason"))
 	}
-	if recString(reapRecord, "session_state") != "absent" || recHas(reapRecord, "session_ref") {
-		t.Fatalf("reaped record state=%q ref=%q, want absent without reference",
-			recString(reapRecord, "session_state"), recString(reapRecord, "session_ref"))
+	if recString(reapRecord, "session_state") != "rehydrated" || recString(reapRecord, "binding_relation") != "not_evaluated" {
+		t.Fatalf("reaped record state=%q binding=%q", recString(reapRecord, "session_state"), recString(reapRecord, "binding_relation"))
+	}
+	if recString(reapRecord, "session_ref_state") != "available" || !validDiagnosticRef(recString(reapRecord, "session_ref")) {
+		t.Fatalf("reaped session reference state=%q ref=%q", recString(reapRecord, "session_ref_state"), recString(reapRecord, "session_ref"))
 	}
 }
 

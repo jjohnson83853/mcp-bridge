@@ -24,6 +24,7 @@ type directExecutionCall struct {
 type directExecutionUpstream struct {
 	calls         chan directExecutionCall
 	started       chan struct{}
+	startedOnce   sync.Once
 	release       chan struct{}
 	waitForCancel bool
 	panicOnCall   bool
@@ -34,7 +35,7 @@ type directExecutionUpstream struct {
 func (u *directExecutionUpstream) CallTool(ctx context.Context, _, serverID, rawName string, args json.RawMessage) (json.RawMessage, *core.UpstreamOutcome) {
 	u.calls <- directExecutionCall{serverID: serverID, rawName: rawName, args: append(json.RawMessage(nil), args...)}
 	if u.started != nil {
-		close(u.started)
+		u.startedOnce.Do(func() { close(u.started) })
 	}
 	if u.panicOnCall {
 		panic("direct upstream panic")

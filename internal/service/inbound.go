@@ -1,6 +1,8 @@
 package service
 
 import (
+	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -9,6 +11,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strconv"
 	"strings"
 	"sync"
@@ -28,11 +31,13 @@ type InboundHandler struct {
 	tokenHashes [][32]byte
 	options     InboundOptions
 
-	mu        sync.Mutex
-	sessions  map[string]sessionRecord
-	lastSweep time.Time
-	logger    *observe.Logger
-	metrics   *observe.Metrics
+	mu          sync.Mutex
+	sessions    map[string]sessionRecord
+	sdkSessions map[string]string
+	sdkFlights  map[string]chan struct{}
+	lastSweep   time.Time
+	logger      *observe.Logger
+	metrics     *observe.Metrics
 
 	// generator produces the server-owned correlation ID. Default is
 	// observe.CorrelationID(""), but tests may replace it per-instance
@@ -116,6 +121,8 @@ func NewInboundHandler(next http.Handler, tokenHashes [][32]byte, options ...Inb
 		tokenHashes: append([][32]byte(nil), tokenHashes...),
 		options:     opts,
 		sessions:    make(map[string]sessionRecord),
+		sdkSessions: make(map[string]string),
+		sdkFlights:  make(map[string]chan struct{}),
 		logger:      opts.Logger,
 		metrics:     opts.Metrics,
 		generator: func() string {
@@ -126,6 +133,122 @@ func NewInboundHandler(next http.Handler, tokenHashes [][32]byte, options ...Inb
 		opts.ToolSurface.registerReceivingMiddleware()
 	}
 	return handler
+}
+
+// ensureSDKSession creates a fresh SDK-owned stateful session for an admitted
+// client session ID that the SDK lost. It runs without h.mu; callers publish
+// its result under h.mu only while their reservation remains current.
+func (h *InboundHandler) ensureSDKSession(ctx context.Context, origin *http.Request) (string, error) {
+	initialize := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":"rehydrate","method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"mcp-bridge-rehydrator","version":"1"}}}`)).WithContext(ctx)
+	initialize.Header.Set("X-Mcp-Bridge-Rehydration", "initialize")
+	initialize.Host = origin.Host
+	initialize.Header.Set("Content-Type", "application/json")
+	initialize.Header.Set("Accept", "application/json, text/event-stream")
+	initialize.Header.Set("Mcp-Protocol-Version", "2025-06-18")
+	if authorization := origin.Header.Get("Authorization"); authorization != "" {
+		initialize.Header.Set("Authorization", authorization)
+	}
+	parseResponse := func(body []byte) map[string]json.RawMessage {
+		var response map[string]json.RawMessage
+		if err := json.Unmarshal(body, &response); err == nil && response != nil {
+			return response
+		}
+		for len(body) > 0 {
+			line := body
+			if newline := bytes.IndexByte(body, '\n'); newline >= 0 {
+				line, body = body[:newline], body[newline+1:]
+			} else {
+				body = nil
+			}
+			line = bytes.TrimSpace(line)
+			if bytes.HasPrefix(line, []byte("data:")) {
+				data := bytes.TrimSpace(line[len("data:"):])
+				if err := json.Unmarshal(data, &response); err == nil && response != nil {
+					return response
+				}
+			}
+		}
+		return nil
+	}
+	validInitializeResponse := func(body []byte) bool {
+		if len(bytes.TrimSpace(body)) == 0 {
+			return false
+		}
+		response := parseResponse(body)
+		if response == nil {
+			return false
+		}
+		var jsonrpc string
+		if err := json.Unmarshal(response["jsonrpc"], &jsonrpc); err != nil || jsonrpc != "2.0" {
+			return false
+		}
+		if _, hasResult := response["result"]; !hasResult {
+			return false
+		}
+		if _, hasError := response["error"]; hasError {
+			return false
+		}
+		var result map[string]json.RawMessage
+		if err := json.Unmarshal(response["result"], &result); err != nil || result == nil {
+			return false
+		}
+		protocolVersion, hasProtocolVersion := result["protocolVersion"]
+		if !hasProtocolVersion {
+			return false
+		}
+		var version string
+		if err := json.Unmarshal(protocolVersion, &version); err != nil || len(strings.TrimSpace(version)) == 0 {
+			return false
+		}
+		return true
+	}
+	hasJSONRPCError := func(body []byte) bool {
+		response := parseResponse(body)
+		if response == nil {
+			return false
+		}
+		_, hasError := response["error"]
+		return hasError
+	}
+	deleteSession := func(sdkID string) {
+		if sdkID == "" {
+			return
+		}
+		remove := httptest.NewRequest(http.MethodDelete, "/mcp", nil).WithContext(ctx)
+		remove.Host = origin.Host
+		remove.Header.Set(sessionIDHeader, sdkID)
+		remove.Header.Set("Mcp-Protocol-Version", "2025-06-18")
+		if authorization := origin.Header.Get("Authorization"); authorization != "" {
+			remove.Header.Set("Authorization", authorization)
+		}
+		h.next.ServeHTTP(httptest.NewRecorder(), remove)
+	}
+
+	response := httptest.NewRecorder()
+	h.next.ServeHTTP(response, initialize)
+	sdkID := response.Header().Get(sessionIDHeader)
+	if response.Code != http.StatusOK || sdkID == "" || !validInitializeResponse(response.Body.Bytes()) {
+		deleteSession(sdkID)
+		return "", errors.New("SDK session initialization failed")
+	}
+	initialized := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(`{"jsonrpc":"2.0","method":"notifications/initialized"}`)).WithContext(ctx)
+	initialized.Header.Set("X-Mcp-Bridge-Rehydration", "initialized")
+	initialized.Host = origin.Host
+	initialized.Header.Set("Content-Type", "application/json")
+	initialized.Header.Set("Accept", "application/json, text/event-stream")
+	initialized.Header.Set("Mcp-Protocol-Version", "2025-06-18")
+	initialized.Header.Set(sessionIDHeader, sdkID)
+	if authorization := origin.Header.Get("Authorization"); authorization != "" {
+		initialized.Header.Set("Authorization", authorization)
+	}
+	initializedResponse := httptest.NewRecorder()
+	h.next.ServeHTTP(initializedResponse, initialized)
+	if initializedResponse.Code < http.StatusOK || initializedResponse.Code >= http.StatusMultipleChoices ||
+		hasJSONRPCError(initializedResponse.Body.Bytes()) {
+		deleteSession(sdkID)
+		return "", errors.New("SDK session initialization failed")
+	}
+	return sdkID, nil
 }
 
 func (h *InboundHandler) bounds() InboundBounds {
@@ -324,64 +447,235 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionID := r.Header.Get(sessionIDHeader)
+	sdkSessionID := sessionID
 	rClone := r.Clone(r.Context())
 	removeHeaderCaseInsensitive(rClone.Header, exposureEpochHeaderName)
+	var requestMethod string
+	if sessionID != "" && r.Method == http.MethodPost && rClone.Body != nil {
+		originalBody := rClone.Body
+		body, err := io.ReadAll(originalBody)
+		if err != nil {
+			var maxBytes *http.MaxBytesError
+			if errors.As(err, &maxBytes) {
+				rejection = legacyRejection{"request_limits", "request_too_large"}
+				observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+					FailureStage: "body_limit", FailureReason: "request_too_large",
+				})
+				http.Error(writer, "request too large", http.StatusRequestEntityTooLarge)
+			} else {
+				http.Error(writer, "bad request", http.StatusBadRequest)
+			}
+			return
+		}
+		rClone.Body = requestBody{Reader: bytes.NewReader(body), Closer: originalBody}
+		var request struct {
+			Method string `json:"method"`
+		}
+		_ = json.Unmarshal(body, &request)
+		requestMethod = request.Method
+	}
+	initializeRehydration := r.Method == http.MethodPost && requestMethod == "initialize"
+	var rehydrated bool
+	var setupFlight chan struct{}
+	var setupRef string
 	if sessionID != "" {
+		forwardUnknownMethod := false
+		var refAvailable bool
+		deleteUnknown := false
+		atCapacity := false
+		var setupFailed bool
+		var needsBootstrap bool
+		var waitFlight chan struct{}
 		h.mu.Lock()
 		now := h.now()
 		retiredOwners := h.reapExpiredLocked(now)
 		bound, exists := h.sessions[sessionID]
 		bindingMatch := exists && subtle.ConstantTimeCompare(bound.token[:], tokenHash[:]) == 1
-		if bindingMatch {
-			// Idle is inactivity, so an accepted request refreshes the record
-			// without replacing its diagnostic reference or incarnation.
+		if !exists {
+			switch {
+			case r.Method == http.MethodDelete:
+				delete(h.sessions, sessionID)
+				delete(h.sdkSessions, sessionID)
+				delete(h.sdkFlights, sessionID)
+				deleteUnknown = true
+			case r.Method != http.MethodPost && r.Method != http.MethodGet:
+				forwardUnknownMethod = true
+				rClone.Header.Del(sessionIDHeader)
+			case bounds.MaxSessions > 0 && len(h.sessions) >= bounds.MaxSessions:
+				atCapacity = true
+			default:
+				ref, drawn := h.newSessionRef()
+				setupRef = ref
+				bound = sessionRecord{token: tokenHash, lastSeen: now, ref: ref}
+				h.sessions[sessionID] = bound
+				exists = true
+				bindingMatch = true
+				rehydrated = true
+				refAvailable = drawn
+				setupFlight = make(chan struct{})
+				h.sdkFlights[sessionID] = setupFlight
+				needsBootstrap = !initializeRehydration
+			}
+		}
+		if bindingMatch && !rehydrated {
+			if mapped := h.sdkSessions[sessionID]; mapped != "" {
+				sdkSessionID = mapped
+			} else if flight := h.sdkFlights[sessionID]; flight != nil {
+				waitFlight = flight
+			} else {
+				sdkSessionID = sessionID
+			}
+		}
+		if bindingMatch && !needsBootstrap && waitFlight == nil {
 			sessionEpoch := bound.epoch
 			h.sessions[sessionID] = sessionRecord{token: bound.token, lastSeen: now, ref: bound.ref, epoch: sessionEpoch}
+			if initializeRehydration && rehydrated {
+				rClone.Header.Del(sessionIDHeader)
+			} else {
+				rClone.Header.Set(sessionIDHeader, sdkSessionID)
+			}
 			if sessionEpoch != 0 {
 				rClone.Header.Set(exposureEpochHeaderName, strconv.FormatUint(sessionEpoch, 10))
 			}
 		}
 		h.mu.Unlock()
-		h.cleanupRetiredOwners(retiredOwners)
-		if !bindingMatch {
-			if !exists {
-				// A supplied session header with no stored entry: the entry is
-				// absent and the comparator never ran. The reference was
-				// deleted with the session, so nothing is retained here.
-				observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
-					FailureStage: "session", FailureReason: "session_absent",
-					SessionState: "absent", BindingRelation: "not_evaluated",
-				})
-				observe.ContributeSessionEvidence(r.Context(), observe.HTTPSessionEvidence{
-					RefState: "not_applicable", State: "absent", Binding: "not_evaluated",
-				})
-			} else {
-				// An existing entry bound to a different bearer: the comparator
-				// mismatched. The live reference appears in the server record
-				// only; it is never written to the response.
-				observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
-					FailureStage: "session", FailureReason: "session_fingerprint_mismatch",
-					SessionState: "existing", BindingRelation: "mismatch",
-				})
-				observe.ContributeSessionEvidence(r.Context(), observe.HTTPSessionEvidence{
-					RefState: diagnosticRefState(bound.ref), Ref: bound.ref,
-					State: "existing", Binding: "mismatch",
-				})
+		if needsBootstrap {
+			var err error
+			sdkSessionID, err = h.ensureSDKSession(r.Context(), r)
+			cleanupSDKID := ""
+			h.mu.Lock()
+			bound, exists = h.sessions[sessionID]
+			setupOwned := exists && setupFlight != nil && h.sdkFlights[sessionID] == setupFlight &&
+				bound.ref == setupRef && subtle.ConstantTimeCompare(bound.token[:], tokenHash[:]) == 1
+			if err == nil && setupOwned && bound.epoch == 0 && h.options.ToolSurface != nil {
+				owner, ownerErr := h.options.ToolSurface.newLiveOwner(sdkSessionID)
+				if ownerErr != nil {
+					err = ownerErr
+					cleanupSDKID = sdkSessionID
+				} else {
+					bound.epoch = owner.epoch
+				}
 			}
-			// Session admission failures (absent entry or binding mismatch)
-			// return 404 without a Bearer challenge so MCP clients treat the
-			// session as lost or unusable, reinitialize, and retry.
+			if err != nil || !setupOwned {
+				if setupOwned {
+					delete(h.sessions, sessionID)
+					delete(h.sdkSessions, sessionID)
+				} else if err == nil {
+					cleanupSDKID = sdkSessionID
+				}
+				setupFailed = true
+				bindingMatch = false
+			} else {
+				bound.lastSeen = h.now()
+				h.sessions[sessionID] = bound
+				h.sdkSessions[sessionID] = sdkSessionID
+				rClone.Header.Set(sessionIDHeader, sdkSessionID)
+				if bound.epoch != 0 {
+					rClone.Header.Set(exposureEpochHeaderName, strconv.FormatUint(bound.epoch, 10))
+				}
+			}
+			if h.sdkFlights[sessionID] == setupFlight {
+				delete(h.sdkFlights, sessionID)
+				close(setupFlight)
+			}
+			h.mu.Unlock()
+			if cleanupSDKID != "" {
+				remove := httptest.NewRequest(http.MethodDelete, "/mcp", nil).WithContext(r.Context())
+				remove.Host = r.Host
+				remove.Header.Set(sessionIDHeader, cleanupSDKID)
+				remove.Header.Set("Mcp-Protocol-Version", "2025-06-18")
+				if authorization := r.Header.Get("Authorization"); authorization != "" {
+					remove.Header.Set("Authorization", authorization)
+				}
+				h.next.ServeHTTP(httptest.NewRecorder(), remove)
+			}
+		}
+		if waitFlight != nil {
+			select {
+			case <-waitFlight:
+				h.mu.Lock()
+				bound, exists = h.sessions[sessionID]
+				bindingMatch = exists && subtle.ConstantTimeCompare(bound.token[:], tokenHash[:]) == 1
+				sdkSessionID = h.sdkSessions[sessionID]
+				if bindingMatch && sdkSessionID != "" {
+					now = h.now()
+					bound.lastSeen = now
+					h.sessions[sessionID] = bound
+					rClone.Header.Set(sessionIDHeader, sdkSessionID)
+					if bound.epoch != 0 {
+						rClone.Header.Set(exposureEpochHeaderName, strconv.FormatUint(bound.epoch, 10))
+					}
+				} else {
+					setupFailed = true
+					bindingMatch = false
+				}
+				h.mu.Unlock()
+			case <-r.Context().Done():
+				setupFailed = true
+				bindingMatch = false
+			}
+		}
+		h.cleanupRetiredOwners(retiredOwners)
+		if deleteUnknown {
+			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+				SessionState: "absent", BindingRelation: "not_evaluated",
+			})
+			observe.ContributeSessionEvidence(r.Context(), observe.HTTPSessionEvidence{
+				RefState: "not_applicable", State: "absent", Binding: "not_evaluated",
+			})
+			writer.WriteHeader(http.StatusNoContent)
+			return
+		}
+		if atCapacity {
+			rejection = legacyRejection{"session_admission", "session_capacity"}
+			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+				FailureStage: "capacity", FailureReason: "session_capacity",
+			})
+			http.Error(writer, "session cap reached", http.StatusServiceUnavailable)
+			return
+		}
+		if setupFailed {
+			rejection = legacyRejection{"session_admission", "session_unavailable"}
+			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+				FailureStage: "unavailable", FailureReason: "unavailable",
+				SessionState: "absent", BindingRelation: "not_evaluated",
+			})
+			http.Error(writer, "session unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		if !bindingMatch && !forwardUnknownMethod {
+			// An existing entry bound to a different bearer: the comparator
+			// mismatched. The live reference appears in the server record
+			// only; it is never written to the response.
+			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+				FailureStage: "session", FailureReason: "session_fingerprint_mismatch",
+				SessionState: "existing", BindingRelation: "mismatch",
+			})
+			observe.ContributeSessionEvidence(r.Context(), observe.HTTPSessionEvidence{
+				RefState: diagnosticRefState(bound.ref), Ref: bound.ref,
+				State: "existing", Binding: "mismatch",
+			})
 			rejection = legacyRejection{"session_admission", "session_auth_failed"}
 			http.Error(writer, "session not found", http.StatusNotFound)
 			return
 		}
-		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
-			SessionState: "existing", BindingRelation: "match",
-		})
-		observe.ContributeSessionEvidence(r.Context(), observe.HTTPSessionEvidence{
-			RefState: diagnosticRefState(bound.ref), Ref: bound.ref,
-			State: "existing", Binding: "match",
-		})
+		if rehydrated {
+			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+				SessionState: "rehydrated", BindingRelation: "not_evaluated",
+			})
+			observe.ContributeSessionEvidence(r.Context(), observe.HTTPSessionEvidence{
+				RefState: refEvidenceState(bound.ref, refAvailable), Ref: bound.ref,
+				State: "rehydrated", Binding: "not_evaluated",
+			})
+		} else if bindingMatch {
+			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+				SessionState: "existing", BindingRelation: "match",
+			})
+			observe.ContributeSessionEvidence(r.Context(), observe.HTTPSessionEvidence{
+				RefState: diagnosticRefState(bound.ref), Ref: bound.ref,
+				State: "existing", Binding: "match",
+			})
+		}
 	} else {
 		// Creating a new session: enforce the session cap after reaping.
 		if maximum := bounds.MaxSessions; maximum > 0 {
@@ -407,7 +701,35 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if internalID := observe.HTTPRequestID(r.Context()); internalID != "" {
 		rClone.Header.Set("X-Mcp-Bridge-Internal-Request-Id", internalID)
 	}
-	h.next.ServeHTTP(writer, rClone)
+	mappedSDKRequest := false
+	if sessionID != "" {
+		h.mu.Lock()
+		mappedSDKRequest = h.sdkSessions[sessionID] != "" && h.sdkSessions[sessionID] == sdkSessionID
+		h.mu.Unlock()
+	}
+	responseObserver := &inboundResponseObserver{ResponseWriter: writer}
+	if rehydrated && initializeRehydration {
+		responseObserver.clientSessionID = sessionID
+		responseObserver.rewriteSessionID = true
+	}
+	h.next.ServeHTTP(responseObserver, rClone)
+	if mappedSDKRequest && responseObserver.missingSession() {
+		h.mu.Lock()
+		record, exists := h.sessions[sessionID]
+		var retiredOwner projectionOwner
+		if exists && h.sdkSessions[sessionID] == sdkSessionID {
+			delete(h.sessions, sessionID)
+			delete(h.sdkSessions, sessionID)
+			if record.epoch != 0 && h.options.ToolSurface != nil {
+				retiredOwner = projectionOwner{kind: projectionSession, sessionID: sdkSessionID, epoch: record.epoch}
+				h.options.ToolSurface.retireLiveOwnerAtInboundLock(retiredOwner)
+			}
+		}
+		h.mu.Unlock()
+		if retiredOwner.epoch != 0 {
+			h.options.ToolSurface.cleanupRetiredOwner(retiredOwner)
+		}
+	}
 	var maxBytes *http.MaxBytesError
 	if bounded != nil && errors.As(bounded.observed, &maxBytes) {
 		// The typed limit error was observed while the delegated handler read
@@ -429,7 +751,60 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if issuedID := writer.Header().Get(sessionIDHeader); issuedID != "" && r.Method != http.MethodDelete {
+	if rehydrated && initializeRehydration && sessionID != "" {
+		issuedID := responseObserver.sdkSessionID
+		if issuedID == "" {
+			issuedID = writer.Header().Get(sessionIDHeader)
+		}
+		cleanupSDKID := ""
+		h.mu.Lock()
+		record, exists := h.sessions[sessionID]
+		setupOwned := exists && setupFlight != nil && h.sdkFlights[sessionID] == setupFlight &&
+			record.ref == setupRef && subtle.ConstantTimeCompare(record.token[:], tokenHash[:]) == 1
+		if issuedID != "" && setupOwned {
+			record.lastSeen = h.now()
+			if record.epoch == 0 && h.options.ToolSurface != nil {
+				owner, err := h.options.ToolSurface.newLiveOwner(issuedID)
+				if err == nil {
+					record.epoch = owner.epoch
+				} else {
+					cleanupSDKID = issuedID
+				}
+			}
+			if cleanupSDKID == "" {
+				h.sessions[sessionID] = record
+				h.sdkSessions[sessionID] = issuedID
+			} else {
+				delete(h.sessions, sessionID)
+				delete(h.sdkSessions, sessionID)
+			}
+		} else {
+			if setupOwned {
+				delete(h.sessions, sessionID)
+				delete(h.sdkSessions, sessionID)
+			}
+			if issuedID != "" {
+				cleanupSDKID = issuedID
+			}
+		}
+		if setupFlight != nil && h.sdkFlights[sessionID] == setupFlight {
+			delete(h.sdkFlights, sessionID)
+			close(setupFlight)
+		}
+		h.mu.Unlock()
+		if cleanupSDKID != "" {
+			remove := httptest.NewRequest(http.MethodDelete, "/mcp", nil).WithContext(r.Context())
+			remove.Host = r.Host
+			remove.Header.Set(sessionIDHeader, cleanupSDKID)
+			remove.Header.Set("Mcp-Protocol-Version", "2025-06-18")
+			if authorization := r.Header.Get("Authorization"); authorization != "" {
+				remove.Header.Set("Authorization", authorization)
+			}
+			h.next.ServeHTTP(httptest.NewRecorder(), remove)
+		}
+	}
+	if issuedID := writer.Header().Get(sessionIDHeader); issuedID != "" && r.Method != http.MethodDelete &&
+		!(rehydrated && initializeRehydration && sessionID != "") {
 		h.mu.Lock()
 		record, exists := h.sessions[issuedID]
 		created := !exists
@@ -480,15 +855,26 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodDelete && sessionID != "" {
 		h.mu.Lock()
 		record, exists := h.sessions[sessionID]
+		sdkSessionID := h.sdkSessions[sessionID]
+		if sdkSessionID == "" {
+			sdkSessionID = sessionID
+		}
 		delete(h.sessions, sessionID)
+		delete(h.sdkSessions, sessionID)
 		var retiredOwner projectionOwner
 		if exists && record.epoch != 0 && h.options.ToolSurface != nil {
-			retiredOwner = projectionOwner{kind: projectionSession, sessionID: sessionID, epoch: record.epoch}
+			retiredOwner = projectionOwner{kind: projectionSession, sessionID: sdkSessionID, epoch: record.epoch}
 			h.options.ToolSurface.retireLiveOwnerAtInboundLock(retiredOwner)
 		}
 		h.mu.Unlock()
 		if retiredOwner.epoch != 0 {
 			h.options.ToolSurface.cleanupRetiredOwner(retiredOwner)
+		}
+		if sdkSessionID != "" {
+			remove := httptest.NewRequest(http.MethodDelete, "/mcp", nil)
+			remove.Header.Set(sessionIDHeader, sdkSessionID)
+			remove.Header.Set("Mcp-Protocol-Version", "2025-06-18")
+			h.next.ServeHTTP(httptest.NewRecorder(), remove)
 		}
 	}
 }
@@ -530,6 +916,66 @@ func refEvidenceState(ref string, drawn bool) string {
 		return "available"
 	}
 	return "unavailable"
+}
+
+type inboundResponseObserver struct {
+	http.ResponseWriter
+	status           int
+	body             [64]byte
+	bodyLen          int
+	overflow         bool
+	clientSessionID  string
+	rewriteSessionID bool
+	sdkSessionID     string
+}
+
+func (w *inboundResponseObserver) WriteHeader(status int) {
+	if w.status == 0 {
+		w.status = status
+		if w.rewriteSessionID {
+			w.sdkSessionID = w.ResponseWriter.Header().Get(sessionIDHeader)
+			if w.sdkSessionID != "" {
+				w.ResponseWriter.Header().Set(sessionIDHeader, w.clientSessionID)
+			}
+		}
+	}
+	w.ResponseWriter.WriteHeader(status)
+}
+
+func (w *inboundResponseObserver) Write(body []byte) (int, error) {
+	if w.status == 0 {
+		w.WriteHeader(http.StatusOK)
+	}
+	if w.status == http.StatusNotFound && !w.overflow {
+		n := copy(w.body[w.bodyLen:], body)
+		w.bodyLen += n
+		if n < len(body) {
+			w.overflow = true
+		}
+	}
+	return w.ResponseWriter.Write(body)
+}
+
+func (w *inboundResponseObserver) Flush() {
+	if w.status == 0 {
+		w.WriteHeader(http.StatusOK)
+	}
+	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
+func (w *inboundResponseObserver) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
+}
+
+func (w *inboundResponseObserver) ReadFrom(reader io.Reader) (int64, error) {
+	return io.Copy(struct{ io.Writer }{w}, reader)
+}
+
+func (w *inboundResponseObserver) missingSession() bool {
+	return w.status == http.StatusNotFound && !w.overflow &&
+		bytes.Equal(bytes.TrimSpace(w.body[:w.bodyLen]), []byte("session not found"))
 }
 
 // legacyClassification computes the summarised legacy stage/reason/operation
@@ -589,22 +1035,34 @@ func (h *InboundHandler) reapExpiredLocked(now time.Time) []projectionOwner {
 	for id, record := range h.sessions {
 		if now.Sub(record.lastSeen) > idle {
 			delete(h.sessions, id)
-			if record.epoch != 0 && h.options.ToolSurface != nil {
-				owner := projectionOwner{kind: projectionSession, sessionID: id, epoch: record.epoch}
-				h.options.ToolSurface.retireLiveOwnerAtInboundLock(owner)
-				retired = append(retired, owner)
+			sdkSessionID := h.sdkSessions[id]
+			delete(h.sdkSessions, id)
+			if sdkSessionID == "" {
+				sdkSessionID = id
 			}
+			if flight := h.sdkFlights[id]; flight != nil {
+				delete(h.sdkFlights, id)
+				close(flight)
+			}
+			owner := projectionOwner{kind: projectionSession, sessionID: sdkSessionID, epoch: record.epoch}
+			if record.epoch != 0 && h.options.ToolSurface != nil {
+				h.options.ToolSurface.retireLiveOwnerAtInboundLock(owner)
+			}
+			retired = append(retired, owner)
 		}
 	}
 	return retired
 }
 
 func (h *InboundHandler) cleanupRetiredOwners(owners []projectionOwner) {
-	if h.options.ToolSurface == nil {
-		return
-	}
 	for _, owner := range owners {
-		h.options.ToolSurface.cleanupRetiredOwner(owner)
+		if owner.epoch != 0 && h.options.ToolSurface != nil {
+			h.options.ToolSurface.cleanupRetiredOwner(owner)
+		}
+		remove := httptest.NewRequest(http.MethodDelete, "/mcp", nil)
+		remove.Header.Set(sessionIDHeader, owner.sessionID)
+		remove.Header.Set("Mcp-Protocol-Version", "2025-06-18")
+		h.next.ServeHTTP(httptest.NewRecorder(), remove)
 	}
 }
 

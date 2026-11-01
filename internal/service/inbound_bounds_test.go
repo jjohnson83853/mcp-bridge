@@ -40,6 +40,18 @@ type sessionIssuingHandler struct {
 }
 
 func (h *sessionIssuingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch r.Header.Get("X-Mcp-Bridge-Rehydration") {
+	case "initialize":
+		h.seq++
+		w.Header().Set(sessionIDHeader, fmt.Sprintf("session-%d", h.seq))
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"jsonrpc":"2.0","id":"rehydrate","result":{"protocolVersion":"2025-06-18","capabilities":{},"serverInfo":{"name":"test","version":"1"}}}`))
+		return
+	case "initialized":
+		w.WriteHeader(http.StatusAccepted)
+		return
+	}
 	if r.Method == http.MethodPost && r.Header.Get(sessionIDHeader) == "" {
 		h.seq++
 		w.Header().Set(sessionIDHeader, fmt.Sprintf("session-%d", h.seq))
@@ -178,11 +190,12 @@ func TestSessionIdleExpiry(t *testing.T) {
 	}
 	id := rec.Header().Get(sessionIDHeader)
 
-	// The session expires after the idle window and is refused, not re-created.
+	// Expiry removes the old record; an authenticated request then rehydrates
+	// its supplied ID as a new live record.
 	clock = clock.Add(time.Minute + time.Second)
 	rec = serve(inbound, requestFor(http.MethodPost, id, ""))
-	if rec.Code != http.StatusNotFound {
-		t.Fatalf("response: %v", rec)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("rehydrated session response: %v", rec)
 	}
 	if len(rec.Header().Values("WWW-Authenticate")) != 0 {
 		t.Fatalf("response: %v", rec)
@@ -190,8 +203,8 @@ func TestSessionIdleExpiry(t *testing.T) {
 	if rec.Header().Get(sessionIDHeader) != "" {
 		t.Fatalf("response: %v", rec)
 	}
-	if inbound.liveSessions() != 0 {
-		t.Fatalf("live sessions: %d", inbound.liveSessions())
+	if inbound.liveSessions() != 1 {
+		t.Fatalf("live sessions after rehydration: %d", inbound.liveSessions())
 	}
 }
 
@@ -311,5 +324,25 @@ func TestInboundBoundsRefuseForeignHostAndOrigin(t *testing.T) {
 				t.Fatalf("inner reached: %v", rec)
 			}
 		})
+	}
+}
+func TestUnsupportedUnknownSessionMethodsDoNotAllocate(t *testing.T) {
+	inbound := NewInboundHandler(
+		NewStreamableHandler(NewMCPServer()),
+		tokenHashFor(sessionTestToken),
+	)
+	for _, method := range []string{http.MethodPut, http.MethodOptions} {
+		request := httptest.NewRequest(method, "/mcp", nil)
+		request.Header.Set("Authorization", "Bearer "+sessionTestToken)
+		request.Header.Set(sessionIDHeader, "unknown-session")
+		request.Header.Set("Mcp-Protocol-Version", "2025-06-18")
+		response := httptest.NewRecorder()
+		inbound.ServeHTTP(response, request)
+		if response.Code != http.StatusMethodNotAllowed {
+			t.Errorf("%s unknown-session status=%d, want 405", method, response.Code)
+		}
+		if got := inbound.liveSessions(); got != 0 {
+			t.Errorf("%s allocated %d sessions, want none", method, got)
+		}
 	}
 }

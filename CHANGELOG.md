@@ -102,13 +102,16 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   unchanged; the record is still a closed typed allowlist within the same
   byte budgets. See the README "Runtime provenance and safe route context"
   section for operator guidance. Real OMP/Gemini smoke NOT RUN.
-- **Session outcome diagnostics (`oauth_diag_v1`).** The inner session
-  admission now distinguishes absent session entries from existing-session
-  bearer-binding mismatches in the terminal `http_complete` record:
-  `failure_stage: session` with `session_absent` (401, `session_state: absent`,
-  `binding_relation: not_evaluated`, no session reference) versus
-  `session_fingerprint_mismatch` (401, `session_state: existing`,
-  `binding_relation: mismatch`, the live reference in the server record only).
+- **Session outcome diagnostics (`oauth_diag_v1`).** Authenticated unknown
+  session IDs now initialize a fresh SDK session and map its SDK-issued ID to
+  the preserved client ID before forwarding, so pre-restart clients can
+  continue on the ordinary MCP handling path. Successful recovery records
+  `session_state: rehydrated` with `binding_relation: not_evaluated` and an
+  independent diagnostic reference; SDK initialization failure returns 503.
+  An unknown-session DELETE returns 204 without forwarding. Existing-session
+  bearer-binding mismatches retain `session_fingerprint_mismatch`,
+  `session_state: existing`, `binding_relation: mismatch`, and the live
+  reference in the server record only.
   Legal headerless initialization records `session_state: created` with an
   independent cryptographically random 128-bit `session_ref` (32 lowercase
   hex) retained only with the session and deleted with it; ordinary
@@ -116,9 +119,10 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   failure records `session_ref_state: unavailable` with no retry or derived
   fallback. Missing-session-header reasons are reserved for actual
   session-required branches with an authoritative cause and are not emitted
-  from header absence alone. Statuses, challenges and response bodies are
-  unchanged; the reference never appears in a response and no raw session ID,
-  digest or correlation map is retained. Real OMP/Gemini smoke NOT RUN.
+  from header absence alone. Authentication failures and existing-session
+  mismatch statuses/challenges remain unchanged; references never appear in
+  responses, and no raw session ID, digest or correlation map is retained.
+  Real OMP/Gemini smoke NOT RUN.
 - **Outer OAuth rejection diagnostics (`oauth_diag_v1`).** Early OAuth
   rejections now carry authoritative typed reasons in the terminal
   `http_complete` log record: `credentials_missing` (401 resource challenge),

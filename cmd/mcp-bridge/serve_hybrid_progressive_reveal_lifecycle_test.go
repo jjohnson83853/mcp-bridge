@@ -263,6 +263,17 @@ func assertProgressiveRevealListNames(t *testing.T, envelope progressiveRevealWi
 	}
 	assertProgressiveRevealNameSet(t, names, allowedDynamic)
 }
+func assertProgressiveRevealListWithoutStaleInterest(t *testing.T, label string, envelope progressiveRevealWireEnvelope, dynamicName string) {
+	t.Helper()
+	if envelope.Result == nil || progressiveRevealHasRPCError(envelope.Error) {
+		t.Fatalf("%s tools/list did not return a successful result: %+v", label, envelope)
+	}
+	for _, tool := range envelope.Result.Tools {
+		if tool.Name == dynamicName {
+			t.Fatalf("%s tools/list retained stale dynamic tool %q", label, dynamicName)
+		}
+	}
+}
 
 func assertProgressiveRevealNameSet(t *testing.T, names []string, allowedDynamic string) {
 	t.Helper()
@@ -428,9 +439,10 @@ func testServeHybridProgressiveRevealConcurrentRetirement(t *testing.T) {
 	}
 
 	retiredA := harness.request(http.MethodPost, sessionA, progressiveRevealListBody(18, ""))
-	if retiredA.err != nil || retiredA.status != http.StatusNotFound {
-		t.Fatalf("deleted owner A request = status %d err %v; want 404", retiredA.status, retiredA.err)
+	if retiredA.err != nil || retiredA.status != http.StatusOK {
+		t.Fatalf("deleted owner A request = status %d err %v; want 200 after session rehydration", retiredA.status, retiredA.err)
 	}
+	assertProgressiveRevealListWithoutStaleInterest(t, "deleted owner A", decodeProgressiveRevealWireEnvelope(t, retiredA.body), writeName)
 	_, listBAfterDelete := harness.rpc(sessionB, progressiveRevealListBody(19, ""))
 	assertProgressiveRevealListNames(t, listBAfterDelete, "")
 	_, pinnedBAfterDelete := harness.rpc(sessionB, progressiveRevealCallBody(t, 20, "alpha__read", `{"path":"file.txt"}`))
@@ -480,13 +492,16 @@ func testServeHybridProgressiveRevealLazyRetirement(t *testing.T) {
 	assertProgressiveRevealNameSet(t, survivorNames, "")
 
 	retiredC := harness.request(http.MethodPost, sessionC, progressiveRevealListBody(27, ""))
-	if retiredC.err != nil || retiredC.status != http.StatusNotFound {
-		t.Fatalf("idle owner C request = status %d err %v; want 404 after lazy reaping", retiredC.status, retiredC.err)
+	if retiredC.err != nil || retiredC.status != http.StatusOK {
+		t.Fatalf("idle owner C request = status %d err %v; want 200 after admission rehydration", retiredC.status, retiredC.err)
 	}
+	assertProgressiveRevealListWithoutStaleInterest(t, "idle owner C", decodeProgressiveRevealWireEnvelope(t, retiredC.body), writeName)
 	retiredCallC := harness.request(http.MethodPost, sessionC, progressiveRevealCallBody(t, 31, writeName, `{"path":"file.txt","data":"after-idle"}`))
-	if retiredCallC.err != nil || retiredCallC.status != http.StatusNotFound {
-		t.Fatalf("idle owner C direct call = status %d err %v; want 404 with no dispatch", retiredCallC.status, retiredCallC.err)
+	if retiredCallC.err != nil || retiredCallC.status != http.StatusOK {
+		t.Fatalf("idle owner C direct call = status %d err %v; want 200 after admission rehydration", retiredCallC.status, retiredCallC.err)
 	}
+	assertProgressiveRevealCallFailure(t, "idle owner C direct call after expiry", retiredCallC,
+		decodeProgressiveRevealWireEnvelope(t, retiredCallC.body))
 	responseB, staleCursor := harness.rpc(sessionB, progressiveRevealListBody(28, cursorC))
 	assertProgressiveRevealCallFailure(t, "owner B using owner C cursor", responseB, staleCursor)
 	_, pinnedBAfterExpiry := harness.rpc(sessionB, progressiveRevealCallBody(t, 29, "alpha__read", `{"path":"file.txt"}`))

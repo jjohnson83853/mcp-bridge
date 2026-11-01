@@ -14,8 +14,8 @@ func TestServeHybridProgressiveRevealSessionAdmission(t *testing.T) {
 	ctx, httpURL, _, _ := startHybridBridgeWithUpstream(t, upstream)
 	client := &http.Client{Timeout: 5 * time.Second}
 
-	// An unregistered session stays rejected before the shared MCP server can
-	// create an SDK session or receive an exposure carrier.
+	// An authenticated unknown ID is rehydrated, and forged exposure headers
+	// are replaced before the request reaches the shared MCP server.
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, httpURL+"/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":0,"method":"tools/list","params":{}}`))
 	if err != nil {
 		t.Fatal(err)
@@ -30,10 +30,37 @@ func TestServeHybridProgressiveRevealSessionAdmission(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _ = io.Copy(io.Discard, response.Body)
+	body, readErr := io.ReadAll(response.Body)
 	_ = response.Body.Close()
-	if response.StatusCode != http.StatusNotFound {
-		t.Fatalf("unregistered-session tools/list status = %d, want 404", response.StatusCode)
+	if readErr != nil {
+		t.Fatalf("read rehydrated tools/list response: %v", readErr)
+	}
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("rehydrated-session tools/list status = %d, want 200 (body=%s)", response.StatusCode, body)
+	}
+	payload := body
+	if dataStart := strings.Index(string(body), "data: "); dataStart >= 0 {
+		payload = body[dataStart+len("data: "):]
+		if end := strings.IndexByte(string(payload), '\n'); end >= 0 {
+			payload = payload[:end]
+		}
+	}
+	var rehydratedEnvelope struct {
+		JSONRPC string          `json:"jsonrpc"`
+		ID      int             `json:"id"`
+		Result  json.RawMessage `json:"result"`
+		Error   json.RawMessage `json:"error"`
+	}
+	if err := json.Unmarshal(payload, &rehydratedEnvelope); err != nil {
+		t.Fatalf("decode rehydrated tools/list response: %v (body=%s)", err, body)
+	}
+	if rehydratedEnvelope.JSONRPC != "2.0" || rehydratedEnvelope.ID != 0 ||
+		len(rehydratedEnvelope.Result) == 0 ||
+		(len(rehydratedEnvelope.Error) != 0 && string(rehydratedEnvelope.Error) != "null") {
+		t.Fatalf("rehydrated tools/list envelope = %s, want client request ID 0 result", payload)
+	}
+	if response.Header.Get("Mcp-Session-Id") != "" {
+		t.Fatalf("tools/list response replaced the client session ID with %q", response.Header.Get("Mcp-Session-Id"))
 	}
 
 	initialize := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"progressive-session-client","version":"1"}}}`

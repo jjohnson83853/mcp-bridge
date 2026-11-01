@@ -236,10 +236,10 @@ func TestProgressiveMetadataSessionEnrollment(t *testing.T) {
 	}
 	*harness.clock = harness.base.Add(2 * time.Second)
 	response = harness.send(t, http.MethodPost, expiringSession, `{"jsonrpc":"2.0","id":100,"method":"tools/list","params":{}}`, nil)
-	if response.StatusCode != http.StatusNotFound {
-		t.Fatalf("expired session tools/list status = %d, want 404", response.StatusCode)
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expired session rehydration status = %d, want 200 (body=%s)", response.StatusCode, response.body)
 	}
-	harness.assertRetired(t, expiringOwner)
+	harness.assertRehydrated(t, expiringOwner)
 	if err := harness.surface.publishOwnerProjection(expiringOwner, harness.assembly); err == nil {
 		t.Fatal("expired never-projected incarnation accepted delayed publication")
 	}
@@ -443,6 +443,26 @@ func (h *progressiveSessionHarness) assertRetired(t *testing.T, owner projection
 	h.inbound.mu.Unlock()
 	if registered {
 		t.Fatalf("retired session %q remains in inbound admission map", owner.sessionID)
+	}
+}
+func (h *progressiveSessionHarness) assertRehydrated(t *testing.T, owner projectionOwner) {
+	t.Helper()
+	h.inbound.mu.Lock()
+	record, registered := h.inbound.sessions[owner.sessionID]
+	sdkSessionID := h.inbound.sdkSessions[owner.sessionID]
+	h.inbound.mu.Unlock()
+	if !registered || record.epoch == 0 || sdkSessionID == "" || sdkSessionID == owner.sessionID {
+		t.Fatalf("rehydrated session registered=%t epoch=%d SDK session=%q, want a mapped SDK exposure incarnation", registered, record.epoch, sdkSessionID)
+	}
+	coordinator := h.surface.projectionCoordinator()
+	coordinator.barrier.Lock()
+	_, oldLive := coordinator.liveOwners[owner]
+	_, oldProjected := coordinator.projections[owner]
+	rehydratedOwner := projectionOwner{kind: projectionSession, sessionID: sdkSessionID, epoch: record.epoch}
+	_, newLive := coordinator.liveOwners[rehydratedOwner]
+	coordinator.barrier.Unlock()
+	if oldLive || oldProjected || !newLive {
+		t.Fatalf("old owner live=%t projected=%t, rehydrated owner live=%t", oldLive, oldProjected, newLive)
 	}
 }
 

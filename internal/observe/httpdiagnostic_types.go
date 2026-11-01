@@ -75,7 +75,7 @@ var (
 	httpCredentialValues        = []string{"not_evaluated", "missing", "accepted", "rejected", "unavailable"}
 	httpScopeStateValues        = []string{"not_evaluated", "not_required", "accepted", "rejected", "unavailable"}
 	httpSessionHeaderValues     = []string{"absent", "present"}
-	httpSessionStateValues      = []string{"not_evaluated", "not_supplied", "absent", "existing", "created", "unavailable"}
+	httpSessionStateValues      = []string{"not_evaluated", "not_supplied", "absent", "rehydrated", "existing", "created", "unavailable"}
 	httpBindingValues           = []string{"not_evaluated", "match", "mismatch", "unavailable"}
 	httpSessionRefValues        = []string{"available", "unavailable", "not_applicable", "omitted_for_budget"}
 	httpChallengeKindValues     = []string{"none", "resource_metadata", "insufficient_scope", "bearer_only", "other", "unavailable"}
