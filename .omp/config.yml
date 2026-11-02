@@ -1,6 +1,15 @@
 skills:
   enabled: true
   includeSkills:
+# .omp/config.yml
+    - setup-matt-pocock-skills
+    - setup-matt-pocock-skills
+    - to-spec
+    - to-tickets
+    - grill-me
+    - implement
+    - retro
+    # Leave your remaining entries unchanged.
     - accessibility
     - agent-introspection-debugging
     - agent-security-hardening

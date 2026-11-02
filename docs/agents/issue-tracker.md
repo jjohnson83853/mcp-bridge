@@ -25,8 +25,8 @@ Issues and specs live as Markdown files in this repository, not GitHub Issues.
 - Record ticket kind in `Type:`: research, prototype, grilling, or task.
 - Record dependencies as `Blocked by: NN, NN`.
 - A ticket is unblocked when all listed dependencies are resolved.
-- For coordinated work, current approvals/access/dependency blockers live once in
-  `.scratch/<feature-slug>/execution-state.json`, as defined by
+- For coordinated work, current approvals/access/dependency blockers live in
+  `.omp/plans/execution-state.json`, as defined by project policy and
   `skill://specdd-coordinator`. Specs, maps and tickets link there instead of
   repeating mutable execution summaries. Historical observations remain evidence.
 - `Status:` and resolved answers still describe tracker lifecycle; the execution
