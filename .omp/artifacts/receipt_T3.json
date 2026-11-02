@@ -1,0 +1,1 @@
+{"task_id":"T3","status":"COMPLETED","artifact_receipt":"cmd/mcp-bridge/serve.go; cmd/mcp-bridge/serve_oauth_test.go","telemetry_ref":null,"summary":"T3 pass. Verified direct routing for /mcp, /mcp/, and POST / without redirects.","error_code":null}

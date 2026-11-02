@@ -46,7 +46,10 @@ func challengeMetadataURL(resourceURL string) string {
 // isBypassed reports whether path skips authentication entirely.
 func isBypassed(path string) bool {
 	switch strings.TrimSuffix(path, "/") {
-	case "/.well-known/oauth-protected-resource", "/livez", "/readyz", "/healthz":
+	case "/.well-known/oauth-protected-resource",
+		"/.well-known/oauth-protected-resource/mcp",
+		"/mcp/.well-known/oauth-protected-resource",
+		"/livez", "/readyz", "/healthz":
 		return true
 	default:
 		return false
@@ -54,11 +57,16 @@ func isBypassed(path string) bool {
 }
 
 // audienceMatches reports whether the token's audience includes the resource
-// URL, ignoring trailing slashes on either side.
+// URL, ignoring trailing slashes on either side and tolerating the origin vs
+// endpoint form (/mcp suffix) in both directions.
 func audienceMatches(tokenAudience []string, targetURL string) bool {
 	target := strings.TrimRight(targetURL, "/")
 	for _, item := range tokenAudience {
-		if strings.TrimRight(item, "/") == target {
+		aud := strings.TrimRight(item, "/")
+		if aud == target {
+			return true
+		}
+		if strings.TrimSuffix(aud, "/mcp") == target || strings.TrimSuffix(target, "/mcp") == aud {
 			return true
 		}
 	}
@@ -150,7 +158,7 @@ func resourcePathBearing(resourceURL string) bool {
 // reachability.
 func challengeClassification(resourceURL string) (target, registered string) {
 	if resourcePathBearing(resourceURL) {
-		return "path_appended_well_known", "no"
+		return "path_appended_well_known", "yes"
 	}
 	return "root_well_known", "yes"
 }

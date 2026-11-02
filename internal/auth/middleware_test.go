@@ -118,6 +118,8 @@ func TestIsBypassed(t *testing.T) {
 	// Arrange
 	bypassed := []string{
 		"/.well-known/oauth-protected-resource",
+		"/.well-known/oauth-protected-resource/mcp",
+		"/mcp/.well-known/oauth-protected-resource",
 		"/livez",
 		"/readyz",
 		"/healthz",
@@ -152,6 +154,12 @@ func TestAudienceMatches(t *testing.T) {
 		{"trailing slash in token", []string{"https://mcp.example.com/"}, target, true},
 		{"trailing slash in target", []string{"https://mcp.example.com"}, target + "/", true},
 		{"multiple audiences match", []string{"other", target}, target, true},
+		{"origin token vs endpoint target", []string{"https://mcp.example.com"}, "https://mcp.example.com/mcp", true},
+		{"endpoint token vs origin target", []string{"https://mcp.example.com/mcp"}, "https://mcp.example.com", true},
+		{"endpoint token vs endpoint target", []string{"https://mcp.example.com/mcp"}, "https://mcp.example.com/mcp", true},
+		{"origin token and endpoint target with trailing slashes", []string{"https://mcp.example.com/"}, "https://mcp.example.com/mcp/", true},
+		{"endpoint token and origin target with trailing slashes", []string{"https://mcp.example.com/mcp/"}, "https://mcp.example.com/", true},
+		{"unrelated endpoint audience rejected", []string{"https://other.example.com/mcp"}, target, false},
 		{"no match", []string{"https://other.example.com"}, target, false},
 		{"empty audience", nil, target, false},
 	}
@@ -230,6 +238,8 @@ func TestMiddlewareBypassedPaths(t *testing.T) {
 
 	paths := []string{
 		"/.well-known/oauth-protected-resource",
+		"/.well-known/oauth-protected-resource/mcp",
+		"/mcp/.well-known/oauth-protected-resource",
 		"/livez",
 		"/readyz",
 		"/healthz",

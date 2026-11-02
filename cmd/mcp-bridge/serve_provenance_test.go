@@ -112,7 +112,7 @@ func TestTerminalRecordRuntimeProvenance(t *testing.T) {
 // TestPathBearingResourceChallengeClassification observes the current
 // conditional behavior for a path-bearing resource fixture: the challenge
 // actually written appends the well-known path after the resource path, and
-// that target is not registered by this server.
+// that target is registered by this server.
 func TestPathBearingResourceChallengeClassification(t *testing.T) {
 	t.Setenv("MCP_RESOURCE_URL", "https://mcp.bullprog.com/mcp")
 	harness := startOAuthHarness(t)
@@ -136,7 +136,7 @@ func TestPathBearingResourceChallengeClassification(t *testing.T) {
 	}
 	record := records[0]
 	requireCompletionField(t, record, "challenge_target", "path_appended_well_known")
-	requireCompletionField(t, record, "metadata_target_registered", "no")
+	requireCompletionField(t, record, "metadata_target_registered", "yes")
 	requireCompletionField(t, record, "resource_path_mode", "path_bearing")
 }
 
@@ -151,6 +151,8 @@ func TestRouteOutcomeByActualDispatch(t *testing.T) {
 		stage                    string
 	}{
 		{name: "Metadata", path: "/.well-known/oauth-protected-resource", routeOutcome: "metadata", status: http.StatusOK, stage: "none"},
+		{name: "MetadataMCPPath", path: "/.well-known/oauth-protected-resource/mcp", routeOutcome: "metadata", status: http.StatusOK, stage: "none"},
+		{name: "MetadataMCPPrefix", path: "/mcp/.well-known/oauth-protected-resource", routeOutcome: "metadata", status: http.StatusOK, stage: "none"},
 		{name: "Livez", path: "/livez", routeOutcome: "health", status: http.StatusOK, stage: "none"},
 		{name: "Unmatched", path: "/definitely-not-a-route", routeOutcome: "inbound_direct", status: http.StatusNotFound,
 			stage: "route"},

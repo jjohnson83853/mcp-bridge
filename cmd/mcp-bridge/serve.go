@@ -165,7 +165,10 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 	})
 
 	inboundMux := http.NewServeMux()
-	inboundMux.Handle("/.well-known/oauth-protected-resource", auth.NewProtectedResourceHandler(authCfg))
+	prHandler := auth.NewProtectedResourceHandler(authCfg)
+	inboundMux.Handle("/.well-known/oauth-protected-resource", prHandler)
+	inboundMux.Handle("/.well-known/oauth-protected-resource/mcp", prHandler)
+	inboundMux.Handle("/mcp/.well-known/oauth-protected-resource", prHandler)
 	inboundMux.HandleFunc("/livez", func(w http.ResponseWriter, r *http.Request) {
 		observe.ContributeHTTP(r.Context(), observe.HTTPDecision{RouteOutcome: "health"})
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -181,6 +184,10 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 	inboundMux.Handle("/readyz", service.NewOperationsHandler(readiness, nil))
 	authMiddleware := auth.NewAuthMiddleware(authCfg, jwksCache, auth.WithStaticFallback(true), auth.WithNow(diagnosticNowFromContext(ctx)))
 	inboundMux.Handle("/mcp", authMiddleware(inbound))
+	inboundMux.Handle("/mcp/", authMiddleware(inbound))
+	// A root discovery probe gets an authenticated challenge rather than a
+	// silent 404 while other root traffic stays on the catch-all handler.
+	inboundMux.Handle("POST /{$}", authMiddleware(inbound))
 	inboundMux.Handle("/", inbound)
 
 	reloads := make(chan struct{}, 1)

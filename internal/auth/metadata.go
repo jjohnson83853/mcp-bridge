@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 )
@@ -20,16 +21,26 @@ type Metadata struct {
 // resource metadata document built from cfg. The payload is marshalled once
 // at construction so each request only writes pre-rendered bytes.
 func NewProtectedResourceHandler(cfg Config) http.Handler {
-	meta := Metadata{
-		Resource:               cfg.MCPResourceURL,
-		AuthorizationServers:   []string{cfg.PocketIDIssuer},
-		ScopesSupported:        []string{"openid", "email", "profile", "mcp:connect"},
-		BearerMethodsSupported: []string{"header"},
+	buildMetadata := func(resource string) []byte {
+		meta := Metadata{
+			Resource:               resource,
+			AuthorizationServers:   []string{cfg.PocketIDIssuer},
+			ScopesSupported:        []string{"openid", "email", "profile", "mcp:connect"},
+			BearerMethodsSupported: []string{"header"},
+		}
+		// Metadata holds only strings and string slices, so Marshal cannot
+		// fail; the error is deliberately discarded to keep the request path
+		// branchless.
+		payload, _ := json.Marshal(meta)
+		return payload
 	}
 
-	// Metadata holds only strings and string slices, so Marshal cannot fail;
-	// the error is deliberately discarded to keep the request path branchless.
-	payload, _ := json.Marshal(meta)
+	originPayload := buildMetadata(cfg.MCPResourceURL)
+	endpointResource := cfg.MCPResourceURL
+	if !strings.HasSuffix(strings.TrimRight(endpointResource, "/"), "/mcp") {
+		endpointResource = strings.TrimRight(endpointResource, "/") + "/mcp"
+	}
+	endpointPayload := buildMetadata(endpointResource)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Dispatch classification: this handler actually served the request.
@@ -38,6 +49,13 @@ func NewProtectedResourceHandler(cfg Config) http.Handler {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
+		}
+
+		// Path-bearing well-known targets advertise the endpoint resource so
+		// the client's expected resource matches the document it received.
+		payload := originPayload
+		if strings.Contains(r.URL.Path, "/mcp") {
+			payload = endpointPayload
 		}
 
 		w.Header().Set("Content-Type", "application/json")

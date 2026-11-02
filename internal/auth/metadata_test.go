@@ -100,3 +100,61 @@ func TestProtectedResourceHandlerDynamicConfig(t *testing.T) {
 		t.Errorf("AuthorizationServers = %v, want %v", meta.AuthorizationServers, want)
 	}
 }
+
+func TestProtectedResourceHandlerPathBearing(t *testing.T) {
+	paths := []string{
+		"/.well-known/oauth-protected-resource",
+		"/.well-known/oauth-protected-resource/mcp",
+		"/mcp/.well-known/oauth-protected-resource",
+	}
+	for _, tc := range []struct {
+		name        string
+		resourceURL string
+		want        string
+	}{
+		{
+			name:        "origin configured",
+			resourceURL: "https://api.example.org",
+			want:        "https://api.example.org",
+		},
+		{
+			name:        "endpoint configured",
+			resourceURL: "https://api.example.org/mcp",
+			want:        "https://api.example.org/mcp",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			handler := NewProtectedResourceHandler(Config{
+				PocketIDIssuer: "https://sso.example.org",
+				MCPResourceURL: tc.resourceURL,
+			})
+			for _, path := range paths {
+				t.Run(path, func(t *testing.T) {
+					rec := httptest.NewRecorder()
+					req := httptest.NewRequest(http.MethodGet, path, nil)
+
+					handler.ServeHTTP(rec, req)
+
+					if rec.Code != http.StatusOK {
+						t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+					}
+					if got := rec.Header().Get("Content-Type"); got != "application/json" {
+						t.Errorf("Content-Type = %q, want %q", got, "application/json")
+					}
+
+					var meta Metadata
+					if err := json.Unmarshal(rec.Body.Bytes(), &meta); err != nil {
+						t.Fatalf("unmarshalling body %q: %v", rec.Body.String(), err)
+					}
+					want := tc.want
+					if path != paths[0] && tc.resourceURL == "https://api.example.org" {
+						want += "/mcp"
+					}
+					if meta.Resource != want {
+						t.Errorf("Resource = %q, want %q", meta.Resource, want)
+					}
+				})
+			}
+		})
+	}
+}

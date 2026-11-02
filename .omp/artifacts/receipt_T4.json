@@ -1,0 +1,8 @@
+{
+  "task_id": "T4",
+  "status": "COMPLETED",
+  "artifact_receipt": "cmd/mcp-bridge/serve_oauth_test.go; cmd/mcp-bridge/serve_provenance_test.go",
+  "telemetry_ref": null,
+  "summary": "T4 pass. Full end-to-end action discovery wire sequence verified with path-bearing resource, dual audience initialize, and diagnostic provenance.",
+  "error_code": null
+}

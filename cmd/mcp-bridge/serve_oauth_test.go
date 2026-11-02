@@ -7,6 +7,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -256,6 +257,128 @@ func requireChallenge(t *testing.T, response *http.Response, what string) {
 	}
 }
 
+func TestProtectedResourceMetadataWire(t *testing.T) {
+
+	resource := oauthResource + "/mcp"
+	t.Setenv("MCP_RESOURCE_URL", resource)
+
+	harness := startOAuthHarness(t)
+	harness.awaitLive(t)
+	for _, path := range []string{
+		"/.well-known/oauth-protected-resource",
+		"/.well-known/oauth-protected-resource/mcp",
+		"/mcp/.well-known/oauth-protected-resource",
+	} {
+		t.Run(path, func(t *testing.T) {
+			response, err := http.Get(harness.httpURL + path)
+			if err != nil {
+				t.Fatalf("GET %s: %v", path, err)
+			}
+			defer response.Body.Close()
+
+			if response.StatusCode != http.StatusOK {
+				t.Fatalf("GET %s: status = %d, want %d", path, response.StatusCode, http.StatusOK)
+			}
+			if got := response.Header.Get("Content-Type"); got != "application/json" {
+				t.Errorf("GET %s: Content-Type = %q, want %q", path, got, "application/json")
+			}
+
+			var metadata struct {
+				Resource string `json:"resource"`
+			}
+			if err := json.NewDecoder(response.Body).Decode(&metadata); err != nil {
+				t.Fatalf("decode metadata for %s: %v", path, err)
+			}
+			if metadata.Resource != resource {
+				t.Errorf("GET %s: resource = %q, want %q", path, metadata.Resource, resource)
+			}
+		})
+	}
+
+	challenge := oauthPost(t, harness.httpURL, "", `{}`)
+	if challenge.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated MCP request: status = %d, want %d", challenge.StatusCode, http.StatusUnauthorized)
+	}
+	wantChallenge := `Bearer realm="mcp", resource_metadata="` + resource + `/.well-known/oauth-protected-resource"`
+	if got := challenge.Header.Get("WWW-Authenticate"); got != wantChallenge {
+		t.Errorf("WWW-Authenticate = %q, want %q", got, wantChallenge)
+	}
+	if !strings.Contains(harness.stdout.String(), `"metadata_target_registered":"yes"`) {
+		t.Error("challenge diagnostics do not classify the metadata target as registered")
+	}
+}
+
+
+func TestServeOAuthMissingAuthorizationDiagnostic(t *testing.T) {
+	rawLogOutput := &syncWriter{}
+	previousLogOutput := log.Writer()
+	log.SetOutput(rawLogOutput)
+	t.Cleanup(func() { log.SetOutput(previousLogOutput) })
+
+	harness := startOAuthHarness(t)
+	harness.awaitLive(t)
+	harness.awaitReady(t)
+
+	response := oauthPost(t, harness.httpURL, "", `{}`)
+	if response.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("missing Authorization: status = %d; want %d", response.StatusCode, http.StatusUnauthorized)
+	}
+	if got := response.Header.Get("WWW-Authenticate"); got != oauthChallenge {
+		t.Fatalf("missing Authorization: WWW-Authenticate = %q; want %q", got, oauthChallenge)
+	}
+
+	diagnosticID := requireDiagnosticID(t, response)
+	completions := waitForDiagnosticCompletion(t, harness, "missing-credential http_complete", diagnosticID)
+	if len(completions) != 1 {
+		t.Fatalf("missing-credential completion count = %d; want exactly 1", len(completions))
+	}
+	requireOuterOAuthRecord(t, completions[0], http.StatusUnauthorized, "credentials_missing", "missing", "not_evaluated")
+	for key, want := range map[string]any{
+		"auth_mode":                  "oauth",
+		"challenge_kind":             "resource_metadata",
+		"metadata_target_registered": "yes",
+	} {
+		if got := completions[0][key]; got != want {
+			t.Errorf("missing-credential http_complete %s = %v; want %v", key, got, want)
+		}
+	}
+	if strings.Contains(rawLogOutput.String(), "auth: missing Authorization header") {
+		t.Error("missing-credential request emitted a duplicate unstructured auth diagnostic")
+	}
+}
+
+func TestServeOAuthRouteNormalizationAndRootProbe(t *testing.T) {
+	harness := startOAuthHarness(t)
+	harness.awaitLive(t)
+	harness.awaitReady(t)
+
+	client := &http.Client{
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	for _, path := range []string{"/mcp", "/mcp/", "/"} {
+		t.Run(path, func(t *testing.T) {
+			request, err := http.NewRequest(http.MethodPost, harness.httpURL+path, strings.NewReader(`{}`))
+			if err != nil {
+				t.Fatalf("build POST %s request: %v", path, err)
+			}
+			request.Header.Set("Content-Type", "application/json")
+			response, err := client.Do(request)
+			if err != nil {
+				t.Fatalf("POST %s: %v", path, err)
+			}
+			defer response.Body.Close()
+
+			requireChallenge(t, response, "POST "+path)
+			if location := response.Header.Get("Location"); location != "" {
+				t.Errorf("POST %s Location = %q; want empty", path, location)
+			}
+		})
+	}
+}
+
+
 // TestServeOAuthWire exercises the full inbound edge through the composition
 // root: metadata discovery, bearer authentication against a real JWKS
 // endpoint, scope enforcement, the static-token fallback, and the
@@ -416,4 +539,73 @@ func readAll(response *http.Response) (string, error) {
 	var buffer bytes.Buffer
 	_, err := buffer.ReadFrom(response.Body)
 	return buffer.String(), err
+}
+func TestServeOAuthActionDiscoveryEndToEnd(t *testing.T) {
+	const (
+		resourceURL = "https://mcp.bullprog.com/mcp"
+		resourceOrigin = "https://mcp.bullprog.com"
+		metadataPath = "/mcp/.well-known/oauth-protected-resource"
+	)
+	t.Setenv("MCP_RESOURCE_URL", resourceURL)
+	harness := startOAuthHarness(t)
+	harness.awaitReady(t)
+
+	initializeRequest := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"action-discovery","version":"1"}}}`
+	publicID, internalID, diagnosticID := diagCanaries(91)
+	challengeResponse := diagPost(t, harness, "", "", map[string]string{
+		"X-Request-ID": publicID,
+	}, initializeRequest)
+	defer challengeResponse.Body.Close()
+	if challengeResponse.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated initialize: status = %d; want 401", challengeResponse.StatusCode)
+	}
+	metadataURL := resourceOrigin + metadataPath
+	wantChallenge := `Bearer realm="mcp", resource_metadata="` + metadataURL + `"`
+	if got := challengeResponse.Header.Get("WWW-Authenticate"); got != wantChallenge {
+		t.Fatalf("WWW-Authenticate = %q; want %q", got, wantChallenge)
+	}
+
+	ownedDiagnosticID := requireDiagnosticID(t, challengeResponse, publicID, internalID, diagnosticID)
+	records := waitForDiagnosticCompletion(t, harness, "action discovery challenge", ownedDiagnosticID)
+	if len(records) != 1 {
+		t.Fatalf("challenge diagnostic completions = %d; want exactly 1", len(records))
+	}
+	requireCompletionField(t, records[0], "challenge_target", "path_appended_well_known")
+	requireCompletionField(t, records[0], "metadata_target_registered", "yes")
+
+	metadataTarget := strings.TrimPrefix(metadataURL, resourceOrigin)
+	metadataResponse, err := http.Get(harness.httpURL + metadataTarget)
+	if err != nil {
+		t.Fatalf("GET metadata target %q: %v", metadataTarget, err)
+	}
+	defer metadataResponse.Body.Close()
+	if metadataResponse.StatusCode != http.StatusOK {
+		t.Fatalf("metadata status = %d; want 200", metadataResponse.StatusCode)
+	}
+	if got := metadataResponse.Header.Get("Content-Type"); got != "application/json" {
+		t.Fatalf("metadata Content-Type = %q; want application/json", got)
+	}
+	metadata := oauthJSONBody(t, metadataResponse)
+	if metadata["resource"] != resourceURL {
+		t.Fatalf("metadata resource = %v; want %q", metadata["resource"], resourceURL)
+	}
+
+	for _, audience := range []string{resourceURL, resourceOrigin} {
+		token := harness.oauthToken(t, time.Now(), map[string]any{"aud": audience})
+		accepted := oauthPost(t, harness.httpURL, token, initializeRequest)
+		if accepted.StatusCode != http.StatusOK {
+			payload, _ := readAll(accepted)
+			t.Fatalf("initialize with audience %q: status = %d; want 200 (body=%s)", audience, accepted.StatusCode, payload)
+		}
+		result := oauthJSONBody(t, accepted)
+		if result["jsonrpc"] != "2.0" {
+			t.Fatalf("initialize with audience %q: jsonrpc = %v; want 2.0", audience, result["jsonrpc"])
+		}
+		if rpcResult, ok := result["result"].(map[string]any); !ok || rpcResult == nil {
+			t.Fatalf("initialize with audience %q: result = %v; want a JSON object", audience, result["result"])
+		}
+		if sessionID := accepted.Header.Get("Mcp-Session-Id"); sessionID == "" {
+			t.Fatalf("initialize with audience %q omitted Mcp-Session-Id", audience)
+		}
+	}
 }

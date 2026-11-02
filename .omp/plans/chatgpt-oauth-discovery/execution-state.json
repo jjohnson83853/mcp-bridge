@@ -1,0 +1,418 @@
+{
+  "schemaVersion": 2,
+  "feature": "chatgpt-oauth-discovery",
+  "revision": "r3",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/chatgpt-oauth-discovery/spec.md",
+    "sha256": "4b789d0141fb2081f47e7781673344d1c87a6d8eee3286c20584d50de2918e10",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r3",
+        "sha256": "c9ef346874083b6e7072787cea38985ece577d47fffc350168266fc98f464aa0"
+      },
+      "design": {
+        "revision": "r3",
+        "sha256": "031946108f4b2012a0b04492a8fea600b9d5ae2ca0a3a25939210a4f10ec435b"
+      },
+      "tasks": {
+        "revision": "r3",
+        "sha256": "bb1898c12553ccf02bc16b2fc8e9e21f7f8193e035cc856ceee9ad62d14b22c3"
+      },
+      "envelope": {
+        "revision": "r3",
+        "sha256": "86d28a81a2d80b2141d5d013ad3c3ba6b9974dfb8908e085833dc72afb160acd"
+      }
+    }
+  },
+  "packet": {
+    "digest": "a2058afcea6a3ef087f18a8008294837d08374cd093d13291f27204132bdb104",
+    "branches": [
+      {
+        "id": "approved-chatgpt-oauth-discovery",
+        "answerIds": [],
+        "taskIds": [
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r3",
+            "sha256": "c9ef346874083b6e7072787cea38985ece577d47fffc350168266fc98f464aa0"
+          },
+          "design": {
+            "revision": "r3",
+            "sha256": "031946108f4b2012a0b04492a8fea600b9d5ae2ca0a3a25939210a4f10ec435b"
+          },
+          "tasks": {
+            "revision": "r3",
+            "sha256": "bb1898c12553ccf02bc16b2fc8e9e21f7f8193e035cc856ceee9ad62d14b22c3"
+          },
+          "envelope": {
+            "revision": "r3",
+            "sha256": "86d28a81a2d80b2141d5d013ad3c3ba6b9974dfb8908e085833dc72afb160acd"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "approved-chatgpt-oauth-discovery"
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "RFC 9728 multi-path metadata discovery and path-aware advertisement"
+    },
+    {
+      "id": "R2",
+      "summary": "Bidirectional audience tolerance"
+    },
+    {
+      "id": "R3",
+      "summary": "Route normalization and root probe handling"
+    },
+    {
+      "id": "R4",
+      "summary": "Bounded structured missing-credential diagnostics"
+    }
+  ],
+  "authorization": {
+    "mode": "bounded",
+    "id": "auth-1",
+    "packetDigest": "a2058afcea6a3ef087f18a8008294837d08374cd093d13291f27204132bdb104",
+    "selectedBranchId": "approved-chatgpt-oauth-discovery",
+    "receipt": {
+      "sourceId": "src-user",
+      "recordedAt": "2026-11-01T18:40:00Z",
+      "response": {
+        "origin": "user",
+        "explicit": true,
+        "timedOut": false,
+        "automatic": false,
+        "packetDigest": "a2058afcea6a3ef087f18a8008294837d08374cd093d13291f27204132bdb104",
+        "selectedBranchId": "approved-chatgpt-oauth-discovery"
+      }
+    }
+  },
+  "reviews": {
+    "specification": {
+      "verdict": "pass",
+      "reviewerId": "critic",
+      "packetDigest": "a2058afcea6a3ef087f18a8008294837d08374cd093d13291f27204132bdb104",
+      "receipt": {
+        "sourceId": "src-review",
+        "recordedAt": "2026-11-01T18:40:00Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    },
+    "tasks": {
+      "verdict": "pass",
+      "reviewerId": "critic",
+      "packetDigest": "a2058afcea6a3ef087f18a8008294837d08374cd093d13291f27204132bdb104",
+      "receipt": {
+        "sourceId": "src-review",
+        "recordedAt": "2026-11-01T18:40:00Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    }
+  },
+  "sources": [
+    {
+      "id": "src-user",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/chatgpt-oauth-discovery/user-auth.txt",
+        "sha256": "ce7d5b0230cac086c606ae4aefc7531c318c9caa2e9d9dcc7b8210893475dcb6"
+      },
+      "locator": "user conversation message",
+      "recordedAt": "2026-11-01T18:40:00Z"
+    },
+    {
+      "id": "src-review",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/chatgpt-oauth-discovery/review-r3.md",
+        "sha256": "b01742b141dc6874b77b3e223091eb79cbfd280f1438bc95c9781c46e53ed257"
+      },
+      "locator": "critic review receipt r3",
+      "recordedAt": "2026-11-01T18:40:00Z"
+    }
+  ],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "T1",
+      "T2",
+      "T3",
+      "T4"
+    ],
+    "readPaths": [
+      ".scratch/chatgpt-oauth-discovery/spec.md",
+      ".scratch/chatgpt-oauth-discovery/issues/01-rfc9728-multi-path-metadata-discovery.md",
+      ".scratch/chatgpt-oauth-discovery/issues/02-bidirectional-audience-tolerance-and-diagnostics.md",
+      ".scratch/chatgpt-oauth-discovery/issues/03-route-normalization-and-root-probe-handling.md",
+      ".scratch/chatgpt-oauth-discovery/issues/04-integrated-action-discovery-wire-verification.md"
+    ],
+    "writePaths": [
+      "cmd/mcp-bridge/serve.go",
+      "internal/auth/metadata.go",
+      "internal/auth/middleware.go",
+      "internal/auth/metadata_test.go",
+      "internal/auth/middleware_test.go",
+      "cmd/mcp-bridge/serve_oauth_test.go",
+      "cmd/mcp-bridge/serve_provenance_test.go"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/serve.go",
+          "internal/auth/metadata.go",
+          "internal/auth/middleware.go",
+          "internal/auth/metadata_test.go",
+          "cmd/mcp-bridge/serve_oauth_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC-1",
+        "AC-2",
+        "AC-3"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T2",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/auth/middleware.go",
+          "internal/auth/middleware_test.go",
+          "cmd/mcp-bridge/serve_oauth_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC-4",
+        "AC-5",
+        "AC-6"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T3",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1",
+        "T2"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/serve_oauth_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC-7"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T4",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1",
+        "T2",
+        "T3"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/serve_oauth_test.go",
+          "cmd/mcp-bridge/serve_provenance_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC-8"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC-1",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-2",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-3",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-4",
+      "requirementIds": [
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-5",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-6",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-7",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-8",
+      "requirementIds": [
+        "R1",
+        "R2",
+        "R3",
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": ".superpowers/sdd/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}
