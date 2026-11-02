@@ -175,8 +175,12 @@ func TestSaveLoadRoundTripIsAtomicAndPrivate(t *testing.T) {
 	if !loaded.Envelope.CreatedAt.Equal(snapshot.Envelope.CreatedAt) || loaded.Envelope.CreatedAt.Location() != time.UTC {
 		t.Fatalf("created_at = %v; want UTC RFC3339Nano %v", loaded.Envelope.CreatedAt, snapshot.Envelope.CreatedAt)
 	}
-	if strings.TrimSpace(loaded.Envelope.SnapshotChecksum) == "" || loaded.Envelope.SnapshotChecksum != snapshot.Envelope.SnapshotChecksum {
-		t.Fatalf("snapshot_checksum = %q; want the canonical checksum", loaded.Envelope.SnapshotChecksum)
+	canonicalChecksum, err := snapshot.Checksum()
+	if err != nil {
+		t.Fatalf("canonical checksum: %v", err)
+	}
+	if strings.TrimSpace(loaded.Envelope.SnapshotChecksum) == "" || loaded.Envelope.SnapshotChecksum != canonicalChecksum {
+		t.Fatalf("snapshot_checksum = %q; want the canonical checksum %q", loaded.Envelope.SnapshotChecksum, canonicalChecksum)
 	}
 	first, err := os.ReadFile(path)
 	if err != nil {
@@ -438,6 +442,14 @@ func TestValidateRejectsBoundsAndIdentityConflicts(t *testing.T) {
 		}},
 		{name: "retired binding with live server", mutate: func(s *storage.Snapshot) { s.Bindings[0].Retired = true }},
 		{name: "orphan server row", mutate: func(s *storage.Snapshot) { s.Bindings = nil }},
+		{name: "mismatched endpoint fingerprint", mutate: func(s *storage.Snapshot) { s.Servers[0].EndpointFingerprint = "other" }},
+		{name: "invalid catalog status", mutate: func(s *storage.Snapshot) { s.Servers[0].CatalogStatus = "bogus" }},
+		{name: "stale status without reason", mutate: func(s *storage.Snapshot) { s.Servers[0].CatalogStatus = storage.StatusStale; s.Servers[0].Reason = "" }},
+		{name: "empty raw name", mutate: func(s *storage.Snapshot) { s.Tools[0].RawName = "" }},
+		{name: "invalid embedding content hash", mutate: func(s *storage.Snapshot) { s.Tools[0].EmbeddingContentHash = "not-hex" }},
+		{name: "duplicate binding", mutate: func(s *storage.Snapshot) { s.Bindings = append(s.Bindings, s.Bindings[0]) }},
+		{name: "invalid binding server id", mutate: func(s *storage.Snapshot) { s.Bindings[0].ServerID = "invalid id" }},
+		{name: "empty binding endpoint fingerprint", mutate: func(s *storage.Snapshot) { s.Bindings[0].EndpointFingerprint = "" }},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -472,5 +484,216 @@ func TestTombstoneRejectsRebind(t *testing.T) {
 	}
 	if !snapshot.BindingAllowed("greenfield", strings.Repeat("7", 64)) {
 		t.Fatal("a server with no binding was refused its first bind")
+	}
+}
+func TestPromptSnapshotAndStoreEdgeCases(t *testing.T) {
+	dir := t.TempDir()
+	store, err := storage.Open(dir)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	defer store.Close()
+
+	if store.Dir() != dir {
+		t.Fatalf("Dir: got %s, want %s", store.Dir(), dir)
+	}
+	if store.Path() != filepath.Join(dir, "snapshot.json") {
+		t.Fatalf("Path: got %s", store.Path())
+	}
+	if store.PromptPath() != filepath.Join(dir, "prompts.json") {
+		t.Fatalf("PromptPath: got %s", store.PromptPath())
+	}
+
+	var nilPrompt *storage.PromptSnapshot
+	if err := nilPrompt.Validate(); err == nil {
+		t.Fatal("expected error validating nil prompt snapshot")
+	}
+	badVersion := &storage.PromptSnapshot{SchemaVersion: 999}
+	if err := badVersion.Validate(); err == nil {
+		t.Fatal("expected error validating bad version")
+	}
+	badServer := &storage.PromptSnapshot{
+		SchemaVersion: storage.PromptSchemaVersion,
+		Prompts: []storage.Prompt{{ServerID: "BadServer", RawName: "r", PublicName: "p"}},
+	}
+	if err := badServer.Validate(); err == nil {
+		t.Fatal("expected error validating bad server ID")
+	}
+	badArgs := &storage.PromptSnapshot{
+		SchemaVersion: storage.PromptSchemaVersion,
+		Prompts: []storage.Prompt{{ServerID: "alpha", RawName: "r", PublicName: "p", Arguments: json.RawMessage("invalid-json")}},
+	}
+	if err := badArgs.Validate(); err == nil {
+		t.Fatal("expected error validating bad arguments")
+	}
+	dupPublic := &storage.PromptSnapshot{
+		SchemaVersion: storage.PromptSchemaVersion,
+		Prompts: []storage.Prompt{
+			{ServerID: "alpha", RawName: "r1", PublicName: "p"},
+			{ServerID: "alpha", RawName: "r2", PublicName: "p"},
+		},
+	}
+	if err := dupPublic.Validate(); err == nil {
+		t.Fatal("expected error validating duplicate public name")
+	}
+
+	if err := store.SavePrompts(nil); err == nil {
+		t.Fatal("expected error saving nil prompts")
+	}
+	if err := store.SavePrompts(badVersion); err == nil {
+		t.Fatal("expected error saving invalid prompts")
+	}
+
+	valid := &storage.PromptSnapshot{
+		SchemaVersion: storage.PromptSchemaVersion,
+		Prompts: []storage.Prompt{
+			{ServerID: "alpha", RawName: "r", PublicName: "p", Arguments: json.RawMessage("{\"type\":\"object\"}")},
+		},
+	}
+	if err := store.SavePrompts(valid); err != nil {
+		t.Fatalf("SavePrompts: %v", err)
+	}
+	loaded, err := store.LoadPrompts()
+	if err != nil {
+		t.Fatalf("LoadPrompts: %v", err)
+	}
+	if len(loaded.Prompts) != 1 {
+		t.Fatalf("got %d prompts, want 1", len(loaded.Prompts))
+	}
+
+	dir2 := t.TempDir()
+	store2, err := storage.Open(dir2)
+	if err != nil {
+		t.Fatalf("Open store2: %v", err)
+	}
+	store2.Close()
+	if err := store2.SavePrompts(valid); err == nil {
+		t.Fatal("expected error saving on closed store")
+	}
+}
+func TestStoreErrorPathsAndEdgeCases(t *testing.T) {
+	f, err := os.CreateTemp("", "store-test-file")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+	defer os.Remove(f.Name())
+	if _, err := storage.Open(filepath.Join(f.Name(), "sub")); err == nil {
+		t.Fatal("expected Open error on file path")
+	}
+
+	var nilStore *storage.Store
+	if err := nilStore.Close(); err != nil {
+		t.Fatalf("nil Close: %v", err)
+	}
+	if err := nilStore.Save(nil); err == nil {
+		t.Fatal("expected Save error on nil store")
+	}
+
+	dir := t.TempDir()
+	store, err := storage.Open(dir)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	if err := store.Save(nil); err == nil {
+		t.Fatal("expected Save error on nil snapshot")
+	}
+	if err := store.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatalf("second Close: %v", err)
+	}
+	if err := store.Save(&storage.Snapshot{}); err == nil {
+		t.Fatal("expected Save error on closed store")
+	}
+
+	dir2 := t.TempDir()
+	store2, err := storage.Open(dir2)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	defer store2.Close()
+
+	if err := os.WriteFile(store2.Path(), []byte("{\"schema_version\": 999}"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store2.Load(); err == nil {
+		t.Fatal("expected error loading unsupported schema_version")
+	}
+
+	valid := validSnapshot()
+	data, _ := json.Marshal(valid)
+	if err := os.WriteFile(store2.Path(), append(data, []byte(" trailing")...), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store2.Load(); err == nil {
+		t.Fatal("expected error loading snapshot with trailing data")
+	}
+
+	store3, err := storage.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store3.Close()
+	if err := os.WriteFile(store3.Path(), []byte("not-json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := store3.Save(valid); err == nil {
+		t.Fatal("expected Save error on corrupt untrusted snapshot")
+	}
+
+	if err := os.WriteFile(store3.PromptPath(), []byte("not-json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	validPrompts := &storage.PromptSnapshot{
+		SchemaVersion: storage.PromptSchemaVersion,
+		Prompts:       []storage.Prompt{{ServerID: "alpha", RawName: "r", PublicName: "p"}},
+	}
+	if err := store3.SavePrompts(validPrompts); err == nil {
+		t.Fatal("expected SavePrompts error on corrupt untrusted prompts")
+	}
+
+	if _, err := store3.LoadPrompts(); err == nil {
+		t.Fatal("expected LoadPrompts error on corrupt json")
+	}
+	pData, _ := json.Marshal(validPrompts)
+	if err := os.WriteFile(store3.PromptPath(), append(pData, []byte(" trailing")...), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store3.LoadPrompts(); err == nil {
+		t.Fatal("expected LoadPrompts error on trailing data")
+	}
+}
+func TestSnapshotBindingAllowed(t *testing.T) {
+	snap := validSnapshot()
+	if !snap.BindingAllowed("portainer", snap.Bindings[0].EndpointFingerprint) {
+		t.Fatal("expected binding to be allowed")
+	}
+	if snap.BindingAllowed("portainer", "mismatched") {
+		t.Fatal("expected mismatched fingerprint to be rejected")
+	}
+	snap.Bindings[0].Retired = true
+	if snap.BindingAllowed("portainer", snap.Bindings[0].EndpointFingerprint) {
+		t.Fatal("expected retired binding to be rejected")
+	}
+}
+func TestSnapshotValidateEdges(t *testing.T) {
+	snap := validSnapshot()
+	snap.Servers = append(snap.Servers, storage.Server{ServerID: "orphan", EndpointFingerprint: fingerprintValue, CatalogStatus: storage.StatusNone})
+	if err := snap.Validate(); err == nil {
+		t.Fatal("expected error on server without binding")
+	}
+
+	snap = validSnapshot()
+	snap.Embeddings[0].ContentHash = "not-a-hex-digest"
+	if err := snap.Validate(); err == nil {
+		t.Fatal("expected error on embedding invalid content hash")
+	}
+
+	snap = validSnapshot()
+	snap.Embeddings[0].FormatVersion = ""
+	if err := snap.Validate(); err == nil {
+		t.Fatal("expected error on embedding missing format version")
 	}
 }

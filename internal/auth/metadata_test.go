@@ -102,25 +102,43 @@ func TestProtectedResourceHandlerDynamicConfig(t *testing.T) {
 }
 
 func TestProtectedResourceHandlerPathBearing(t *testing.T) {
-	paths := []string{
-		"/.well-known/oauth-protected-resource",
-		"/.well-known/oauth-protected-resource/mcp",
-		"/mcp/.well-known/oauth-protected-resource",
+	paths := []struct {
+		path   string
+		isRoot bool
+	}{
+		{path: "/.well-known/oauth-protected-resource", isRoot: true},
+		{path: "/.well-known/oauth-protected-resource/mcp"},
+		{path: "/mcp/.well-known/oauth-protected-resource"},
 	}
 	for _, tc := range []struct {
-		name        string
-		resourceURL string
-		want        string
+		name           string
+		resourceURL    string
+		wantRoot       string
+		wantEndpoint   string
 	}{
 		{
-			name:        "origin configured",
-			want:        "https://api.example.org/mcp",
-			resourceURL: "https://api.example.org",
+			name:         "origin configured",
+			resourceURL:  "https://api.example.org",
+			wantRoot:     "https://api.example.org",
+			wantEndpoint: "https://api.example.org/mcp",
 		},
 		{
-			name:        "endpoint configured",
-			resourceURL: "https://api.example.org/mcp",
-			want:        "https://api.example.org/mcp",
+			name:         "origin configured with trailing slash",
+			resourceURL:  "https://api.example.org/",
+			wantRoot:     "https://api.example.org",
+			wantEndpoint: "https://api.example.org/mcp",
+		},
+		{
+			name:         "endpoint configured",
+			resourceURL:  "https://api.example.org/mcp",
+			wantRoot:     "https://api.example.org/mcp",
+			wantEndpoint: "https://api.example.org/mcp",
+		},
+		{
+			name:         "endpoint configured with trailing slash",
+			resourceURL:  "https://api.example.org/mcp/",
+			wantRoot:     "https://api.example.org/mcp",
+			wantEndpoint: "https://api.example.org/mcp",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -128,10 +146,10 @@ func TestProtectedResourceHandlerPathBearing(t *testing.T) {
 				PocketIDIssuer: "https://sso.example.org",
 				MCPResourceURL: tc.resourceURL,
 			})
-			for _, path := range paths {
-				t.Run(path, func(t *testing.T) {
+			for _, route := range paths {
+				t.Run(route.path, func(t *testing.T) {
 					rec := httptest.NewRecorder()
-					req := httptest.NewRequest(http.MethodGet, path, nil)
+					req := httptest.NewRequest(http.MethodGet, route.path, nil)
 
 					handler.ServeHTTP(rec, req)
 
@@ -146,8 +164,12 @@ func TestProtectedResourceHandlerPathBearing(t *testing.T) {
 					if err := json.Unmarshal(rec.Body.Bytes(), &meta); err != nil {
 						t.Fatalf("unmarshalling body %q: %v", rec.Body.String(), err)
 					}
-					if meta.Resource != tc.want {
-						t.Errorf("Resource = %q, want %q", meta.Resource, tc.want)
+					want := tc.wantEndpoint
+					if route.isRoot {
+						want = tc.wantRoot
+					}
+					if meta.Resource != want {
+						t.Errorf("Resource = %q, want %q", meta.Resource, want)
 					}
 				})
 			}

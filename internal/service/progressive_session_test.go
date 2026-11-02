@@ -531,3 +531,23 @@ func headersEqual(left, right http.Header) bool {
 	}
 	return true
 }
+func TestEnsureOwnerProjectionNilRuntime(t *testing.T) {
+	runtime := NewRuntime()
+	surface, err := NewToolSurface(runtime, ToolSurfaceConfig{Model: search.ModelIdentity{Dimensions: 1}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	coordinator := surface.projectionCoordinator()
+	owner := projectionOwner{kind: projectionSession, sessionID: "s1", epoch: 1}
+	coordinator.barrier.Lock()
+	coordinator.liveOwners[owner] = struct{}{}
+	coordinator.barrier.Unlock()
+
+	proj, err := surface.ensureOwnerProjection(owner)
+	if err != nil {
+		t.Fatalf("ensureOwnerProjection: %v", err)
+	}
+	if proj == nil {
+		t.Fatal("expected non-nil projection")
+	}
+}

@@ -1,1 +1,8 @@
-{"task_id":"T2","status":"COMPLETED","artifact_receipt":"internal/auth/middleware.go; internal/auth/middleware_test.go; internal/service/inbound.go; internal/service/inbound_test.go; cmd/mcp-bridge/serve.go; cmd/mcp-bridge/serve_oauth_test.go","telemetry_ref":null,"summary":"Implemented session admission validator hook and tokenless discovery burst under MCP_SESSION_ADMISSION_ENABLED gate with passing tests","error_code":null}
+{
+  "task_id": "T2",
+  "status": "PASS",
+  "artifact_receipt": "coverage.out",
+  "telemetry_ref": null,
+  "summary": "Completed ChatGPT wire verification test and targeted edge tests in internal/service, internal/storage, and cmd/mcp-bridge. All focused tests passed, go vet passed, full repository go test -race -count=1 ./... passed, and coverage gate passed at 90.1% (6,135 / 6,807 lines >= 90.0%).",
+  "error_code": null
+}

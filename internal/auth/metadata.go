@@ -18,7 +18,7 @@ type Metadata struct {
 }
 
 // NewProtectedResourceHandler returns a handler serving the protected
-// resource metadata document built from cfg. The payload is marshalled once
+// resource metadata document built from cfg. The payloads are marshalled once
 // at construction so each request only writes pre-rendered bytes.
 func NewProtectedResourceHandler(cfg Config) http.Handler {
 	buildMetadata := func(resource string) []byte {
@@ -28,18 +28,21 @@ func NewProtectedResourceHandler(cfg Config) http.Handler {
 			ScopesSupported:        []string{"openid", "email", "profile", "mcp:connect"},
 			BearerMethodsSupported: []string{"header"},
 		}
-		// Metadata holds only strings and string slices, so Marshal cannot
-		// fail; the error is deliberately discarded to keep the request path
-		// branchless.
+		// Metadata holds only strings and string slices, so Marshal cannot fail.
+		// The marshal error is intentionally ignored.
 		payload, _ := json.Marshal(meta)
 		return payload
 	}
 
-	canonicalResource := cfg.MCPResourceURL
-	if !strings.HasSuffix(strings.TrimRight(canonicalResource, "/"), "/mcp") {
-		canonicalResource = strings.TrimRight(canonicalResource, "/") + "/mcp"
+	cleanResource := strings.TrimRight(cfg.MCPResourceURL, "/")
+	isPathBearing := strings.HasSuffix(cleanResource, "/mcp")
+	originPayload := buildMetadata(cleanResource)
+
+	endpointResource := cleanResource
+	if !isPathBearing {
+		endpointResource += "/mcp"
 	}
-	canonicalPayload := buildMetadata(canonicalResource)
+	endpointPayload := buildMetadata(endpointResource)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Dispatch classification: this handler actually served the request.
@@ -50,9 +53,14 @@ func NewProtectedResourceHandler(cfg Config) http.Handler {
 			return
 		}
 
-		// All well-known targets advertise the canonical MCP endpoint resource.
+		payload := originPayload
+		if isPathBearing || strings.Contains(r.URL.Path, "/mcp") {
+			payload = endpointPayload
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(canonicalPayload)
+		_, _ = w.Write(payload)
 	})
 }
+

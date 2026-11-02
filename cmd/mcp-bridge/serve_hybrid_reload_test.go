@@ -232,16 +232,11 @@ func TestServeHybridSIGHUPReload(t *testing.T) {
 		sendReload(t)
 		watcher.waitSignal(t)
 
-		names := listToolNames(t, ctx, session)
-		if !listToolsContains(names, "alpha__read") {
-			t.Errorf("tools/list after pin addition missing alpha__read; tools = %v", names)
-		}
-		if !listToolsContains(names, "alpha__write") {
-			t.Errorf("tools/list after pin addition missing alpha__write; tools = %v", names)
-		}
-		if len(names) != 5 {
-			t.Errorf("tools/list after pin addition = %d tools (%v); want 5 (3 meta-tools + both pins)", len(names), names)
-		}
+		var names []string
+		waitFor(t, "pin addition reload", func() bool {
+			names = listToolNames(t, ctx, session)
+			return listToolsContains(names, "alpha__read") && listToolsContains(names, "alpha__write") && len(names) == 5
+		})
 
 		result, err := directCallTool(t, ctx, session, "alpha__write")
 		if err != nil {
@@ -261,13 +256,11 @@ func TestServeHybridSIGHUPReload(t *testing.T) {
 		sendReload(t)
 		watcher.waitSignal(t)
 
-		names := listToolNames(t, ctx, session)
-		if !listToolsContains(names, "alpha__write") {
-			t.Errorf("tools/list after pin removal missing alpha__write; tools = %v", names)
-		}
-		if listToolsContains(names, "alpha__read") {
-			t.Errorf("tools/list after pin removal still lists alpha__read; tools = %v", names)
-		}
+		var names []string
+		waitFor(t, "pin removal reload", func() bool {
+			names = listToolNames(t, ctx, session)
+			return listToolsContains(names, "alpha__write") && !listToolsContains(names, "alpha__read") && len(names) == 4
+		})
 
 		result, err := directCallTool(t, ctx, session, "alpha__read")
 		if err != nil {
@@ -284,6 +277,13 @@ func TestServeHybridSIGHUPReload(t *testing.T) {
 		beforeCount := watcher.count()
 		rewriteHybridReloadPins(t, configPath, httpAddress, operationsAddress, storageDirectory, embeddings.URL, servers,
 			[]string{"alpha/write", "alpha/nonexistent"})
+		for drained := false; !drained; {
+			select {
+			case <-watcher.notify:
+			default:
+				drained = true
+			}
+		}
 		sendReload(t)
 
 		// Give the reload handler time to process and reject the candidate.

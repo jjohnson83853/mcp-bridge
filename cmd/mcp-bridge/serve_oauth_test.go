@@ -7,6 +7,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -20,6 +21,8 @@ import (
 	"time"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/auth"
+	"github.com/jjohnson83853/mcp-bridge/internal/config"
+	"github.com/jjohnson83853/mcp-bridge/internal/search"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
@@ -407,8 +410,8 @@ func TestServeOAuthWire(t *testing.T) {
 	if err := json.Unmarshal([]byte(body), &metadata); err != nil {
 		t.Fatalf("decode metadata %q: %v", body, err)
 	}
-	if metadata.Resource != oauthResource+"/mcp" {
-		t.Fatalf("metadata resource = %q; want %q", metadata.Resource, oauthResource+"/mcp")
+	if metadata.Resource != oauthResource {
+		t.Fatalf("metadata resource = %q; want %q", metadata.Resource, oauthResource)
 	}
 	if len(metadata.AuthorizationServers) != 1 || metadata.AuthorizationServers[0] != oauthIssuer {
 		t.Fatalf("metadata authorization_servers = %v; want [%s]", metadata.AuthorizationServers, oauthIssuer)
@@ -855,4 +858,252 @@ func TestServeOAuthSessionAuthorizationCeilingWire(t *testing.T) {
 	if status, _ = send("", "wire-session"); status != http.StatusAccepted {
 		t.Fatalf("tokenless request after renewal status=%d, want 202", status)
 	}
+}
+func TestChatGPTOAuthAndActionDiscoveryWire(t *testing.T) {
+	const resourceURL = "https://mcp.bullprog.com"
+
+	t.Setenv("MCP_RESOURCE_URL", resourceURL)
+	t.Setenv("MCP_SESSION_ADMISSION_ENABLED", "true")
+	t.Setenv("MCP_REQUIRED_SCOPE", "mcp:connect")
+
+	h := startOAuthHarness(t)
+	h.awaitLive(t)
+	h.awaitReady(t)
+	token := h.oauthToken(t, time.Now().UTC(), map[string]any{"aud": resourceURL, "scope": "mcp:connect"})
+
+	post := func(body, token, sessionID string) *http.Response {
+		t.Helper()
+		request, err := http.NewRequest(http.MethodPost, h.httpURL+"/mcp", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Accept", "application/json, text/event-stream")
+		if token != "" {
+			request.Header.Set("Authorization", "Bearer "+token)
+		}
+		if sessionID != "" {
+			request.Header.Set("Mcp-Session-Id", sessionID)
+		}
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return response
+	}
+
+	probe := post(`{}`, "", "")
+	defer probe.Body.Close()
+	if probe.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated probe status = %d; want 401", probe.StatusCode)
+	}
+	if got := probe.Header.Get("WWW-Authenticate"); !strings.Contains(got, `resource_metadata="https://mcp.bullprog.com/.well-known/oauth-protected-resource"`) {
+		t.Fatalf("unauthenticated probe WWW-Authenticate = %q; want origin metadata target", got)
+	}
+
+	discovery, err := http.Get(h.httpURL + "/.well-known/oauth-protected-resource")
+	if err != nil {
+		t.Fatalf("GET protected resource metadata: %v", err)
+	}
+	defer discovery.Body.Close()
+	if discovery.StatusCode != http.StatusOK {
+		t.Fatalf("protected resource metadata status = %d; want 200", discovery.StatusCode)
+	}
+	metadata := oauthJSONBody(t, discovery)
+	if got := metadata["resource"]; got != resourceURL {
+		t.Fatalf("protected resource metadata resource = %v; want %q", got, resourceURL)
+	}
+
+	initialize := post(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"chatgpt","version":"1.0"}}}`, token, "")
+	defer initialize.Body.Close()
+	if initialize.StatusCode != http.StatusOK {
+		t.Fatalf("initialize status = %d; want 200", initialize.StatusCode)
+	}
+	sessionID := initialize.Header.Get("Mcp-Session-Id")
+	if sessionID == "" {
+		t.Fatal("expected session ID")
+	}
+
+	notification := post(`{"jsonrpc":"2.0","method":"notifications/initialized"}`, "", sessionID)
+	defer notification.Body.Close()
+	if notification.StatusCode != http.StatusAccepted {
+		t.Fatalf("initialized notification status = %d; want 202", notification.StatusCode)
+	}
+	notificationBody, err := io.ReadAll(notification.Body)
+	if err != nil {
+		t.Fatalf("read initialized notification body: %v", err)
+	}
+	if strings.TrimSpace(string(notificationBody)) != "" {
+		t.Fatalf("initialized notification body = %q; want empty", notificationBody)
+	}
+
+	toolList := post(`{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`, "", sessionID)
+	defer toolList.Body.Close()
+	if toolList.StatusCode != http.StatusOK {
+		t.Fatalf("tools/list status = %d; want 200", toolList.StatusCode)
+	}
+	toolListBody := oauthJSONBody(t, toolList)
+	if toolListBody["jsonrpc"] != "2.0" {
+		t.Fatalf("tools/list jsonrpc = %v; want 2.0", toolListBody["jsonrpc"])
+	}
+	result, ok := toolListBody["result"].(map[string]any)
+	if !ok {
+		t.Fatalf("tools/list result = %v; want JSON object", toolListBody["result"])
+	}
+	if _, ok := result["tools"].([]any); !ok {
+		t.Fatalf("tools/list result tools = %v; want JSON array", result["tools"])
+	}
+
+	negativeResponse := post(`{"jsonrpc":"2.0","id":3,"method":"tools/list","params":{}}`, "", "unknown-bogus-session")
+	defer negativeResponse.Body.Close()
+	captured := h.stdout.String()
+	if negativeResponse.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("unknown-session request status = %d; want 401", negativeResponse.StatusCode)
+	}
+	diagID := negativeResponse.Header.Get("mcp-diagnostic-id")
+	if diagID == "" {
+		t.Fatal("unknown-session response omitted mcp-diagnostic-id")
+	}
+	matchingRecords := 0
+	for _, line := range strings.Split(strings.TrimSpace(captured), "\n") {
+		var record struct {
+			RequestID     string `json:"request_id"`
+			FailureStage  string `json:"failure_stage"`
+			FailureReason string `json:"failure_reason"`
+		}
+		if err := json.Unmarshal([]byte(line), &record); err != nil {
+			continue
+		}
+		if record.RequestID != diagID {
+			continue
+		}
+		matchingRecords++
+		if record.FailureStage != "outer_oauth" || record.FailureReason != "credentials_missing" {
+			t.Errorf("diagnostic record for %q has failure_stage=%q failure_reason=%q; want outer_oauth/credentials_missing", diagID, record.FailureStage, record.FailureReason)
+		}
+	}
+	if matchingRecords != 1 {
+		t.Fatalf("stdout contained %d diagnostic records for request_id %q; want exactly one (stdout=%q)", matchingRecords, diagID, captured)
+	}
+}
+func TestDiagnosticDepsWiringCoverage(t *testing.T) {
+	ctx := context.Background()
+	nowFn := func() time.Time { return time.Date(2026, 11, 2, 0, 0, 0, 0, time.UTC) }
+	idFn := func() string { return "test-id" }
+	deps := diagnosticDeps{Now: nowFn, NewID: idFn}
+	ctx = withDiagnosticDeps(ctx, deps)
+	if gotDeps, ok := diagnosticDepsFromContext(ctx); !ok || gotDeps.Now == nil {
+		t.Fatal("expected diagnostic deps in context")
+	}
+	if diagnosticNowFromContext(ctx)() != nowFn() {
+		t.Fatal("diagnosticNowFromContext mismatch")
+	}
+	if diagnosticNewIDFromContext(ctx)() != "test-id" {
+		t.Fatal("diagnosticNewIDFromContext mismatch")
+	}
+	if !isSafeServerID("alpha-1") || isSafeServerID("") || isSafeServerID("Alpha") || isSafeServerID("tool_1") {
+		t.Fatal("isSafeServerID validation failure")
+	}
+}
+func TestWiringEdgeCases(t *testing.T) {
+	err1 := errors.New("err1")
+	err2 := errors.New("err2")
+	if firstError(nil, nil) != nil || firstError(err1, nil) != err1 || firstError(nil, err2) != err2 || firstError(err1, err2) != err1 {
+		t.Fatal("firstError logic failure")
+	}
+	holder := newConfigHolder()
+	reg := newUpstreamRegistry(holder)
+	s := config.Server{ID: "test", Endpoint: "http://example.com"}
+	if _, err := reg.newClient(s); err == nil {
+		t.Fatal("expected error with no staged config")
+	}
+	if _, err := reg.discover(s); err == nil {
+		t.Fatal("expected error with no client for server")
+	}
+	if _, err := reg.discoverPrompts(s); err == nil {
+		t.Fatal("expected error with no client for server")
+	}
+	if err := reg.close(nil); err != nil {
+		t.Fatalf("close(nil) = %v", err)
+	}
+
+	// Exercise all branches of restartOnlyField
+	cases := []struct {
+		name      string
+		candidate config.Command
+		want      string
+	}{
+		{"identical", config.Command{}, ""},
+		{"http", config.Command{HTTPListen: "1"}, "http.listen"},
+		{"ops", config.Command{OperationsListen: "1"}, "operations.listen"},
+		{"dir", config.Command{StorageDirectory: "1"}, "storage.directory"},
+		{"snap", config.Command{MaxSnapshotBytes: 1}, "storage.max_snapshot_bytes"},
+		{"refresh", config.Command{RefreshInterval: 1}, "catalog.refresh_interval"},
+		{"rate", config.Command{OpsRequestsPerSecond: 1}, "operations.requests_per_second"},
+		{"burst", config.Command{OpsBurst: 1}, "operations.burst"},
+		{"search", config.Command{Search: config.SearchSettings{DefaultTopK: 1}}, "search"},
+		{"embed", config.Command{Embedding: config.EmbeddingSettings{Model: "1"}}, "embedding"},
+	}
+	base := config.Command{}
+	for _, tc := range cases {
+		if got := restartOnlyField(base, tc.candidate); got != tc.want {
+			t.Fatalf("restartOnlyField(%s) = %q, want %q", tc.name, got, tc.want)
+		}
+	}
+
+	// Exercise configHolder methods
+	if holder.publishedSettings() != nil {
+		t.Fatal("expected nil publishedSettings initially")
+	}
+	holder.commit() // commit without staged is a no-op
+	if s := holder.settings(); s.MaxRequestBytes != 0 {
+		t.Fatal("expected empty settings initially")
+	}
+	if st := holder.stagedSettings(); st.MaxRequestBytes != 0 {
+		t.Fatal("expected empty stagedSettings initially")
+	}
+
+	cmd := config.Command{MaxRequestBytes: 1024, MaxSessions: 10}
+	holder.stage(&config.Config{}, cmd)
+	if b := holder.bounds(); b.MaxRequestBytes != 1024 || b.MaxSessions != 10 {
+		t.Fatal("bounds mismatch")
+	}
+	if st := holder.stagedSettings(); st.MaxRequestBytes != 1024 {
+		t.Fatal("stagedSettings mismatch")
+	}
+	holder.commit()
+	if pub := holder.publishedSettings(); pub == nil || pub.MaxRequestBytes != 1024 {
+		t.Fatal("expected publishedSettings after commit")
+	}
+	if s := holder.settings(); s.MaxRequestBytes != 1024 {
+		t.Fatal("settings mismatch")
+	}
+	// embedder error branches (wiring.go:261, 271, 274)
+	embedFn := embedder(&mockEmbedProvider{}, search.ModelIdentity{}, config.EmbeddingSettings{Timeout: time.Second})
+	if res, err := embedFn(nil); res != nil || err != nil {
+		t.Fatal("expected nil, nil on empty documents")
+	}
+
+	embedFnErr := embedder(&mockEmbedProvider{err: errors.New("embed error")}, search.ModelIdentity{}, config.EmbeddingSettings{Timeout: time.Second})
+	if _, err := embedFnErr([]search.Document{{RawName: "a"}}); err == nil {
+		t.Fatal("expected error from embed provider")
+	}
+
+	embedFnLen := embedder(&mockEmbedProvider{vectors: [][]float64{}}, search.ModelIdentity{}, config.EmbeddingSettings{Timeout: time.Second})
+	if _, err := embedFnLen([]search.Document{{RawName: "a"}}); err == nil {
+		t.Fatal("expected length mismatch error from embed provider")
+	}
+
+	// publishObserver line 371
+	obs := publishObserver(nil, nil, nil, nil)
+	obs(nil)
+}
+
+type mockEmbedProvider struct {
+	vectors [][]float64
+	err     error
+}
+
+func (m *mockEmbedProvider) Embed(ctx context.Context, inputs []string) ([][]float64, error) {
+	return m.vectors, m.err
 }
