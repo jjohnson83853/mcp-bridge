@@ -6,8 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -15,7 +18,9 @@ import (
 
 // DedicatedOptions is the full identity of one dedicated per-server runtime.
 type DedicatedOptions struct {
-	Server ServerOptions
+	Server    ServerOptions
+	Stateless bool
+	LogWriter io.Writer
 }
 
 // Dedicated owns exactly one upstream client and session for one configured
@@ -25,7 +30,11 @@ type DedicatedOptions struct {
 // Close. It never retries, never fulfills interaction requests, and never
 // queues behind a saturated or breaker-open server.
 type Dedicated struct {
-	client *ServerClient
+	client    *ServerClient
+	stateless bool
+
+	requiresHandshake bool
+	logWriter         io.Writer
 
 	mu      sync.Mutex
 	session *mcp.ClientSession
@@ -38,7 +47,19 @@ func NewDedicated(opts DedicatedOptions) (*Dedicated, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Dedicated{client: client}, nil
+	writer := opts.LogWriter
+	if writer == nil {
+		writer = os.Stdout
+	}
+	return &Dedicated{client: client, stateless: opts.Stateless, logWriter: writer}, nil
+}
+
+// RequiresHandshake reports whether discovery identified an upstream that
+// requires an initialization handshake before tool calls.
+func (d *Dedicated) RequiresHandshake() bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.requiresHandshake
 }
 
 // ID is the configured server identity this runtime is dedicated to.
@@ -74,9 +95,30 @@ func (d *Dedicated) sessionFor(ctx context.Context) (*mcp.ClientSession, error) 
 // server. Every page must succeed: a partial or malformed discovery is an error
 // so the caller keeps its last-known-good catalog instead of a truncated one.
 func (d *Dedicated) Discover(ctx context.Context) ([]core.ToolDefinition, error) {
-	session, err := d.sessionFor(ctx)
-	if err != nil {
-		return nil, err
+	var session *mcp.ClientSession
+	var err error
+	if d.stateless {
+		d.mu.Lock()
+		if d.closed {
+			d.mu.Unlock()
+			return nil, errUnavailable
+		}
+		d.mu.Unlock()
+		session, err = d.client.Connect(ctx, nil)
+		if err != nil {
+			return nil, fmt.Errorf("upstream: connect %s: %w", d.client.ID, err)
+		}
+		defer session.Close()
+	} else {
+		session, err = d.sessionFor(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if res := session.InitializeResult(); res != nil && res.ProtocolVersion < "2026-07-28" {
+		d.mu.Lock()
+		d.requiresHandshake = true
+		d.mu.Unlock()
 	}
 	var defs []core.ToolDefinition
 	cursor := ""
@@ -177,9 +219,45 @@ func (d *Dedicated) CallTool(ctx context.Context, pub, serverID, rawName string,
 	if serverID != "" && serverID != d.client.ID {
 		return nil, &core.UpstreamOutcome{Failure: &core.UpstreamFailure{Code: "unknown_tool", ExecutionState: core.ExecutionNotStarted}}
 	}
-	session, err := d.sessionFor(ctx)
-	if err != nil {
-		return nil, &core.UpstreamOutcome{Failure: &core.UpstreamFailure{Code: "backend_unavailable", ExecutionState: core.ExecutionNotStarted}}
+	var session *mcp.ClientSession
+	var err error
+	if d.stateless {
+		d.mu.Lock()
+		if d.closed {
+			d.mu.Unlock()
+			return nil, &core.UpstreamOutcome{Failure: &core.UpstreamFailure{Code: "backend_unavailable", ExecutionState: core.ExecutionNotStarted}}
+		}
+		d.mu.Unlock()
+		start := time.Now()
+		session, err = d.client.Connect(ctx, nil)
+		if err != nil {
+			return nil, &core.UpstreamOutcome{Failure: &core.UpstreamFailure{Code: "backend_unavailable", ExecutionState: core.ExecutionNotStarted}}
+		}
+		defer session.Close()
+
+		d.mu.Lock()
+		reqHandshake := d.requiresHandshake
+		d.mu.Unlock()
+
+		if reqHandshake {
+			protoVer := ""
+			if res := session.InitializeResult(); res != nil {
+				protoVer = res.ProtocolVersion
+			}
+			logEntry := map[string]any{
+				"level":            "info",
+				"event":            "upstream_ephemeral_handshake",
+				"backend_id":       d.client.ID,
+				"duration_ms":      time.Since(start).Milliseconds(),
+				"protocol_version": protoVer,
+			}
+			_ = json.NewEncoder(d.logWriter).Encode(logEntry)
+		}
+	} else {
+		session, err = d.sessionFor(ctx)
+		if err != nil {
+			return nil, &core.UpstreamOutcome{Failure: &core.UpstreamFailure{Code: "backend_unavailable", ExecutionState: core.ExecutionNotStarted}}
+		}
 	}
 	arguments, err := decodeArguments(args)
 	if err != nil {

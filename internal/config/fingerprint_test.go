@@ -154,6 +154,21 @@ func TestFingerprintTracksPublicShapeChanges(t *testing.T) {
 		})
 	}
 }
+func TestFingerprintChangesOnServerStatelessToggle(t *testing.T) {
+	fingerprintEnv(t)
+
+	falseConfig := strings.Replace(fingerprintBase,
+		"endpoint: https://alpha.invalid/mcp\n",
+		"endpoint: https://alpha.invalid/mcp\n    stateless: false\n", 1)
+	trueConfig := strings.Replace(fingerprintBase,
+		"endpoint: https://alpha.invalid/mcp\n",
+		"endpoint: https://alpha.invalid/mcp\n    stateless: true\n", 1)
+	falseFingerprint := mustParseConfig(t, falseConfig).Fingerprint()
+	trueFingerprint := mustParseConfig(t, trueConfig).Fingerprint()
+	if falseFingerprint == trueFingerprint {
+		t.Fatalf("server stateless toggle did not change the fingerprint: %q", falseFingerprint)
+	}
+}
 
 // TestFingerprintIgnoresSecretValues pins that only resolved secret values are
 // outside the public fingerprint: rotating an upstream or client secret value

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -18,6 +19,7 @@ import (
 	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // readHeaderTimeout bounds the header phase of every listener; shutdownTimeout
@@ -143,7 +145,8 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 		checks.storage(true)
 		return nil
 	}
-	inbound := service.NewInboundHandler(service.NewStreamableHandler(server), candidate.ClientTokenHashes(), service.InboundOptions{
+	streamableOpts := &mcp.StreamableHTTPOptions{Stateless: strings.EqualFold(os.Getenv("MCP_STATELESS"), "true")}
+	inbound := service.NewInboundHandler(service.NewStreamableHandler(server, streamableOpts), candidate.ClientTokenHashes(), service.InboundOptions{
 		Logger:          logger,
 		Now:             testServeNow,
 		Metrics:         metrics,

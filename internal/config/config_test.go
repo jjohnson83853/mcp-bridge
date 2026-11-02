@@ -35,6 +35,38 @@ func TestParseValidFlatConfigAndRedactsSecrets(t *testing.T) {
 		}
 	}
 }
+func TestServerStatelessDefaultAndExplicit(t *testing.T) {
+	t.Setenv("TEST_UPSTREAM_SECRET", "private-upstream-value")
+	t.Setenv("TEST_CLIENT_SECRET", "private-client-value")
+
+	cases := []struct {
+		name      string
+		stateless string
+		want      bool
+	}{
+		{name: "omitted", want: true},
+		{name: "explicit false", stateless: "false", want: false},
+		{name: "explicit true", stateless: "true", want: true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			input := valid
+			if tc.stateless != "" {
+				input = strings.Replace(input,
+					"endpoint: https://alpha.invalid/mcp\n",
+					"endpoint: https://alpha.invalid/mcp\n    stateless: "+tc.stateless+"\n", 1)
+			}
+			cfg, err := config.Parse([]byte(input), ".")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := cfg.Servers[0].ServerStateless(); got != tc.want {
+				t.Errorf("ServerStateless() = %t, want %t", got, tc.want)
+			}
+		})
+	}
+}
+
 
 func TestParseRejectsInvalidDocuments(t *testing.T) {
 	t.Setenv("TEST_UPSTREAM_SECRET", "upstream-secret")

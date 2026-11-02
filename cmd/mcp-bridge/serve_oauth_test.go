@@ -986,6 +986,57 @@ func TestChatGPTOAuthAndActionDiscoveryWire(t *testing.T) {
 		t.Fatalf("stdout contained %d diagnostic records for request_id %q; want exactly one (stdout=%q)", matchingRecords, diagID, captured)
 	}
 }
+func TestChatGPTDeveloperModeStatelessDiscoveryWire(t *testing.T) {
+	const resourceURL = "https://mcp.bullprog.com"
+
+	t.Setenv("MCP_RESOURCE_URL", resourceURL)
+	t.Setenv("MCP_STATELESS", "true")
+
+	h := startOAuthHarness(t)
+	h.awaitLive(t)
+	h.awaitReady(t)
+	token := h.oauthToken(t, time.Now().UTC(), map[string]any{"aud": "https://mcp.bullprog.com", "scope": "mcp:connect"})
+
+	post := func(method, toolName, body string) *http.Response {
+		t.Helper()
+		request, err := http.NewRequest(http.MethodPost, h.httpURL+"/mcp", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Accept", "application/json, text/event-stream")
+		request.Header.Set("Authorization", "Bearer "+token)
+		request.Header.Set("Mcp-Protocol-Version", "2026-07-28")
+		request.Header.Set("Mcp-Method", method)
+		if toolName != "" {
+			request.Header.Set("Mcp-Name", toolName)
+		}
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return response
+	}
+
+	discovery := post("server/discover", "", `{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientInfo":{"name":"wire-client","version":"1"},"io.modelcontextprotocol/clientCapabilities":{"sampling":{}}}}}`)
+	defer discovery.Body.Close()
+	if discovery.StatusCode != http.StatusOK {
+		t.Fatalf("server/discover status = %d; want 200", discovery.StatusCode)
+	}
+
+	toolList := post("tools/list", "", `{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{"sampling":{}}}}}`)
+	defer toolList.Body.Close()
+	if toolList.StatusCode != http.StatusOK {
+		t.Fatalf("tools/list status = %d; want 200", toolList.StatusCode)
+	}
+
+	toolCall := post("tools/call", "search_tools", `{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"search_tools","arguments":{"query":"test"},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{"sampling":{}}}}}`)
+	defer toolCall.Body.Close()
+	if toolCall.StatusCode != http.StatusOK {
+		t.Fatalf("tools/call status = %d; want 200", toolCall.StatusCode)
+	}
+}
+
 func TestDiagnosticDepsWiringCoverage(t *testing.T) {
 	ctx := context.Background()
 	nowFn := func() time.Time { return time.Date(2026, 11, 2, 0, 0, 0, 0, time.UTC) }

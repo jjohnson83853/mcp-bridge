@@ -40,6 +40,7 @@ type projectedServer struct {
 	Endpoint        string              `json:"endpoint"`
 	Limits          map[string]any      `json:"limits,omitempty"`
 	PromptsDisabled bool                `json:"prompts_disabled"`
+	Stateless       bool                `json:"stateless"`
 	Credentials     map[string]any      `json:"credentials,omitempty"`
 	ToolMetadata    *ToolMetadataConfig `json:"tool_metadata,omitempty"`
 }
@@ -68,6 +69,7 @@ func (c Config) Fingerprint() string {
 			ID:              server.ID,
 			Endpoint:        server.Endpoint,
 			PromptsDisabled: server.PromptsDisabled,
+			Stateless:       server.ServerStateless(),
 			Limits:          server.Limits,
 			Credentials:     server.Credentials,
 			ToolMetadata:    server.ToolMetadata,

@@ -37,10 +37,18 @@ var pinToolNamePattern = regexp.MustCompile("^[a-zA-Z0-9_-]+$")
 type Server struct {
 	ID              string              `yaml:"id"`
 	Endpoint        string              `yaml:"endpoint"`
+	Stateless       *bool               `yaml:"stateless,omitempty"`
 	PromptsDisabled bool                `yaml:"prompts_disabled"`
 	Credentials     map[string]any      `yaml:"credentials,omitempty"`
 	Limits          map[string]any      `yaml:"limits,omitempty"`
 	ToolMetadata    *ToolMetadataConfig `yaml:"tool_metadata,omitempty"`
+}
+
+func (s Server) ServerStateless() bool {
+	if s.Stateless == nil {
+		return true
+	}
+	return *s.Stateless
 }
 
 type Config struct {
@@ -593,7 +601,7 @@ var fields = map[string]map[string]bool{
 	"embedding":         set("provider model model_revision base_url dimensions api_key timeout max_concurrency batch_size max_response_bytes"),
 	"client_auth":       set("bearer_tokens"),
 	"upstream_defaults": set("connect_timeout call_timeout refresh_timeout max_concurrent_calls max_event_bytes max_response_bytes breaker"),
-	"server":            set("id endpoint prompts_disabled credentials limits tool_metadata"), "credentials": set("bearer headers"),
+	"server":            set("id endpoint prompts_disabled credentials limits tool_metadata stateless"), "credentials": set("bearer headers"),
 	"tool_metadata": set("defaults tools"),
 	"defaults":      set("description title icons annotations _meta"),
 	"limits":        set("max_concurrent_calls call_timeout"), "breaker": set("consecutive_failures open_duration half_open_probes"),

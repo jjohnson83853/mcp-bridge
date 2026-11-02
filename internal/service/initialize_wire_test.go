@@ -139,3 +139,81 @@ func TestLatestToolsCallRejectedWithNarrowedVersionsAndNoExecution(t *testing.T)
 		t.Fatalf("tool executed %d times, want 0", calls)
 	}
 }
+
+func TestStreamableHandlerStatelessDefaultDiscover(t *testing.T) {
+	tests := []struct {
+		name         string
+		stateless    bool
+		wantLatest   bool
+	}{
+		{name: "stateless", stateless: true, wantLatest: true},
+		{name: "stateful", stateless: false, wantLatest: false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			versions := discoverProtocolVersions(t, &mcp.StreamableHTTPOptions{Stateless: test.stateless})
+			supported := make(map[string]bool, len(versions))
+			for _, version := range versions {
+				supported[version] = true
+			}
+
+			if supported["2026-07-28"] != test.wantLatest {
+				t.Fatalf("supported versions=%v, want 2026-07-28 present=%t", versions, test.wantLatest)
+			}
+			if test.stateless {
+				for _, version := range legacyVersions {
+					if !supported[version] {
+						t.Errorf("stateless supported versions=%v, missing legacy version %q", versions, version)
+					}
+				}
+			}
+		})
+	}
+}
+
+func discoverProtocolVersions(t *testing.T, opts *mcp.StreamableHTTPOptions) []string {
+	t.Helper()
+
+	httpServer := httptest.NewServer(service.NewStreamableHandler(service.NewMCPServer(), opts))
+	defer httpServer.Close()
+
+	body := []byte(`{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientInfo":{"name":"wire-client","version":"1"},"io.modelcontextprotocol/clientCapabilities":{"sampling":{}}}}}`)
+	req, err := http.NewRequest(http.MethodPost, httpServer.URL+"/mcp", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+	req.Header.Set("Mcp-Protocol-Version", "2026-07-28")
+	req.Header.Set("Mcp-Method", "server/discover")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status=%d body=%s", resp.StatusCode, responseBody)
+	}
+
+	payload := responseBody
+	if index := bytes.Index(payload, []byte("data: ")); index >= 0 {
+		payload = payload[index+len("data: "):]
+		if end := bytes.IndexByte(payload, '\n'); end >= 0 {
+			payload = payload[:end]
+		}
+	}
+	var result struct {
+		Result mcp.DiscoverResult `json:"result"`
+	}
+	if err := json.Unmarshal(payload, &result); err != nil {
+		t.Fatalf("decode response %q: %v", responseBody, err)
+	}
+	return result.Result.SupportedVersions
+}

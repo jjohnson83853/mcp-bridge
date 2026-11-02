@@ -1,1 +1,8 @@
-{"task_id":"T1","status":"COMPLETED","artifact_receipt":"internal/auth/metadata.go; internal/auth/metadata_test.go; cmd/mcp-bridge/serve_oauth_test.go","telemetry_ref":null,"summary":"Added context-aware resource metadata normalization; RED reproduced origin/trailing-slash mismatches, and focused handler and OAuth wire tests passed.","error_code":null}
+{
+  "task_id": "T1",
+  "status": "COMPLETED",
+  "artifact_receipt": "internal/config stateless parsing and fingerprint projection changes; regression and race tests passed",
+  "telemetry_ref": null,
+  "summary": "Allowed stateless server configuration and included its effective value in fingerprints; focused regression tests and config race tests passed.",
+  "error_code": null
+}

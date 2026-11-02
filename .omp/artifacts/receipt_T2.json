@@ -1,8 +1,8 @@
 {
   "task_id": "T2",
-  "status": "PASS",
-  "artifact_receipt": "coverage.out",
+  "status": "COMPLETED",
+  "artifact_receipt": "internal/upstream/dedicated.go; internal/upstream/dedicated_test.go",
   "telemetry_ref": null,
-  "summary": "Completed ChatGPT wire verification test and targeted edge tests in internal/service, internal/storage, and cmd/mcp-bridge. All focused tests passed, go vet passed, full repository go test -race -count=1 ./... passed, and coverage gate passed at 90.1% (6,135 / 6,807 lines >= 90.0%).",
+  "summary": "Implemented stateless ephemeral tool discovery and tool calls with pooled keep-alive in Dedicated; verified restart-resilience and stateful preservation tests under -race.",
   "error_code": null
 }

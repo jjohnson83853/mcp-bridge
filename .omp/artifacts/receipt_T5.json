@@ -1,1 +1,8 @@
-{"task_id":"T5","status":"COMPLETED","artifact_receipt":"cmd/mcp-bridge/serve_oauth_test.go","telemetry_ref":null,"summary":"Implemented complete end-to-end integration wire test covering ChatGPT lifecycle and tokenless admission with passing tests","error_code":null}
+{
+  "task_id": "T5",
+  "status": "COMPLETED",
+  "artifact_receipt": "cmd/mcp-bridge/serve_oauth_test.go; coverage.out",
+  "telemetry_ref": null,
+  "summary": "Added stateless ChatGPT wire headers and metadata; discovery/list/call and OAuth tests pass; coverage is 90.2%; go vet passes. Extra go test -race ./... fails at out-of-scope TestPromptPassThroughCT07 (search payload revision = <nil>).",
+  "error_code": null
+}

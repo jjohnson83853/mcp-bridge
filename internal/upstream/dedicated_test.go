@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"sort"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -56,8 +57,12 @@ func newPeer(t *testing.T, opts *mcp.ServerOptions, register func(*mcp.Server, *
 }
 
 func newDedicated(t *testing.T, endpoint string) *upstream.Dedicated {
+	return newDedicatedWithStateless(t, endpoint, false)
+}
+
+func newDedicatedWithStateless(t *testing.T, endpoint string, stateless bool) *upstream.Dedicated {
 	t.Helper()
-	dedicated, err := upstream.NewDedicated(upstream.DedicatedOptions{Server: upstream.ServerOptions{
+	dedicated, err := upstream.NewDedicated(upstream.DedicatedOptions{Stateless: stateless, Server: upstream.ServerOptions{
 		ID:             "alpha",
 		Endpoint:       endpoint,
 		CallTimeout:    5 * time.Second,
@@ -240,5 +245,136 @@ func TestDedicatedCloseIsIdempotentAndFailsClosed(t *testing.T) {
 	_, outcome := dedicated.CallTool(context.Background(), "t_x", "alpha", "read", json.RawMessage(`{}`))
 	if outcome == nil || outcome.Failure == nil || outcome.Failure.Code != "backend_unavailable" || outcome.Failure.ExecutionState != core.ExecutionNotStarted {
 		t.Fatalf("outcome=%+v, want backend_unavailable/not_started closed outcome", outcome)
+	}
+}
+// Stateless calls use a fresh MCP session after the peer handler is replaced.
+func TestDedicatedStatelessToolCallsSurvivesServerRestart(t *testing.T) {
+	newPeerHandler := func(generation string) (*peerState, http.Handler) {
+		state := &peerState{}
+		server := mcp.NewServer(&mcp.Implementation{Name: "peer", Version: "1"}, nil)
+		server.AddTool(&mcp.Tool{Name: "read", InputSchema: json.RawMessage(`{"type":"object"}`)},
+			func(context.Context, *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+				state.executions.Add(1)
+				return &mcp.CallToolResult{StructuredContent: map[string]any{"generation": generation}}, nil
+			})
+		inner := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return server }, nil)
+		return state, http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			body, err := io.ReadAll(request.Body)
+			if err != nil {
+				t.Errorf("read peer request: %v", err)
+			}
+			request.Body = io.NopCloser(bytes.NewReader(body))
+			if bytes.Contains(body, []byte(`"method":"initialize"`)) {
+				state.initializes.Add(1)
+			}
+			inner.ServeHTTP(writer, request)
+		})
+	}
+
+	state, activeHandler := newPeerHandler("before")
+	var handlerMu sync.RWMutex
+	httpServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		handlerMu.RLock()
+		handler := activeHandler
+		handlerMu.RUnlock()
+		handler.ServeHTTP(writer, request)
+	}))
+	t.Cleanup(httpServer.Close)
+	dedicated := newDedicatedWithStateless(t, httpServer.URL, true)
+
+	callAndCheckGeneration := func(want string) {
+		t.Helper()
+		result, outcome := dedicated.CallTool(context.Background(), "t_read", "alpha", "read", json.RawMessage(`{}`))
+		if outcome != nil {
+			t.Fatalf("CallTool outcome=%+v, want success", outcome)
+		}
+		var decoded struct {
+			StructuredContent struct {
+				Generation string `json:"generation"`
+			} `json:"structuredContent"`
+		}
+		if err := json.Unmarshal(result, &decoded); err != nil {
+			t.Fatalf("decode CallTool result %s: %v", result, err)
+		}
+		if decoded.StructuredContent.Generation != want {
+			t.Fatalf("generation=%q, want %q", decoded.StructuredContent.Generation, want)
+		}
+	}
+
+	callAndCheckGeneration("before")
+	if state.initializes.Load() != 1 {
+		t.Fatalf("initializations before restart=%d, want 1", state.initializes.Load())
+	}
+
+	handlerMu.Lock()
+	state, activeHandler = newPeerHandler("after")
+	handlerMu.Unlock()
+	callAndCheckGeneration("after")
+	if state.initializes.Load() != 1 {
+		t.Fatalf("initializations after restart=%d, want fresh session initialization", state.initializes.Load())
+	}
+	if state.executions.Load() != 1 {
+		t.Fatalf("executions after restart=%d, want 1", state.executions.Load())
+	}
+}
+
+// Stateful calls retain one initialized MCP session across tool executions.
+func TestDedicatedStatefulPreservesSession(t *testing.T) {
+	httpServer, state := newPeer(t, nil, func(server *mcp.Server, state *peerState) {
+		server.AddTool(&mcp.Tool{Name: "read", InputSchema: json.RawMessage(`{"type":"object"}`)},
+			func(context.Context, *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+				state.executions.Add(1)
+				return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: "ok"}}}, nil
+			})
+	})
+	dedicated := newDedicatedWithStateless(t, httpServer.URL, false)
+
+	for i := 0; i < 2; i++ {
+		if _, outcome := dedicated.CallTool(context.Background(), "t_read", "alpha", "read", json.RawMessage(`{}`)); outcome != nil {
+			t.Fatalf("CallTool outcome=%+v, want success", outcome)
+		}
+	}
+	if state.initializes.Load() != 1 {
+		t.Fatalf("initializations=%d, want 1 persistent session", state.initializes.Load())
+	}
+	if state.executions.Load() != 2 {
+		t.Fatalf("executions=%d, want 2", state.executions.Load())
+	}
+}
+
+func TestDedicatedAdaptiveEphemeralHandshake(t *testing.T) {
+	httpServer, _ := newPeer(t, nil, func(server *mcp.Server, _ *peerState) {
+		server.AddTool(&mcp.Tool{Name: "read", InputSchema: json.RawMessage(`{"type":"object"}`)},
+			func(context.Context, *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+				return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: "ok"}}}, nil
+			})
+	})
+	buf := &bytes.Buffer{}
+	dedicated, err := upstream.NewDedicated(upstream.DedicatedOptions{
+		Stateless: true,
+		LogWriter: buf,
+		Server: upstream.ServerOptions{
+			ID:       "alpha",
+			Endpoint: httpServer.URL,
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewDedicated: %v", err)
+	}
+	t.Cleanup(func() { _ = dedicated.Close() })
+
+	if _, err := dedicated.Discover(context.Background()); err != nil {
+		t.Fatalf("Discover: %v", err)
+	}
+	if !dedicated.RequiresHandshake() {
+		t.Fatal("RequiresHandshake() = false after discovering a legacy upstream")
+	}
+	if _, outcome := dedicated.CallTool(context.Background(), "t_read", "alpha", "read", json.RawMessage(`{}`)); outcome != nil {
+		t.Fatalf("CallTool outcome=%+v, want success", outcome)
+	}
+	for _, want := range []string{`"event":"upstream_ephemeral_handshake"`, `"backend_id":"alpha"`, `"duration_ms"`} {
+		if !bytes.Contains(buf.Bytes(), []byte(want)) {
+			t.Errorf("handshake log %q does not contain %q", buf.String(), want)
+		}
 	}
 }

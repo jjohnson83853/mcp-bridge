@@ -1,1 +1,8 @@
-{"task_id":"T4","status":"COMPLETED","artifact_receipt":"internal/auth/middleware.go; internal/auth/middleware_test.go; internal/service/inbound.go; internal/service/inbound_test.go; cmd/mcp-bridge/serve_oauth_test.go","telemetry_ref":null,"summary":"Implemented 8-hour authorization ceiling and dynamic scope re-evaluation on session-admitted requests with passing tests","error_code":null}
+{
+  "task_id": "T4",
+  "status": "COMPLETED",
+  "artifact_receipt": "internal/service/server.go; cmd/mcp-bridge/serve.go; internal/service/initialize_wire_test.go",
+  "telemetry_ref": null,
+  "summary": "Extended NewStreamableHandler with optional streamable HTTP options, configured cmd/mcp-bridge/serve.go with MCP_STATELESS flag, and verified multi-version protocol discovery in initialize_wire_test.go.",
+  "error_code": null
+}
