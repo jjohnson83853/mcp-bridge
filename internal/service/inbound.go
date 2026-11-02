@@ -50,13 +50,26 @@ type InboundHandler struct {
 }
 
 type sessionRecord struct {
-	token    [32]byte
-	lastSeen time.Time
-	epoch    uint64
+	token        [32]byte
+	lastSeen     time.Time
+	epoch        uint64
+	authDeadline time.Time
+	claims       *auth.Claims
 	// ref is the 32 lowercase hexadecimal diagnostic reference drawn once
 	// when the live session was admitted; empty means the reference is
 	// explicitly unavailable. It is retained only with the session.
 	ref string
+}
+
+// SessionClaims returns the OAuth claims retained for an admitted session.
+func (h *InboundHandler) SessionClaims(sessionID string) (*auth.Claims, bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	rec, exists := h.sessions[sessionID]
+	if !exists || rec.claims == nil || h.now().After(rec.authDeadline) {
+		return nil, false
+	}
+	return rec.claims, true
 }
 
 // InboundBounds are the admission bounds of the currently published generation.
@@ -479,9 +492,11 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var setupFlight chan struct{}
 	var setupRef string
 	if sessionID != "" {
+		missingSessionCredential := false
 		forwardUnknownMethod := false
 		var refAvailable bool
 		deleteUnknown := false
+		identityConflict := false
 		atCapacity := false
 		var setupFailed bool
 		var needsBootstrap bool
@@ -491,6 +506,15 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		retiredOwners := h.reapExpiredLocked(now)
 		bound, exists := h.sessions[sessionID]
 		bindingMatch := exists && subtle.ConstantTimeCompare(bound.token[:], tokenHash[:]) == 1
+		incomingClaims := auth.ClaimsFromContext(r.Context())
+		if exists && !bindingMatch && incomingClaims != nil && bound.claims != nil {
+			if incomingClaims.Subject != bound.claims.Subject || incomingClaims.Issuer != bound.claims.Issuer {
+				identityConflict = true
+			} else {
+				bound.token = tokenHash
+				bindingMatch = true
+			}
+		}
 		if !exists {
 			switch {
 			case r.Method == http.MethodDelete:
@@ -498,6 +522,8 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				delete(h.sdkSessions, sessionID)
 				delete(h.sdkFlights, sessionID)
 				deleteUnknown = true
+			case r.Header.Get("Authorization") == "" && auth.ClaimsFromContext(r.Context()) == nil:
+				missingSessionCredential = true
 			case r.Method != http.MethodPost && r.Method != http.MethodGet:
 				forwardUnknownMethod = true
 				rClone.Header.Del(sessionIDHeader)
@@ -506,7 +532,14 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			default:
 				ref, drawn := h.newSessionRef()
 				setupRef = ref
-				bound = sessionRecord{token: tokenHash, lastSeen: now, ref: ref}
+				claims := auth.ClaimsFromContext(r.Context())
+				authDeadline := time.Time{}
+				if r.Header.Get("Authorization") != "" && claims != nil {
+					authDeadline = now.Add(8 * time.Hour)
+				}
+				bound = sessionRecord{
+					token: tokenHash, lastSeen: now, claims: claims, authDeadline: authDeadline, ref: ref,
+				}
 				h.sessions[sessionID] = bound
 				exists = true
 				bindingMatch = true
@@ -528,7 +561,16 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		if bindingMatch && !needsBootstrap && waitFlight == nil {
 			sessionEpoch := bound.epoch
-			h.sessions[sessionID] = sessionRecord{token: bound.token, lastSeen: now, ref: bound.ref, epoch: sessionEpoch}
+			claims := bound.claims
+			authDeadline := bound.authDeadline
+			if r.Header.Get("Authorization") != "" && incomingClaims != nil {
+				claims = incomingClaims
+				authDeadline = now.Add(8 * time.Hour)
+			}
+			h.sessions[sessionID] = sessionRecord{
+				token: bound.token, lastSeen: now, epoch: sessionEpoch,
+				claims: claims, authDeadline: authDeadline, ref: bound.ref,
+			}
 			if initializeRehydration && rehydrated {
 				rClone.Header.Del(sessionIDHeader)
 			} else {
@@ -626,6 +668,17 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			writer.WriteHeader(http.StatusNoContent)
 			return
 		}
+		if missingSessionCredential {
+			rejection = legacyRejection{"client_auth", "client_auth_failed"}
+			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+				FailureStage: "inner_credential", FailureReason: "static_invalid",
+				AuthMode: "static", CredentialState: "missing",
+				SessionState: "absent", BindingRelation: "not_evaluated",
+			})
+			writer.Header().Set("WWW-Authenticate", "Bearer")
+			http.Error(writer, "unauthorized", http.StatusUnauthorized)
+			return
+		}
 		if atCapacity {
 			rejection = legacyRejection{"session_admission", "session_capacity"}
 			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
@@ -641,6 +694,20 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				SessionState: "absent", BindingRelation: "not_evaluated",
 			})
 			http.Error(writer, "session unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		if identityConflict {
+			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
+				FailureStage: "session", FailureReason: "session_fingerprint_mismatch",
+				SessionState: "existing", BindingRelation: "mismatch",
+			})
+			observe.ContributeSessionEvidence(r.Context(), observe.HTTPSessionEvidence{
+				RefState: diagnosticRefState(bound.ref), Ref: bound.ref,
+				State: "existing", Binding: "mismatch",
+			})
+			rejection = legacyRejection{"session_admission", "session_auth_failed"}
+			writer.Header().Set("WWW-Authenticate", "Bearer")
+			http.Error(writer, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 		if !bindingMatch && !forwardUnknownMethod {
@@ -810,17 +877,29 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		created := !exists
 		var ref string
 		refAvailable := true
+		now := h.now()
+		claims := auth.ClaimsFromContext(r.Context())
+		authenticated := r.Header.Get("Authorization") != "" && claims != nil
 		if exists {
 			// A response-issued identifier for an already tracked session
 			// replaces the record without redrawing its reference or epoch.
 			record.token = tokenHash
-			record.lastSeen = h.now()
+			record.lastSeen = now
+			if authenticated {
+				record.claims = claims
+				record.authDeadline = now.Add(8 * time.Hour)
+			}
 			ref = record.ref
 		} else {
 			// An admitted live session was created: draw its one independent
 			// diagnostic reference and retain it only with this session.
 			ref, refAvailable = h.newSessionRef()
-			record = sessionRecord{token: tokenHash, lastSeen: h.now(), ref: ref}
+			record = sessionRecord{
+				token: tokenHash, lastSeen: now, claims: claims, ref: ref,
+			}
+			if authenticated {
+				record.authDeadline = now.Add(8 * time.Hour)
+			}
 		}
 		if record.epoch == 0 && h.options.ToolSurface != nil {
 			owner, err := h.options.ToolSurface.newLiveOwner(issuedID)
@@ -1196,6 +1275,20 @@ func originAllowed(allowed []string, origin string) bool {
 
 func (h *InboundHandler) authenticate(r *http.Request) ([32]byte, bool) {
 	values := r.Header.Values("Authorization")
+	if len(values) == 0 {
+		claims := auth.ClaimsFromContext(r.Context())
+		sessionID := r.Header.Get(sessionIDHeader)
+		if claims == nil || sessionID == "" {
+			return [32]byte{}, false
+		}
+		h.mu.Lock()
+		bound, exists := h.sessions[sessionID]
+		h.mu.Unlock()
+		if !exists || bound.claims != claims {
+			return [32]byte{}, false
+		}
+		return bound.token, true
+	}
 	if len(values) != 1 {
 		return [32]byte{}, false
 	}

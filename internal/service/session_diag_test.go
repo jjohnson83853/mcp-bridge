@@ -709,11 +709,11 @@ func TestComposedOAuthSyntheticABSessionDiagnostics(t *testing.T) {
 	// Different valid principal B on A's retained session: OAuth accepts, the
 	// existing-session bearer binding rejects.
 	bMismatch := do(t, http.MethodPost, `{"jsonrpc":"2.0","id":3,"method":"tools/list"}`, tokenB, sessionA)
-	if bMismatch.StatusCode != http.StatusNotFound {
-		t.Fatalf("B on retained A session status=%d, want 404", bMismatch.StatusCode)
+	if bMismatch.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("B on retained A session status=%d, want 401", bMismatch.StatusCode)
 	}
-	if challenge := bMismatch.Header.Get("WWW-Authenticate"); challenge != "" {
-		t.Fatalf("B mismatch challenge=%q, want no challenge", challenge)
+	if challenge := bMismatch.Header.Get("WWW-Authenticate"); challenge != "Bearer" {
+		t.Fatalf("B mismatch challenge=%q, want Bearer", challenge)
 	}
 	if bMismatch.Header.Get("Mcp-Session-Id") != "" {
 		t.Fatal("mismatch response leaked a session reference header")

@@ -16,7 +16,7 @@ type Config struct {
 const (
 	DefaultPocketIDIssuer   = "https://id.bullprog.com"
 	DefaultPocketIDJWKSURL  = "https://id.bullprog.com/.well-known/jwks.json"
-	DefaultMCPResourceURL   = "https://mcp.bullprog.com"
+	DefaultMCPResourceURL   = "https://mcp.bullprog.com/mcp"
 	DefaultMCPRequiredScope = ""
 )
 

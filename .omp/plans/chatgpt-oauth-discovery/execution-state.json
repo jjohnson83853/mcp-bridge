@@ -200,7 +200,7 @@
     {
       "id": "T1",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [],
       "requires": [],
       "effects": {
@@ -218,7 +218,9 @@
         "AC-2",
         "AC-3"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-T1-test"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -226,7 +228,7 @@
     {
       "id": "T2",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [
         "T1"
       ],
@@ -244,7 +246,9 @@
         "AC-5",
         "AC-6"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-T2-test"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -252,7 +256,7 @@
     {
       "id": "T3",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [
         "T1",
         "T2"
@@ -268,7 +272,9 @@
       "acceptanceIds": [
         "AC-7"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-T3-test"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -276,7 +282,7 @@
     {
       "id": "T4",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [
         "T1",
         "T2",
@@ -293,7 +299,9 @@
       "acceptanceIds": [
         "AC-8"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-T4-test"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -409,7 +417,108 @@
       ]
     }
   ],
-  "evidence": [],
+  "evidence": [
+    {
+      "id": "ev-T1-test",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "6b569c839d26e90be29fdd245c5029fc0aa9ab037dcb6e01e0db7d527967f0e0"
+      },
+      "feature": "chatgpt-oauth-discovery",
+      "packetDigest": "a2058afcea6a3ef087f18a8008294837d08374cd093d13291f27204132bdb104",
+      "selectedBranchId": "approved-chatgpt-oauth-discovery",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC-1",
+        "AC-2",
+        "AC-3"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-02T00:30:00Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test -v ./internal/auth/... ./cmd/mcp-bridge/... -run TestProtectedResource|TestPathBearing",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T2-test",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
+        "sha256": "8d7245f9d2169a7751ffe71b510455376c8f5cabef1d819da0ff508c05147242"
+      },
+      "feature": "chatgpt-oauth-discovery",
+      "packetDigest": "a2058afcea6a3ef087f18a8008294837d08374cd093d13291f27204132bdb104",
+      "selectedBranchId": "approved-chatgpt-oauth-discovery",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC-4",
+        "AC-5",
+        "AC-6"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-02T00:45:00Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test -v ./internal/auth/... ./cmd/mcp-bridge/... -run TestAudienceMatches|TestServeOAuth",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T3-test",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T3.json",
+        "sha256": "7585ecec264c199a74c4bae4b0de68a9b312c70e962a514558c8b715d11c3a32"
+      },
+      "feature": "chatgpt-oauth-discovery",
+      "packetDigest": "a2058afcea6a3ef087f18a8008294837d08374cd093d13291f27204132bdb104",
+      "selectedBranchId": "approved-chatgpt-oauth-discovery",
+      "taskIds": [
+        "T3"
+      ],
+      "acceptanceIds": [
+        "AC-7"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-02T01:00:00Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test -v ./cmd/mcp-bridge/... -run TestServeOAuthRouteNormalizationAndRootProbe",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T4-test",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T4.json",
+        "sha256": "cfc7d3a07e8dab40cf1e47443ec715b064cc59d890ea981e1f39746e7fb57fb7"
+      },
+      "feature": "chatgpt-oauth-discovery",
+      "packetDigest": "a2058afcea6a3ef087f18a8008294837d08374cd093d13291f27204132bdb104",
+      "selectedBranchId": "approved-chatgpt-oauth-discovery",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC-8"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-02T01:15:00Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test -v ./cmd/mcp-bridge/... -run TestServeOAuthActionDiscoveryEndToEnd",
+        "exitCode": 0
+      }
+    }
+  ],
   "blockers": [],
   "gate": {
     "markerPath": ".superpowers/sdd/GATE_OPEN",

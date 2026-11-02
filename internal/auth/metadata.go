@@ -35,12 +35,11 @@ func NewProtectedResourceHandler(cfg Config) http.Handler {
 		return payload
 	}
 
-	originPayload := buildMetadata(cfg.MCPResourceURL)
-	endpointResource := cfg.MCPResourceURL
-	if !strings.HasSuffix(strings.TrimRight(endpointResource, "/"), "/mcp") {
-		endpointResource = strings.TrimRight(endpointResource, "/") + "/mcp"
+	canonicalResource := cfg.MCPResourceURL
+	if !strings.HasSuffix(strings.TrimRight(canonicalResource, "/"), "/mcp") {
+		canonicalResource = strings.TrimRight(canonicalResource, "/") + "/mcp"
 	}
-	endpointPayload := buildMetadata(endpointResource)
+	canonicalPayload := buildMetadata(canonicalResource)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Dispatch classification: this handler actually served the request.
@@ -51,15 +50,9 @@ func NewProtectedResourceHandler(cfg Config) http.Handler {
 			return
 		}
 
-		// Path-bearing well-known targets advertise the endpoint resource so
-		// the client's expected resource matches the document it received.
-		payload := originPayload
-		if strings.Contains(r.URL.Path, "/mcp") {
-			payload = endpointPayload
-		}
-
+		// All well-known targets advertise the canonical MCP endpoint resource.
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(payload)
+		_, _ = w.Write(canonicalPayload)
 	})
 }

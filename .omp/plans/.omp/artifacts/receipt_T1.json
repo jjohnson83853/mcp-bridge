@@ -1,0 +1,1 @@
+{"task_id":"T1","status":"COMPLETED","artifact_receipt":"internal/auth/metadata.go; internal/auth/metadata_test.go; internal/auth/config.go; cmd/mcp-bridge/serve_oauth_test.go","telemetry_ref":null,"summary":"Normalized canonical /mcp metadata advertisement across root and path-bearing endpoints","error_code":null}

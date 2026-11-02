@@ -114,8 +114,8 @@ func TestProtectedResourceHandlerPathBearing(t *testing.T) {
 	}{
 		{
 			name:        "origin configured",
+			want:        "https://api.example.org/mcp",
 			resourceURL: "https://api.example.org",
-			want:        "https://api.example.org",
 		},
 		{
 			name:        "endpoint configured",
@@ -146,12 +146,8 @@ func TestProtectedResourceHandlerPathBearing(t *testing.T) {
 					if err := json.Unmarshal(rec.Body.Bytes(), &meta); err != nil {
 						t.Fatalf("unmarshalling body %q: %v", rec.Body.String(), err)
 					}
-					want := tc.want
-					if path != paths[0] && tc.resourceURL == "https://api.example.org" {
-						want += "/mcp"
-					}
-					if meta.Resource != want {
-						t.Errorf("Resource = %q, want %q", meta.Resource, want)
+					if meta.Resource != tc.want {
+						t.Errorf("Resource = %q, want %q", meta.Resource, tc.want)
 					}
 				})
 			}

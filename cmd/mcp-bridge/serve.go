@@ -182,7 +182,14 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 		_, _ = w.Write([]byte("ok\n"))
 	})
 	inboundMux.Handle("/readyz", service.NewOperationsHandler(readiness, nil))
-	authMiddleware := auth.NewAuthMiddleware(authCfg, jwksCache, auth.WithStaticFallback(true), auth.WithNow(diagnosticNowFromContext(ctx)))
+	authOptions := []auth.Option{
+		auth.WithStaticFallback(true),
+		auth.WithNow(diagnosticNowFromContext(ctx)),
+	}
+	if os.Getenv("MCP_SESSION_ADMISSION_ENABLED") == "true" {
+		authOptions = append(authOptions, auth.WithSessionAdmission(inbound.SessionClaims))
+	}
+	authMiddleware := auth.NewAuthMiddleware(authCfg, jwksCache, authOptions...)
 	inboundMux.Handle("/mcp", authMiddleware(inbound))
 	inboundMux.Handle("/mcp/", authMiddleware(inbound))
 	// A root discovery probe gets an authenticated challenge rather than a

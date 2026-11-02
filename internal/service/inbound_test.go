@@ -153,6 +153,151 @@ func TestSessionBoundToTokenFingerprint(t *testing.T) {
 	}
 }
 
+func TestInboundSessionTokenRenewal(t *testing.T) {
+	initializeBody := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"wire-client","version":"1"}}}`
+	notificationBody := `{"jsonrpc":"2.0","method":"notifications/initialized"}`
+
+	for _, tc := range []struct {
+		name       string
+		renewed    *auth.Claims
+		wantStatus int
+	}{
+		{
+			name: "matching identity renews token binding",
+			renewed: &auth.Claims{
+				Subject: "oidc-user", Issuer: "https://issuer.example",
+			},
+			wantStatus: http.StatusAccepted,
+		},
+		{
+			name: "conflicting subject rejected",
+			renewed: &auth.Claims{
+				Subject: "other-user", Issuer: "https://issuer.example",
+			},
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "conflicting issuer rejected",
+			renewed: &auth.Claims{
+				Subject: "oidc-user", Issuer: "https://other-issuer.example",
+			},
+			wantStatus: http.StatusUnauthorized,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			originalClaims := &auth.Claims{Subject: "oidc-user", Issuer: "https://issuer.example"}
+			claimsByToken := map[string]*auth.Claims{
+				"token-one": originalClaims,
+				"token-two": tc.renewed,
+			}
+			claimsMiddleware := func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+					next.ServeHTTP(w, r.WithContext(auth.ContextWithClaims(r.Context(), claimsByToken[token])))
+				})
+			}
+			inbound := service.NewInboundHandler(
+				service.NewStreamableHandler(service.NewMCPServer()),
+				tokenHash("token-one", "token-two"),
+			)
+			server := httptest.NewServer(claimsMiddleware(inbound))
+			defer server.Close()
+
+			request := func(token, sessionID, body string) (int, string) {
+				t.Helper()
+				req, err := http.NewRequest(http.MethodPost, server.URL+"/mcp", strings.NewReader(body))
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Authorization", "Bearer "+token)
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Accept", "application/json, text/event-stream")
+				req.Header.Set("Mcp-Protocol-Version", "2025-11-25")
+				if sessionID != "" {
+					req.Header.Set("Mcp-Session-Id", sessionID)
+				}
+				response, err := http.DefaultClient.Do(req)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, _ = io.Copy(io.Discard, response.Body)
+				_ = response.Body.Close()
+				return response.StatusCode, response.Header.Get("Mcp-Session-Id")
+			}
+
+			status, sessionID := request("token-one", "", initializeBody)
+			if status != http.StatusOK || sessionID == "" {
+				t.Fatalf("initialize status=%d session=%q", status, sessionID)
+			}
+			status, _ = request("token-two", sessionID, notificationBody)
+			if status != tc.wantStatus {
+				t.Fatalf("renewal status=%d, want %d", status, tc.wantStatus)
+			}
+		})
+	}
+}
+
+func TestInboundSessionAuthorizationCeilingAndRenewal(t *testing.T) {
+	now := time.Date(2026, time.January, 2, 3, 4, 5, 0, time.UTC)
+	claims := &auth.Claims{Subject: "session-user", Issuer: "https://issuer.example"}
+	claimsByToken := map[string]*auth.Claims{
+		"token-one": claims,
+		"token-two": claims,
+	}
+	inbound := service.NewInboundHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Mcp-Session-Id") == "" {
+			w.Header().Set("Mcp-Session-Id", "deadline-session")
+		}
+		w.WriteHeader(http.StatusAccepted)
+	}), tokenHash("token-one", "token-two"), service.InboundOptions{
+		Now: func() time.Time { return now },
+	})
+	claimsMiddleware := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var admittedClaims *auth.Claims
+			var ok bool
+			if authorization := r.Header.Get("Authorization"); authorization != "" {
+				admittedClaims, ok = claimsByToken[strings.TrimPrefix(authorization, "Bearer ")]
+			} else {
+				admittedClaims, ok = inbound.SessionClaims(r.Header.Get("Mcp-Session-Id"))
+			}
+			if !ok || admittedClaims == nil {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+			next.ServeHTTP(w, r.WithContext(auth.ContextWithClaims(r.Context(), admittedClaims)))
+		})
+	}
+	server := httptest.NewServer(claimsMiddleware(inbound))
+	defer server.Close()
+
+	initialize := requestInboundTest(t, server, http.MethodPost, "token-one", "", `{"jsonrpc":"2.0","id":1,"method":"initialize"}`)
+	if initialize.StatusCode != http.StatusAccepted {
+		t.Fatalf("initialize status=%d, want 202", initialize.StatusCode)
+	}
+	sessionID := initialize.Header.Get("Mcp-Session-Id")
+	if sessionID != "deadline-session" {
+		t.Fatalf("initialize session ID=%q, want deadline-session", sessionID)
+	}
+
+	now = now.Add(8*time.Hour + time.Second)
+	expired := requestInboundTest(t, server, http.MethodPost, "", sessionID, `{"jsonrpc":"2.0","method":"notifications/initialized"}`)
+	if expired.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("tokenless request after ceiling status=%d, want 401", expired.StatusCode)
+	}
+
+	renewed := requestInboundTest(t, server, http.MethodPost, "token-two", sessionID, `{"jsonrpc":"2.0","method":"notifications/initialized"}`)
+	if renewed.StatusCode != http.StatusAccepted {
+		t.Fatalf("fresh bearer renewal status=%d, want 202", renewed.StatusCode)
+	}
+
+	now = time.Date(2026, time.January, 2, 19, 4, 5, 0, time.UTC)
+	afterRenewal := requestInboundTest(t, server, http.MethodPost, "", sessionID, `{"jsonrpc":"2.0","method":"notifications/initialized"}`)
+	if afterRenewal.StatusCode != http.StatusAccepted {
+		t.Fatalf("tokenless request after renewal status=%d, want 202", afterRenewal.StatusCode)
+	}
+}
+
 func TestInboundHandlerLogsAndCountsWithoutLoggingCredentials(t *testing.T) {
 	var logs bytes.Buffer
 	metrics := observe.NewMetrics([]string{"alpha"})
@@ -327,16 +472,16 @@ func TestInboundHandlerContextClaimsBypass(t *testing.T) {
 			t.Fatalf("non-claims request status=%d, want 401", recorder.Code)
 		}
 
-		// With context claims restored, a different bearer token does not
-		// reopen the session: the session stays bound to its fingerprint.
+		// With context claims restored, the same subject can renew its token
+		// fingerprint for the retained session.
 		response, err = post(client, server.URL, "other-token", sessionID)
 		if err != nil {
 			t.Fatal(err)
 		}
 		_, _ = io.Copy(io.Discard, response.Body)
 		_ = response.Body.Close()
-		if response.StatusCode != http.StatusNotFound {
-			t.Fatalf("token mismatch status=%d, want 404", response.StatusCode)
+		if response.StatusCode != http.StatusAccepted {
+			t.Fatalf("token renewal status=%d, want %d", response.StatusCode, http.StatusAccepted)
 		}
 	})
 }
@@ -348,6 +493,97 @@ func tokenHash(values ...string) [][32]byte {
 	}
 	return hashes
 }
+
+func TestInboundSessionAdmissionDiscoveryBurst(t *testing.T) {
+	oauthMiddleware, token := inboundOAuthTestMiddleware(t)
+	inbound := service.NewInboundHandler(service.NewStreamableHandler(service.NewMCPServer()), nil)
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") == "" {
+			if claims, ok := inbound.SessionClaims(r.Header.Get("Mcp-Session-Id")); ok {
+				inbound.ServeHTTP(w, r.WithContext(auth.ContextWithClaims(r.Context(), claims)))
+				return
+			}
+		}
+		oauthMiddleware(inbound).ServeHTTP(w, r)
+	})
+	server := newInboundHTTPServer(t, handler)
+	sessionID := initializeInboundTestSession(t, server, token)
+	if claims, ok := inbound.SessionClaims(sessionID); !ok || claims == nil {
+		t.Fatal("OAuth initialize did not retain session claims")
+	}
+
+	post := func(body, bearer, sessionID string) inboundTestResponse {
+		t.Helper()
+		request, err := http.NewRequest(http.MethodPost, server.URL+"/mcp", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if bearer != "" {
+			request.Header.Set("Authorization", "Bearer "+bearer)
+		}
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Accept", "application/json, text/event-stream")
+		request.Header.Set("Mcp-Protocol-Version", "2025-11-25")
+		if sessionID != "" {
+			request.Header.Set("Mcp-Session-Id", sessionID)
+		}
+		resp, err := http.DefaultClient.Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return inboundTestResponse{
+			StatusCode: resp.StatusCode,
+			Header:     resp.Header.Clone(),
+			Body:       respBody,
+		}
+	}
+
+	notification := post(`{"jsonrpc":"2.0","method":"notifications/initialized"}`, "", sessionID)
+	if notification.StatusCode != http.StatusAccepted {
+		t.Fatalf("tokenless initialized notification status=%d, want 202", notification.StatusCode)
+	}
+
+	list := post(`{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`, "", sessionID)
+	if list.StatusCode != http.StatusOK {
+		t.Fatalf("tokenless tools/list status=%d, want 200", list.StatusCode)
+	}
+	requireMCPResult(t, list, "2")
+
+	unknown := post(`{"jsonrpc":"2.0","method":"notifications/initialized"}`, "", "unknown-session")
+	if unknown.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("unknown tokenless session status=%d, want 401", unknown.StatusCode)
+	}
+
+	if _, ok := inbound.SessionClaims("unknown-session"); ok {
+		t.Fatal("unknown tokenless session was admitted")
+	}
+
+	unauthenticated := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(`{"jsonrpc":"2.0","method":"notifications/initialized"}`))
+	unauthenticated.Header.Set("Content-Type", "application/json")
+	unauthenticated.Header.Set("Mcp-Protocol-Version", "2025-11-25")
+	unauthenticated.Header.Set("Mcp-Session-Id", "unknown-session")
+	unauthenticatedResponse := httptest.NewRecorder()
+	inbound.ServeHTTP(unauthenticatedResponse, unauthenticated)
+	if unauthenticatedResponse.Code != http.StatusUnauthorized {
+		t.Fatalf("direct unknown session without Authorization status=%d, want 401", unauthenticatedResponse.Code)
+	}
+
+	rehydrated := post(`{"jsonrpc":"2.0","id":3,"method":"tools/list","params":{}}`, token, "unknown-session")
+	if rehydrated.StatusCode != http.StatusOK {
+		t.Fatalf("authenticated rehydration after anonymous request status=%d, want 200", rehydrated.StatusCode)
+	}
+	requireMCPResult(t, rehydrated, "3")
+
+	if _, ok := inbound.SessionClaims("unknown-session"); !ok {
+		t.Fatal("authenticated rehydration did not retain session claims")
+	}
+}
+
 func TestInboundRehydratesAuthenticatedUnknownSession(t *testing.T) {
 	t.Run("valid OAuth token", func(t *testing.T) {
 		authMiddleware, token := inboundOAuthTestMiddleware(t)

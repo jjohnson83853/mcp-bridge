@@ -1,8 +1,1 @@
-{
-  "task_id": "T4",
-  "status": "COMPLETED",
-  "artifact_receipt": "cmd/mcp-bridge/serve_oauth_test.go; cmd/mcp-bridge/serve_provenance_test.go",
-  "telemetry_ref": null,
-  "summary": "T4 pass. Full end-to-end action discovery wire sequence verified with path-bearing resource, dual audience initialize, and diagnostic provenance.",
-  "error_code": null
-}
+{"task_id":"T4","status":"COMPLETED","artifact_receipt":"internal/auth/middleware.go; internal/auth/middleware_test.go; internal/service/inbound.go; internal/service/inbound_test.go; cmd/mcp-bridge/serve_oauth_test.go","telemetry_ref":null,"summary":"Implemented 8-hour authorization ceiling and dynamic scope re-evaluation on session-admitted requests with passing tests","error_code":null}

@@ -5,8 +5,10 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -17,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jjohnson83853/mcp-bridge/internal/auth"
+	"github.com/jjohnson83853/mcp-bridge/internal/service"
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jwt"
@@ -45,12 +49,12 @@ type oauthTestHarness struct {
 	private     *rsa.PrivateKey
 	public      jwk.Key
 	httpURL     string
-	opsURL  string
-	ctx     context.Context
-	cancel  context.CancelFunc
-	done    chan int
-	stdout  *syncWriter
-	stderr  *syncWriter
+	opsURL      string
+	ctx         context.Context
+	cancel      context.CancelFunc
+	done        chan int
+	stdout      *syncWriter
+	stderr      *syncWriter
 }
 
 // startOAuthHarness generates the signing key, publishes its JWKS, writes one
@@ -122,14 +126,14 @@ func startOAuthHarness(t *testing.T) *oauthTestHarness {
 		jwks:        jwks,
 		jwksFetches: &jwksFetches,
 		private:     private,
-		public:  public,
-		httpURL: "http://" + httpAddress,
-		opsURL:  "http://" + operationsAddress,
-		ctx:     ctx,
-		cancel:  cancel,
-		done:    done,
-		stdout:  stdout,
-		stderr:  stderr,
+		public:      public,
+		httpURL:     "http://" + httpAddress,
+		opsURL:      "http://" + operationsAddress,
+		ctx:         ctx,
+		cancel:      cancel,
+		done:        done,
+		stdout:      stdout,
+		stderr:      stderr,
 	}
 	t.Cleanup(harness.stop)
 	return harness
@@ -308,7 +312,6 @@ func TestProtectedResourceMetadataWire(t *testing.T) {
 	}
 }
 
-
 func TestServeOAuthMissingAuthorizationDiagnostic(t *testing.T) {
 	rawLogOutput := &syncWriter{}
 	previousLogOutput := log.Writer()
@@ -378,7 +381,6 @@ func TestServeOAuthRouteNormalizationAndRootProbe(t *testing.T) {
 	}
 }
 
-
 // TestServeOAuthWire exercises the full inbound edge through the composition
 // root: metadata discovery, bearer authentication against a real JWKS
 // endpoint, scope enforcement, the static-token fallback, and the
@@ -405,8 +407,8 @@ func TestServeOAuthWire(t *testing.T) {
 	if err := json.Unmarshal([]byte(body), &metadata); err != nil {
 		t.Fatalf("decode metadata %q: %v", body, err)
 	}
-	if metadata.Resource != oauthResource {
-		t.Fatalf("metadata resource = %q; want %q", metadata.Resource, oauthResource)
+	if metadata.Resource != oauthResource+"/mcp" {
+		t.Fatalf("metadata resource = %q; want %q", metadata.Resource, oauthResource+"/mcp")
 	}
 	if len(metadata.AuthorizationServers) != 1 || metadata.AuthorizationServers[0] != oauthIssuer {
 		t.Fatalf("metadata authorization_servers = %v; want [%s]", metadata.AuthorizationServers, oauthIssuer)
@@ -424,7 +426,8 @@ func TestServeOAuthWire(t *testing.T) {
 
 	// 3. Expired token: verification rejects it with the same challenge.
 	expired := harness.oauthToken(t, now.Add(-2*time.Hour), nil)
-	requireChallenge(t, oauthPost(t, harness.httpURL, expired, `{}`), "expired token")
+	requireChallenge(t, oauthPost(t, harness.httpURL, expired,
+		`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"oauth-wire","version":"1"}}}`), "expired token")
 
 	// 4a. Wrong issuer: a well-signed token from another issuer is refused.
 	foreign := harness.oauthToken(t, now, map[string]any{"iss": "https://evil.example.com"})
@@ -540,11 +543,187 @@ func readAll(response *http.Response) (string, error) {
 	_, err := buffer.ReadFrom(response.Body)
 	return buffer.String(), err
 }
+func TestServeOAuthSessionBoundAdmissionLifecycle(t *testing.T) {
+	const (
+		resourceURL  = "https://mcp.bullprog.com/mcp"
+		metadataPath = "/mcp/.well-known/oauth-protected-resource"
+	)
+	t.Setenv("MCP_RESOURCE_URL", resourceURL)
+	t.Setenv("MCP_SESSION_ADMISSION_ENABLED", "true")
+	harness := startOAuthHarness(t)
+	harness.awaitReady(t)
+
+	contains := func(value, substring string) bool {
+		for i := 0; i+len(substring) <= len(value); i++ {
+			if value[i:i+len(substring)] == substring {
+				return true
+			}
+		}
+		return false
+	}
+	post := func(token, sessionID, body string) *http.Response {
+		request, err := http.NewRequest(http.MethodPost, harness.httpURL+"/mcp", bytes.NewBufferString(body))
+		if err != nil {
+			t.Fatalf("create MCP request: %v", err)
+		}
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Accept", "application/json, text/event-stream")
+		if token != "" {
+			request.Header.Set("Authorization", "Bearer "+token)
+		}
+		if sessionID != "" {
+			request.Header.Set("Mcp-Session-Id", sessionID)
+		}
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			t.Fatalf("send MCP request: %v", err)
+		}
+		return response
+	}
+	initialize := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"session-bound-admission","version":"1"}}}`
+
+	// Probe the protected resource without credentials and discover its
+	// canonical protected-resource metadata URL from the challenge.
+	discovery := post("", "", initialize)
+	if discovery.StatusCode != http.StatusUnauthorized {
+		payload, _ := readAll(discovery)
+		discovery.Body.Close()
+		t.Fatalf("anonymous discovery probe: status = %d; want 401 (body=%s)", discovery.StatusCode, payload)
+	}
+	metadataURL := "https://mcp.bullprog.com" + metadataPath
+	challenge := discovery.Header.Get("WWW-Authenticate")
+	discovery.Body.Close()
+	if challenge == "" || !contains(challenge, metadataURL) {
+		t.Fatalf("discovery challenge = %q; want canonical metadata URL %q", challenge, metadataURL)
+	}
+
+	// The harness serves the canonical metadata path locally while advertising
+	// the configured canonical resource URL to clients.
+	metadataRequest, err := http.NewRequest(http.MethodGet, harness.httpURL+metadataPath, nil)
+	if err != nil {
+		t.Fatalf("create metadata request: %v", err)
+	}
+	metadataResponse, err := http.DefaultClient.Do(metadataRequest)
+	if err != nil {
+		t.Fatalf("fetch protected-resource metadata: %v", err)
+	}
+	if metadataResponse.StatusCode != http.StatusOK {
+		payload, _ := readAll(metadataResponse)
+		metadataResponse.Body.Close()
+		t.Fatalf("protected-resource metadata: status = %d; want 200 (body=%s)", metadataResponse.StatusCode, payload)
+	}
+	metadata := oauthJSONBody(t, metadataResponse)
+	metadataResponse.Body.Close()
+	if got := metadata["resource"]; got != resourceURL {
+		t.Fatalf("metadata resource = %v; want canonical resource %q", got, resourceURL)
+	}
+
+	now := time.Now()
+	token := harness.oauthToken(t, now, nil)
+	initialized := post(token, "", initialize)
+	if initialized.StatusCode != http.StatusOK {
+		payload, _ := readAll(initialized)
+		initialized.Body.Close()
+		t.Fatalf("initialize: status = %d; want 200 (body=%s)", initialized.StatusCode, payload)
+	}
+	if response := oauthJSONBody(t, initialized); response["jsonrpc"] != "2.0" {
+		initialized.Body.Close()
+		t.Fatalf("initialize response = %v; want JSON-RPC 2.0", response)
+	}
+	sessionID := initialized.Header.Get("Mcp-Session-Id")
+	initialized.Body.Close()
+	if sessionID == "" {
+		t.Fatal("initialize omitted Mcp-Session-Id")
+	}
+
+	initializedNotification := post("", sessionID, `{"jsonrpc":"2.0","method":"notifications/initialized"}`)
+	if initializedNotification.StatusCode != http.StatusOK && initializedNotification.StatusCode != http.StatusAccepted {
+		payload, _ := readAll(initializedNotification)
+		initializedNotification.Body.Close()
+		t.Fatalf("initialized notification: status = %d; want 200 or 202 (body=%s)", initializedNotification.StatusCode, payload)
+	}
+	initializedNotification.Body.Close()
+
+	listTools := func(token string) *http.Response {
+		return post(token, sessionID, `{"jsonrpc":"2.0","id":2,"method":"tools/list"}`)
+	}
+	listed := listTools("")
+	if listed.StatusCode != http.StatusOK {
+		payload, _ := readAll(listed)
+		listed.Body.Close()
+		t.Fatalf("tools/list without Authorization: status = %d; want 200 (body=%s)", listed.StatusCode, payload)
+	}
+	listResult := oauthJSONBody(t, listed)
+	listed.Body.Close()
+	result, ok := listResult["result"].(map[string]any)
+	if !ok {
+		t.Fatalf("tools/list response lacks result: %v", listResult)
+	}
+	tools, ok := result["tools"].([]any)
+	if !ok || len(tools) == 0 {
+		t.Fatalf("tools/list catalog = %v; want at least one tool", result["tools"])
+	}
+	firstTool, ok := tools[0].(map[string]any)
+	if !ok {
+		t.Fatalf("tools/list first tool = %v; want an object", tools[0])
+	}
+	toolName, ok := firstTool["name"].(string)
+	if !ok || toolName == "" {
+		t.Fatalf("tools/list first tool has no name: %v", firstTool)
+	}
+	callBody := `{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"` + toolName + `","arguments":{}}}`
+	called := post("", sessionID, callBody)
+	if called.StatusCode != http.StatusOK {
+		payload, _ := readAll(called)
+		called.Body.Close()
+		t.Fatalf("tools/call without Authorization: status = %d; want 200 (body=%s)", called.StatusCode, payload)
+	}
+	called.Body.Close()
+
+	// A fresh valid token on the active session renews the binding; subsequent
+	// tokenless traffic must remain admitted.
+	rotatedToken := harness.oauthToken(t, now.Add(time.Second), nil)
+	rotated := listTools(rotatedToken)
+	if rotated.StatusCode != http.StatusOK {
+		payload, _ := readAll(rotated)
+		rotated.Body.Close()
+		t.Fatalf("token rotation: status = %d; want 200 (body=%s)", rotated.StatusCode, payload)
+	}
+	rotated.Body.Close()
+	afterRotation := listTools("")
+	if afterRotation.StatusCode != http.StatusOK {
+		payload, _ := readAll(afterRotation)
+		afterRotation.Body.Close()
+		t.Fatalf("tokenless request after rotation: status = %d; want 200 (body=%s)", afterRotation.StatusCode, payload)
+	}
+	afterRotation.Body.Close()
+
+	unknownSession := post("", "unknown-session-id", `{"jsonrpc":"2.0","id":4,"method":"tools/list"}`)
+	if unknownSession.StatusCode != http.StatusUnauthorized {
+		payload, _ := readAll(unknownSession)
+		unknownSession.Body.Close()
+		t.Fatalf("unknown session without Authorization: status = %d; want 401 (body=%s)", unknownSession.StatusCode, payload)
+	}
+	if got := unknownSession.Header.Get("WWW-Authenticate"); !strings.HasPrefix(got, "Bearer realm=\"mcp\"") || !contains(got, "resource_metadata=") {
+		unknownSession.Body.Close()
+		t.Fatalf("unknown session challenge = %q; want Bearer realm=\"mcp\" with resource_metadata", got)
+	}
+	unknownSession.Body.Close()
+
+	invalidToken := post("invalid-token", sessionID, `{"jsonrpc":"2.0","id":5,"method":"tools/list"}`)
+	if invalidToken.StatusCode != http.StatusUnauthorized {
+		payload, _ := readAll(invalidToken)
+		invalidToken.Body.Close()
+		t.Fatalf("invalid token on active session: status = %d; want 401 (body=%s)", invalidToken.StatusCode, payload)
+	}
+	invalidToken.Body.Close()
+}
+
 func TestServeOAuthActionDiscoveryEndToEnd(t *testing.T) {
 	const (
-		resourceURL = "https://mcp.bullprog.com/mcp"
+		resourceURL    = "https://mcp.bullprog.com/mcp"
 		resourceOrigin = "https://mcp.bullprog.com"
-		metadataPath = "/mcp/.well-known/oauth-protected-resource"
+		metadataPath   = "/mcp/.well-known/oauth-protected-resource"
 	)
 	t.Setenv("MCP_RESOURCE_URL", resourceURL)
 	harness := startOAuthHarness(t)
@@ -607,5 +786,73 @@ func TestServeOAuthActionDiscoveryEndToEnd(t *testing.T) {
 		if sessionID := accepted.Header.Get("Mcp-Session-Id"); sessionID == "" {
 			t.Fatalf("initialize with audience %q omitted Mcp-Session-Id", audience)
 		}
+	}
+}
+func TestServeOAuthSessionAuthorizationCeilingWire(t *testing.T) {
+	now := time.Date(2026, time.January, 2, 3, 4, 5, 0, time.UTC)
+	claims := &auth.Claims{Subject: "wire-user", Issuer: "https://issuer.example"}
+	claimsByToken := map[string]*auth.Claims{
+		"token-one": claims,
+		"token-two": claims,
+	}
+	tokenHashes := [][32]byte{sha256.Sum256([]byte("token-one")), sha256.Sum256([]byte("token-two"))}
+	inbound := service.NewInboundHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Mcp-Session-Id") == "" {
+			w.Header().Set("Mcp-Session-Id", "wire-session")
+		}
+		w.WriteHeader(http.StatusAccepted)
+	}), tokenHashes, service.InboundOptions{Now: func() time.Time { return now }})
+	authentication := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var admittedClaims *auth.Claims
+		var ok bool
+		if authorization := r.Header.Get("Authorization"); authorization != "" {
+			admittedClaims, ok = claimsByToken[strings.TrimPrefix(authorization, "Bearer ")]
+		} else {
+			admittedClaims, ok = inbound.SessionClaims(r.Header.Get("Mcp-Session-Id"))
+		}
+		if !ok || admittedClaims == nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		inbound.ServeHTTP(w, r.WithContext(auth.ContextWithClaims(r.Context(), admittedClaims)))
+	})
+	server := httptest.NewServer(authentication)
+	defer server.Close()
+
+	send := func(token, sessionID string) (int, http.Header) {
+		t.Helper()
+		request, err := http.NewRequest(http.MethodPost, server.URL+"/mcp", strings.NewReader(`{"jsonrpc":"2.0","method":"notifications/initialized"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if token != "" {
+			request.Header.Set("Authorization", "Bearer "+token)
+		}
+		if sessionID != "" {
+			request.Header.Set("Mcp-Session-Id", sessionID)
+		}
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+		_, _ = io.Copy(io.Discard, response.Body)
+		return response.StatusCode, response.Header.Clone()
+	}
+
+	status, headers := send("token-one", "")
+	if status != http.StatusAccepted || headers.Get("Mcp-Session-Id") != "wire-session" {
+		t.Fatalf("initialize status=%d session=%q, want 202 and wire-session", status, headers.Get("Mcp-Session-Id"))
+	}
+	now = now.Add(8*time.Hour + time.Second)
+	if status, _ = send("", "wire-session"); status != http.StatusUnauthorized {
+		t.Fatalf("tokenless request after ceiling status=%d, want 401", status)
+	}
+	if status, _ = send("token-two", "wire-session"); status != http.StatusAccepted {
+		t.Fatalf("fresh bearer renewal status=%d, want 202", status)
+	}
+	now = time.Date(2026, time.January, 2, 19, 4, 5, 0, time.UTC)
+	if status, _ = send("", "wire-session"); status != http.StatusAccepted {
+		t.Fatalf("tokenless request after renewal status=%d, want 202", status)
 	}
 }

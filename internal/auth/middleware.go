@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jws"
 	"github.com/lestrrat-go/jwx/v2/jwt"
-	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 )
 
 // Option customises the auth middleware at construction time.
@@ -21,8 +21,9 @@ type Option func(*middlewareOptions)
 
 // middlewareOptions holds the runtime configuration for the auth middleware.
 type middlewareOptions struct {
-	staticFallback bool
-	now            func() time.Time
+	staticFallback   bool
+	now              func() time.Time
+	sessionAdmission func(sessionID string) (*Claims, bool)
 }
 
 // WithStaticFallback lets opaque (non-JWT) bearer tokens through untouched,
@@ -35,6 +36,12 @@ func WithStaticFallback(enabled bool) Option {
 // validation. Production behavior is unchanged when the option is absent.
 func WithNow(now func() time.Time) Option {
 	return func(o *middlewareOptions) { o.now = now }
+}
+
+// WithSessionAdmission lets a validated existing session supply OAuth claims
+// when a client omits its bearer token during session-bound discovery.
+func WithSessionAdmission(validator func(string) (*Claims, bool)) Option {
+	return func(o *middlewareOptions) { o.sessionAdmission = validator }
 }
 
 // challengeMetadataURL returns the OAuth protected-resource metadata URL for
@@ -201,8 +208,34 @@ func NewAuthMiddleware(cfg Config, keys KeySetProvider, opts ...Option) func(htt
 				http.Error(w, "unauthorized", http.StatusUnauthorized)
 			}
 
-			authHeader := r.Header.Get("Authorization")
-			if authHeader == "" {
+			authValues := r.Header.Values("Authorization")
+			if len(authValues) == 0 {
+				sessionID := r.Header.Get("Mcp-Session-Id")
+				if options.sessionAdmission != nil && sessionID != "" {
+					if claims, ok := options.sessionAdmission(sessionID); ok && claims != nil {
+						if cfg.MCPRequiredScope != "" && !slices.Contains(claims.Scopes, cfg.MCPRequiredScope) {
+							contribute(observe.HTTPDecision{
+								FailureStage: "outer_oauth", FailureReason: "scope_insufficient",
+								AuthMode: "oauth", CredentialState: "accepted", ScopeState: "rejected",
+								RouteOutcome: "oauth_protected",
+							})
+							w.Header().Set("WWW-Authenticate", `Bearer error="insufficient_scope", scope="`+cfg.MCPRequiredScope+`"`)
+							http.Error(w, "insufficient scope", http.StatusForbidden)
+							return
+						}
+						contribute(observe.HTTPDecision{
+							RouteOutcome:    "oauth_protected",
+							AuthMode:        "oauth",
+							CredentialState: "accepted",
+							ScopeState:      scopeAcceptedState(claims.Scopes, cfg.MCPRequiredScope),
+							SessionState:    "existing",
+							BindingRelation: "match",
+						})
+						r = r.WithContext(ContextWithClaims(r.Context(), claims))
+						next.ServeHTTP(w, r)
+						return
+					}
+				}
 				contribute(observe.HTTPDecision{
 					FailureStage: "outer_oauth", FailureReason: "credentials_missing",
 					AuthMode: "oauth", CredentialState: "missing",
@@ -213,6 +246,18 @@ func NewAuthMiddleware(cfg Config, keys KeySetProvider, opts ...Option) func(htt
 				emit401()
 				return
 			}
+			if len(authValues) != 1 {
+				contribute(observe.HTTPDecision{
+					FailureStage: "outer_oauth", FailureReason: "bearer_malformed",
+					AuthMode: "oauth", CredentialState: "rejected",
+					ChallengeKind: "resource_metadata", ChallengeTarget: challengeTarget,
+					MetadataTargetRegistered: metadataRegistered,
+					RouteOutcome:             "oauth_protected",
+				})
+				emit401()
+				return
+			}
+			authHeader := authValues[0]
 			if !strings.HasPrefix(strings.ToLower(authHeader), "bearer ") {
 				contribute(observe.HTTPDecision{
 					FailureStage: "outer_oauth", FailureReason: "bearer_malformed",
@@ -297,7 +342,7 @@ func NewAuthMiddleware(cfg Config, keys KeySetProvider, opts ...Option) func(htt
 				contribute(observe.HTTPDecision{
 					FailureStage: "outer_oauth", FailureReason: "scope_insufficient",
 					AuthMode: "oauth", CredentialState: "accepted",
-					ScopeState:   "rejected",
+					ScopeState:    "rejected",
 					ChallengeKind: "insufficient_scope", ChallengeTarget: "none",
 					RouteOutcome: "oauth_protected",
 				})

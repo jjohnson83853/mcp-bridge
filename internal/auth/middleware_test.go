@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bytes"
 	"crypto/rsa"
 	"fmt"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jwt"
@@ -87,6 +89,66 @@ func requestWithAuth(t *testing.T, mw func(http.Handler) http.Handler, next http
 	rec := httptest.NewRecorder()
 	mw(next).ServeHTTP(rec, req)
 	return rec
+}
+
+func TestCredentialPrecedenceOverSessionAdmission(t *testing.T) {
+	now := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
+	validSessionClaims := &Claims{Subject: "session-user", Issuer: testConfig.PocketIDIssuer, Scopes: []string{testConfig.MCPRequiredScope}}
+	sessionAdmissionCalls := 0
+	mw, keys := newAuthTest(t, WithNow(func() time.Time { return now }), WithSessionAdmission(func(string) (*Claims, bool) {
+		sessionAdmissionCalls++
+		return validSessionClaims, true
+	}))
+
+	invalidToken := "not-a-jwt"
+	expiredToken := mustSignToken(t, keys.priv, mustBuildToken(t, func(b *jwt.Builder) {
+		_ = b.Issuer(testConfig.PocketIDIssuer)
+		_ = b.Subject("user")
+		_ = b.Audience([]string{testConfig.MCPResourceURL})
+		_ = b.Claim("scope", testConfig.MCPRequiredScope)
+		_ = b.Expiration(now.Add(-time.Minute))
+	}))
+	insufficientScopeToken := mustSignToken(t, keys.priv, mustBuildToken(t, func(b *jwt.Builder) {
+		_ = b.Issuer(testConfig.PocketIDIssuer)
+		_ = b.Subject("user")
+		_ = b.Audience([]string{testConfig.MCPResourceURL})
+		_ = b.Claim("scope", "other:scope")
+		_ = b.Expiration(now.Add(time.Hour))
+	}))
+
+	for _, tc := range []struct {
+		name               string
+		token              string
+		emptyAuthorization bool
+		want               int
+	}{
+		{name: "malformed credentials", token: invalidToken, want: http.StatusUnauthorized},
+		{name: "expired credentials", token: expiredToken, want: http.StatusUnauthorized},
+		{name: "insufficient scope", token: insufficientScopeToken, want: http.StatusForbidden},
+		{name: "empty explicit authorization", emptyAuthorization: true, want: http.StatusUnauthorized},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			nextCalled := false
+			req := httptest.NewRequest(http.MethodPost, "/mcp", nil)
+			if tc.emptyAuthorization {
+				req.Header["Authorization"] = []string{""}
+			} else {
+				req.Header.Set("Authorization", "Bearer "+tc.token)
+			}
+			req.Header.Set("Mcp-Session-Id", "active-session")
+			rec := httptest.NewRecorder()
+			mw(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { nextCalled = true })).ServeHTTP(rec, req)
+			if rec.Code != tc.want {
+				t.Fatalf("status=%d, want %d", rec.Code, tc.want)
+			}
+			if nextCalled {
+				t.Fatal("request with rejected credentials reached downstream handler")
+			}
+			if sessionAdmissionCalls != 0 {
+				t.Fatal("session admission was consulted despite an explicit Authorization header")
+			}
+		})
+	}
 }
 
 func TestChallengeMetadataURL(t *testing.T) {
@@ -284,6 +346,118 @@ func TestMiddlewareMissingAuthHeader(t *testing.T) {
 	want := fmt.Sprintf(`Bearer realm="mcp", resource_metadata="%s"`, challengeMetadataURL(testConfig.MCPResourceURL))
 	if got := rec.Header().Get("WWW-Authenticate"); got != want {
 		t.Errorf("WWW-Authenticate = %q, want %q", got, want)
+	}
+}
+
+func TestMiddlewareSessionAdmission(t *testing.T) {
+	claims := &Claims{
+		Subject: "session-user",
+		Issuer:  "https://issuer.example",
+		Scopes:  []string{"mcp:connect"},
+	}
+	middleware, _ := newAuthTest(t, WithSessionAdmission(func(sessionID string) (*Claims, bool) {
+		if sessionID == "existing" {
+			return claims, true
+		}
+		return nil, false
+	}))
+	var acceptedLog bytes.Buffer
+	diagnostics := observe.NewHTTPDiagnostics(observe.NewLogger(&acceptedLog), observe.HTTPDiagnosticsOptions{
+		NewID: func() string { return "0123456789abcdef0123456789abcdef" },
+	})
+	nextCalled := false
+	next := http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		nextCalled = true
+		if got := ClaimsFromContext(r.Context()); got != claims {
+			t.Errorf("context claims = %p, want %p", got, claims)
+		}
+	})
+	request := httptest.NewRequest(http.MethodPost, "/mcp", nil)
+	request.Header.Set("Mcp-Session-Id", "existing")
+	response := httptest.NewRecorder()
+	diagnostics.Wrap(middleware(next)).ServeHTTP(response, request)
+	if response.Code != http.StatusOK || !nextCalled {
+		t.Fatalf("admitted request status=%d reached=%v, want 200 and handler call", response.Code, nextCalled)
+	}
+	if !strings.Contains(acceptedLog.String(), `"credential_state":"accepted"`) {
+		t.Fatalf("session admission did not record accepted credentials: %s", acceptedLog.String())
+	}
+
+	for _, tc := range []struct {
+		name      string
+		validator func(string) (*Claims, bool)
+	}{
+		{
+			name: "unknown session",
+			validator: func(string) (*Claims, bool) {
+				return nil, false
+			},
+		},
+		{name: "nil validator"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var logOutput bytes.Buffer
+			diagnostics := observe.NewHTTPDiagnostics(observe.NewLogger(&logOutput), observe.HTTPDiagnosticsOptions{
+				NewID: func() string { return "0123456789abcdef0123456789abcdef" },
+			})
+			middleware, _ := newAuthTest(t, WithSessionAdmission(tc.validator))
+			request := httptest.NewRequest(http.MethodPost, "/mcp", nil)
+			request.Header.Set("Mcp-Session-Id", "unknown")
+			response := httptest.NewRecorder()
+			diagnostics.Wrap(middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+				t.Error("handler called without valid session admission")
+			}))).ServeHTTP(response, request)
+			if response.Code != http.StatusUnauthorized {
+				t.Fatalf("status=%d, want 401", response.Code)
+			}
+			if !strings.Contains(logOutput.String(), "credentials_missing") {
+				t.Fatalf("missing-credential diagnostic not recorded: %s", logOutput.String())
+			}
+		})
+	}
+}
+
+func TestMiddlewareSessionAdmissionRejectsInsufficientScope(t *testing.T) {
+	claims := &Claims{
+		Subject: "session-user",
+		Issuer:  "https://issuer.example",
+		Scopes:  []string{"openid"},
+	}
+	middleware, _ := newAuthTest(t, WithSessionAdmission(func(string) (*Claims, bool) {
+		return claims, true
+	}))
+	var logOutput bytes.Buffer
+	diagnostics := observe.NewHTTPDiagnostics(observe.NewLogger(&logOutput), observe.HTTPDiagnosticsOptions{
+		NewID: func() string { return "0123456789abcdef0123456789abcdef" },
+	})
+	nextCalled := false
+	request := httptest.NewRequest(http.MethodPost, "/mcp", nil)
+	request.Header.Set("Mcp-Session-Id", "existing")
+	response := httptest.NewRecorder()
+	diagnostics.Wrap(middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		nextCalled = true
+	}))).ServeHTTP(response, request)
+
+	if response.Code != http.StatusForbidden || nextCalled {
+		t.Fatalf("session admission status=%d reached=%v, want 403 without handler call", response.Code, nextCalled)
+	}
+	if got := strings.TrimSpace(response.Body.String()); got != "insufficient scope" {
+		t.Fatalf("response body=%q, want insufficient scope", got)
+	}
+	wantChallenge := `Bearer error="insufficient_scope", scope="` + testConfig.MCPRequiredScope + `"`
+	if got := response.Header().Get("WWW-Authenticate"); got != wantChallenge {
+		t.Fatalf("WWW-Authenticate=%q, want %q", got, wantChallenge)
+	}
+	for _, evidence := range []string{
+		`"failure_stage":"outer_oauth"`,
+		`"failure_reason":"scope_insufficient"`,
+		`"auth_mode":"oauth"`,
+		`"credential_state":"accepted"`,
+		`"scope_state":"rejected"`,
+	} {
+		if !strings.Contains(logOutput.String(), evidence) {
+			t.Errorf("diagnostic missing %s: %s", evidence, logOutput.String())
+		}
 	}
 }
 
