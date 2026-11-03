@@ -1,0 +1,8 @@
+{
+  "task_id": "T1",
+  "status": "COMPLETED",
+  "artifact_receipt": "internal/catalog/schema.go; internal/catalog/catalog_test.go; internal/search/search.go; internal/search/search_test.go",
+  "telemetry_ref": null,
+  "summary": "Aligned built-in input schemas; empty servers decode as nil and 32/33 server bounds are covered. RED observed; catalog, search, and service GREEN checks passed (exit 0). No built-in $schema assertion required updating in service tests.",
+  "error_code": null
+}

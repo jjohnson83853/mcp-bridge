@@ -65,8 +65,11 @@ type oauthTestHarness struct {
 
 // startOAuthHarness generates the signing key, publishes its JWKS, writes one
 // operator document and starts the bridge with the OAuth environment set.
-func startOAuthHarness(t *testing.T) *oauthTestHarness {
+func startOAuthHarness(t *testing.T, serverIDs ...string) *oauthTestHarness {
 	t.Helper()
+	if len(serverIDs) == 0 {
+		serverIDs = []string{"alpha"}
+	}
 
 	private, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -121,7 +124,11 @@ func startOAuthHarness(t *testing.T) *oauthTestHarness {
 	directory := t.TempDir()
 	configPath := filepath.Join(directory, "bridge.yaml")
 	storageDirectory := filepath.Join(directory, "state")
-	writeBridgeConfig(t, configPath, httpAddress, operationsAddress, storageDirectory, embeddings.URL, []bridgeServerSpec{{id: "alpha", endpoint: upstream.URL}})
+	configuredServers := make([]bridgeServerSpec, len(serverIDs))
+	for index, id := range serverIDs {
+		configuredServers[index] = bridgeServerSpec{id: id, endpoint: upstream.URL}
+	}
+	writeBridgeConfig(t, configPath, httpAddress, operationsAddress, storageDirectory, embeddings.URL, configuredServers)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	stdout, stderr := &syncWriter{}, &syncWriter{}
@@ -1449,4 +1456,204 @@ func TestChatGPTSessionAdmissionDiscoveryBurstWire(t *testing.T) {
 		}
 	}
 	testServeNow = nil
+}
+func TestOpenAIToolSchemaCompatibilityWire(t *testing.T) {
+	const resourceURL = "https://mcp.bullprog.com"
+	t.Setenv("MCP_RESOURCE_URL", resourceURL)
+	t.Setenv("MCP_SESSION_ADMISSION_ENABLED", "true")
+	t.Setenv("MCP_REQUIRED_SCOPE", "mcp:connect")
+
+	servers32 := make([]string, 32)
+	for index := range servers32 {
+		servers32[index] = fmt.Sprintf("server-%02d", index)
+	}
+	servers32[0] = "alpha"
+
+	h := startOAuthHarness(t, servers32...)
+	h.awaitLive(t)
+	h.awaitReady(t)
+
+	now := time.Now().UTC()
+	token := h.oauthToken(t, now, map[string]any{
+		"aud":   resourceURL,
+		"scope": "mcp:connect",
+		"exp":   now.Add(10 * time.Minute).Unix(),
+	})
+	post := func(body, sessionID string) *http.Response {
+		t.Helper()
+		request, err := http.NewRequest(http.MethodPost, h.httpURL+"/mcp", strings.NewReader(body))
+		if err != nil {
+			t.Fatalf("build MCP request: %v", err)
+		}
+		request.Header.Set("Authorization", "Bearer "+token)
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Accept", "application/json, text/event-stream")
+		if sessionID != "" {
+			request.Header.Set("Mcp-Session-Id", sessionID)
+		}
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			t.Fatalf("POST /mcp: %v", err)
+		}
+		t.Cleanup(func() { _ = response.Body.Close() })
+		return response
+	}
+
+	initialize := post(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"openai-schema-compatibility","version":"1"}}}`, "")
+	if initialize.StatusCode != http.StatusOK {
+		t.Fatalf("initialize status = %d; want 200", initialize.StatusCode)
+	}
+	initializeReply := oauthJSONBody(t, initialize)
+	if initializeReply["jsonrpc"] != "2.0" {
+		t.Fatalf("initialize jsonrpc = %v; want 2.0", initializeReply["jsonrpc"])
+	}
+	sessionID := initialize.Header.Get("Mcp-Session-Id")
+	if sessionID == "" {
+		t.Fatal("initialize response omitted Mcp-Session-Id")
+	}
+
+	discovery := post(`{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`, sessionID)
+	if discovery.StatusCode != http.StatusOK {
+		t.Fatalf("tools/list status = %d; want 200", discovery.StatusCode)
+	}
+	discoveryReply := oauthJSONBody(t, discovery)
+	discoveryResult, ok := discoveryReply["result"].(map[string]any)
+	if !ok {
+		t.Fatalf("tools/list result = %T; want JSON object", discoveryReply["result"])
+	}
+	tools, ok := discoveryResult["tools"].([]any)
+	if !ok {
+		t.Fatalf("tools/list result.tools = %T; want array", discoveryResult["tools"])
+	}
+	inputSchemas := make(map[string]map[string]any, len(tools))
+	for index, rawTool := range tools {
+		tool, ok := rawTool.(map[string]any)
+		if !ok {
+			t.Fatalf("tools[%d] = %T; want JSON object", index, rawTool)
+		}
+		name, ok := tool["name"].(string)
+		if !ok {
+			t.Fatalf("tools[%d].name = %T; want string", index, tool["name"])
+		}
+		switch name {
+		case "search_tools", "describe_tool", "call_tool":
+			inputSchema, ok := tool["inputSchema"].(map[string]any)
+			if !ok {
+				t.Fatalf("%s inputSchema = %T; want JSON object", name, tool["inputSchema"])
+			}
+			if _, exists := inputSchema["$schema"]; exists {
+				t.Errorf("%s inputSchema unexpectedly contains $schema", name)
+			}
+			inputSchemas[name] = inputSchema
+		}
+	}
+	for _, name := range []string{"search_tools", "describe_tool", "call_tool"} {
+		if _, ok := inputSchemas[name]; !ok {
+			t.Fatalf("tools/list omitted %q", name)
+		}
+	}
+
+	searchProperties, ok := inputSchemas["search_tools"]["properties"].(map[string]any)
+	if !ok {
+		t.Fatalf("search_tools properties = %T; want JSON object", inputSchemas["search_tools"]["properties"])
+	}
+	servers, ok := searchProperties["servers"].(map[string]any)
+	if !ok {
+		t.Fatalf("search_tools servers schema = %T; want JSON object", searchProperties["servers"])
+	}
+	for _, bound := range []string{"minItems", "maxItems"} {
+		if _, exists := servers[bound]; exists {
+			t.Errorf("search_tools servers schema unexpectedly contains %s", bound)
+		}
+	}
+
+	callProperties, ok := inputSchemas["call_tool"]["properties"].(map[string]any)
+	if !ok {
+		t.Fatalf("call_tool properties = %T; want JSON object", inputSchemas["call_tool"]["properties"])
+	}
+	arguments, ok := callProperties["arguments"].(map[string]any)
+	if !ok {
+		t.Fatalf("call_tool arguments schema = %T; want JSON object", callProperties["arguments"])
+	}
+	if arguments["type"] != "object" {
+		t.Errorf("call_tool arguments type = %v; want object", arguments["type"])
+	}
+	if additionalProperties, exists := arguments["additionalProperties"]; !exists || additionalProperties != true {
+		t.Errorf("call_tool arguments additionalProperties = %v (present %t); want true", additionalProperties, exists)
+	}
+	if description, ok := arguments["description"].(string); !ok || strings.TrimSpace(description) == "" {
+		t.Errorf("call_tool arguments description = %v; want non-empty string", arguments["description"])
+	}
+
+	callSearch := func(id int, arguments map[string]any) (map[string]any, map[string]any) {
+		t.Helper()
+		requestBody, err := json.Marshal(map[string]any{
+			"jsonrpc": "2.0",
+			"id":      id,
+			"method":  "tools/call",
+			"params": map[string]any{
+				"name":      "search_tools",
+				"arguments": arguments,
+			},
+		})
+		if err != nil {
+			t.Fatalf("marshal search_tools call: %v", err)
+		}
+		response := post(string(requestBody), sessionID)
+		if response.StatusCode != http.StatusOK {
+			t.Fatalf("tools/call status = %d; want 200", response.StatusCode)
+		}
+		reply := oauthJSONBody(t, response)
+		result, ok := reply["result"].(map[string]any)
+		if !ok {
+			t.Fatalf("tools/call result = %T; want JSON object", reply["result"])
+		}
+		return reply, result
+	}
+	requireIsError := func(result map[string]any, want bool, input string) {
+		t.Helper()
+		if isError, present := result["isError"]; present {
+			if value, ok := isError.(bool); !ok || value != want {
+				t.Fatalf("tools/call %s isError = %v; want %t", input, isError, want)
+			}
+		} else if want {
+			t.Fatalf("tools/call %s omitted isError; want true", input)
+		}
+	}
+
+	emptyReply, emptyResult := callSearch(3, map[string]any{"query": "test", "servers": []string{}})
+	requireIsError(emptyResult, false, "with empty servers")
+	omittedReply, omittedResult := callSearch(4, map[string]any{"query": "test"})
+	requireIsError(omittedResult, false, "with servers omitted")
+	emptyJSON, err := json.Marshal(emptyReply["result"])
+	if err != nil {
+		t.Fatalf("marshal empty-servers result: %v", err)
+	}
+	omittedJSON, err := json.Marshal(omittedReply["result"])
+	if err != nil {
+		t.Fatalf("marshal omitted-servers result: %v", err)
+	}
+	if !bytes.Equal(emptyJSON, omittedJSON) {
+		t.Errorf("search_tools result with servers:[] = %s; with servers omitted = %s; want identical results", emptyJSON, omittedJSON)
+	}
+
+	_, result32 := callSearch(5, map[string]any{"query": "test", "servers": servers32})
+	requireIsError(result32, false, "with 32 servers")
+
+	servers33 := make([]string, 33)
+	for index := range servers33 {
+		servers33[index] = fmt.Sprintf("server-%02d", index)
+	}
+	_, result33 := callSearch(6, map[string]any{"query": "test", "servers": servers33})
+	requireIsError(result33, true, "with 33 servers")
+	structured, ok := result33["structuredContent"].(map[string]any)
+	if !ok {
+		t.Fatalf("33-server error structuredContent = %T; want JSON object", result33["structuredContent"])
+	}
+	if structured["code"] != "invalid_arguments" {
+		t.Errorf("33-server error code = %v; want invalid_arguments", structured["code"])
+	}
+	if message, ok := structured["message"].(string); !ok || !strings.Contains(message, "servers exceeds maximum of 32 entries") {
+		t.Errorf("33-server error message = %v; want it to contain the maximum-server message", structured["message"])
+	}
 }

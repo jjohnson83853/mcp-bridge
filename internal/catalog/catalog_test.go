@@ -11,8 +11,8 @@ import (
 // assertSchema pins the §4.4 root invariants shared by all three bridge tools.
 func assertSchema(t *testing.T, name string, schema map[string]any, required ...string) map[string]any {
 	t.Helper()
-	if schema["$schema"] != catalog.Draft202012 {
-		t.Fatalf("%s $schema = %v; want draft 2020-12", name, schema["$schema"])
+	if _, hasSchema := schema["$schema"]; hasSchema {
+		t.Fatalf("%s has unexpected $schema: %v", name, schema["$schema"])
 	}
 	if schema["type"] != "object" {
 		t.Fatalf("%s type = %v; want object", name, schema["type"])
@@ -49,9 +49,14 @@ func TestSearchToolsSchemaMatchesContract(t *testing.T) {
 		t.Fatalf("search_tools top_k = %v; want bounded integer", topK)
 	}
 	servers := properties["servers"].(map[string]any)
-	if servers["type"] != "array" || servers["minItems"] != 1 ||
-		servers["maxItems"] != catalog.ServerFilterMax || servers["uniqueItems"] != true {
-		t.Fatalf("search_tools servers = %v; want bounded unique array", servers)
+	if servers["type"] != "array" || servers["uniqueItems"] != true {
+		t.Fatalf("search_tools servers = %v; want unique array", servers)
+	}
+	if _, hasMin := servers["minItems"]; hasMin {
+		t.Fatalf("search_tools servers has unexpected minItems: %v", servers["minItems"])
+	}
+	if _, hasMax := servers["maxItems"]; hasMax {
+		t.Fatalf("search_tools servers has unexpected maxItems: %v", servers["maxItems"])
 	}
 	items := servers["items"].(map[string]any)
 	if items["pattern"] != catalog.ServerIDPattern {
@@ -86,8 +91,9 @@ func TestCallToolSchemaMatchesContract(t *testing.T) {
 		t.Fatalf("call_tool catalog_revision pattern = %v", properties["catalog_revision"])
 	}
 	arguments := properties["arguments"].(map[string]any)
-	if arguments["type"] != "object" {
-		t.Fatalf("call_tool arguments = %v; want object", arguments)
+	if arguments["type"] != "object" || arguments["additionalProperties"] != true ||
+		arguments["description"] == "" {
+		t.Fatalf("call_tool arguments = %v; want extensible described object", arguments)
 	}
 }
 

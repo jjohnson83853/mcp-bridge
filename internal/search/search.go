@@ -174,9 +174,12 @@ func DecodeRequest(raw json.RawMessage, cfg Config) (Request, error) {
 	}
 	if wire.Servers != nil {
 		if len(*wire.Servers) == 0 {
-			return Request{}, invalidArguments("servers must not be empty when provided")
+			request.Servers = nil
+		} else if len(*wire.Servers) > 32 {
+			return Request{}, invalidArguments("servers exceeds maximum of 32 entries")
+		} else {
+			request.Servers = append([]string(nil), (*wire.Servers)...)
 		}
-		request.Servers = append([]string(nil), (*wire.Servers)...)
 	}
 	return request, nil
 }

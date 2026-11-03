@@ -9,7 +9,7 @@ const (
 	ToolCallTool     = "call_tool"
 )
 
-// JSON Schema dialect pinned for the bridge's own tools (r8 §4.4).
+// Draft202012 is the JSON Schema draft URI.
 const Draft202012 = "https://json-schema.org/draft/2020-12/schema"
 
 // Exact §4.4 patterns for the bridge's own parameter values.
@@ -32,7 +32,6 @@ const (
 // Effective default/max are narrowed from config at runtime.
 func SearchToolsInputSchema() map[string]any {
 	return map[string]any{
-		"$schema":              Draft202012,
 		"type":                 "object",
 		"additionalProperties": false,
 		"required":             []any{"query"},
@@ -50,8 +49,6 @@ func SearchToolsInputSchema() map[string]any {
 			},
 			"servers": map[string]any{
 				"type":        "array",
-				"minItems":    1,
-				"maxItems":    ServerFilterMax,
 				"uniqueItems": true,
 				"items":       map[string]any{"type": "string", "pattern": ServerIDPattern},
 			},
@@ -62,7 +59,6 @@ func SearchToolsInputSchema() map[string]any {
 // DescribeToolInputSchema returns the exact describe_tool inputSchema (r8 §4.4).
 func DescribeToolInputSchema() map[string]any {
 	return map[string]any{
-		"$schema":              Draft202012,
 		"type":                 "object",
 		"additionalProperties": false,
 		"required":             []any{"tool_name", "catalog_revision"},
@@ -76,14 +72,17 @@ func DescribeToolInputSchema() map[string]any {
 // CallToolInputSchema returns the exact call_tool inputSchema (r8 §4.4).
 func CallToolInputSchema() map[string]any {
 	return map[string]any{
-		"$schema":              Draft202012,
 		"type":                 "object",
 		"additionalProperties": false,
 		"required":             []any{"tool_name", "catalog_revision", "arguments"},
 		"properties": map[string]any{
 			"tool_name":        map[string]any{"type": "string", "pattern": PublicToolNamePattern},
 			"catalog_revision": map[string]any{"type": "string", "pattern": CatalogRevisionPattern},
-			"arguments":        map[string]any{"type": "object"},
+			"arguments": map[string]any{
+				"type":                 "object",
+				"additionalProperties": true,
+				"description":          "Arguments for the upstream tool invocation",
+			},
 		},
 	}
 }

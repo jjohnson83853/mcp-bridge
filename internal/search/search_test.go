@@ -195,6 +195,33 @@ func TestDecodeRequestRejectsNamespaceAndUnknownFields(t *testing.T) {
 	}
 }
 
+func TestDecodeRequestServerBounds(t *testing.T) {
+	cfg := testConfig()
+	request, err := search.DecodeRequest(json.RawMessage(`{"query":"x","servers":[]}`), cfg)
+	if err != nil {
+		t.Fatalf("empty servers rejected: %v", err)
+	}
+	if request.Servers != nil {
+		t.Fatalf("empty servers = %v; want nil", request.Servers)
+	}
+
+	servers := strings.TrimSuffix(strings.Repeat(`"developer",`, 32), ",")
+	raw := json.RawMessage(`{"query":"x","servers":[` + servers + `]}`)
+	if _, err := search.DecodeRequest(raw, cfg); err != nil {
+		t.Fatalf("32 servers rejected: %v", err)
+	}
+
+	servers = strings.TrimSuffix(strings.Repeat(`"developer",`, 33), ",")
+	raw = json.RawMessage(`{"query":"x","servers":[` + servers + `]}`)
+	_, err = search.DecodeRequest(raw, cfg)
+	failure, ok := err.(*search.Failure)
+	if !ok || failure.Code != search.CodeInvalidArguments ||
+		failure.Message != "servers exceeds maximum of 32 entries" {
+		t.Fatalf("33 servers error = %v; want invalid_arguments with maximum message", err)
+	}
+}
+
+
 // overlimit: bounds are rejected, never clamped, and an empty query can never
 // degrade into a full-catalog response (r8 §4.2/§4.8).
 func TestBoundsRejectedWithoutClamping(t *testing.T) {
@@ -208,7 +235,6 @@ func TestBoundsRejectedWithoutClamping(t *testing.T) {
 		`{"query":"x","top_k":-1}`,
 		`{"query":""}`,
 		`{"query":"   "}`,
-		`{"query":"x","servers":[]}`,
 		`{"query":"` + strings.Repeat("q", 2049) + `"}`,
 	} {
 		if _, err := search.DecodeRequest(json.RawMessage(raw), cfg); err == nil {
