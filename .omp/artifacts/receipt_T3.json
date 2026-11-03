@@ -1,1 +1,8 @@
-{"task_id":"T3","status":"COMPLETED","artifact_receipt":"internal/upstream/dedicated.go, internal/upstream/dedicated_test.go","telemetry_ref":null,"summary":"Adaptive handshake detection and structured logging implemented; focused test RED then GREEN; upstream race suite and go build passed.","error_code":null}
+{
+  "task_id": "T3",
+  "status": "COMPLETED",
+  "artifact_receipt": "artifact://1647",
+  "telemetry_ref": null,
+  "summary": "Set handshake Binding to not_evaluated for stateful and stateless evidence; go test -v ./internal/service/... passed.",
+  "error_code": null
+}

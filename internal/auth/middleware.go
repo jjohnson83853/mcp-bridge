@@ -19,11 +19,29 @@ import (
 // Option customises the auth middleware at construction time.
 type Option func(*middlewareOptions)
 
+// SessionAdmissionReason classifies the result of looking up an existing
+// authenticated session.
+type SessionAdmissionReason string
+
+const (
+	AdmissionAdmitted        SessionAdmissionReason = "admitted"
+	AdmissionNotFound        SessionAdmissionReason = "not_found"
+	AdmissionUnauthenticated SessionAdmissionReason = "unauthenticated"
+	AdmissionExpired         SessionAdmissionReason = "expired"
+)
+
+// SessionAdmissionOutcome reports whether an existing session may provide
+// OAuth claims to a tokenless request.
+type SessionAdmissionOutcome struct {
+	Claims *Claims
+	Reason SessionAdmissionReason
+}
+
 // middlewareOptions holds the runtime configuration for the auth middleware.
 type middlewareOptions struct {
 	staticFallback   bool
 	now              func() time.Time
-	sessionAdmission func(sessionID string) (*Claims, bool)
+	sessionAdmission func(sessionID string) SessionAdmissionOutcome
 }
 
 // WithStaticFallback lets opaque (non-JWT) bearer tokens through untouched,
@@ -38,9 +56,7 @@ func WithNow(now func() time.Time) Option {
 	return func(o *middlewareOptions) { o.now = now }
 }
 
-// WithSessionAdmission lets a validated existing session supply OAuth claims
-// when a client omits its bearer token during session-bound discovery.
-func WithSessionAdmission(validator func(string) (*Claims, bool)) Option {
+func WithSessionAdmission(validator func(string) SessionAdmissionOutcome) Option {
 	return func(o *middlewareOptions) { o.sessionAdmission = validator }
 }
 
@@ -211,34 +227,79 @@ func NewAuthMiddleware(cfg Config, keys KeySetProvider, opts ...Option) func(htt
 			authValues := r.Header.Values("Authorization")
 			if len(authValues) == 0 {
 				sessionID := r.Header.Get("Mcp-Session-Id")
+				sessionHeader := "absent"
+				if sessionID != "" {
+					sessionHeader = "present"
+				}
 				if options.sessionAdmission != nil && sessionID != "" {
-					if claims, ok := options.sessionAdmission(sessionID); ok && claims != nil {
-						if cfg.MCPRequiredScope != "" && !slices.Contains(claims.Scopes, cfg.MCPRequiredScope) {
+					outcome := options.sessionAdmission(sessionID)
+					switch outcome.Reason {
+					case AdmissionAdmitted:
+						if outcome.Claims != nil {
+							claims := outcome.Claims
+							if cfg.MCPRequiredScope != "" && !slices.Contains(claims.Scopes, cfg.MCPRequiredScope) {
+								contribute(observe.HTTPDecision{
+									FailureStage: "outer_oauth", FailureReason: "scope_insufficient",
+									AuthMode: "oauth", CredentialState: "accepted", ScopeState: "rejected",
+									SessionHeader: "present", SessionState: "existing",
+									RouteOutcome: "oauth_protected",
+								})
+								w.Header().Set("WWW-Authenticate", `Bearer error="insufficient_scope", scope="`+cfg.MCPRequiredScope+`"`)
+								http.Error(w, "insufficient scope", http.StatusForbidden)
+								return
+							}
 							contribute(observe.HTTPDecision{
-								FailureStage: "outer_oauth", FailureReason: "scope_insufficient",
-								AuthMode: "oauth", CredentialState: "accepted", ScopeState: "rejected",
-								RouteOutcome: "oauth_protected",
+								RouteOutcome:    "oauth_protected",
+								AuthMode:        "oauth",
+								CredentialState: "accepted",
+								ScopeState:      scopeAcceptedState(claims.Scopes, cfg.MCPRequiredScope),
+								SessionHeader:   "present",
+								SessionState:    "existing",
+								BindingRelation: "match",
 							})
-							w.Header().Set("WWW-Authenticate", `Bearer error="insufficient_scope", scope="`+cfg.MCPRequiredScope+`"`)
-							http.Error(w, "insufficient scope", http.StatusForbidden)
+							r = r.WithContext(ContextWithClaims(r.Context(), claims))
+							next.ServeHTTP(w, r)
 							return
 						}
+					case AdmissionNotFound:
 						contribute(observe.HTTPDecision{
-							RouteOutcome:    "oauth_protected",
-							AuthMode:        "oauth",
-							CredentialState: "accepted",
-							ScopeState:      scopeAcceptedState(claims.Scopes, cfg.MCPRequiredScope),
-							SessionState:    "existing",
-							BindingRelation: "match",
+							FailureStage: "outer_oauth", FailureReason: "session_absent",
+							AuthMode: "oauth", CredentialState: "missing",
+							SessionHeader: "present", SessionState: "absent",
+							ChallengeKind: "resource_metadata", ChallengeTarget: challengeTarget,
+							MetadataTargetRegistered: metadataRegistered,
+							RouteOutcome:             "oauth_protected",
 						})
-						r = r.WithContext(ContextWithClaims(r.Context(), claims))
-						next.ServeHTTP(w, r)
+						emit401()
+						return
+					case AdmissionUnauthenticated:
+						contribute(observe.HTTPDecision{
+							FailureStage: "outer_oauth", FailureReason: "session_fingerprint_mismatch",
+							AuthMode: "oauth", CredentialState: "rejected",
+							SessionHeader: "present", SessionState: "existing",
+							ChallengeKind: "resource_metadata", ChallengeTarget: challengeTarget,
+							MetadataTargetRegistered: metadataRegistered,
+							RouteOutcome:             "oauth_protected",
+						})
+						emit401()
+						return
+					case AdmissionExpired:
+						contribute(observe.HTTPDecision{
+							FailureStage: "outer_oauth", FailureReason: "jwt_expired",
+							AuthMode: "oauth", CredentialState: "rejected",
+							SessionHeader: "present", SessionState: "existing",
+							ChallengeKind: "resource_metadata", ChallengeTarget: challengeTarget,
+							MetadataTargetRegistered: metadataRegistered,
+							RouteOutcome:             "oauth_protected",
+						})
+						emit401()
 						return
 					}
 				}
 				contribute(observe.HTTPDecision{
 					FailureStage: "outer_oauth", FailureReason: "credentials_missing",
 					AuthMode: "oauth", CredentialState: "missing",
+					SessionHeader: sessionHeader, SessionState: "not_evaluated",
 					ChallengeKind: "resource_metadata", ChallengeTarget: challengeTarget,
 					MetadataTargetRegistered: metadataRegistered,
 					RouteOutcome:             "oauth_protected",

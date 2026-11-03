@@ -61,15 +61,31 @@ type sessionRecord struct {
 	ref string
 }
 
-// SessionClaims returns the OAuth claims retained for an admitted session.
-func (h *InboundHandler) SessionClaims(sessionID string) (*auth.Claims, bool) {
+// SessionAdmission reports why a retained session can or cannot supply OAuth
+// claims to a tokenless request.
+func (h *InboundHandler) SessionAdmission(sessionID string) auth.SessionAdmissionOutcome {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	rec, exists := h.sessions[sessionID]
-	if !exists || rec.claims == nil || h.now().After(rec.authDeadline) {
-		return nil, false
+	if !exists {
+		return auth.SessionAdmissionOutcome{Reason: auth.AdmissionNotFound}
 	}
-	return rec.claims, true
+	if rec.claims == nil {
+		return auth.SessionAdmissionOutcome{Reason: auth.AdmissionUnauthenticated}
+	}
+	if !h.now().Before(rec.authDeadline) {
+		return auth.SessionAdmissionOutcome{Reason: auth.AdmissionExpired}
+	}
+	return auth.SessionAdmissionOutcome{Claims: rec.claims, Reason: auth.AdmissionAdmitted}
+}
+
+// SessionClaims returns the OAuth claims retained for an admitted session.
+func (h *InboundHandler) SessionClaims(sessionID string) (*auth.Claims, bool) {
+	outcome := h.SessionAdmission(sessionID)
+	if outcome.Reason == auth.AdmissionAdmitted {
+		return outcome.Claims, true
+	}
+	return nil, false
 }
 
 // InboundBounds are the admission bounds of the currently published generation.
@@ -918,7 +934,7 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			})
 			observe.ContributeSessionEvidence(r.Context(), observe.HTTPSessionEvidence{
 				RefState: refEvidenceState(ref, refAvailable), Ref: ref,
-				State: "created", Binding: "not_evaluated",
+			State: "created", Binding: "not_evaluated",
 			})
 		}
 	} else if sessionID == "" {

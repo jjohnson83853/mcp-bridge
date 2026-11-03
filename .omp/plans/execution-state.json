@@ -1,65 +1,64 @@
 {
   "schemaVersion": 2,
-  "feature": "stateless-and-backend-modes",
-  "revision": "r1",
+  "feature": "chatgpt-session-admission-diagnostics",
+  "revision": "r10",
   "projectRoot": "/home/opencode/projects/default/mcp-bridge",
   "spec": {
-    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-and-backend-modes/spec.md",
-    "sha256": "9ca14d53ed235e1ea0bdfcb2869aaf1cb7d2866fc16826c31402ade79fe10602",
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/chatgpt-session-admission-diagnostics/spec.md",
+    "sha256": "17e46434f76b1e075a1c7ee1293a9b2427625e077e9b4a12899fb022025cbde8",
     "sectionBindings": {
       "requirements": {
-        "revision": "r1",
-        "sha256": "9d5adca928fa9d577762ef4bfdf32bbaf580e0881cade5c4b9b5d29c4577287a"
+        "revision": "r10",
+        "sha256": "b7074c139f5fd00b1a18221229577b3d255ec7d4d0031dc4bdba424a6592d01f"
       },
       "design": {
-        "revision": "r1",
-        "sha256": "8cdfb6e7eed4a9e3aa9b2b850371ec5ef05483a45f132d72bab80feec9ef77c4"
+        "revision": "r10",
+        "sha256": "f4c6f2c783c6639263478eedfc12459aa28ee80ae0da0f171052dd4ce8cb92bb"
       },
       "tasks": {
-        "revision": "r1",
-        "sha256": "b359e465b26ac759e24ead3b35f9cd88cae4bb47ea854ee8ea89c46d5fd10606"
+        "revision": "r10",
+        "sha256": "b67f9f90a6391abb8e8fa79c9add24175f45e2acb12fc2ae9c01b275c8582a8d"
       },
       "envelope": {
-        "revision": "r1",
-        "sha256": "e09d213e3ff95e9a01406fe3d73c7907e6dce181e10f1e3061b242d22357bdea"
+        "revision": "r10",
+        "sha256": "bf0eaff27795eaee8c75357390b63914d6cc3ef1621bfc5f8498be5f9a34a500"
       }
     }
   },
   "packet": {
-    "digest": "e4b4facfa1e30767e4f00d63c11d43cf968663d6d1f8c81bede3189426c5a00b",
+    "digest": "0398b608993191349c167d2966ba0e07badcd1a97b24c77e2fc653e18f16b2e5",
     "branches": [
       {
-        "id": "approved-stateless-and-backend-modes",
+        "id": "approved-chatgpt-session-admission-diagnostics",
         "answerIds": [],
         "taskIds": [
           "T1",
           "T2",
           "T3",
-          "T4",
-          "T5"
+          "T4"
         ],
         "envelopeId": "env-1",
         "sectionBindings": {
           "requirements": {
-            "revision": "r1",
-            "sha256": "9d5adca928fa9d577762ef4bfdf32bbaf580e0881cade5c4b9b5d29c4577287a"
+            "revision": "r10",
+            "sha256": "b7074c139f5fd00b1a18221229577b3d255ec7d4d0031dc4bdba424a6592d01f"
           },
           "design": {
-            "revision": "r1",
-            "sha256": "8cdfb6e7eed4a9e3aa9b2b850371ec5ef05483a45f132d72bab80feec9ef77c4"
+            "revision": "r10",
+            "sha256": "f4c6f2c783c6639263478eedfc12459aa28ee80ae0da0f171052dd4ce8cb92bb"
           },
           "tasks": {
-            "revision": "r1",
-            "sha256": "b359e465b26ac759e24ead3b35f9cd88cae4bb47ea854ee8ea89c46d5fd10606"
+            "revision": "r10",
+            "sha256": "b67f9f90a6391abb8e8fa79c9add24175f45e2acb12fc2ae9c01b275c8582a8d"
           },
           "envelope": {
-            "revision": "r1",
-            "sha256": "e09d213e3ff95e9a01406fe3d73c7907e6dce181e10f1e3061b242d22357bdea"
+            "revision": "r10",
+            "sha256": "bf0eaff27795eaee8c75357390b63914d6cc3ef1621bfc5f8498be5f9a34a500"
           }
         }
       }
     ],
-    "selectedBranchId": "approved-stateless-and-backend-modes"
+    "selectedBranchId": "approved-chatgpt-session-admission-diagnostics"
   },
   "actors": {
     "plannerId": "planner",
@@ -70,36 +69,36 @@
   "requirements": [
     {
       "id": "R1",
-      "summary": "Upstream Server Backend Stateless Mode Configuration"
+      "summary": "Typed Session Admission Outcome Taxonomy"
     },
     {
       "id": "R2",
-      "summary": "Upstream Execution Lifecycle in Dedicated Runtime"
+      "summary": "Differentiated Outer OAuth Rejection Diagnostics"
     },
     {
       "id": "R3",
-      "summary": "Downstream Streamable Transport Default & Protocol Negotiation"
+      "summary": "Initialize Handshake Lifecycle & Evidence Preservation"
     },
     {
       "id": "R4",
-      "summary": "Integrated ChatGPT Wire Verification & Coverage Gate"
+      "summary": "Security, Wire Compatibility & Zero Credential Leakage"
     }
   ],
   "authorization": {
     "mode": "bounded",
     "id": "auth-1",
-    "packetDigest": "e4b4facfa1e30767e4f00d63c11d43cf968663d6d1f8c81bede3189426c5a00b",
-    "selectedBranchId": "approved-stateless-and-backend-modes",
+    "packetDigest": "0398b608993191349c167d2966ba0e07badcd1a97b24c77e2fc653e18f16b2e5",
+    "selectedBranchId": "approved-chatgpt-session-admission-diagnostics",
     "receipt": {
       "sourceId": "src-user",
-      "recordedAt": "2026-11-02T22:30:00Z",
+      "recordedAt": "2026-11-02T23:30:00Z",
       "response": {
         "origin": "user",
         "explicit": true,
         "timedOut": false,
         "automatic": false,
-        "packetDigest": "e4b4facfa1e30767e4f00d63c11d43cf968663d6d1f8c81bede3189426c5a00b",
-        "selectedBranchId": "approved-stateless-and-backend-modes"
+        "packetDigest": "0398b608993191349c167d2966ba0e07badcd1a97b24c77e2fc653e18f16b2e5",
+        "selectedBranchId": "approved-chatgpt-session-admission-diagnostics"
       }
     }
   },
@@ -107,10 +106,10 @@
     "specification": {
       "verdict": "pass",
       "reviewerId": "critic",
-      "packetDigest": "e4b4facfa1e30767e4f00d63c11d43cf968663d6d1f8c81bede3189426c5a00b",
+      "packetDigest": "0398b608993191349c167d2966ba0e07badcd1a97b24c77e2fc653e18f16b2e5",
       "receipt": {
         "sourceId": "src-review",
-        "recordedAt": "2026-11-02T22:30:00Z",
+        "recordedAt": "2026-11-02T23:30:00Z",
         "response": {
           "origin": "reviewer",
           "verdict": "pass"
@@ -120,10 +119,10 @@
     "tasks": {
       "verdict": "pass",
       "reviewerId": "critic",
-      "packetDigest": "e4b4facfa1e30767e4f00d63c11d43cf968663d6d1f8c81bede3189426c5a00b",
+      "packetDigest": "0398b608993191349c167d2966ba0e07badcd1a97b24c77e2fc653e18f16b2e5",
       "receipt": {
         "sourceId": "src-review",
-        "recordedAt": "2026-11-02T22:30:00Z",
+        "recordedAt": "2026-11-02T23:30:00Z",
         "response": {
           "origin": "reviewer",
           "verdict": "pass"
@@ -136,71 +135,31 @@
       "id": "src-user",
       "kind": "user-message",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-and-backend-modes/user-auth.txt",
-        "sha256": "7c80ba1f6a3a6732c424162562d09b8915a8eac08b1b9a5593ec4d29a7bd8a8d"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/chatgpt-session-admission-diagnostics/user-auth.txt",
+        "sha256": "8e992b113609a62dc26efdbe527b188fd14398c3ae11fd1c451377506e8ea392"
       },
-      "locator": "owner explicit confirmation 'yes' for stateless-and-backend-modes spec r1",
-      "recordedAt": "2026-11-02T22:30:00Z"
+      "locator": "user conversation message 'implement'",
+      "recordedAt": "2026-11-02T23:30:00Z"
     },
     {
       "id": "src-review",
       "kind": "observation",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-and-backend-modes/review-r1.md",
-        "sha256": "5a9beb90dc58bfdc38db2cf92162ba92ac2039b9b2a7f0ea1afff15425b7ca76"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/chatgpt-session-admission-diagnostics/review-r8.md",
+        "sha256": "2c66cc5f633470ebde947f9e5418ab06d7246d4fa8cf51b953917bffaabb4936"
       },
-      "locator": "critic and code-reviewer dual review receipt r1",
-      "recordedAt": "2026-11-02T22:30:00Z"
+      "locator": "critic review receipt r8",
+      "recordedAt": "2026-11-02T23:30:00Z"
     },
     {
-      "id": "src-receipt-t1",
+      "id": "src-review-r10",
       "kind": "observation",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
-        "sha256": "19205c8eb3359f4f76a91034967cc9d1c6606137ac912e1ccc250e1a34c9a55c"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/chatgpt-session-admission-diagnostics/review-r10.md",
+        "sha256": "86df333fb369b291a616329bb4be5f969fdae926ad9e3b2b0c0b6e3ab651f79a"
       },
-      "locator": "engineer receipt T1",
-      "recordedAt": "2026-11-02T22:30:00Z"
-    },
-    {
-      "id": "src-receipt-t2",
-      "kind": "observation",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
-        "sha256": "c46b9a31e45ab096b19fabb13c3e8800d49acc41f22c4f493393ae5b6480fc64"
-      },
-      "locator": "engineer receipt T2",
-      "recordedAt": "2026-11-02T22:30:00Z"
-    },
-    {
-      "id": "src-receipt-t3",
-      "kind": "observation",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T3.json",
-        "sha256": "daec5f4bedec343042a424fa065ab0ca7980e9df6b5b6bb7a845c2877f2d2e1d"
-      },
-      "locator": "engineer receipt T3",
-      "recordedAt": "2026-11-02T22:30:00Z"
-    },
-    {
-      "id": "src-receipt-t4",
-      "kind": "observation",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T4.json",
-        "sha256": "3361a63530e2383f6bdb4d742d14db468bebb4627b93fb83b4ea2133a8293148"
-      },
-      "locator": "engineer receipt T4",
-      "recordedAt": "2026-11-02T22:30:00Z"
-    },
-    {
-      "id": "src-receipt-t5",
-      "kind": "observation",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T5.json",
-        "sha256": "17746c38a0bf3c28bfd2560f0a7dd8832a960368d3062251a4d6a88fa432b3d9"
-      },
-      "locator": "engineer receipt T5",
-      "recordedAt": "2026-11-02T22:30:00Z"
+      "locator": "code-reviewer review receipt r10",
+      "recordedAt": "2026-11-02T23:30:00Z"
     }
   ],
   "decisions": [],
@@ -211,28 +170,25 @@
       "T1",
       "T2",
       "T3",
-      "T4",
-      "T5"
+      "T4"
     ],
     "readPaths": [
-      ".scratch/stateless-and-backend-modes/spec.md",
-      ".scratch/stateless-and-backend-modes/issues/01-upstream-server-config-stateless-stubs.md",
-      ".scratch/stateless-and-backend-modes/issues/02-upstream-runtime-stateless-execution.md",
-      ".scratch/stateless-and-backend-modes/issues/03-upstream-adaptive-ephemeral-handshake.md",
-      ".scratch/stateless-and-backend-modes/issues/04-downstream-stateless-streamable-transport.md",
-      ".scratch/stateless-and-backend-modes/issues/05-e2e-chatgpt-wire-verification-and-coverage.md"
+      ".scratch/chatgpt-session-admission-diagnostics/spec.md",
+      ".scratch/chatgpt-session-admission-diagnostics/issues/01-session-admission-result-taxonomy.md",
+      ".scratch/chatgpt-session-admission-diagnostics/issues/02-middleware-differentiated-rejection-diagnostics.md",
+      ".scratch/chatgpt-session-admission-diagnostics/issues/03-initialize-handshake-lifecycle-diagnostics.md",
+      ".scratch/chatgpt-session-admission-diagnostics/issues/04-end-to-end-discovery-wire-verification-and-coverage.md"
     ],
     "writePaths": [
-      "internal/config/config.go",
-      "internal/config/fingerprint.go",
-      "internal/config/config_test.go",
-      "internal/config/fingerprint_test.go",
-      "internal/upstream/dedicated.go",
-      "internal/upstream/dedicated_test.go",
-      "internal/service/server.go",
+      "internal/auth/middleware.go",
+      "internal/auth/middleware_test.go",
+      "internal/service/inbound.go",
+      "internal/service/inbound_test.go",
       "cmd/mcp-bridge/serve.go",
-      "internal/service/initialize_wire_test.go",
+      "cmd/mcp-bridge/serve_test.go",
       "cmd/mcp-bridge/serve_oauth_test.go",
+      "cmd/mcp-bridge/serve_oauth_diagnostics_test.go",
+      "docs/runbooks/chatgpt-integration.md",
       "coverage.out"
     ],
     "allowedEffects": [
@@ -263,14 +219,15 @@
       "effects": {
         "kind": "write",
         "paths": [
-          "internal/config/config.go",
-          "internal/config/fingerprint.go",
-          "internal/config/config_test.go",
-          "internal/config/fingerprint_test.go"
+          "internal/auth/middleware.go",
+          "internal/auth/middleware_test.go",
+          "internal/service/inbound.go",
+          "internal/service/inbound_test.go",
+          "cmd/mcp-bridge/serve.go"
         ]
       },
       "acceptanceIds": [
-        "AC-1"
+        "AC1"
       ],
       "evidenceIds": [
         "ev-t1-test"
@@ -290,12 +247,17 @@
       "effects": {
         "kind": "write",
         "paths": [
-          "internal/upstream/dedicated.go",
-          "internal/upstream/dedicated_test.go"
+          "internal/auth/middleware.go",
+          "internal/auth/middleware_test.go",
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/serve_test.go"
         ]
       },
       "acceptanceIds": [
-        "AC-2"
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC7"
       ],
       "evidenceIds": [
         "ev-t2-test"
@@ -309,18 +271,18 @@
       "stage": "implementation",
       "status": "done",
       "blockedBy": [
-        "T2"
+        "T1"
       ],
       "requires": [],
       "effects": {
         "kind": "write",
         "paths": [
-          "internal/upstream/dedicated.go",
-          "internal/upstream/dedicated_test.go"
+          "internal/service/inbound.go",
+          "internal/service/inbound_test.go"
         ]
       },
       "acceptanceIds": [
-        "AC-3"
+        "AC6"
       ],
       "evidenceIds": [
         "ev-t3-test"
@@ -333,51 +295,32 @@
       "id": "T4",
       "stage": "implementation",
       "status": "done",
-      "blockedBy": [],
-      "requires": [],
-      "effects": {
-        "kind": "write",
-        "paths": [
-          "internal/service/server.go",
-          "cmd/mcp-bridge/serve.go",
-          "internal/service/initialize_wire_test.go"
-        ]
-      },
-      "acceptanceIds": [
-        "AC-4"
-      ],
-      "evidenceIds": [
-        "ev-t4-test"
-      ],
-      "agentRoles": [
-        "engineer"
-      ]
-    },
-    {
-      "id": "T5",
-      "stage": "implementation",
-      "status": "done",
       "blockedBy": [
-        "T1",
         "T2",
-        "T3",
-        "T4"
+        "T3"
       ],
       "requires": [],
       "effects": {
         "kind": "write",
         "paths": [
           "cmd/mcp-bridge/serve_oauth_test.go",
+          "cmd/mcp-bridge/serve_oauth_diagnostics_test.go",
+          "docs/runbooks/chatgpt-integration.md",
           "coverage.out"
         ]
       },
       "acceptanceIds": [
-        "AC-5",
-        "AC-6"
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC6",
+        "AC7",
+        "AC8"
       ],
       "evidenceIds": [
-        "ev-t5-wire",
-        "ev-t5-gate"
+        "ev-t4-test"
       ],
       "agentRoles": [
         "engineer"
@@ -387,7 +330,7 @@
   "capabilities": [],
   "acceptance": [
     {
-      "id": "AC-1",
+      "id": "AC1",
       "requirementIds": [
         "R1"
       ],
@@ -400,9 +343,8 @@
       ]
     },
     {
-      "id": "AC-2",
+      "id": "AC2",
       "requirementIds": [
-        "R1",
         "R2"
       ],
       "ownerTaskIds": [
@@ -414,12 +356,12 @@
       ]
     },
     {
-      "id": "AC-3",
+      "id": "AC3",
       "requirementIds": [
         "R2"
       ],
       "ownerTaskIds": [
-        "T3"
+        "T2"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -427,9 +369,22 @@
       ]
     },
     {
-      "id": "AC-4",
+      "id": "AC4",
       "requirementIds": [
-        "R3"
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC5",
+      "requirementIds": [
+        "R2"
       ],
       "ownerTaskIds": [
         "T4"
@@ -440,12 +395,12 @@
       ]
     },
     {
-      "id": "AC-5",
+      "id": "AC6",
       "requirementIds": [
-        "R4"
+        "R3"
       ],
       "ownerTaskIds": [
-        "T5"
+        "T3"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -453,12 +408,26 @@
       ]
     },
     {
-      "id": "AC-6",
+      "id": "AC7",
       "requirementIds": [
         "R4"
       ],
       "ownerTaskIds": [
-        "T5"
+        "T2",
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC8",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T4"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -472,22 +441,22 @@
       "kind": "test",
       "artifact": {
         "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
-        "sha256": "19205c8eb3359f4f76a91034967cc9d1c6606137ac912e1ccc250e1a34c9a55c"
+        "sha256": "bcc40d4c80b79661ead1a9ceb8ce3f460311a361a89cfc17603a62ab94f8fd41"
       },
-      "feature": "stateless-and-backend-modes",
-      "packetDigest": "e4b4facfa1e30767e4f00d63c11d43cf968663d6d1f8c81bede3189426c5a00b",
-      "selectedBranchId": "approved-stateless-and-backend-modes",
+      "feature": "chatgpt-session-admission-diagnostics",
+      "packetDigest": "0398b608993191349c167d2966ba0e07badcd1a97b24c77e2fc653e18f16b2e5",
+      "selectedBranchId": "approved-chatgpt-session-admission-diagnostics",
       "taskIds": [
         "T1"
       ],
       "acceptanceIds": [
-        "AC-1"
+        "AC1"
       ],
       "outcome": "pass",
-      "observedAt": "2026-11-02T22:30:00Z",
+      "observedAt": "2026-11-02T23:30:00Z",
       "producer": "engineer",
       "details": {
-        "command": "go test -v -run \"TestServerStateless|TestFingerprintChangesOnServerStateless\" ./internal/config/...",
+        "command": "go test -count=1 ./internal/auth/... ./internal/service/...",
         "exitCode": 0
       }
     },
@@ -496,22 +465,25 @@
       "kind": "test",
       "artifact": {
         "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
-        "sha256": "c46b9a31e45ab096b19fabb13c3e8800d49acc41f22c4f493393ae5b6480fc64"
+        "sha256": "9aa4c65a0e33c8229cc82bc7a558a5d758b12ccd686b15b3047f525772484b87"
       },
-      "feature": "stateless-and-backend-modes",
-      "packetDigest": "e4b4facfa1e30767e4f00d63c11d43cf968663d6d1f8c81bede3189426c5a00b",
-      "selectedBranchId": "approved-stateless-and-backend-modes",
+      "feature": "chatgpt-session-admission-diagnostics",
+      "packetDigest": "0398b608993191349c167d2966ba0e07badcd1a97b24c77e2fc653e18f16b2e5",
+      "selectedBranchId": "approved-chatgpt-session-admission-diagnostics",
       "taskIds": [
         "T2"
       ],
       "acceptanceIds": [
-        "AC-2"
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC7"
       ],
       "outcome": "pass",
-      "observedAt": "2026-11-02T22:30:00Z",
+      "observedAt": "2026-11-02T23:30:00Z",
       "producer": "engineer",
       "details": {
-        "command": "go test -v -run \"TestDedicatedStateless|TestDedicatedStateful\" ./internal/upstream/...",
+        "command": "go test -v ./internal/auth/... && go test -v ./cmd/mcp-bridge -run TestSessionAdmissionEnabledParsing",
         "exitCode": 0
       }
     },
@@ -520,22 +492,22 @@
       "kind": "test",
       "artifact": {
         "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T3.json",
-        "sha256": "daec5f4bedec343042a424fa065ab0ca7980e9df6b5b6bb7a845c2877f2d2e1d"
+        "sha256": "42783b546ddf5a22c9fea47f3d01bf2c4171c65e5098e668e8ef4c9c9b4b7d74"
       },
-      "feature": "stateless-and-backend-modes",
-      "packetDigest": "e4b4facfa1e30767e4f00d63c11d43cf968663d6d1f8c81bede3189426c5a00b",
-      "selectedBranchId": "approved-stateless-and-backend-modes",
+      "feature": "chatgpt-session-admission-diagnostics",
+      "packetDigest": "0398b608993191349c167d2966ba0e07badcd1a97b24c77e2fc653e18f16b2e5",
+      "selectedBranchId": "approved-chatgpt-session-admission-diagnostics",
       "taskIds": [
         "T3"
       ],
       "acceptanceIds": [
-        "AC-3"
+        "AC6"
       ],
       "outcome": "pass",
-      "observedAt": "2026-11-02T22:30:00Z",
+      "observedAt": "2026-11-02T23:30:00Z",
       "producer": "engineer",
       "details": {
-        "command": "go test -v -run TestDedicatedAdaptiveEphemeralHandshake ./internal/upstream/...",
+        "command": "go test -count=1 ./internal/service/...",
         "exitCode": 0
       }
     },
@@ -544,70 +516,29 @@
       "kind": "test",
       "artifact": {
         "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T4.json",
-        "sha256": "3361a63530e2383f6bdb4d742d14db468bebb4627b93fb83b4ea2133a8293148"
+        "sha256": "93dd14f4af8f701b3db9d5ac1ce29508d22f4151d3480929ab014ea632495582"
       },
-      "feature": "stateless-and-backend-modes",
-      "packetDigest": "e4b4facfa1e30767e4f00d63c11d43cf968663d6d1f8c81bede3189426c5a00b",
-      "selectedBranchId": "approved-stateless-and-backend-modes",
+      "feature": "chatgpt-session-admission-diagnostics",
+      "packetDigest": "0398b608993191349c167d2966ba0e07badcd1a97b24c77e2fc653e18f16b2e5",
+      "selectedBranchId": "approved-chatgpt-session-admission-diagnostics",
       "taskIds": [
         "T4"
       ],
       "acceptanceIds": [
-        "AC-4"
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC6",
+        "AC7",
+        "AC8"
       ],
       "outcome": "pass",
-      "observedAt": "2026-11-02T22:30:00Z",
+      "observedAt": "2026-11-02T23:30:00Z",
       "producer": "engineer",
       "details": {
-        "command": "go test -v -run TestStreamableHandlerStatelessDefaultDiscover ./internal/service/...",
-        "exitCode": 0
-      }
-    },
-    {
-      "id": "ev-t5-wire",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T5.json",
-        "sha256": "17746c38a0bf3c28bfd2560f0a7dd8832a960368d3062251a4d6a88fa432b3d9"
-      },
-      "feature": "stateless-and-backend-modes",
-      "packetDigest": "e4b4facfa1e30767e4f00d63c11d43cf968663d6d1f8c81bede3189426c5a00b",
-      "selectedBranchId": "approved-stateless-and-backend-modes",
-      "taskIds": [
-        "T5"
-      ],
-      "acceptanceIds": [
-        "AC-5"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-02T22:30:00Z",
-      "producer": "engineer",
-      "details": {
-        "command": "go test -v -run \"TestChatGPTDeveloperModeStatelessDiscoveryWire|TestChatGPTOAuthAndActionDiscoveryWire\" ./cmd/mcp-bridge/...",
-        "exitCode": 0
-      }
-    },
-    {
-      "id": "ev-t5-gate",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T5.json",
-        "sha256": "17746c38a0bf3c28bfd2560f0a7dd8832a960368d3062251a4d6a88fa432b3d9"
-      },
-      "feature": "stateless-and-backend-modes",
-      "packetDigest": "e4b4facfa1e30767e4f00d63c11d43cf968663d6d1f8c81bede3189426c5a00b",
-      "selectedBranchId": "approved-stateless-and-backend-modes",
-      "taskIds": [
-        "T5"
-      ],
-      "acceptanceIds": [
-        "AC-6"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-02T22:30:00Z",
-      "producer": "engineer",
-      "details": {
-        "command": "go test -coverprofile=coverage.out -coverpkg=./internal/...,./cmd/... ./... && go run ./cmd/covcheck",
+        "command": "go test -v ./cmd/mcp-bridge/... -run 'TestChatGPT.*Wire' && go run ./cmd/covcheck",
         "exitCode": 0
       }
     }

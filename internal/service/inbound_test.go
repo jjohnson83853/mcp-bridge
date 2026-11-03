@@ -328,6 +328,91 @@ func TestInboundHandlerLogsAndCountsWithoutLoggingCredentials(t *testing.T) {
 		t.Fatalf("inbound request metric missing: %s", metricsResponse.Body.String())
 	}
 }
+func TestInboundInitializeHandshakeSessionEvidence(t *testing.T) {
+	tests := []struct {
+		name            string
+		sessionID       string
+		newSessionRef   func() (string, error)
+		expectedFields  []string
+	}{
+		{
+			name:      "stateful session created",
+			sessionID: "stateful-session",
+			newSessionRef: func() (string, error) {
+				return "0123456789abcdef0123456789abcdef", nil
+			},
+			expectedFields: []string{
+				`"session_state":"created"`,
+				`"binding_relation":"not_evaluated"`,
+				`"session_ref_state":"available"`,
+				`"session_ref":"0123456789abcdef0123456789abcdef"`,
+				`"session_binding":"unavailable"`,
+			},
+		},
+		{
+			name: "stateless session",
+			expectedFields: []string{
+				`"session_state":"not_supplied"`,
+				`"binding_relation":"not_evaluated"`,
+				`"session_ref_state":"not_applicable"`,
+				`"session_binding":"unavailable"`,
+			},
+		},
+		{
+			name:          "session reference generation unavailable",
+			sessionID:     "unavailable-ref-session",
+			newSessionRef: func() (string, error) { return "", io.EOF },
+			expectedFields: []string{
+				`"session_state":"created"`,
+				`"binding_relation":"not_evaluated"`,
+				`"session_ref_state":"unavailable"`,
+				`"session_binding":"unavailable"`,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var logs bytes.Buffer
+			next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				if test.sessionID != "" {
+					w.Header().Set("Mcp-Session-Id", test.sessionID)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, _ = io.WriteString(w, `{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","capabilities":{},"serverInfo":{"name":"inbound-test","version":"1"}}}`)
+			})
+			handler := service.NewInboundHandler(next, tokenHash("token"), service.InboundOptions{
+				Logger:        observe.NewLogger(&logs),
+				NewSessionRef: test.newSessionRef,
+			})
+			request := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"inbound-test","version":"1"}}}`))
+			request.Header.Set("Authorization", "Bearer token")
+			request.Header.Set("Content-Type", "application/json")
+			request.Header.Set("Accept", "application/json, text/event-stream")
+			response := httptest.NewRecorder()
+
+			handler.ServeHTTP(response, request)
+
+			if response.Code != http.StatusOK {
+				t.Fatalf("initialize status=%d body=%s", response.Code, response.Body)
+			}
+			if got := response.Header().Get("Mcp-Session-Id"); got != test.sessionID {
+				t.Errorf("initialize session ID=%q, want %q", got, test.sessionID)
+			}
+			record := strings.TrimSpace(logs.String())
+			if lines := strings.Split(record, "\n"); len(lines) != 1 {
+				t.Fatalf("got %d completion records, want exactly one: %s", len(lines), record)
+			}
+			for _, field := range test.expectedFields {
+				if !strings.Contains(record, field) {
+					t.Errorf("completion record does not contain %s: %s", field, record)
+				}
+			}
+		})
+	}
+}
+
 
 func TestInboundResponseWriterPreservesStreamingFlush(t *testing.T) {
 	handler := service.NewInboundHandler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -492,6 +577,55 @@ func tokenHash(values ...string) [][32]byte {
 		hashes = append(hashes, sha256.Sum256([]byte(value)))
 	}
 	return hashes
+}
+
+func TestInboundHandler_SessionAdmission_DeadlineBoundary(t *testing.T) {
+	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
+	oauthMiddleware, token := inboundOAuthTestMiddleware(t)
+	inbound := service.NewInboundHandler(
+		service.NewStreamableHandler(service.NewMCPServer()),
+		tokenHash("static-token", token),
+		service.InboundOptions{Now: func() time.Time { return now }},
+	)
+
+	unauthenticatedServer := newInboundHTTPServer(t, inbound)
+	unauthenticatedSessionID := initializeInboundTestSession(t, unauthenticatedServer, "static-token")
+	authenticatedServer := newInboundHTTPServer(t, oauthMiddleware(inbound))
+	authenticatedSessionID := initializeInboundTestSession(t, authenticatedServer, token)
+
+	deadline := now.Add(8 * time.Hour)
+	for _, tc := range []struct {
+		name       string
+		sessionID  string
+		now        time.Time
+		wantReason auth.SessionAdmissionReason
+		admitted   bool
+	}{
+		{name: "nonexistent", sessionID: "missing-session", now: now, wantReason: auth.AdmissionNotFound},
+		{name: "nil claims", sessionID: unauthenticatedSessionID, now: now, wantReason: auth.AdmissionUnauthenticated},
+		{name: "before deadline", sessionID: authenticatedSessionID, now: deadline.Add(-time.Nanosecond), wantReason: auth.AdmissionAdmitted, admitted: true},
+		{name: "at deadline", sessionID: authenticatedSessionID, now: deadline, wantReason: auth.AdmissionExpired},
+		{name: "after deadline", sessionID: authenticatedSessionID, now: deadline.Add(time.Nanosecond), wantReason: auth.AdmissionExpired},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			now = tc.now
+			outcome := inbound.SessionAdmission(tc.sessionID)
+			if outcome.Reason != tc.wantReason {
+				t.Fatalf("SessionAdmission reason = %q, want %q", outcome.Reason, tc.wantReason)
+			}
+			if (outcome.Claims != nil) != tc.admitted {
+				t.Fatalf("SessionAdmission claims present = %t, want %t", outcome.Claims != nil, tc.admitted)
+			}
+
+			claims, ok := inbound.SessionClaims(tc.sessionID)
+			if ok != tc.admitted || (claims != nil) != tc.admitted {
+				t.Fatalf("SessionClaims = (%p, %t), admitted = %t", claims, ok, tc.admitted)
+			}
+			if tc.admitted && claims != outcome.Claims {
+				t.Fatalf("SessionClaims claims = %p, want SessionAdmission claims %p", claims, outcome.Claims)
+			}
+		})
+	}
 }
 
 func TestInboundSessionAdmissionDiscoveryBurst(t *testing.T) {

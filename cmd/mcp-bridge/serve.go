@@ -31,6 +31,9 @@ const (
 
 var testServeNow func() time.Time
 
+func sessionAdmissionEnabled(value string) bool {
+	return strings.EqualFold(value, "true") || value == "1"
+}
 
 // serve is the composition root: it turns one operator document into the
 // serving bridge of plan §4.2 — the inbound edge with its bounds and tokens,
@@ -189,8 +192,8 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 		auth.WithStaticFallback(true),
 		auth.WithNow(diagnosticNowFromContext(ctx)),
 	}
-	if os.Getenv("MCP_SESSION_ADMISSION_ENABLED") == "true" {
-		authOptions = append(authOptions, auth.WithSessionAdmission(inbound.SessionClaims))
+	if sessionAdmissionEnabled(os.Getenv("MCP_SESSION_ADMISSION_ENABLED")) {
+		authOptions = append(authOptions, auth.WithSessionAdmission(inbound.SessionAdmission))
 	}
 	authMiddleware := auth.NewAuthMiddleware(authCfg, jwksCache, authOptions...)
 	inboundMux.Handle("/mcp", authMiddleware(inbound))

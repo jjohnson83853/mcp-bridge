@@ -1,8 +1,8 @@
 {
   "task_id": "T1",
   "status": "COMPLETED",
-  "artifact_receipt": "internal/config stateless parsing and fingerprint projection changes; regression and race tests passed",
+  "artifact_receipt": "internal/auth/middleware.go; internal/auth/middleware_test.go; internal/service/inbound.go; internal/service/inbound_test.go; cmd/mcp-bridge/serve.go",
   "telemetry_ref": null,
-  "summary": "Allowed stateless server configuration and included its effective value in fingerprints; focused regression tests and config race tests passed.",
+  "summary": "Implemented typed session admission outcome and boundary tests; verified with go test -count=1 ./internal/auth/... ./internal/service/... (exit 0).",
   "error_code": null
 }

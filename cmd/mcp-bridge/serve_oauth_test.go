@@ -6,7 +6,9 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io"
@@ -16,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -978,8 +981,8 @@ func TestChatGPTOAuthAndActionDiscoveryWire(t *testing.T) {
 			continue
 		}
 		matchingRecords++
-		if record.FailureStage != "outer_oauth" || record.FailureReason != "credentials_missing" {
-			t.Errorf("diagnostic record for %q has failure_stage=%q failure_reason=%q; want outer_oauth/credentials_missing", diagID, record.FailureStage, record.FailureReason)
+		if record.FailureStage != "outer_oauth" || (record.FailureReason != "credentials_missing" && record.FailureReason != "session_absent") {
+			t.Errorf("diagnostic record for %q has failure_stage=%q failure_reason=%q; want outer_oauth/credentials_missing or session_absent", diagID, record.FailureStage, record.FailureReason)
 		}
 	}
 	if matchingRecords != 1 {
@@ -1157,4 +1160,293 @@ type mockEmbedProvider struct {
 
 func (m *mockEmbedProvider) Embed(ctx context.Context, inputs []string) ([][]float64, error) {
 	return m.vectors, m.err
+}
+func TestChatGPTSessionAdmissionDiscoveryBurstWire(t *testing.T) {
+	const resourceURL = "https://mcp.bullprog.com"
+	t.Setenv("MCP_RESOURCE_URL", resourceURL)
+	t.Setenv("MCP_SESSION_ADMISSION_ENABLED", "true")
+	t.Setenv("MCP_REQUIRED_SCOPE", "mcp:connect")
+
+	now := time.Now().UTC()
+	var clockMu sync.Mutex
+	simulatedNow := now
+	testServeNow = func() time.Time {
+		clockMu.Lock()
+		defer clockMu.Unlock()
+		return simulatedNow
+	}
+	t.Cleanup(func() { testServeNow = nil })
+	advanceClock := func(duration time.Duration) {
+		clockMu.Lock()
+		simulatedNow = simulatedNow.Add(duration)
+		clockMu.Unlock()
+	}
+
+	h := startOAuthHarness(t)
+	h.awaitLive(t)
+	h.awaitReady(t)
+
+	validToken := h.oauthToken(t, now, map[string]any{"aud": resourceURL, "scope": "mcp:connect", "exp": now.Add(10 * time.Minute).Unix()})
+	insufficientScopeToken := h.oauthToken(t, now, map[string]any{"aud": resourceURL, "scope": "openid", "exp": now.Add(10 * time.Minute).Unix()})
+
+	statusCounts := make(map[int]int)
+	var rejectedHeaders []string
+	var diagnosticIDs []string
+	post := func(path, body, token, sessionID string) *http.Response {
+		t.Helper()
+		req, err := http.NewRequest(http.MethodPost, h.httpURL+path, strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Accept", "application/json, text/event-stream")
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+		if sessionID != "" {
+			req.Header.Set("Mcp-Session-Id", sessionID)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		statusCounts[resp.StatusCode]++
+		if resp.StatusCode >= http.StatusBadRequest {
+			rejectedHeaders = append(rejectedHeaders, fmt.Sprint(resp.Header))
+		}
+		diagnosticIDs = append(diagnosticIDs, resp.Header.Get("mcp-diagnostic-id"))
+		return resp
+	}
+
+	var allBodies []string
+
+	// 1. Probe without session header -> 401 outer_oauth/credentials_missing, session_header: absent
+	probe := post("/mcp", "{}", "", "")
+	probeBody, _ := io.ReadAll(probe.Body)
+	_ = probe.Body.Close()
+	allBodies = append(allBodies, string(probeBody))
+	if probe.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("probe status=%d, want 401", probe.StatusCode)
+	}
+	requireChallenge(t, probe, "probe")
+	if string(probeBody) != "unauthorized\n" {
+		t.Fatalf("probe body=%q, want unauthorized response", probeBody)
+	}
+
+	// 2. Initialize with valid OAuth token -> 200 OK, Mcp-Session-Id, session_state: created
+	initResp := post("/mcp", `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"chatgpt","version":"1.0"}}}`, validToken, "")
+	initBody, _ := io.ReadAll(initResp.Body)
+	_ = initResp.Body.Close()
+	allBodies = append(allBodies, string(initBody))
+	if initResp.StatusCode != http.StatusOK {
+		t.Fatalf("init status=%d, want 200", initResp.StatusCode)
+	}
+	if recordID := initResp.Header.Get("mcp-diagnostic-id"); recordID == "" {
+		t.Fatal("initialize response omitted mcp-diagnostic-id")
+	}
+	sessionID := initResp.Header.Get("Mcp-Session-Id")
+	if sessionID == "" {
+		t.Fatal("init response missing Mcp-Session-Id header")
+	}
+
+	// 3. Tokenless discovery burst -> 200 OK
+	discResp := post("/mcp", `{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`, "", sessionID)
+	discBody, _ := io.ReadAll(discResp.Body)
+	_ = discResp.Body.Close()
+	allBodies = append(allBodies, string(discBody))
+	if discResp.StatusCode != http.StatusOK {
+		t.Fatalf("tokenless discovery burst status=%d, want 200", discResp.StatusCode)
+	}
+	jsonRPCBody := string(discBody)
+	for _, line := range strings.Split(jsonRPCBody, "\n") {
+		if strings.HasPrefix(line, "data: ") {
+			jsonRPCBody = strings.TrimPrefix(line, "data: ")
+			break
+		}
+	}
+	var discoveryReply struct {
+		JSONRPC string          `json:"jsonrpc"`
+		Result  json.RawMessage `json:"result"`
+	}
+	if err := json.Unmarshal([]byte(jsonRPCBody), &discoveryReply); err != nil {
+		t.Fatalf("tokenless discovery body is not valid JSON-RPC (%s): %v", discResp.Header.Get("Content-Type"), err)
+	}
+	if discoveryReply.JSONRPC != "2.0" || len(discoveryReply.Result) == 0 {
+		t.Fatalf("tokenless discovery returned invalid JSON-RPC response")
+	}
+
+	// 4. Unknown session ID -> 401 outer_oauth/session_absent
+	unknownResp := post("/mcp", `{"jsonrpc":"2.0","id":3,"method":"tools/list","params":{}}`, "", "unknown-session-1234")
+	unknownBody, _ := io.ReadAll(unknownResp.Body)
+	_ = unknownResp.Body.Close()
+	allBodies = append(allBodies, string(unknownBody))
+	if unknownResp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("unknown session status=%d, want 401", unknownResp.StatusCode)
+	}
+	requireChallenge(t, unknownResp, "unknown session")
+	if string(unknownBody) != "unauthorized\n" {
+		t.Fatalf("unknown session body=%q, want unauthorized response", unknownBody)
+	}
+
+	// 5. An unauthenticated static-token session cannot admit tokenless discovery.
+	staticInit := post("/mcp", `{"jsonrpc":"2.0","id":4,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"chatgpt","version":"1.0"}}}`, serveClientToken, "")
+	staticBody, _ := io.ReadAll(staticInit.Body)
+	_ = staticInit.Body.Close()
+	allBodies = append(allBodies, string(staticBody))
+	if staticInit.StatusCode != http.StatusOK {
+		t.Fatalf("static-token init status=%d, want 200", staticInit.StatusCode)
+	}
+	unauthenticatedSessionID := staticInit.Header.Get("Mcp-Session-Id")
+	if unauthenticatedSessionID == "" {
+		t.Fatal("static-token init response missing Mcp-Session-Id header")
+	}
+	unauthenticatedResp := post("/mcp", `{"jsonrpc":"2.0","id":5,"method":"tools/list","params":{}}`, "", unauthenticatedSessionID)
+	unauthenticatedBody, _ := io.ReadAll(unauthenticatedResp.Body)
+	_ = unauthenticatedResp.Body.Close()
+	allBodies = append(allBodies, string(unauthenticatedBody))
+	requireChallenge(t, unauthenticatedResp, "unauthenticated session")
+	if string(unauthenticatedBody) != "unauthorized\n" {
+		t.Fatalf("unauthenticated session body=%q, want unauthorized response", unauthenticatedBody)
+	}
+
+	// 6. Insufficient OAuth scope returns 403; an authenticated nonexistent route returns 404.
+	scopeResp := post("/mcp", `{"jsonrpc":"2.0","id":6,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"chatgpt","version":"1.0"}}}`, insufficientScopeToken, "")
+	scopeBody, _ := io.ReadAll(scopeResp.Body)
+	_ = scopeResp.Body.Close()
+	allBodies = append(allBodies, string(scopeBody))
+	if scopeResp.StatusCode != http.StatusForbidden {
+		t.Fatalf("insufficient scope status=%d, want 403", scopeResp.StatusCode)
+	}
+	if string(scopeBody) != "forbidden: insufficient scope\n" {
+		t.Fatalf("insufficient scope body=%q, want forbidden response", scopeBody)
+	}
+	wantScopeChallenge := `Bearer error="insufficient_scope", scope="mcp:connect"`
+	if got := scopeResp.Header.Get("WWW-Authenticate"); got != wantScopeChallenge {
+		t.Fatalf("insufficient scope challenge=%q, want %q", got, wantScopeChallenge)
+	}
+	notFoundResp := post("/nonexistent-endpoint", `{}`, validToken, "")
+	notFoundBody, _ := io.ReadAll(notFoundResp.Body)
+	_ = notFoundResp.Body.Close()
+	allBodies = append(allBodies, string(notFoundBody))
+	if notFoundResp.StatusCode != http.StatusNotFound {
+		t.Fatalf("nonexistent route status=%d, want 404", notFoundResp.StatusCode)
+	}
+
+	// 7. Expire a newly-created session by advancing the injected server clock beyond its deadline.
+	expiredInit := post("/mcp", `{"jsonrpc":"2.0","id":7,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"chatgpt","version":"1.0"}}}`, validToken, "")
+	expiredInitBody, _ := io.ReadAll(expiredInit.Body)
+	_ = expiredInit.Body.Close()
+	allBodies = append(allBodies, string(expiredInitBody))
+	if expiredInit.StatusCode != http.StatusOK {
+		t.Fatalf("expiry-session init status=%d, want 200", expiredInit.StatusCode)
+	}
+	expiredSessionID := expiredInit.Header.Get("Mcp-Session-Id")
+	if expiredSessionID == "" {
+		t.Fatal("expiry-session init response missing Mcp-Session-Id header")
+	}
+	advanceClock(9 * time.Hour)
+	expiredResp := post("/mcp", `{"jsonrpc":"2.0","id":8,"method":"tools/list","params":{}}`, "", expiredSessionID)
+	expiredBody, _ := io.ReadAll(expiredResp.Body)
+	_ = expiredResp.Body.Close()
+	allBodies = append(allBodies, string(expiredBody))
+	requireChallenge(t, expiredResp, "expired session")
+	if string(expiredBody) != "unauthorized\n" {
+		t.Fatalf("expired session body=%q, want unauthorized response", expiredBody)
+	}
+	if statusCounts[http.StatusForbidden] == 0 || statusCounts[http.StatusNotFound] == 0 {
+		t.Fatalf("wire status counts omit required rejection: 403=%d 404=%d", statusCounts[http.StatusForbidden], statusCounts[http.StatusNotFound])
+	}
+
+	captured := h.stdout.String()
+	type diagnosticRecord struct {
+		Event           string `json:"event"`
+		RequestID       string `json:"request_id"`
+		FailureStage    string `json:"failure_stage"`
+		FailureReason   string `json:"failure_reason"`
+		SessionHeader   string `json:"session_header"`
+		SessionState    string `json:"session_state"`
+		BindingRelation string `json:"binding_relation"`
+		SessionRefState string `json:"session_ref_state"`
+	}
+	records := make(map[string][]diagnosticRecord)
+	for _, line := range strings.Split(strings.TrimSpace(captured), "\n") {
+		var record diagnosticRecord
+		if err := json.Unmarshal([]byte(line), &record); err != nil || record.Event != "http_complete" {
+			continue
+		}
+		records[record.RequestID] = append(records[record.RequestID], record)
+	}
+	type diagnosticExpectation struct {
+		failureStage, failureReason, sessionHeader, sessionState, bindingRelation, sessionRefState string
+	}
+	assertDiagnostic := func(index int, name string, want diagnosticExpectation) {
+		t.Helper()
+		if index >= len(diagnosticIDs) || diagnosticIDs[index] == "" {
+			t.Errorf("%s response omitted its diagnostic correlation ID", name)
+			return
+		}
+		matches := records[diagnosticIDs[index]]
+		if len(matches) != 1 {
+			t.Errorf("%s has %d correlated completion records, want exactly one", name, len(matches))
+			return
+		}
+		got := matches[0]
+		if (want.failureStage != "" && got.FailureStage != want.failureStage) ||
+			(want.failureReason != "" && got.FailureReason != want.failureReason) ||
+			(want.sessionHeader != "" && got.SessionHeader != want.sessionHeader) ||
+			(want.sessionState != "" && got.SessionState != want.sessionState) ||
+			(want.bindingRelation != "" && got.BindingRelation != want.bindingRelation) ||
+			(want.sessionRefState != "" && got.SessionRefState != want.sessionRefState) {
+			t.Errorf("%s diagnostic has unexpected admission fields", name)
+		}
+	}
+	assertDiagnostic(0, "probe", diagnosticExpectation{failureStage: "outer_oauth", failureReason: "credentials_missing", sessionHeader: "absent"})
+	assertDiagnostic(1, "initialize", diagnosticExpectation{sessionState: "created", bindingRelation: "not_evaluated", sessionRefState: "available"})
+	assertDiagnostic(2, "discovery", diagnosticExpectation{sessionHeader: "present", sessionState: "existing", bindingRelation: "match"})
+	assertDiagnostic(3, "unknown session", diagnosticExpectation{failureStage: "outer_oauth", failureReason: "session_absent", sessionHeader: "present", sessionState: "absent"})
+	assertDiagnostic(5, "unauthenticated session", diagnosticExpectation{failureStage: "outer_oauth", failureReason: "session_fingerprint_mismatch", sessionHeader: "present", sessionState: "existing"})
+	assertDiagnostic(6, "insufficient scope", diagnosticExpectation{failureStage: "outer_oauth", failureReason: "scope_insufficient"})
+	assertDiagnostic(9, "expired session", diagnosticExpectation{failureStage: "outer_oauth", failureReason: "jwt_expired", sessionHeader: "present", sessionState: "existing"})
+
+	privateKeyDER := x509.MarshalPKCS1PrivateKey(h.private)
+	privateKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: privateKeyDER})
+	fixtureSecrets := []string{
+		validToken,
+		insufficientScopeToken,
+		serveClientToken,
+		sessionID,
+		"unknown-session-1234",
+		unauthenticatedSessionID,
+		expiredSessionID,
+		string(privateKeyDER),
+		string(privateKeyPEM),
+		"BEGIN RSA PRIVATE KEY",
+	}
+	secretsAndHashes := make([]string, 0, 2*len(fixtureSecrets))
+	for _, secret := range fixtureSecrets {
+		if secret == "" {
+			continue
+		}
+		secretsAndHashes = append(secretsAndHashes, secret, fmt.Sprintf("%x", sha256.Sum256([]byte(secret))))
+	}
+	for _, body := range allBodies {
+		for _, secret := range secretsAndHashes {
+			if strings.Contains(body, secret) {
+				t.Error("fixture secret leaked in an HTTP response body")
+			}
+		}
+	}
+	for _, headers := range rejectedHeaders {
+		for _, secret := range secretsAndHashes {
+			if strings.Contains(headers, secret) {
+				t.Error("fixture secret leaked in rejected response headers")
+			}
+		}
+	}
+	for _, secret := range secretsAndHashes {
+		if strings.Contains(captured, secret) {
+			t.Error("fixture secret leaked in stdout diagnostics")
+		}
+	}
+	testServeNow = nil
 }

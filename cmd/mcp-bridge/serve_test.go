@@ -343,6 +343,27 @@ func sendReload(t *testing.T) {
 	}
 }
 
+func TestSessionAdmissionEnabledParsing(t *testing.T) {
+	for _, tc := range []struct {
+		value string
+		want  bool
+	}{
+		{value: "true", want: true},
+		{value: "TRUE", want: true},
+		{value: "True", want: true},
+		{value: "1", want: true},
+		{value: "false"},
+		{value: "0"},
+		{value: ""},
+	} {
+		t.Run(fmt.Sprintf("%q", tc.value), func(t *testing.T) {
+			if got := sessionAdmissionEnabled(tc.value); got != tc.want {
+				t.Errorf("sessionAdmissionEnabled(%q) = %v, want %v", tc.value, got, tc.want)
+			}
+		})
+	}
+}
+
 // TestServeCompositionRootServesCatalogAndSurvivesReload is the process-level
 // acceptance of plan §4.2/§4.5/§4.6/§4.7/§4.12: the operator document becomes a
 // serving bridge (inbound auth + bounds, local catalog, ops routes), a SIGHUP

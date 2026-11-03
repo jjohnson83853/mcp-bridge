@@ -95,9 +95,9 @@ func TestCredentialPrecedenceOverSessionAdmission(t *testing.T) {
 	now := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
 	validSessionClaims := &Claims{Subject: "session-user", Issuer: testConfig.PocketIDIssuer, Scopes: []string{testConfig.MCPRequiredScope}}
 	sessionAdmissionCalls := 0
-	mw, keys := newAuthTest(t, WithNow(func() time.Time { return now }), WithSessionAdmission(func(string) (*Claims, bool) {
+	mw, keys := newAuthTest(t, WithNow(func() time.Time { return now }), WithSessionAdmission(func(string) SessionAdmissionOutcome {
 		sessionAdmissionCalls++
-		return validSessionClaims, true
+		return SessionAdmissionOutcome{Claims: validSessionClaims, Reason: AdmissionAdmitted}
 	}))
 
 	invalidToken := "not-a-jwt"
@@ -355,11 +355,11 @@ func TestMiddlewareSessionAdmission(t *testing.T) {
 		Issuer:  "https://issuer.example",
 		Scopes:  []string{"mcp:connect"},
 	}
-	middleware, _ := newAuthTest(t, WithSessionAdmission(func(sessionID string) (*Claims, bool) {
+	middleware, _ := newAuthTest(t, WithSessionAdmission(func(sessionID string) SessionAdmissionOutcome {
 		if sessionID == "existing" {
-			return claims, true
+			return SessionAdmissionOutcome{Claims: claims, Reason: AdmissionAdmitted}
 		}
-		return nil, false
+		return SessionAdmissionOutcome{Reason: AdmissionNotFound}
 	}))
 	var acceptedLog bytes.Buffer
 	diagnostics := observe.NewHTTPDiagnostics(observe.NewLogger(&acceptedLog), observe.HTTPDiagnosticsOptions{
@@ -384,16 +384,18 @@ func TestMiddlewareSessionAdmission(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		name      string
-		validator func(string) (*Claims, bool)
+		name          string
+		validator     func(string) SessionAdmissionOutcome
+		failureReason string
 	}{
 		{
 			name: "unknown session",
-			validator: func(string) (*Claims, bool) {
-				return nil, false
+			validator: func(string) SessionAdmissionOutcome {
+				return SessionAdmissionOutcome{Reason: AdmissionNotFound}
 			},
+			failureReason: "session_absent",
 		},
-		{name: "nil validator"},
+		{name: "nil validator", failureReason: "credentials_missing"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var logOutput bytes.Buffer
@@ -410,8 +412,98 @@ func TestMiddlewareSessionAdmission(t *testing.T) {
 			if response.Code != http.StatusUnauthorized {
 				t.Fatalf("status=%d, want 401", response.Code)
 			}
-			if !strings.Contains(logOutput.String(), "credentials_missing") {
-				t.Fatalf("missing-credential diagnostic not recorded: %s", logOutput.String())
+			if !strings.Contains(logOutput.String(), tc.failureReason) {
+				t.Fatalf("diagnostic reason %q not recorded: %s", tc.failureReason, logOutput.String())
+			}
+		})
+	}
+}
+
+func TestMiddlewareSessionAdmissionRejectionDiagnostics(t *testing.T) {
+	tests := []struct {
+		name            string
+		sessionID       string
+		reason          SessionAdmissionReason
+		failureReason   string
+		credentialState string
+		sessionHeader   string
+		sessionState    string
+	}{
+		{
+			name:            "unknown session",
+			sessionID:       "unknown",
+			reason:          AdmissionNotFound,
+			failureReason:   "session_absent",
+			credentialState: "missing",
+			sessionHeader:   "present",
+			sessionState:    "absent",
+		},
+		{
+			name:            "unauthenticated session",
+			sessionID:       "unauthenticated",
+			reason:          AdmissionUnauthenticated,
+			failureReason:   "session_fingerprint_mismatch",
+			credentialState: "rejected",
+			sessionHeader:   "present",
+			sessionState:    "existing",
+		},
+		{
+			name:            "expired session",
+			sessionID:       "expired",
+			reason:          AdmissionExpired,
+			failureReason:   "jwt_expired",
+			credentialState: "rejected",
+			sessionHeader:   "present",
+			sessionState:    "existing",
+		},
+		{
+			name:            "no session ID",
+			reason:          AdmissionNotFound,
+			failureReason:   "credentials_missing",
+			credentialState: "missing",
+			sessionHeader:   "absent",
+			sessionState:    "not_evaluated",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var logOutput bytes.Buffer
+			diagnostics := observe.NewHTTPDiagnostics(observe.NewLogger(&logOutput), observe.HTTPDiagnosticsOptions{
+				NewID: func() string { return "0123456789abcdef0123456789abcdef" },
+			})
+			middleware, _ := newAuthTest(t, WithSessionAdmission(func(string) SessionAdmissionOutcome {
+				return SessionAdmissionOutcome{Reason: tc.reason}
+			}))
+			request := httptest.NewRequest(http.MethodPost, "/mcp", nil)
+			if tc.sessionID != "" {
+				request.Header.Set("Mcp-Session-Id", tc.sessionID)
+			}
+			response := httptest.NewRecorder()
+			diagnostics.Wrap(middleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+				t.Error("handler called without valid session admission")
+			}))).ServeHTTP(response, request)
+
+			if response.Code != http.StatusUnauthorized {
+				t.Fatalf("status=%d, want 401", response.Code)
+			}
+			if got := response.Body.String(); got != "unauthorized\n" {
+				t.Fatalf("body=%q, want %q", got, "unauthorized\n")
+			}
+			wantChallenge := fmt.Sprintf(`Bearer realm="mcp", resource_metadata="%s"`, challengeMetadataURL(testConfig.MCPResourceURL))
+			if got := response.Header().Get("WWW-Authenticate"); got != wantChallenge {
+				t.Fatalf("WWW-Authenticate=%q, want %q", got, wantChallenge)
+			}
+			for _, evidence := range []string{
+				`"failure_stage":"outer_oauth"`,
+				`"failure_reason":"` + tc.failureReason + `"`,
+				`"credential_state":"` + tc.credentialState + `"`,
+				`"session_header":"` + tc.sessionHeader + `"`,
+				`"session_state":"` + tc.sessionState + `"`,
+			} {
+				if !strings.Contains(logOutput.String(), evidence) {
+					t.Errorf("diagnostic missing %s: %s", evidence, logOutput.String())
+				}
 			}
 		})
 	}
@@ -423,8 +515,8 @@ func TestMiddlewareSessionAdmissionRejectsInsufficientScope(t *testing.T) {
 		Issuer:  "https://issuer.example",
 		Scopes:  []string{"openid"},
 	}
-	middleware, _ := newAuthTest(t, WithSessionAdmission(func(string) (*Claims, bool) {
-		return claims, true
+	middleware, _ := newAuthTest(t, WithSessionAdmission(func(string) SessionAdmissionOutcome {
+		return SessionAdmissionOutcome{Claims: claims, Reason: AdmissionAdmitted}
 	}))
 	var logOutput bytes.Buffer
 	diagnostics := observe.NewHTTPDiagnostics(observe.NewLogger(&logOutput), observe.HTTPDiagnosticsOptions{

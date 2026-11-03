@@ -1,8 +1,1 @@
-{
-  "task_id": "T4",
-  "status": "COMPLETED",
-  "artifact_receipt": "internal/service/server.go; cmd/mcp-bridge/serve.go; internal/service/initialize_wire_test.go",
-  "telemetry_ref": null,
-  "summary": "Extended NewStreamableHandler with optional streamable HTTP options, configured cmd/mcp-bridge/serve.go with MCP_STATELESS flag, and verified multi-version protocol discovery in initialize_wire_test.go.",
-  "error_code": null
-}
+{"task_id":"T4","status":"COMPLETED","artifact_receipt":".omp/artifacts/receipt_T4.json","telemetry_ref":null,"summary":"Composed session-admission wire test and zero-leak checks; ChatGPT runbook updated. Focused/full race tests pass; coverage 90.2% and covcheck gate passes.","error_code":null}

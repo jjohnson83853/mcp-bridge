@@ -1,8 +1,8 @@
 {
   "task_id": "T2",
   "status": "COMPLETED",
-  "artifact_receipt": "internal/upstream/dedicated.go; internal/upstream/dedicated_test.go",
+  "artifact_receipt": "internal/auth/middleware.go; internal/auth/middleware_test.go; cmd/mcp-bridge/serve.go; cmd/mcp-bridge/serve_test.go",
   "telemetry_ref": null,
-  "summary": "Implemented stateless ephemeral tool discovery and tool calls with pooled keep-alive in Dedicated; verified restart-resilience and stateful preservation tests under -race.",
+  "summary": "Implemented differentiated outer OAuth rejection diagnostics and case-insensitive MCP_SESSION_ADMISSION_ENABLED parsing; verified with go test -v ./internal/auth/... and go test -v ./cmd/mcp-bridge -run TestSessionAdmissionEnabledParsing (exit 0).",
   "error_code": null
 }
