@@ -1036,8 +1036,23 @@ func TestChatGPTDeveloperModeStatelessDiscoveryWire(t *testing.T) {
 
 	toolList := post("tools/list", "", `{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{"sampling":{}}}}}`)
 	defer toolList.Body.Close()
-	if toolList.StatusCode != http.StatusOK {
-		t.Fatalf("tools/list status = %d; want 200", toolList.StatusCode)
+	toolListBody := oauthJSONBody(t, toolList)
+	if toolListBody["jsonrpc"] != "2.0" {
+		t.Fatalf("tools/list jsonrpc = %v; want 2.0", toolListBody["jsonrpc"])
+	}
+	if id, ok := toolListBody["id"].(float64); !ok || int(id) != 2 {
+		t.Fatalf("tools/list id = %v; want 2", toolListBody["id"])
+	}
+	if toolListBody["error"] != nil {
+		t.Fatalf("tools/list error = %v; want nil", toolListBody["error"])
+	}
+	result, ok := toolListBody["result"].(map[string]any)
+	if !ok {
+		t.Fatalf("tools/list result missing or not object: %v", toolListBody)
+	}
+	tools, ok := result["tools"].([]any)
+	if !ok || len(tools) == 0 {
+		t.Fatalf("tools/list tools missing or empty: %v", result)
 	}
 
 	toolCall := post("tools/call", "search_tools", `{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"search_tools","arguments":{"query":"test"},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{"sampling":{}}}}}`)

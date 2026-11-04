@@ -89,8 +89,24 @@ func (t *ToolSurface) isProjectedToolName(name string) bool {
 }
 
 func (t *ToolSurface) admitExposureRequest(request mcp.Request) (*toolProjection, error) {
+	if request == nil {
+		return nil, invalidExposureRequest()
+	}
+	if request.GetSession() == nil || request.GetSession().ID() == "" {
+		coordinator := t.projectionCoordinator()
+		coordinator.barrier.Lock()
+		projection := coordinator.projections[t.publisherOwner]
+		coordinator.barrier.Unlock()
+		if projection == nil {
+			return nil, &jsonrpc.Error{
+				Code:    jsonrpc.CodeInternalError,
+				Message: "exposure unavailable",
+			}
+		}
+		return projection, nil
+	}
 	epoch, valid := requestExposureEpoch(request)
-	if !valid || request.GetSession() == nil {
+	if !valid {
 		return nil, invalidExposureRequest()
 	}
 	sessionID := request.GetSession().ID()

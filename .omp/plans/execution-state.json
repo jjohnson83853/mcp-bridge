@@ -1,62 +1,61 @@
 {
   "schemaVersion": 2,
-  "feature": "openai-tool-schema-compatibility",
+  "feature": "stateless-tools-exposure-bugfix",
   "revision": "r3",
   "projectRoot": "/home/opencode/projects/default/mcp-bridge",
   "spec": {
-    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/openai-tool-schema-compatibility/spec.md",
-    "sha256": "23ccaa475447aad5aa3b48774b50b4cf7f94d95ff88db48553ec50886f754293",
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-exposure-bugfix/spec.md",
+    "sha256": "3b1f737551b7598228ce4643944fb0b000b25ed015c8e8b9cc4ce7e6e3dd89b1",
     "sectionBindings": {
       "requirements": {
         "revision": "r3",
-        "sha256": "fa8315faddc75a7e196765427c2d3eee8afdc9500ceddda5d06d479ff294e83d"
+        "sha256": "dfd5f7a7dd4b6c05f5740b31a0159ec11eabd62e5ec1b3288e145c50a1e59363"
       },
       "design": {
         "revision": "r3",
-        "sha256": "2ebc0cc9ff4a6408b6bbb91c324fd26594fb98078e0f6602cafc0cbed3be2f15"
+        "sha256": "484327e046d2aea51e4b68cab805978708f0e4c3ea2e16286f575a57d2a5d0b0"
       },
       "tasks": {
         "revision": "r3",
-        "sha256": "84c9c88d04530b1da689bb7de2c33c03fe937079c89e148d38c6246b25a619e8"
+        "sha256": "7fe69a620518011d64fbd279cb6357f3ef75d67f8255de558bdbce95c60e0d93"
       },
       "envelope": {
         "revision": "r3",
-        "sha256": "322e42e5f7dbfb882e78e5341741848755f98d2027f17c441a47f52957168c12"
+        "sha256": "20550704de00f81310cfd7ae5f4202f424b47fb60d4e75be2b8cadfec37be808"
       }
     }
   },
   "packet": {
-    "digest": "c116cbd2b1b2e769265839c491b39f8263b626578201b2b655cd42edae734993",
+    "digest": "5a47d18b07bd9eb41b83a3ccc60b41ad00c35d699dffa93073b4ae16b223741e",
     "branches": [
       {
-        "id": "approved-openai-tool-schema-compatibility",
+        "id": "approved-stateless-tools-exposure-bugfix",
         "answerIds": [],
         "taskIds": [
-          "T1",
-          "T2"
+          "T1"
         ],
         "envelopeId": "env-1",
         "sectionBindings": {
           "requirements": {
             "revision": "r3",
-            "sha256": "fa8315faddc75a7e196765427c2d3eee8afdc9500ceddda5d06d479ff294e83d"
+            "sha256": "dfd5f7a7dd4b6c05f5740b31a0159ec11eabd62e5ec1b3288e145c50a1e59363"
           },
           "design": {
             "revision": "r3",
-            "sha256": "2ebc0cc9ff4a6408b6bbb91c324fd26594fb98078e0f6602cafc0cbed3be2f15"
+            "sha256": "484327e046d2aea51e4b68cab805978708f0e4c3ea2e16286f575a57d2a5d0b0"
           },
           "tasks": {
             "revision": "r3",
-            "sha256": "84c9c88d04530b1da689bb7de2c33c03fe937079c89e148d38c6246b25a619e8"
+            "sha256": "7fe69a620518011d64fbd279cb6357f3ef75d67f8255de558bdbce95c60e0d93"
           },
           "envelope": {
             "revision": "r3",
-            "sha256": "322e42e5f7dbfb882e78e5341741848755f98d2027f17c441a47f52957168c12"
+            "sha256": "20550704de00f81310cfd7ae5f4202f424b47fb60d4e75be2b8cadfec37be808"
           }
         }
       }
     ],
-    "selectedBranchId": "approved-openai-tool-schema-compatibility"
+    "selectedBranchId": "approved-stateless-tools-exposure-bugfix"
   },
   "actors": {
     "plannerId": "planner",
@@ -67,40 +66,40 @@
   "requirements": [
     {
       "id": "R1",
-      "summary": "Root Dialect Omission & Standard Tool Manifest Alignment"
+      "summary": "Stateless Tools Exposure Admission"
     },
     {
       "id": "R2",
-      "summary": "Array Parameter Bounds Normalization & Decoder Enforcement"
+      "summary": "Publisher Projection Resolution"
     },
     {
       "id": "R3",
-      "summary": "Generic Argument Object Definition"
+      "summary": "Stateful Request Admission Preservation"
     },
     {
       "id": "R4",
-      "summary": "Parameter Optionality & String Constraints"
+      "summary": "Stateless Discovery Wire Verification"
     },
     {
       "id": "R5",
-      "summary": "End-to-End Action Discovery Wire Verification & Coverage Gate"
+      "summary": "Coverage Gate Verification"
     }
   ],
   "authorization": {
     "mode": "bounded",
     "id": "auth-1",
-    "packetDigest": "c116cbd2b1b2e769265839c491b39f8263b626578201b2b655cd42edae734993",
-    "selectedBranchId": "approved-openai-tool-schema-compatibility",
+    "packetDigest": "5a47d18b07bd9eb41b83a3ccc60b41ad00c35d699dffa93073b4ae16b223741e",
+    "selectedBranchId": "approved-stateless-tools-exposure-bugfix",
     "receipt": {
       "sourceId": "src-user",
-      "recordedAt": "2026-11-03T10:00:00Z",
+      "recordedAt": "2026-11-03T23:58:00Z",
       "response": {
         "origin": "user",
         "explicit": true,
         "timedOut": false,
         "automatic": false,
-        "packetDigest": "c116cbd2b1b2e769265839c491b39f8263b626578201b2b655cd42edae734993",
-        "selectedBranchId": "approved-openai-tool-schema-compatibility"
+        "packetDigest": "5a47d18b07bd9eb41b83a3ccc60b41ad00c35d699dffa93073b4ae16b223741e",
+        "selectedBranchId": "approved-stateless-tools-exposure-bugfix"
       }
     }
   },
@@ -108,10 +107,10 @@
     "specification": {
       "verdict": "pass",
       "reviewerId": "critic",
-      "packetDigest": "c116cbd2b1b2e769265839c491b39f8263b626578201b2b655cd42edae734993",
+      "packetDigest": "5a47d18b07bd9eb41b83a3ccc60b41ad00c35d699dffa93073b4ae16b223741e",
       "receipt": {
         "sourceId": "src-review-critic",
-        "recordedAt": "2026-11-03T10:00:00Z",
+        "recordedAt": "2026-11-03T23:58:00Z",
         "response": {
           "origin": "reviewer",
           "verdict": "pass"
@@ -121,10 +120,10 @@
     "tasks": {
       "verdict": "pass",
       "reviewerId": "code-reviewer",
-      "packetDigest": "c116cbd2b1b2e769265839c491b39f8263b626578201b2b655cd42edae734993",
+      "packetDigest": "5a47d18b07bd9eb41b83a3ccc60b41ad00c35d699dffa93073b4ae16b223741e",
       "receipt": {
         "sourceId": "src-review-reviewer",
-        "recordedAt": "2026-11-03T10:00:00Z",
+        "recordedAt": "2026-11-03T23:58:00Z",
         "response": {
           "origin": "reviewer",
           "verdict": "pass"
@@ -137,31 +136,41 @@
       "id": "src-user",
       "kind": "user-message",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/openai-tool-schema-compatibility/user-auth.txt",
-        "sha256": "fe92d986d374b08be7ba35dcd426ebfb1611fe16c9f988a093554974430e815d"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-exposure-bugfix/user-auth.txt",
+        "sha256": "342299e497829a7d84dc3a1baa40561c1e313f8cdd67c6c45db5f285fb77bc1b"
       },
-      "locator": "user conversation message 'implement'",
-      "recordedAt": "2026-11-03T10:00:00Z"
+      "locator": "user conversation message 'yes' confirming r3 fix",
+      "recordedAt": "2026-11-03T23:58:00Z"
     },
     {
       "id": "src-review-critic",
       "kind": "observation",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/openai-tool-schema-compatibility/review-critic.md",
-        "sha256": "963e200a7065077f9846683989e9b34cdfd83b38888c7510c42cde0a77de25f0"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-exposure-bugfix/review-critic.md",
+        "sha256": "2c6d25841675cdaaf933344372a7f36bbec7b9bfc66af731fe243b5f9a9938e9"
       },
       "locator": "critic review receipt r3",
-      "recordedAt": "2026-11-03T10:00:00Z"
+      "recordedAt": "2026-11-03T23:58:00Z"
     },
     {
       "id": "src-review-reviewer",
       "kind": "observation",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/openai-tool-schema-compatibility/review-code-reviewer.md",
-        "sha256": "2a79bb69f330c578e7d1ce4c2d6595221f0133f019f5eb03c67b4bc0608a69fa"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-exposure-bugfix/review-code-reviewer.md",
+        "sha256": "cd550b2081f7508129c8c1b00cc9845580fb208aa6fc7f599fdf48be58e837fe"
       },
       "locator": "code-reviewer review receipt r3",
-      "recordedAt": "2026-11-03T10:00:00Z"
+      "recordedAt": "2026-11-03T23:58:00Z"
+    },
+    {
+      "id": "src-receipt-t1",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_stateless_bugfix_T1.json",
+        "sha256": "d3984d9e2953f42a158748b1be9f074d476b54b5f2fcc808707f9241f71ddb11"
+      },
+      "locator": "engineer receipt T1",
+      "recordedAt": "2026-11-03T23:58:00Z"
     }
   ],
   "decisions": [],
@@ -169,26 +178,16 @@
     "id": "env-1",
     "root": "/home/opencode/projects/default/mcp-bridge",
     "allowedTaskIds": [
-      "T1",
-      "T2"
+      "T1"
     ],
     "readPaths": [
-      ".scratch/openai-tool-schema-compatibility/spec.md",
-      ".scratch/openai-tool-schema-compatibility/issues/01-tool-input-schema-alignment-and-bounds-normalization.md",
-      ".scratch/openai-tool-schema-compatibility/issues/02-end-to-end-action-discovery-wire-verification.md",
-      "internal/catalog/schema.go",
-      "internal/catalog/catalog_test.go",
-      "internal/search/search.go",
-      "internal/search/search_test.go",
-      "internal/service/tools_test.go",
+      ".scratch/stateless-tools-exposure-bugfix/spec.md",
+      ".scratch/stateless-tools-exposure-bugfix/issues/01-stateless-tools-exposure-admission.md",
+      "internal/service/session_exposure.go",
       "cmd/mcp-bridge/serve_oauth_test.go"
     ],
     "writePaths": [
-      "internal/catalog/schema.go",
-      "internal/catalog/catalog_test.go",
-      "internal/search/search.go",
-      "internal/search/search_test.go",
-      "internal/service/tools_test.go",
+      "internal/service/session_exposure.go",
       "cmd/mcp-bridge/serve_oauth_test.go",
       "coverage.out"
     ],
@@ -220,49 +219,19 @@
       "effects": {
         "kind": "write",
         "paths": [
-          "internal/catalog/schema.go",
-          "internal/catalog/catalog_test.go",
-          "internal/search/search.go",
-          "internal/search/search_test.go",
-          "internal/service/tools_test.go"
+          "internal/service/session_exposure.go",
+          "cmd/mcp-bridge/serve_oauth_test.go",
+          "coverage.out"
         ]
       },
       "acceptanceIds": [
         "AC1",
         "AC2",
         "AC3",
-        "AC4",
-        "AC5"
+        "AC4"
       ],
       "evidenceIds": [
         "ev-t1-test"
-      ],
-      "agentRoles": [
-        "engineer"
-      ]
-    },
-    {
-      "id": "T2",
-      "stage": "implementation",
-      "status": "done",
-      "blockedBy": [
-        "T1"
-      ],
-      "requires": [],
-      "effects": {
-        "kind": "write",
-        "paths": [
-          "cmd/mcp-bridge/serve_oauth_test.go",
-          "coverage.out"
-        ]
-      },
-      "acceptanceIds": [
-        "AC6",
-        "AC7",
-        "AC8"
-      ],
-      "evidenceIds": [
-        "ev-t2-test"
       ],
       "agentRoles": [
         "engineer"
@@ -274,7 +243,8 @@
     {
       "id": "AC1",
       "requirementIds": [
-        "R1"
+        "R1",
+        "R2"
       ],
       "ownerTaskIds": [
         "T1"
@@ -287,7 +257,7 @@
     {
       "id": "AC2",
       "requirementIds": [
-        "R2"
+        "R3"
       ],
       "ownerTaskIds": [
         "T1"
@@ -300,7 +270,7 @@
     {
       "id": "AC3",
       "requirementIds": [
-        "R3"
+        "R4"
       ],
       "ownerTaskIds": [
         "T1"
@@ -313,62 +283,10 @@
     {
       "id": "AC4",
       "requirementIds": [
-        "R4"
+        "R5"
       ],
       "ownerTaskIds": [
         "T1"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC5",
-      "requirementIds": [
-        "R2"
-      ],
-      "ownerTaskIds": [
-        "T1"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC6",
-      "requirementIds": [
-        "R5"
-      ],
-      "ownerTaskIds": [
-        "T2"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC7",
-      "requirementIds": [
-        "R5"
-      ],
-      "ownerTaskIds": [
-        "T2"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC8",
-      "requirementIds": [
-        "R5"
-      ],
-      "ownerTaskIds": [
-        "T2"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -381,12 +299,12 @@
       "id": "ev-t1-test",
       "kind": "test",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_schema_T1.json",
-        "sha256": "724d3379fe98414a82ac265eebf6934fc220e2d809c6e8eb0b22b0cf4242afca"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_stateless_bugfix_T1.json",
+        "sha256": "d3984d9e2953f42a158748b1be9f074d476b54b5f2fcc808707f9241f71ddb11"
       },
-      "feature": "openai-tool-schema-compatibility",
-      "packetDigest": "c116cbd2b1b2e769265839c491b39f8263b626578201b2b655cd42edae734993",
-      "selectedBranchId": "approved-openai-tool-schema-compatibility",
+      "feature": "stateless-tools-exposure-bugfix",
+      "packetDigest": "5a47d18b07bd9eb41b83a3ccc60b41ad00c35d699dffa93073b4ae16b223741e",
+      "selectedBranchId": "approved-stateless-tools-exposure-bugfix",
       "taskIds": [
         "T1"
       ],
@@ -394,40 +312,13 @@
         "AC1",
         "AC2",
         "AC3",
-        "AC4",
-        "AC5"
+        "AC4"
       ],
       "outcome": "pass",
-      "observedAt": "2026-11-03T10:00:00Z",
+      "observedAt": "2026-11-03T23:58:00Z",
       "producer": "engineer",
       "details": {
-        "command": "go test -v -count=1 ./internal/catalog/... ./internal/search/... ./internal/service/... -run TestToolSurfaceAdvertisesExactlyItsThreeTools",
-        "exitCode": 0
-      }
-    },
-    {
-      "id": "ev-t2-test",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_schema_T2.json",
-        "sha256": "8b12e17a01f22220db1a4b9436452c19f92964e3f873d692d52ce634304be9fd"
-      },
-      "feature": "openai-tool-schema-compatibility",
-      "packetDigest": "c116cbd2b1b2e769265839c491b39f8263b626578201b2b655cd42edae734993",
-      "selectedBranchId": "approved-openai-tool-schema-compatibility",
-      "taskIds": [
-        "T2"
-      ],
-      "acceptanceIds": [
-        "AC6",
-        "AC7",
-        "AC8"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-03T10:00:00Z",
-      "producer": "engineer",
-      "details": {
-        "command": "go test -race -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck",
+        "command": "go test -race -p 1 -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck",
         "exitCode": 0
       }
     }

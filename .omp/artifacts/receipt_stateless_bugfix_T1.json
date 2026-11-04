@@ -1,0 +1,1 @@
+{"task_id":"T1","status":"COMPLETED","artifact_receipt":"coverage.out","telemetry_ref":null,"summary":"Updated admitExposureRequest to treat nil or empty-ID sessions as stateless. Focused wire test passed; full race suite passed; covcheck: 90.2% (6218/6894), gate true.","error_code":null}
