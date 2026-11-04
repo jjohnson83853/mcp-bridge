@@ -66,6 +66,9 @@ type oauthTestHarness struct {
 // startOAuthHarness generates the signing key, publishes its JWKS, writes one
 // operator document and starts the bridge with the OAuth environment set.
 func startOAuthHarness(t *testing.T, serverIDs ...string) *oauthTestHarness {
+	return startOAuthHarnessWithPins(t, nil, serverIDs...)
+}
+func startOAuthHarnessWithPins(t *testing.T, pins []map[string]string, serverIDs ...string) *oauthTestHarness {
 	t.Helper()
 	if len(serverIDs) == 0 {
 		serverIDs = []string{"alpha"}
@@ -129,6 +132,24 @@ func startOAuthHarness(t *testing.T, serverIDs ...string) *oauthTestHarness {
 		configuredServers[index] = bridgeServerSpec{id: id, endpoint: upstream.URL}
 	}
 	writeBridgeConfig(t, configPath, httpAddress, operationsAddress, storageDirectory, embeddings.URL, configuredServers)
+	if len(pins) > 0 {
+		config, err := os.ReadFile(configPath)
+		if err != nil {
+			t.Fatalf("read bridge config to configure pins: %v", err)
+		}
+		var pinBlock strings.Builder
+		pinBlock.WriteString("pins:\n")
+		for _, pin := range pins {
+			fmt.Fprintf(&pinBlock, "  - {server: %q, tool: %q}\n", pin["server"], pin["tool"])
+		}
+		configText := strings.Replace(string(config), "pins: []", strings.TrimSuffix(pinBlock.String(), "\n"), 1)
+		if configText == string(config) {
+			t.Fatal("bridge config pins block was not replaced")
+		}
+		if err := os.WriteFile(configPath, []byte(configText), 0o600); err != nil {
+			t.Fatalf("write bridge config with pins: %v", err)
+		}
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	stdout, stderr := &syncWriter{}, &syncWriter{}
@@ -1002,7 +1023,7 @@ func TestChatGPTDeveloperModeStatelessDiscoveryWire(t *testing.T) {
 	t.Setenv("MCP_RESOURCE_URL", resourceURL)
 	t.Setenv("MCP_STATELESS", "true")
 
-	h := startOAuthHarness(t)
+	h := startOAuthHarnessWithPins(t, []map[string]string{{"server": "alpha", "tool": "read"}}, "alpha")
 	h.awaitLive(t)
 	h.awaitReady(t)
 	token := h.oauthToken(t, time.Now().UTC(), map[string]any{"aud": "https://mcp.bullprog.com", "scope": "mcp:connect"})
@@ -1054,12 +1075,43 @@ func TestChatGPTDeveloperModeStatelessDiscoveryWire(t *testing.T) {
 	if !ok || len(tools) == 0 {
 		t.Fatalf("tools/list tools missing or empty: %v", result)
 	}
+	pinnedToolFound := false
+	for _, listedTool := range tools {
+		descriptor, ok := listedTool.(map[string]any)
+		if ok && descriptor["name"] == "alpha__read" {
+			pinnedToolFound = true
+			break
+		}
+	}
+	if !pinnedToolFound {
+		t.Fatalf("tools/list missing pinned alpha__read: %v", result)
+	}
 
-	toolCall := post("tools/call", "search_tools", `{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"search_tools","arguments":{"query":"test"},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{"sampling":{}}}}}`)
+	alphaCall := post("tools/call", "alpha__read", `{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"alpha__read","arguments":{"path":"test"},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{"sampling":{}}}}}`)
+	defer alphaCall.Body.Close()
+	alphaBody := oauthJSONBody(t, alphaCall)
+	if alphaBody["error"] != nil {
+		t.Fatalf("alpha__read error = %v; want nil", alphaBody["error"])
+	}
+	alphaRes, ok := alphaBody["result"].(map[string]any)
+	if !ok {
+		t.Fatalf("alpha__read result missing: %v", alphaBody)
+	}
+	if alphaRes["isError"] == true {
+		t.Fatalf("alpha__read returned application error: %v", alphaRes)
+	}
+
+	toolCall := post("tools/call", "search_tools", `{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"search_tools","arguments":{"query":"test"},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{"sampling":{}}}}}`)
 	defer toolCall.Body.Close()
 	if toolCall.StatusCode != http.StatusOK {
 		t.Fatalf("tools/call status = %d; want 200", toolCall.StatusCode)
 	}
+	searchBody := oauthJSONBody(t, toolCall)
+	searchRes, ok := searchBody["result"].(map[string]any)
+	if !ok || searchRes["isError"] == true {
+		t.Fatalf("search_tools returned application error: %v", searchBody)
+	}
+
 }
 
 func TestDiagnosticDepsWiringCoverage(t *testing.T) {

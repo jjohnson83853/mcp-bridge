@@ -335,7 +335,7 @@ func preparePinProjection(owner projectionOwner, previous *toolProjection, assem
 }
 
 func (t *ToolSurface) discoveryOwnerValid(owner projectionOwner, assembly *Assembly) bool {
-	if owner.kind != projectionSession || assembly == nil {
+	if (owner.kind != projectionSession && owner.kind != projectionPublisher) || assembly == nil {
 		return false
 	}
 	coordinator := t.projectionCoordinator()
@@ -353,13 +353,19 @@ func (t *ToolSurface) discoveryOwnerValid(owner projectionOwner, assembly *Assem
 }
 
 func (t *ToolSurface) commitDiscovery(owner projectionOwner, assembly *Assembly, targets map[logicalToolTarget]struct{}) error {
-	if assembly == nil || owner.kind != projectionSession {
+	if assembly == nil {
 		return errAcceptedGenerationMismatch
 	}
 	coordinator := t.projectionCoordinator()
 	coordinator.publicationMu.Lock()
 	defer coordinator.publicationMu.Unlock()
 	if !t.discoveryOwnerValid(owner, assembly) {
+		return errAcceptedGenerationMismatch
+	}
+	if owner.kind == projectionPublisher {
+		return nil
+	}
+	if owner.kind != projectionSession {
 		return errAcceptedGenerationMismatch
 	}
 

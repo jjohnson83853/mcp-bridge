@@ -182,7 +182,7 @@ func (t *ToolSurface) callPinnedTool(ctx context.Context, req *mcp.CallToolReque
 	}
 	operationID := observe.CorrelationID("")
 	start := time.Now()
-	owner, ownerOK := directRequestOwner(req)
+	owner, ownerOK := t.directRequestOwner(req)
 	toolName := ""
 	if req != nil && req.Params != nil {
 		toolName = req.Params.Name
@@ -268,13 +268,17 @@ func (t *ToolSurface) callDirectExecution(ctx context.Context, execution boundDi
 	return execution.call(ctx, args)
 }
 
-func directRequestOwner(req *mcp.CallToolRequest) (projectionOwner, bool) {
+func (t *ToolSurface) directRequestOwner(req *mcp.CallToolRequest) (projectionOwner, bool) {
 	if req == nil {
 		return projectionOwner{}, false
 	}
 	session := req.GetSession()
+	if session == nil || session.ID() == "" {
+		t.projectionCoordinator()
+		return t.publisherOwner, true
+	}
 	epoch, valid := requestExposureEpoch(req)
-	if !valid || session == nil || session.ID() == "" {
+	if !valid {
 		return projectionOwner{}, false
 	}
 	return projectionOwner{kind: projectionSession, sessionID: session.ID(), epoch: epoch}, true
@@ -388,7 +392,7 @@ func (t *ToolSurface) searchTools(ctx context.Context, req *mcp.CallToolRequest)
 	if assembly == nil {
 		return errorResult(codeBackendUnavailable, "no catalog generation is published", core.ExecutionNotStarted), nil
 	}
-	owner, ownerOK := directRequestOwner(req)
+	owner, ownerOK := t.directRequestOwner(req)
 	if !ownerOK {
 		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
 	}
@@ -492,7 +496,7 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 	if assembly == nil {
 		return errorResult(codeBackendUnavailable, "no catalog generation is published", core.ExecutionNotStarted), nil
 	}
-	owner, ownerOK := directRequestOwner(req)
+	owner, ownerOK := t.directRequestOwner(req)
 	if !ownerOK {
 		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
 	}

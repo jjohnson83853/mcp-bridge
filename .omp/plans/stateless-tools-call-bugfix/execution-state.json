@@ -1,0 +1,367 @@
+{
+  "schemaVersion": 2,
+  "feature": "stateless-tools-call-bugfix",
+  "revision": "r2",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-call-bugfix/spec.md",
+    "sha256": "afec7d7308899942b00beb0231611d5d21cddbdaa926ec3e8bf759c0d8efa555",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r2",
+        "sha256": "93c33c050986d77b0353e8d0f750248e34172226bb7b2a579d37409acd9faea7"
+      },
+      "design": {
+        "revision": "r2",
+        "sha256": "953a7c379ca2307a9ced40347af5d53b2082cab3f018cec3145a55d3c1c60f10"
+      },
+      "tasks": {
+        "revision": "r2",
+        "sha256": "0150f9ff30d9e73b64080a9cf1a4ae34db2da7a07c24a2f3193e9f65b6c5898a"
+      },
+      "envelope": {
+        "revision": "r2",
+        "sha256": "9c6e9e49077e781a0c921f0de80c75246aef032cc1fd0bcd06e62daa81ae99bc"
+      }
+    }
+  },
+  "packet": {
+    "digest": "bbc46ce79e81edfc7a3dfb7bb3ebbfecabfb36065a6ec5e63311df79ff03a831",
+    "branches": [
+      {
+        "id": "approved-stateless-tools-call-bugfix",
+        "answerIds": [],
+        "taskIds": [
+          "T1"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r2",
+            "sha256": "93c33c050986d77b0353e8d0f750248e34172226bb7b2a579d37409acd9faea7"
+          },
+          "design": {
+            "revision": "r2",
+            "sha256": "953a7c379ca2307a9ced40347af5d53b2082cab3f018cec3145a55d3c1c60f10"
+          },
+          "tasks": {
+            "revision": "r2",
+            "sha256": "0150f9ff30d9e73b64080a9cf1a4ae34db2da7a07c24a2f3193e9f65b6c5898a"
+          },
+          "envelope": {
+            "revision": "r2",
+            "sha256": "9c6e9e49077e781a0c921f0de80c75246aef032cc1fd0bcd06e62daa81ae99bc"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "approved-stateless-tools-call-bugfix"
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Stateless Pinned Preloaded Tool Admission"
+    },
+    {
+      "id": "R2",
+      "summary": "Stateless Built-In Search Tool Admission"
+    },
+    {
+      "id": "R3",
+      "summary": "Stateless Commit Discovery Completion Validation"
+    },
+    {
+      "id": "R4",
+      "summary": "Stateful Request Invariants Preservation"
+    },
+    {
+      "id": "R5",
+      "summary": "Stateless Wire Tool Execution Verification"
+    },
+    {
+      "id": "R6",
+      "summary": "Full Suite and Coverage Gate Verification"
+    }
+  ],
+  "authorization": {
+    "mode": "bounded",
+    "id": "auth-1",
+    "packetDigest": "bbc46ce79e81edfc7a3dfb7bb3ebbfecabfb36065a6ec5e63311df79ff03a831",
+    "selectedBranchId": "approved-stateless-tools-call-bugfix",
+    "receipt": {
+      "sourceId": "src-user",
+      "recordedAt": "2026-11-04T00:25:00Z",
+      "response": {
+        "origin": "user",
+        "explicit": true,
+        "timedOut": false,
+        "automatic": false,
+        "packetDigest": "bbc46ce79e81edfc7a3dfb7bb3ebbfecabfb36065a6ec5e63311df79ff03a831",
+        "selectedBranchId": "approved-stateless-tools-call-bugfix"
+      }
+    }
+  },
+  "reviews": {
+    "specification": {
+      "verdict": "pass",
+      "reviewerId": "critic",
+      "packetDigest": "bbc46ce79e81edfc7a3dfb7bb3ebbfecabfb36065a6ec5e63311df79ff03a831",
+      "receipt": {
+        "sourceId": "src-review-critic",
+        "recordedAt": "2026-11-04T00:25:00Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    },
+    "tasks": {
+      "verdict": "pass",
+      "reviewerId": "code-reviewer",
+      "packetDigest": "bbc46ce79e81edfc7a3dfb7bb3ebbfecabfb36065a6ec5e63311df79ff03a831",
+      "receipt": {
+        "sourceId": "src-review-reviewer",
+        "recordedAt": "2026-11-04T00:25:00Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    }
+  },
+  "sources": [
+    {
+      "id": "src-user",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-call-bugfix/user-auth.txt",
+        "sha256": "79c13af0a800eda28959efcea985e73e2ea4944eac09a0d0ee317dc1a8a5927d"
+      },
+      "locator": "user conversation message reporting unknown preloaded tool and catalog revision changed errors",
+      "recordedAt": "2026-11-04T00:25:00Z"
+    },
+    {
+      "id": "src-review-critic",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-call-bugfix/review-critic.md",
+        "sha256": "78a65aed9d75606261e59d69246fad95db8ae8c08a05d4a873aeee1169bcc65e"
+      },
+      "locator": "critic review receipt r2",
+      "recordedAt": "2026-11-04T00:25:00Z"
+    },
+    {
+      "id": "src-review-reviewer",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-call-bugfix/review-code-reviewer.md",
+        "sha256": "a75bcbe707c2a736355375d9564e84f536a8958a028d734af395f83237734ea0"
+      },
+      "locator": "code-reviewer review receipt r2",
+      "recordedAt": "2026-11-04T00:25:00Z"
+    },
+    {
+      "id": "src-receipt-t1",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_call_T1.json",
+        "sha256": "0b07cf10b6e6eca17c079f7d6bcd777e28c301d59302abfd451eb4299fd8f966"
+      },
+      "locator": "engineer receipt T1",
+      "recordedAt": "2026-11-04T00:25:00Z"
+    }
+  ],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "T1"
+    ],
+    "readPaths": [
+      ".scratch/stateless-tools-call-bugfix/spec.md",
+      ".scratch/stateless-tools-call-bugfix/issues/01-stateless-tools-call-admission.md",
+      "internal/service/tools.go",
+      "internal/service/projection.go",
+      "cmd/mcp-bridge/serve_oauth_test.go"
+    ],
+    "writePaths": [
+      "internal/service/tools.go",
+      "internal/service/projection.go",
+      "cmd/mcp-bridge/serve_oauth_test.go",
+      "coverage.out"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/tools.go",
+          "internal/service/projection.go",
+          "cmd/mcp-bridge/serve_oauth_test.go",
+          "coverage.out"
+        ]
+      },
+      "acceptanceIds": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC6"
+      ],
+      "evidenceIds": [
+        "ev-t1-test"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC1",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2",
+      "requirementIds": [
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC3",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC4",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC5",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC6",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-t1-test",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_call_T1.json",
+        "sha256": "0b07cf10b6e6eca17c079f7d6bcd777e28c301d59302abfd451eb4299fd8f966"
+      },
+      "feature": "stateless-tools-call-bugfix",
+      "packetDigest": "bbc46ce79e81edfc7a3dfb7bb3ebbfecabfb36065a6ec5e63311df79ff03a831",
+      "selectedBranchId": "approved-stateless-tools-call-bugfix",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC6"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-04T00:25:00Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test -race -p 1 -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck",
+        "exitCode": 0
+      }
+    }
+  ],
+  "blockers": [],
+  "gate": {
+    "markerPath": ".superpowers/sdd/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}

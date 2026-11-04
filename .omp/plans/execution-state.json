@@ -1,35 +1,35 @@
 {
   "schemaVersion": 2,
-  "feature": "stateless-tools-exposure-bugfix",
-  "revision": "r3",
+  "feature": "stateless-tools-call-bugfix",
+  "revision": "r2",
   "projectRoot": "/home/opencode/projects/default/mcp-bridge",
   "spec": {
-    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-exposure-bugfix/spec.md",
-    "sha256": "3b1f737551b7598228ce4643944fb0b000b25ed015c8e8b9cc4ce7e6e3dd89b1",
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-call-bugfix/spec.md",
+    "sha256": "afec7d7308899942b00beb0231611d5d21cddbdaa926ec3e8bf759c0d8efa555",
     "sectionBindings": {
       "requirements": {
-        "revision": "r3",
-        "sha256": "dfd5f7a7dd4b6c05f5740b31a0159ec11eabd62e5ec1b3288e145c50a1e59363"
+        "revision": "r2",
+        "sha256": "93c33c050986d77b0353e8d0f750248e34172226bb7b2a579d37409acd9faea7"
       },
       "design": {
-        "revision": "r3",
-        "sha256": "484327e046d2aea51e4b68cab805978708f0e4c3ea2e16286f575a57d2a5d0b0"
+        "revision": "r2",
+        "sha256": "953a7c379ca2307a9ced40347af5d53b2082cab3f018cec3145a55d3c1c60f10"
       },
       "tasks": {
-        "revision": "r3",
-        "sha256": "7fe69a620518011d64fbd279cb6357f3ef75d67f8255de558bdbce95c60e0d93"
+        "revision": "r2",
+        "sha256": "0150f9ff30d9e73b64080a9cf1a4ae34db2da7a07c24a2f3193e9f65b6c5898a"
       },
       "envelope": {
-        "revision": "r3",
-        "sha256": "20550704de00f81310cfd7ae5f4202f424b47fb60d4e75be2b8cadfec37be808"
+        "revision": "r2",
+        "sha256": "9c6e9e49077e781a0c921f0de80c75246aef032cc1fd0bcd06e62daa81ae99bc"
       }
     }
   },
   "packet": {
-    "digest": "5a47d18b07bd9eb41b83a3ccc60b41ad00c35d699dffa93073b4ae16b223741e",
+    "digest": "bbc46ce79e81edfc7a3dfb7bb3ebbfecabfb36065a6ec5e63311df79ff03a831",
     "branches": [
       {
-        "id": "approved-stateless-tools-exposure-bugfix",
+        "id": "approved-stateless-tools-call-bugfix",
         "answerIds": [],
         "taskIds": [
           "T1"
@@ -37,25 +37,25 @@
         "envelopeId": "env-1",
         "sectionBindings": {
           "requirements": {
-            "revision": "r3",
-            "sha256": "dfd5f7a7dd4b6c05f5740b31a0159ec11eabd62e5ec1b3288e145c50a1e59363"
+            "revision": "r2",
+            "sha256": "93c33c050986d77b0353e8d0f750248e34172226bb7b2a579d37409acd9faea7"
           },
           "design": {
-            "revision": "r3",
-            "sha256": "484327e046d2aea51e4b68cab805978708f0e4c3ea2e16286f575a57d2a5d0b0"
+            "revision": "r2",
+            "sha256": "953a7c379ca2307a9ced40347af5d53b2082cab3f018cec3145a55d3c1c60f10"
           },
           "tasks": {
-            "revision": "r3",
-            "sha256": "7fe69a620518011d64fbd279cb6357f3ef75d67f8255de558bdbce95c60e0d93"
+            "revision": "r2",
+            "sha256": "0150f9ff30d9e73b64080a9cf1a4ae34db2da7a07c24a2f3193e9f65b6c5898a"
           },
           "envelope": {
-            "revision": "r3",
-            "sha256": "20550704de00f81310cfd7ae5f4202f424b47fb60d4e75be2b8cadfec37be808"
+            "revision": "r2",
+            "sha256": "9c6e9e49077e781a0c921f0de80c75246aef032cc1fd0bcd06e62daa81ae99bc"
           }
         }
       }
     ],
-    "selectedBranchId": "approved-stateless-tools-exposure-bugfix"
+    "selectedBranchId": "approved-stateless-tools-call-bugfix"
   },
   "actors": {
     "plannerId": "planner",
@@ -66,40 +66,44 @@
   "requirements": [
     {
       "id": "R1",
-      "summary": "Stateless Tools Exposure Admission"
+      "summary": "Stateless Pinned Preloaded Tool Admission"
     },
     {
       "id": "R2",
-      "summary": "Publisher Projection Resolution"
+      "summary": "Stateless Built-In Search Tool Admission"
     },
     {
       "id": "R3",
-      "summary": "Stateful Request Admission Preservation"
+      "summary": "Stateless Commit Discovery Completion Validation"
     },
     {
       "id": "R4",
-      "summary": "Stateless Discovery Wire Verification"
+      "summary": "Stateful Request Invariants Preservation"
     },
     {
       "id": "R5",
-      "summary": "Coverage Gate Verification"
+      "summary": "Stateless Wire Tool Execution Verification"
+    },
+    {
+      "id": "R6",
+      "summary": "Full Suite and Coverage Gate Verification"
     }
   ],
   "authorization": {
     "mode": "bounded",
     "id": "auth-1",
-    "packetDigest": "5a47d18b07bd9eb41b83a3ccc60b41ad00c35d699dffa93073b4ae16b223741e",
-    "selectedBranchId": "approved-stateless-tools-exposure-bugfix",
+    "packetDigest": "bbc46ce79e81edfc7a3dfb7bb3ebbfecabfb36065a6ec5e63311df79ff03a831",
+    "selectedBranchId": "approved-stateless-tools-call-bugfix",
     "receipt": {
       "sourceId": "src-user",
-      "recordedAt": "2026-11-03T23:58:00Z",
+      "recordedAt": "2026-11-04T00:25:00Z",
       "response": {
         "origin": "user",
         "explicit": true,
         "timedOut": false,
         "automatic": false,
-        "packetDigest": "5a47d18b07bd9eb41b83a3ccc60b41ad00c35d699dffa93073b4ae16b223741e",
-        "selectedBranchId": "approved-stateless-tools-exposure-bugfix"
+        "packetDigest": "bbc46ce79e81edfc7a3dfb7bb3ebbfecabfb36065a6ec5e63311df79ff03a831",
+        "selectedBranchId": "approved-stateless-tools-call-bugfix"
       }
     }
   },
@@ -107,10 +111,10 @@
     "specification": {
       "verdict": "pass",
       "reviewerId": "critic",
-      "packetDigest": "5a47d18b07bd9eb41b83a3ccc60b41ad00c35d699dffa93073b4ae16b223741e",
+      "packetDigest": "bbc46ce79e81edfc7a3dfb7bb3ebbfecabfb36065a6ec5e63311df79ff03a831",
       "receipt": {
         "sourceId": "src-review-critic",
-        "recordedAt": "2026-11-03T23:58:00Z",
+        "recordedAt": "2026-11-04T00:25:00Z",
         "response": {
           "origin": "reviewer",
           "verdict": "pass"
@@ -120,10 +124,10 @@
     "tasks": {
       "verdict": "pass",
       "reviewerId": "code-reviewer",
-      "packetDigest": "5a47d18b07bd9eb41b83a3ccc60b41ad00c35d699dffa93073b4ae16b223741e",
+      "packetDigest": "bbc46ce79e81edfc7a3dfb7bb3ebbfecabfb36065a6ec5e63311df79ff03a831",
       "receipt": {
         "sourceId": "src-review-reviewer",
-        "recordedAt": "2026-11-03T23:58:00Z",
+        "recordedAt": "2026-11-04T00:25:00Z",
         "response": {
           "origin": "reviewer",
           "verdict": "pass"
@@ -136,41 +140,41 @@
       "id": "src-user",
       "kind": "user-message",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-exposure-bugfix/user-auth.txt",
-        "sha256": "342299e497829a7d84dc3a1baa40561c1e313f8cdd67c6c45db5f285fb77bc1b"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-call-bugfix/user-auth.txt",
+        "sha256": "79c13af0a800eda28959efcea985e73e2ea4944eac09a0d0ee317dc1a8a5927d"
       },
-      "locator": "user conversation message 'yes' confirming r3 fix",
-      "recordedAt": "2026-11-03T23:58:00Z"
+      "locator": "user conversation message reporting unknown preloaded tool and catalog revision changed errors",
+      "recordedAt": "2026-11-04T00:25:00Z"
     },
     {
       "id": "src-review-critic",
       "kind": "observation",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-exposure-bugfix/review-critic.md",
-        "sha256": "2c6d25841675cdaaf933344372a7f36bbec7b9bfc66af731fe243b5f9a9938e9"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-call-bugfix/review-critic.md",
+        "sha256": "78a65aed9d75606261e59d69246fad95db8ae8c08a05d4a873aeee1169bcc65e"
       },
-      "locator": "critic review receipt r3",
-      "recordedAt": "2026-11-03T23:58:00Z"
+      "locator": "critic review receipt r2",
+      "recordedAt": "2026-11-04T00:25:00Z"
     },
     {
       "id": "src-review-reviewer",
       "kind": "observation",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-exposure-bugfix/review-code-reviewer.md",
-        "sha256": "cd550b2081f7508129c8c1b00cc9845580fb208aa6fc7f599fdf48be58e837fe"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/stateless-tools-call-bugfix/review-code-reviewer.md",
+        "sha256": "a75bcbe707c2a736355375d9564e84f536a8958a028d734af395f83237734ea0"
       },
-      "locator": "code-reviewer review receipt r3",
-      "recordedAt": "2026-11-03T23:58:00Z"
+      "locator": "code-reviewer review receipt r2",
+      "recordedAt": "2026-11-04T00:25:00Z"
     },
     {
       "id": "src-receipt-t1",
       "kind": "observation",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_stateless_bugfix_T1.json",
-        "sha256": "d3984d9e2953f42a158748b1be9f074d476b54b5f2fcc808707f9241f71ddb11"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_call_T1.json",
+        "sha256": "0b07cf10b6e6eca17c079f7d6bcd777e28c301d59302abfd451eb4299fd8f966"
       },
       "locator": "engineer receipt T1",
-      "recordedAt": "2026-11-03T23:58:00Z"
+      "recordedAt": "2026-11-04T00:25:00Z"
     }
   ],
   "decisions": [],
@@ -181,13 +185,15 @@
       "T1"
     ],
     "readPaths": [
-      ".scratch/stateless-tools-exposure-bugfix/spec.md",
-      ".scratch/stateless-tools-exposure-bugfix/issues/01-stateless-tools-exposure-admission.md",
-      "internal/service/session_exposure.go",
+      ".scratch/stateless-tools-call-bugfix/spec.md",
+      ".scratch/stateless-tools-call-bugfix/issues/01-stateless-tools-call-admission.md",
+      "internal/service/tools.go",
+      "internal/service/projection.go",
       "cmd/mcp-bridge/serve_oauth_test.go"
     ],
     "writePaths": [
-      "internal/service/session_exposure.go",
+      "internal/service/tools.go",
+      "internal/service/projection.go",
       "cmd/mcp-bridge/serve_oauth_test.go",
       "coverage.out"
     ],
@@ -219,7 +225,8 @@
       "effects": {
         "kind": "write",
         "paths": [
-          "internal/service/session_exposure.go",
+          "internal/service/tools.go",
+          "internal/service/projection.go",
           "cmd/mcp-bridge/serve_oauth_test.go",
           "coverage.out"
         ]
@@ -228,7 +235,9 @@
         "AC1",
         "AC2",
         "AC3",
-        "AC4"
+        "AC4",
+        "AC5",
+        "AC6"
       ],
       "evidenceIds": [
         "ev-t1-test"
@@ -243,8 +252,7 @@
     {
       "id": "AC1",
       "requirementIds": [
-        "R1",
-        "R2"
+        "R1"
       ],
       "ownerTaskIds": [
         "T1"
@@ -257,7 +265,7 @@
     {
       "id": "AC2",
       "requirementIds": [
-        "R3"
+        "R2"
       ],
       "ownerTaskIds": [
         "T1"
@@ -270,7 +278,7 @@
     {
       "id": "AC3",
       "requirementIds": [
-        "R4"
+        "R3"
       ],
       "ownerTaskIds": [
         "T1"
@@ -283,7 +291,33 @@
     {
       "id": "AC4",
       "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC5",
+      "requirementIds": [
         "R5"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC6",
+      "requirementIds": [
+        "R6"
       ],
       "ownerTaskIds": [
         "T1"
@@ -299,12 +333,12 @@
       "id": "ev-t1-test",
       "kind": "test",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_stateless_bugfix_T1.json",
-        "sha256": "d3984d9e2953f42a158748b1be9f074d476b54b5f2fcc808707f9241f71ddb11"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_call_T1.json",
+        "sha256": "0b07cf10b6e6eca17c079f7d6bcd777e28c301d59302abfd451eb4299fd8f966"
       },
-      "feature": "stateless-tools-exposure-bugfix",
-      "packetDigest": "5a47d18b07bd9eb41b83a3ccc60b41ad00c35d699dffa93073b4ae16b223741e",
-      "selectedBranchId": "approved-stateless-tools-exposure-bugfix",
+      "feature": "stateless-tools-call-bugfix",
+      "packetDigest": "bbc46ce79e81edfc7a3dfb7bb3ebbfecabfb36065a6ec5e63311df79ff03a831",
+      "selectedBranchId": "approved-stateless-tools-call-bugfix",
       "taskIds": [
         "T1"
       ],
@@ -312,10 +346,12 @@
         "AC1",
         "AC2",
         "AC3",
-        "AC4"
+        "AC4",
+        "AC5",
+        "AC6"
       ],
       "outcome": "pass",
-      "observedAt": "2026-11-03T23:58:00Z",
+      "observedAt": "2026-11-04T00:25:00Z",
       "producer": "engineer",
       "details": {
         "command": "go test -race -p 1 -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck",
