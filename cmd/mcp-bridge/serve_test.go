@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -288,6 +289,138 @@ func catalogRevisionAndTool(t *testing.T, payload map[string]any, serverID strin
 	return "", ""
 }
 
+type serveWireResponse struct {
+	status  int
+	headers http.Header
+	body    map[string]any
+}
+
+func postServeWire(t *testing.T, endpoint, sessionID string, id any, method string, params map[string]any) serveWireResponse {
+	t.Helper()
+	requestBody := map[string]any{"jsonrpc": "2.0", "method": method}
+	if id != nil {
+		requestBody["id"] = id
+	}
+	if params != nil {
+		requestBody["params"] = params
+	}
+	raw, err := json.Marshal(requestBody)
+	if err != nil {
+		t.Fatalf("marshal %s request: %v", method, err)
+	}
+	request, err := http.NewRequest(http.MethodPost, endpoint+"/mcp", bytes.NewReader(raw))
+	if err != nil {
+		t.Fatalf("build %s request: %v", method, err)
+	}
+	request.Header.Set("Authorization", "Bearer "+serveClientToken)
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Accept", "application/json, text/event-stream")
+	if sessionID != "" {
+		request.Header.Set("Mcp-Session-Id", sessionID)
+		request.Header.Set("Mcp-Protocol-Version", "2025-03-26")
+	}
+	response, err := (&http.Client{Timeout: 5 * time.Second}).Do(request)
+	if err != nil {
+		t.Fatalf("POST %s: %v", method, err)
+	}
+	defer response.Body.Close()
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatalf("read %s response: %v", method, err)
+	}
+	body := strings.TrimSpace(string(responseBody))
+	for _, line := range strings.Split(body, "\n") {
+		if data, ok := strings.CutPrefix(strings.TrimSpace(line), "data: "); ok {
+			body = data
+			break
+		}
+	}
+	var decoded map[string]any
+	if body != "" {
+		if err := json.Unmarshal([]byte(body), &decoded); err != nil {
+			t.Fatalf("decode %s response %q: %v", method, responseBody, err)
+		}
+	}
+	return serveWireResponse{status: response.StatusCode, headers: response.Header.Clone(), body: decoded}
+}
+
+func requireServeWireToolResult(t *testing.T, response serveWireResponse) map[string]any {
+	t.Helper()
+	if response.status != http.StatusOK {
+		t.Fatalf("tools/call status = %d; want 200 (body=%v)", response.status, response.body)
+	}
+	result, ok := response.body["result"].(map[string]any)
+	if !ok {
+		t.Fatalf("tools/call response = %v; want JSON-RPC result", response.body)
+	}
+	return result
+}
+
+func requireServeWireStructuredContent(t *testing.T, result map[string]any) map[string]any {
+	t.Helper()
+	payload, ok := result["structuredContent"].(map[string]any)
+	if !ok {
+		t.Fatalf("structuredContent = %T (%v); want an object", result["structuredContent"], result["structuredContent"])
+	}
+	return payload
+}
+
+func assertServeWireCompletion(t *testing.T, stdout *syncWriter, response serveWireResponse, operation, reason, upstreamState string, wantBackend bool) {
+	t.Helper()
+	requestID := response.headers.Get("Mcp-Diagnostic-Id")
+	if len(requestID) != 32 {
+		t.Fatalf("Mcp-Diagnostic-Id = %q; want 32-character request ID", requestID)
+	}
+	var httpRecords, mcpRecords, backendRecords []map[string]any
+	collect := func() {
+		httpRecords, mcpRecords, backendRecords = nil, nil, nil
+		for _, record := range decodeCapturedRecords(t, stdout.String()) {
+			if record["request_id"] != requestID {
+				continue
+			}
+			switch record["event"] {
+			case "http_complete":
+				httpRecords = append(httpRecords, record)
+			case "mcp_complete":
+				mcpRecords = append(mcpRecords, record)
+			case "backend_complete":
+				backendRecords = append(backendRecords, record)
+			}
+		}
+	}
+	waitFor(t, operation+" wire completion records", func() bool {
+		collect()
+		return len(httpRecords) == 1 && len(mcpRecords) == 1 && (!wantBackend || len(backendRecords) == 1)
+	})
+	collect()
+	if len(httpRecords) != 1 || len(mcpRecords) != 1 {
+		t.Fatalf("%s completion records: http=%d mcp=%d", operation, len(httpRecords), len(mcpRecords))
+	}
+	if wantBackend && len(backendRecords) != 1 || !wantBackend && len(backendRecords) != 0 {
+		t.Fatalf("%s backend completion records = %d; want backend=%t", operation, len(backendRecords), wantBackend)
+	}
+	httpRecord, mcpRecord := httpRecords[0], mcpRecords[0]
+	if httpRecord["request_id"] != mcpRecord["request_id"] {
+		t.Fatalf("completion request IDs differ: http=%v mcp=%v", httpRecord["request_id"], mcpRecord["request_id"])
+	}
+	if mcpRecord["operation"] != operation || mcpRecord["reason"] != reason {
+		t.Errorf("mcp_complete = %v; want operation=%q reason=%q", mcpRecord, operation, reason)
+	}
+	wantOutcome := "success"
+	if reason != "none" {
+		wantOutcome = "error"
+		if mcpRecord["stage"] != "tool_admission" {
+			t.Errorf("mcp_complete stage = %v; want tool_admission", mcpRecord["stage"])
+		}
+	}
+	if mcpRecord["outcome"] != wantOutcome {
+		t.Errorf("mcp_complete outcome = %v; want %q", mcpRecord["outcome"], wantOutcome)
+	}
+	if upstreamState != "" && httpRecord["upstream_state"] != upstreamState {
+		t.Errorf("http_complete upstream_state = %v; want %q", httpRecord["upstream_state"], upstreamState)
+	}
+}
+
 func getBody(t *testing.T, url string) (int, string) {
 	t.Helper()
 	response, err := http.Get(url)
@@ -471,7 +604,7 @@ func TestServeCompositionRootServesCatalogAndSurvivesReload(t *testing.T) {
 			return false
 		}
 		revision, readName = catalogRevisionAndTool(t, payload, "alpha")
-		return revision != "" && readName == core.PublicName("alpha", "read")
+		return revision != "" && readName == "alpha__read"
 	})
 
 	// A bridged call reaches the real upstream through the published generation.
@@ -481,8 +614,18 @@ func TestServeCompositionRootServesCatalogAndSurvivesReload(t *testing.T) {
 		"arguments":        map[string]any{"limit": 3},
 	})
 	envelope := structuredContent(t, call)
-	if envelope["server"] != "alpha" || envelope["catalog_revision"] != revision {
-		t.Fatalf("call envelope = %v", envelope)
+	if envelope["server"] != "alpha" || envelope["tool_name"] != readName {
+		t.Fatalf("call envelope = %v; want alpha/%s", envelope, readName)
+	}
+	for _, key := range []string{"request_id", "upstream_result"} {
+		if _, ok := envelope[key]; !ok {
+			t.Errorf("call envelope lacks %q: %v", key, envelope)
+		}
+	}
+	for _, key := range []string{"catalog_revision", "catalog_status", "availability"} {
+		if _, exists := envelope[key]; exists {
+			t.Errorf("call envelope unexpectedly contains %q: %v", key, envelope)
+		}
 	}
 	if len(call.Content) == 0 {
 		t.Fatalf("call returned no content: %#v", call)
@@ -519,8 +662,8 @@ func TestServeCompositionRootServesCatalogAndSurvivesReload(t *testing.T) {
 		}
 		return false
 	})
-	if betaName != core.PublicName("beta", "list") {
-		t.Fatalf("beta tool name = %q; want %q", betaName, core.PublicName("beta", "list"))
+	if betaName != "beta__list" {
+		t.Fatalf("beta tool name = %q; want beta__list", betaName)
 	}
 	betaCall := callTool(t, ctx, session, catalog.ToolCallTool, map[string]any{
 		"tool_name":        betaName,
@@ -606,5 +749,182 @@ func TestServeCompositionRootServesCatalogAndSurvivesReload(t *testing.T) {
 	if response, err := http.Get(operationsURL + "/livez"); err == nil {
 		response.Body.Close()
 		t.Fatalf("operations listener still serving after shutdown: %d", response.StatusCode)
+	}
+}
+func TestServeCatalogErgonomicsLiveWire(t *testing.T) {
+	_, httpURL, stdout, stop := startHTTPLoggingBridge(t)
+	defer stop()
+
+	initialize := postServeWire(t, httpURL, "", 1, "initialize", map[string]any{
+		"protocolVersion": "2025-03-26",
+		"capabilities":   map[string]any{},
+		"clientInfo":     map[string]any{"name": "wire-test", "version": "1"},
+	})
+	if initialize.status != http.StatusOK {
+		t.Fatalf("initialize status = %d; want 200", initialize.status)
+	}
+	sessionID := initialize.headers.Get("Mcp-Session-Id")
+	if sessionID == "" {
+		t.Fatal("initialize response omitted Mcp-Session-Id")
+	}
+	initialized := postServeWire(t, httpURL, sessionID, nil, "notifications/initialized", map[string]any{})
+	if initialized.status != http.StatusOK && initialized.status != http.StatusAccepted && initialized.status != http.StatusNoContent {
+		t.Fatalf("initialized notification status = %d; want 200, 202, or 204", initialized.status)
+	}
+
+	initialList := postServeWire(t, httpURL, sessionID, 2, "tools/list", map[string]any{})
+	if initialList.status != http.StatusOK {
+		t.Fatalf("initial tools/list status = %d; want 200", initialList.status)
+	}
+	initialResult, ok := initialList.body["result"].(map[string]any)
+	if !ok {
+		t.Fatalf("initial tools/list response = %v; want result", initialList.body)
+	}
+	initialTools, ok := initialResult["tools"].([]any)
+	if !ok {
+		t.Fatalf("initial tools/list tools = %T; want array", initialResult["tools"])
+	}
+	for _, item := range initialTools {
+		tool, ok := item.(map[string]any)
+		if ok && tool["name"] == "alpha__read" {
+			t.Fatal("alpha__read was visible before search discovery")
+		}
+	}
+
+	nextID := 3
+	callWireTool := func(name string, arguments map[string]any) (serveWireResponse, map[string]any, map[string]any) {
+		t.Helper()
+		response := postServeWire(t, httpURL, sessionID, nextID, "tools/call", map[string]any{
+			"name": name, "arguments": arguments,
+		})
+		nextID++
+		result := requireServeWireToolResult(t, response)
+		return response, result, requireServeWireStructuredContent(t, result)
+	}
+
+	searchResponse, searchResult, search := callWireTool("search_tools", map[string]any{"query": "read"})
+	isSearchError, _ := searchResult["isError"].(bool)
+	if isSearchError {
+		t.Fatalf("search_tools returned an error: %v", search)
+	}
+	if _, exists := search["backends"]; exists {
+		t.Fatalf("search payload includes pruned backends: %v", search["backends"])
+	}
+	revision, ok := search["catalog_revision"].(string)
+	if !ok || len(revision) != 64 {
+		t.Fatalf("search catalog_revision = %v; want a 64-character digest", search["catalog_revision"])
+	}
+	results, ok := search["results"].([]any)
+	if !ok {
+		t.Fatalf("search results = %T; want array", search["results"])
+	}
+	const wireToolName = "alpha__read"
+	foundSearchTool := false
+	for _, item := range results {
+		row, ok := item.(map[string]any)
+		if !ok || row["server"] != "alpha" || row["upstream_name"] != "read" {
+			continue
+		}
+		foundSearchTool = true
+		if row["tool_name"] != wireToolName || row["availability"] != "available" {
+			t.Errorf("search row = %v; want tool_name=%q and availability=available", row, wireToolName)
+		}
+	}
+	if !foundSearchTool {
+		t.Fatalf("search did not return alpha/read: %v", results)
+	}
+	if searchResponse.status != http.StatusOK {
+		t.Fatalf("search_tools status = %d; want 200", searchResponse.status)
+	}
+
+	listed := postServeWire(t, httpURL, sessionID, nextID, "tools/list", map[string]any{})
+	nextID++
+	if listed.status != http.StatusOK {
+		t.Fatalf("tools/list after discovery status = %d; want 200", listed.status)
+	}
+	listResult, ok := listed.body["result"].(map[string]any)
+	if !ok {
+		t.Fatalf("tools/list response = %v; want result", listed.body)
+	}
+	listedTools, ok := listResult["tools"].([]any)
+	if !ok {
+		t.Fatalf("tools/list tools = %T; want array", listResult["tools"])
+	}
+	foundListedTool := false
+	for _, item := range listedTools {
+		tool, ok := item.(map[string]any)
+		if ok && tool["name"] == wireToolName {
+			foundListedTool = true
+			break
+		}
+	}
+	if !foundListedTool {
+		t.Fatalf("tools/list omitted newly discovered %q: %v", wireToolName, listedTools)
+	}
+
+	staleRevision := revision
+	if staleRevision[0] == '0' {
+		staleRevision = "1" + staleRevision[1:]
+	} else {
+		staleRevision = "0" + staleRevision[1:]
+	}
+	cases := []struct {
+		name            string
+		tool            string
+		revision        string
+		includeRevision bool
+		wantError       bool
+		reason          string
+	}{
+		{name: "describe omitted revision", tool: "describe_tool"},
+		{name: "describe empty revision", tool: "describe_tool", includeRevision: true},
+		{name: "call omitted revision", tool: "call_tool"},
+		{name: "call empty revision", tool: "call_tool", includeRevision: true},
+		{name: "describe stale revision", tool: "describe_tool", revision: staleRevision, includeRevision: true, wantError: true, reason: "catalog_changed"},
+		{name: "call stale revision", tool: "call_tool", revision: staleRevision, includeRevision: true, wantError: true, reason: "catalog_changed"},
+		{name: "describe malformed revision", tool: "describe_tool", revision: "not-hex", includeRevision: true, wantError: true, reason: "invalid_arguments"},
+		{name: "call malformed revision", tool: "call_tool", revision: "not-hex", includeRevision: true, wantError: true, reason: "invalid_arguments"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			arguments := map[string]any{"tool_name": wireToolName}
+			if tc.includeRevision {
+				arguments["catalog_revision"] = tc.revision
+			}
+			if tc.tool == "call_tool" {
+				arguments["arguments"] = map[string]any{}
+			}
+			response, result, payload := callWireTool(tc.tool, arguments)
+			isError, _ := result["isError"].(bool)
+			if isError != tc.wantError {
+				t.Fatalf("%s isError = %v; want %t (result=%v)", tc.tool, result["isError"], tc.wantError, result)
+			}
+			reason := tc.reason
+			if !tc.wantError {
+				reason = "none"
+				if tc.tool == "describe_tool" && payload["catalog_revision"] != revision {
+					t.Errorf("describe catalog_revision = %v; want %q", payload["catalog_revision"], revision)
+				}
+				if tc.tool == "call_tool" {
+					for _, key := range []string{"server", "tool_name", "request_id", "upstream_result"} {
+						if _, exists := payload[key]; !exists {
+							t.Errorf("call_tool envelope lacks %q: %v", key, payload)
+						}
+					}
+					for _, key := range []string{"catalog_revision", "catalog_status", "availability"} {
+						if _, exists := payload[key]; exists {
+							t.Errorf("call_tool envelope contains pruned %q: %v", key, payload)
+						}
+					}
+				}
+			} else if payload["code"] != tc.reason {
+				t.Errorf("%s refusal code = %v; want %q", tc.tool, payload["code"], tc.reason)
+			}
+			upstreamState := ""
+			if tc.tool == "describe_tool" || tc.wantError {
+				upstreamState = "not_attempted"
+			}
+			assertServeWireCompletion(t, stdout, response, tc.tool, reason, upstreamState, tc.tool == "call_tool" && !tc.wantError)
+		})
 	}
 }

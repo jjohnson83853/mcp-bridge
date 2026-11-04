@@ -137,9 +137,9 @@ func TestServeHybridMetadataSourceRoundTrip(t *testing.T) {
 		t.Fatalf("decode search_tools response: %v (%s)", err, body)
 	}
 	var searchPayload struct {
-		Results []struct {
-			ToolName        string `json:"tool_name"`
-			CatalogRevision string `json:"catalog_revision"`
+		CatalogRevision string `json:"catalog_revision"`
+		Results         []struct {
+			ToolName string `json:"tool_name"`
 		} `json:"results"`
 	}
 	if err := json.Unmarshal(search.Result.StructuredContent, &searchPayload); err != nil {
@@ -148,11 +148,11 @@ func TestServeHybridMetadataSourceRoundTrip(t *testing.T) {
 	if len(searchPayload.Results) == 0 {
 		t.Fatalf("search_tools returned no results: %s", search.Result.StructuredContent)
 	}
-	revision := ""
+	revision := searchPayload.CatalogRevision
 	toolName := ""
 	for _, result := range searchPayload.Results {
 		if result.ToolName == "alpha__read" {
-			revision, toolName = result.CatalogRevision, result.ToolName
+			toolName = result.ToolName
 			break
 		}
 	}

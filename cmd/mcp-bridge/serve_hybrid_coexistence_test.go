@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -173,8 +172,8 @@ func TestServeHybridCoexistence(t *testing.T) {
 				if result.Pinned {
 					t.Errorf("alpha/write result pinned = true; want false")
 				}
-				if !regexp.MustCompile(`^t_[a-z2-7]{52}$`).MatchString(result.ToolName) {
-					t.Errorf("alpha/write result tool_name = %q; want hash name matching ^t_[a-z2-7]{52}$", result.ToolName)
+				if result.ToolName != "alpha__write" {
+					t.Errorf("alpha/write result tool_name = %q; want %q", result.ToolName, "alpha__write")
 				}
 			}
 		}

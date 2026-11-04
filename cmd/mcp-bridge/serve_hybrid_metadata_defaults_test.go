@@ -201,22 +201,23 @@ func TestServeHybridMetadataServerDefaults(t *testing.T) {
 		t.Fatalf("decode search_tools response: %v (%s)", err, body)
 	}
 	var searchPayload struct {
-		Results []struct {
-			ToolName        string `json:"tool_name"`
-			CatalogRevision string `json:"catalog_revision"`
+		CatalogRevision string `json:"catalog_revision"`
+		Results         []struct {
+			ToolName string `json:"tool_name"`
 		} `json:"results"`
 	}
 	if err := json.Unmarshal(search.Result.StructuredContent, &searchPayload); err != nil {
 		t.Fatalf("decode search payload: %v (%s)", err, search.Result.StructuredContent)
 	}
-	revision := ""
+	revision := searchPayload.CatalogRevision
+	foundRead := false
 	for _, result := range searchPayload.Results {
 		if result.ToolName == "alpha__read" {
-			revision = result.CatalogRevision
+			foundRead = true
 			break
 		}
 	}
-	if len(revision) != 64 {
+	if !foundRead || len(revision) != 64 {
 		t.Fatalf("search_tools did not return alpha__read with a revision: %s", search.Result.StructuredContent)
 	}
 	describe := `{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"describe_tool","arguments":{"tool_name":"alpha__read","catalog_revision":"` + revision + `"}}}`

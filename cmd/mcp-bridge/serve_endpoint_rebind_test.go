@@ -17,7 +17,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/catalog"
-	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/config"
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
 
@@ -231,11 +231,11 @@ func TestBridgeRebindsServerEndpointOnRestartAndReload(t *testing.T) {
 	awaitReady(operationsAddress1)
 	session1 := connectBridge(t, ctx1, "http://"+httpAddress1+"/mcp", serveClientToken)
 
-	readV1 := core.PublicName("alpha", "read_v1")
+	readV1 := config.WireToolName("alpha", "read_v1")
 	awaitDiscovery(ctx1, session1, "read", "alpha", readV1)
 	callCurrentTool(t, ctx1, session1, "read", readV1, map[string]any{"limit": 2}, `{"limit":2}`)
 
-	queryTool := core.PublicName("beta", "query")
+	queryTool := config.WireToolName("beta", "query")
 	awaitDiscovery(ctx1, session1, "query", "beta", queryTool)
 	callCurrentTool(t, ctx1, session1, "query", queryTool, map[string]any{"prefix": "x"}, `{"prefix":"x"}`)
 
@@ -273,7 +273,7 @@ func TestBridgeRebindsServerEndpointOnRestartAndReload(t *testing.T) {
 	session2 := connectBridge(t, ctx2, "http://"+httpAddress2+"/mcp", serveClientToken)
 	defer session2.Close()
 
-	readV2 := core.PublicName("alpha", "read_v2")
+	readV2 := config.WireToolName("alpha", "read_v2")
 	awaitDiscovery(ctx2, session2, "read", "alpha", readV2)
 	callCurrentTool(t, ctx2, session2, "read", readV2, map[string]any{"limit": 3}, `{"limit":3}`)
 
@@ -323,7 +323,7 @@ func TestBridgeRebindsServerEndpointOnRestartAndReload(t *testing.T) {
 	})
 	sendReload(t)
 
-	readV3 := core.PublicName("alpha", "read_v3")
+	readV3 := config.WireToolName("alpha", "read_v3")
 	awaitDiscovery(ctx2, session2, "read", "alpha", readV3)
 	callCurrentTool(t, ctx2, session2, "read", readV3, map[string]any{"limit": 4}, `{"limit":4}`)
 

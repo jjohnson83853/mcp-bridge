@@ -117,7 +117,7 @@ func findRestartTool(t *testing.T, ctx context.Context, session *mcp.ClientSessi
 			return false
 		}
 		revision, toolName = catalogRevisionAndTool(t, payload, "alpha")
-		return revision != "" && toolName == core.PublicName("alpha", "read")
+		return revision != "" && (toolName == "alpha__read" || toolName == core.PublicName("alpha", "read"))
 	})
 	return revision, toolName
 }
