@@ -473,7 +473,7 @@ func TestToolSurfaceReturnsSafeAdmissionAndDispatchErrors(t *testing.T) {
 	if unknown["code"] != codeUnknownTool {
 		t.Fatalf("unknown tool response = %v", unknown)
 	}
-	stale := call(`{"tool_name":"` + readName + `","catalog_revision":"old","arguments":{"limit":1}}`)
+	stale := call(`{"tool_name":"` + readName + `","catalog_revision":"` + strings.Repeat("b", 64) + `","arguments":{"limit":1}}`)
 	if stale["code"] != codeCatalogChanged {
 		t.Fatalf("stale revision response = %v", stale)
 	}

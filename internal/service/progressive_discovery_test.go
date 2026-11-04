@@ -101,7 +101,7 @@ func TestProgressiveMetadataDiscoveryCommit(t *testing.T) {
 		t.Fatalf("tools/list after empty discovery: %v", err)
 	}
 	for _, tool := range beforeEmpty.Tools {
-		if tool.Name == core.PublicName("alpha", "new") || tool.Name == core.PublicName("alpha", "shared") {
+		if tool.Name == "alpha__new" || tool.Name == "alpha__shared" {
 			t.Fatalf("empty discovery exposed %q", tool.Name)
 		}
 	}
@@ -182,7 +182,7 @@ func TestProgressiveMetadataDiscoveryCommit(t *testing.T) {
 		coordinator.barrier.Lock()
 		committedCount := 0
 		for _, rawName := range []string{"new", "shared"} {
-			name := core.PublicName("alpha", rawName)
+			name := "alpha__" + rawName
 			if coordinator.union[name] == nil {
 				continue
 			}
@@ -249,7 +249,7 @@ func TestProgressiveMetadataDiscoveryCommit(t *testing.T) {
 			{serverID: "alpha", rawName: "new"},
 			{serverID: "alpha", rawName: "shared"},
 		} {
-			name := core.PublicName(target.serverID, target.rawName)
+			name := "alpha__" + target.rawName
 			if _, found := projection.byName[name]; !found {
 				hasBothTargets = false
 				break
@@ -269,7 +269,7 @@ func TestProgressiveMetadataDiscoveryCommit(t *testing.T) {
 		t.Fatal("concurrent searches from one session did not retain both tools and interests in its projection")
 	}
 
-	rejectedName := core.PublicName("alpha", "new")
+	rejectedName := "alpha__new"
 	clientBTools, err := clientB.ListTools(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("tools/list for distinct bearer after discovery: %v", err)
@@ -342,7 +342,7 @@ func TestProgressiveMetadataDiscoveryCommit(t *testing.T) {
 		if err != nil {
 			t.Fatalf("tools/list after %s discovery: %v", check.rawName, err)
 		}
-		name := core.PublicName("alpha", check.rawName)
+		name := "alpha__" + check.rawName
 		found := false
 		for _, tool := range page.Tools {
 			if tool.Name == name {
@@ -439,7 +439,7 @@ func TestProgressiveMetadataDiscoveryFailuresDoNotCommit(t *testing.T) {
 		ToolName        string `json:"tool_name"`
 		CatalogRevision string `json:"catalog_revision"`
 	}{
-		ToolName:        core.PublicName("alpha", "new"),
+		ToolName:        "alpha__new",
 		CatalogRevision: strings.Repeat("b", 64),
 	})
 	if err != nil {
@@ -505,7 +505,7 @@ func TestProgressiveMetadataDiscoveryCancellationKeepsCommit(t *testing.T) {
 	if !projectionBefore.present {
 		t.Fatal("session projection was not admitted before cancelled discovery")
 	}
-	targetName := core.PublicName("alpha", "new")
+	targetName := "alpha__new"
 	if _, alreadyExposed := projectionBefore.byName[targetName]; alreadyExposed {
 		t.Fatalf("cancellation target %q was already exposed", targetName)
 	}

@@ -290,7 +290,7 @@ func hasProjectionReference(registration *unionTool, owner projectionOwner) bool
 }
 
 func (t *ToolSurface) rejectPinnedCall(ctx context.Context, requestID, operationID, corrState string, start time.Time, code, message, reason string) (*mcp.CallToolResult, error) {
-	t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, reason)
+	t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, "call_tool", reason)
 	return errorResult(code, message, core.ExecutionNotStarted), nil
 }
 func (t *ToolSurface) pinnedToolHandler(name string, registeredDescriptor *mcp.Tool) func(context.Context, *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -484,7 +484,18 @@ func resolveBinding(catalog *core.Bridge, toolName string) (*core.Binding, strin
 }
 
 // describeTool answers one exact stored definition (plan §4.4).
-func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (t *ToolSurface) describeTool(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var requestID string
+	corrState := "unavailable"
+	if req != nil && req.Extra != nil && req.Extra.Header != nil {
+		carrier := req.Extra.Header.Get("X-Mcp-Bridge-Internal-Request-Id")
+		if len(carrier) == 32 && validHex(carrier) {
+			requestID = carrier
+			corrState = "valid"
+		}
+	}
+	operationID := observe.CorrelationID("")
+	start := time.Now()
 	var wire struct {
 		ToolName        string `json:"tool_name"`
 		CatalogRevision string `json:"catalog_revision"`
@@ -496,11 +507,23 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 	if assembly == nil {
 		return errorResult(codeBackendUnavailable, "no catalog generation is published", core.ExecutionNotStarted), nil
 	}
+	if wire.CatalogRevision == "" {
+		wire.CatalogRevision = assembly.CatalogRevision()
+	} else {
+		if !isValidCatalogRevision(wire.CatalogRevision) {
+			t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, "describe_tool", "invalid_arguments")
+			return errorResult(search.CodeInvalidArguments, "catalog_revision is not a valid 64-character hexadecimal digest", core.ExecutionNotStarted), nil
+		}
+		if wire.CatalogRevision != assembly.CatalogRevision() {
+			t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, "describe_tool", "catalog_changed")
+			return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
+		}
+	}
 	owner, ownerOK := t.directRequestOwner(req)
 	if !ownerOK {
 		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
 	}
-	if !t.discoveryOwnerValid(owner, assembly) || wire.CatalogRevision != assembly.CatalogRevision() {
+	if !t.discoveryOwnerValid(owner, assembly) {
 		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
 	}
 	binding, pub, ok := resolveBinding(assembly.catalog, wire.ToolName)
@@ -512,13 +535,11 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 	payload := map[string]any{
 		"server":            binding.ServerID,
 		"catalog_revision":  assembly.CatalogRevision(),
-		"catalog_status":    health.Status,
 		"availability":      health.Availability,
 		"tool_name":         wire.ToolName,
 		"upstream_name":     binding.RawName,
 		"description":       binding.Def.Description,
 		"pinned":            pinnedNames[pub],
-		"last_success_at":   timestamp(health.LastSuccessAt),
 		"validation_status": "supported",
 	}
 	if metadata := upstreamMetadataValue(binding.Def.Metadata); metadata != nil {
@@ -571,17 +592,25 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 		}
 		return failureResult(err), nil
 	}
+	t.contributeOperation(requestID, operationID, "not_attempted")
 	if t.logger != nil {
+		duration := time.Since(start)
 		t.logger.Log(observe.Entry{
 			Level:     "info",
 			Event:     "mcp_complete",
-			RequestID: "",
+			RequestID: requestID,
 			Operation: "describe_tool",
-			Duration:  0,
+			Duration:  duration,
 			Outcome:   "success",
 			Reason:    "none",
 			Fields: map[string]any{
-				"reason": "none",
+				"request_id":        requestID,
+				"operation_id":      operationID,
+				"mcp_method":        "tools_call",
+				"outcome":           "success",
+				"reason":            "none",
+				"correlation_state": corrState,
+				"duration_ms":       duration.Milliseconds(),
 			},
 		})
 	}
@@ -591,10 +620,8 @@ func (t *ToolSurface) describeTool(_ context.Context, req *mcp.CallToolRequest) 
 	}, nil
 }
 
-// logToolAdmissionFailure terminates the tools/call operation at the
-// tool_admission stage: exactly one mcp_complete record per rejected call,
-// emitted before any upstream dispatch is attempted.
-func (t *ToolSurface) logToolAdmissionFailure(ctx context.Context, requestID, operationID, corrState string, start time.Time, reason string) {
+// logAdmissionFailure records a terminal rejection before any upstream dispatch.
+func (t *ToolSurface) logAdmissionFailure(ctx context.Context, requestID, operationID, corrState string, start time.Time, operation string, reason string) {
 	// The operation ran its admission boundary without an upstream attempt;
 	// the terminal record links this decoded operation with the truthful
 	// no-upstream state regardless of logging availability.
@@ -607,7 +634,7 @@ func (t *ToolSurface) logToolAdmissionFailure(ctx context.Context, requestID, op
 		Level:     "warn",
 		Event:     "mcp_complete",
 		RequestID: requestID,
-		Operation: "call_tool",
+		Operation: operation,
 		Duration:  duration,
 		Outcome:   "error",
 		Reason:    reason,
@@ -633,6 +660,10 @@ func validHex(s string) bool {
 	}
 	return true
 }
+func isValidCatalogRevision(rev string) bool {
+	return len(rev) == 64 && validHex(rev)
+}
+
 
 // callTool admits and forwards exactly one execution (plan §4.4/§4.5).
 func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -658,28 +689,36 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 		Arguments       json.RawMessage `json:"arguments"`
 	}
 	if err := decodeStrict(rawArguments(req), &wire); err != nil {
-		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "invalid_arguments")
+		t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, "call_tool", "invalid_arguments")
 		return errorResult(search.CodeInvalidArguments, "call arguments are not a valid call request", core.ExecutionNotStarted), nil
 	}
 	assembly := t.runtime.Current()
 	if assembly == nil {
-		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "backend_unavailable")
+		t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, "call_tool", "backend_unavailable")
 		return errorResult(codeBackendUnavailable, "no catalog generation is published", core.ExecutionNotStarted), nil
 	}
 	// Revision admission precedes every other check, so a stale expected
 	// revision is never answered with a schema verdict about the new catalog.
-	if wire.CatalogRevision != assembly.CatalogRevision() {
-		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "catalog_changed")
-		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
+	if wire.CatalogRevision == "" {
+		wire.CatalogRevision = assembly.CatalogRevision()
+	} else {
+		if !isValidCatalogRevision(wire.CatalogRevision) {
+			t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, "call_tool", "invalid_arguments")
+			return errorResult(search.CodeInvalidArguments, "catalog_revision is not a valid 64-character hexadecimal digest", core.ExecutionNotStarted), nil
+		}
+		if wire.CatalogRevision != assembly.CatalogRevision() {
+			t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, "call_tool", "catalog_changed")
+			return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
+		}
 	}
 	binding, pub, ok := resolveBinding(assembly.catalog, wire.ToolName)
 	if !ok {
-		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "unknown_tool")
+		t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, "call_tool", "unknown_tool")
 		return errorResult(codeUnknownTool, "no such tool in the published catalog", core.ExecutionNotStarted), nil
 	}
 	health, _ := assembly.Health(binding.ServerID)
 	if health.Availability != AvailabilityAvailable {
-		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "backend_unavailable")
+		t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, "call_tool", "backend_unavailable")
 		return errorResult(codeBackendUnavailable, "the server of this tool is not available", core.ExecutionNotStarted), nil
 	}
 	args := wire.Arguments
@@ -688,20 +727,20 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 	}
 	if len(binding.Def.InputSchema) > 0 {
 		if err := catalog.ValidateSchemaDocument(string(binding.Def.InputSchema)); err != nil {
-			t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "unsupported_schema")
+			t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, "call_tool", "unsupported_schema")
 			return errorResult(codeUnsupportedSchema, "the stored input schema cannot be applied", core.ExecutionNotStarted), nil
 		}
 		if err := catalog.ValidateSchema(string(binding.Def.InputSchema), string(args)); err != nil {
 			// The validator's own text may quote submitted values, so the
 			// rejection is answered with a fixed, payload-free message.
-			t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "invalid_arguments")
+			t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, "call_tool", "invalid_arguments")
 			return errorResult(search.CodeInvalidArguments, "arguments do not satisfy the tool's stored input schema", core.ExecutionNotStarted), nil
 		}
 	}
 
 	lease, ok := assembly.Acquire(binding.ServerID)
 	if !ok {
-		t.logToolAdmissionFailure(ctx, requestID, operationID, corrState, start, "backend_busy")
+		t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, "call_tool", "backend_busy")
 		return errorResult(codeBackendUnavailable, "the server of this tool is draining", core.ExecutionNotStarted), nil
 	}
 	defer lease.Release()
@@ -805,13 +844,10 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 	}
 
 	payload := map[string]any{
-		"server":           envelope.Server,
-		"catalog_revision": envelope.CatalogRevision,
-		"catalog_status":   health.Status,
-		"availability":     health.Availability,
-		"tool_name":        wire.ToolName,
-		"request_id":       newRequestID(),
-		"upstream_result":  rawValue(envelope.UpstreamResult),
+		"server":          envelope.Server,
+		"tool_name":       wire.ToolName,
+		"request_id":      newRequestID(),
+		"upstream_result": rawValue(envelope.UpstreamResult),
 	}
 	fCount, fText, fStructured := summarizeShape(upstream.Content, payload)
 	if t.logger != nil {
@@ -889,37 +925,43 @@ func decodeUpstreamResult(raw json.RawMessage) mcp.CallToolResult {
 	}
 	return result
 }
+// effectiveWireName returns the semantic wire name when it fits the identifier
+// contract, and the deterministic public hash otherwise.
+func effectiveWireName(serverID, rawName string) string {
+	wire := config.WireToolName(serverID, rawName)
+	valid := len(wire) <= 64 && len(serverID) > 0 && len(serverID) <= 32 && len(rawName) > 0
+	if valid {
+		valid = serverID[0] >= 'a' && serverID[0] <= 'z'
+	}
+	for i := 1; valid && i < len(serverID); i++ {
+		char := serverID[i]
+		valid = char >= 'a' && char <= 'z' || char >= '0' && char <= '9' || char == '-'
+	}
+	for i := 0; valid && i < len(rawName); i++ {
+		char := rawName[i]
+		valid = char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z' ||
+			char >= '0' && char <= '9' || char == '_' || char == '-'
+	}
+	if !valid {
+		return core.PublicName(serverID, rawName)
+	}
+	return wire
+}
+
 
 // searchPayload renders one search response with the §4.4 field names.
 func searchPayload(response search.Response) map[string]any {
 	results := make([]map[string]any, 0, len(response.Results))
 	for _, result := range response.Results {
-		toolName := result.ToolName
-		if result.Pinned {
-			toolName = config.WireToolName(result.Server, result.UpstreamName)
-		}
+		toolName := effectiveWireName(result.Server, result.UpstreamName)
 		results = append(results, map[string]any{
-			"tool_name":        toolName,
-			"server":           result.Server,
-			"upstream_name":    result.UpstreamName,
-			"description":      result.Description,
-			"score":            result.Score,
-			"catalog_revision": result.CatalogRevision,
-			"catalog_status":   result.CatalogStatus,
-			"availability":     result.Availability,
-			"last_success_at":  timestamp(result.LastSuccessAt),
-			"pinned":           result.Pinned,
-		})
-	}
-	backends := make([]map[string]any, 0, len(response.Backends))
-	for _, backend := range response.Backends {
-		backends = append(backends, map[string]any{
-			"server":          backend.Server,
-			"status":          backend.Status,
-			"availability":    backend.Availability,
-			"reason":          backend.Reason,
-			"revision":        backend.Revision,
-			"last_success_at": timestamp(backend.LastSuccessAt),
+			"tool_name":     toolName,
+			"server":        result.Server,
+			"upstream_name": result.UpstreamName,
+			"description":   result.Description,
+			"score":         result.Score,
+			"pinned":        result.Pinned,
+			"availability":  result.Availability,
 		})
 	}
 	reasons := make([]string, 0, len(response.DegradedReasons))
@@ -929,7 +971,6 @@ func searchPayload(response search.Response) map[string]any {
 		"mode":             response.Mode,
 		"degraded_reasons": reasons,
 		"results":          results,
-		"backends":         backends,
 	}
 }
 

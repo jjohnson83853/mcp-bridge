@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/json"
@@ -19,6 +20,7 @@ import (
 	"github.com/jjohnson83853/mcp-bridge/internal/catalog"
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/search"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
@@ -86,14 +88,11 @@ type toolHarness struct {
 	serverInit *mcp.Implementation
 }
 
-func newToolHarness(t *testing.T, cfg *config.Config, surfaceCfg service.ToolSurfaceConfig) *toolHarness {
+
+func newToolHarnessWithDefinitions(t *testing.T, cfg *config.Config, surfaceCfg service.ToolSurfaceConfig, defs []core.ToolDefinition) *toolHarness {
 	t.Helper()
 	upstream := &recordingClient{}
 	runtime := service.NewRuntime()
-	defs := []core.ToolDefinition{
-		{RawName: "read", Description: "read one row", InputSchema: json.RawMessage(toolReadSchema)},
-		{RawName: "write", Description: "write one row", InputSchema: json.RawMessage(toolUnsupportedSchema)},
-	}
 	assembly, err := runtime.Reload(cfg, service.ReloadDeps{
 		Discover: func(config.Server) ([]core.ToolDefinition, error) { return defs, nil },
 		NewClient: func(config.Server) (core.Upstream, error) {
@@ -109,6 +108,16 @@ func newToolHarness(t *testing.T, cfg *config.Config, surfaceCfg service.ToolSur
 
 	return startToolHarness(t, runtime, assembly, upstream, surfaceCfg)
 }
+
+func newToolHarness(t *testing.T, cfg *config.Config, surfaceCfg service.ToolSurfaceConfig) *toolHarness {
+	t.Helper()
+	defs := []core.ToolDefinition{
+		{RawName: "read", Description: "read one row", InputSchema: json.RawMessage(toolReadSchema)},
+		{RawName: "write", Description: "write one row", InputSchema: json.RawMessage(toolUnsupportedSchema)},
+	}
+	return newToolHarnessWithDefinitions(t, cfg, surfaceCfg, defs)
+}
+
 
 // newAdmittedToolHarness is the cold-start sibling of newToolHarness: the
 // runtime admits the given durable snapshot instead of discovering upstreams,
@@ -165,7 +174,7 @@ func startToolHarness(t *testing.T, runtime *service.Runtime, assembly *service.
 	inbound := service.NewInboundHandler(
 		service.NewStreamableHandler(server),
 		[][32]byte{sha256.Sum256([]byte(token))},
-		service.InboundOptions{ToolSurface: surface},
+		service.InboundOptions{Logger: surfaceCfg.Logger, ToolSurface: surface},
 	)
 	httpServer := httptest.NewServer(inbound)
 	t.Cleanup(httpServer.Close)
@@ -246,6 +255,219 @@ func canonical(t *testing.T, value any) string {
 	}
 	return string(raw)
 }
+type syncBuffer struct {
+	mu     sync.Mutex
+	buffer bytes.Buffer
+}
+
+func (b *syncBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buffer.Write(p)
+}
+
+func (b *syncBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buffer.String()
+}
+
+func (b *syncBuffer) Reset() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.buffer.Reset()
+}
+
+func decodeToolLogRecords(t *testing.T, output string) []map[string]any {
+	t.Helper()
+	if strings.TrimSpace(output) == "" {
+		return nil
+	}
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	records := make([]map[string]any, 0, len(lines))
+	for _, line := range lines {
+		var record map[string]any
+		if err := json.Unmarshal([]byte(line), &record); err != nil {
+			t.Fatalf("decode tool log record: %v", err)
+		}
+		records = append(records, record)
+	}
+	return records
+}
+
+func assertToolOperationLogs(t *testing.T, logs *syncBuffer, operation, outcome, reason, upstreamState string, admission bool) {
+	t.Helper()
+	var rawLogs string
+	waitFor(t, "request-correlated http_complete", func() bool {
+		rawLogs = logs.String()
+		requestID := ""
+		for _, record := range decodeToolLogRecords(t, rawLogs) {
+			if record["event"] == "mcp_complete" {
+				requestID, _ = record["request_id"].(string)
+			}
+			if record["event"] == "http_complete" && requestID != "" && record["request_id"] == requestID {
+				return true
+			}
+		}
+		return false
+	})
+	var completions, httpCompletions []map[string]any
+	for _, record := range decodeToolLogRecords(t, rawLogs) {
+		switch record["event"] {
+		case "mcp_complete":
+			completions = append(completions, record)
+		case "http_complete":
+			httpCompletions = append(httpCompletions, record)
+		}
+	}
+	if len(completions) != 1 {
+		t.Fatalf("mcp_complete records = %d; want exactly one: %s", len(completions), rawLogs)
+	}
+	completion := completions[0]
+	for key, want := range map[string]any{"operation": operation, "outcome": outcome, "reason": reason} {
+		if completion[key] != want {
+			t.Errorf("mcp_complete %s = %v; want %v", key, completion[key], want)
+		}
+	}
+	if admission && completion["stage"] != "tool_admission" {
+		t.Errorf("mcp_complete stage = %v; want tool_admission", completion["stage"])
+	}
+	requestID, ok := completion["request_id"].(string)
+	if !ok || len(requestID) != 32 {
+		t.Fatalf("mcp_complete request_id = %v; want the 32-character server-owned request ID", completion["request_id"])
+	}
+	matchingHTTP := 0
+	for _, record := range httpCompletions {
+		if record["request_id"] != requestID {
+			continue
+		}
+		matchingHTTP++
+		if record["upstream_state"] != upstreamState {
+			t.Errorf("http_complete upstream_state = %v; want %q", record["upstream_state"], upstreamState)
+		}
+	}
+	if matchingHTTP != 1 {
+		t.Errorf("http_complete records joined to request %q = %d; want exactly one: %s", requestID, matchingHTTP, rawLogs)
+	}
+}
+
+func TestToolSurfaceDescribeCatalogRevisionAdmission(t *testing.T) {
+	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")
+	t.Setenv("TOOLS_CLIENT_TOKEN", "client-token")
+	var logs syncBuffer
+	h := newToolHarness(t, parseReloadConfig(t, toolSurfaceConfig), service.ToolSurfaceConfig{
+		Model:  search.ModelIdentity{Provider: "openai", Model: "embed-1", Dimensions: 4, FormatVersion: "v1"},
+		Logger: observe.NewLogger(&logs),
+	})
+	currentRevision := h.assembly.CatalogRevision()
+	cases := []struct {
+		name            string
+		revision        string
+		includeRevision bool
+		wantCode        string
+		wantReason      string
+	}{
+		{name: "omitted", wantReason: "none"},
+		{name: "empty", includeRevision: true, revision: "", wantReason: "none"},
+		{name: "matching", includeRevision: true, revision: currentRevision, wantReason: "none"},
+		{name: "stale", includeRevision: true, revision: strings.Repeat("b", 64), wantCode: "catalog_changed", wantReason: "catalog_changed"},
+		{name: "malformed", includeRevision: true, revision: "not-hex", wantCode: "invalid_arguments", wantReason: "invalid_arguments"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			args := map[string]any{"tool_name": h.readName}
+			if tc.includeRevision {
+				args["catalog_revision"] = tc.revision
+			}
+			logs.Reset()
+			result := h.call(t, catalog.ToolDescribeTool, args)
+			if tc.wantCode == "" {
+				if result.IsError {
+					t.Fatalf("describe_tool rejected %s revision: %s", tc.name, canonical(t, structured(t, result)))
+				}
+				if got := structured(t, result)["catalog_revision"]; got != currentRevision {
+					t.Fatalf("describe revision = %v; want current revision %s", got, currentRevision)
+				}
+				assertToolOperationLogs(t, &logs, "describe_tool", "success", "none", "not_attempted", false)
+				return
+			}
+			if !result.IsError {
+				t.Fatalf("describe_tool accepted %s revision", tc.name)
+			}
+			if got := structured(t, result)["code"]; got != tc.wantCode {
+				t.Fatalf("describe code = %v; want %q", got, tc.wantCode)
+			}
+			assertToolOperationLogs(t, &logs, "describe_tool", "error", tc.wantReason, "not_attempted", true)
+		})
+	}
+	if calls := h.upstream.recorded(); len(calls) != 0 {
+		t.Fatalf("describe_tool dispatched upstream calls: %+v", calls)
+	}
+}
+
+func TestToolSurfaceCallCatalogRevisionAdmission(t *testing.T) {
+	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")
+	t.Setenv("TOOLS_CLIENT_TOKEN", "client-token")
+	var logs syncBuffer
+	h := newToolHarness(t, parseReloadConfig(t, toolSurfaceConfig), service.ToolSurfaceConfig{
+		Model:  search.ModelIdentity{Provider: "openai", Model: "embed-1", Dimensions: 4, FormatVersion: "v1"},
+		Logger: observe.NewLogger(&logs),
+	})
+	currentRevision := h.assembly.CatalogRevision()
+	cases := []struct {
+		name            string
+		revision        string
+		includeRevision bool
+		wantCode        string
+		wantReason      string
+	}{
+		{name: "omitted", wantReason: "none"},
+		{name: "empty", includeRevision: true, revision: "", wantReason: "none"},
+		{name: "matching", includeRevision: true, revision: currentRevision, wantReason: "none"},
+		{name: "stale", includeRevision: true, revision: strings.Repeat("b", 64), wantCode: "catalog_changed", wantReason: "catalog_changed"},
+		{name: "malformed", includeRevision: true, revision: "not-hex", wantCode: "invalid_arguments", wantReason: "invalid_arguments"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			args := map[string]any{
+				"tool_name": h.readName,
+				"arguments": map[string]any{"limit": 1},
+			}
+			if tc.includeRevision {
+				args["catalog_revision"] = tc.revision
+			}
+			before := len(h.upstream.recorded())
+			logs.Reset()
+			result := h.call(t, catalog.ToolCallTool, args)
+			if tc.wantCode == "" {
+				if result.IsError {
+					t.Fatalf("call_tool rejected %s revision: %s", tc.name, canonical(t, structured(t, result)))
+				}
+				for _, key := range []string{"catalog_revision", "catalog_status", "availability"} {
+					if _, ok := structured(t, result)[key]; ok {
+						t.Fatalf("call_tool payload unexpectedly contains pruned field %q: %v", key, structured(t, result))
+					}
+				}
+				if calls := len(h.upstream.recorded()); calls != before+1 {
+					t.Fatalf("upstream calls = %d; want %d", calls, before+1)
+				}
+				assertToolOperationLogs(t, &logs, "call_tool", "success", "none", "succeeded", false)
+				return
+			}
+			if !result.IsError {
+				t.Fatalf("call_tool accepted %s revision", tc.name)
+			}
+			if got := structured(t, result)["code"]; got != tc.wantCode {
+				t.Fatalf("call code = %v; want %q", got, tc.wantCode)
+			}
+			if calls := len(h.upstream.recorded()); calls != before {
+				t.Fatalf("rejected call dispatched upstream: got %d calls, want %d", calls, before)
+			}
+			assertToolOperationLogs(t, &logs, "call_tool", "error", tc.wantReason, "not_attempted", true)
+		})
+	}
+}
+
 
 // The bridge advertises its three built-ins with the exact schemas, plus its configured
 // pin (PR-R7/PR-AC1).
@@ -317,14 +539,21 @@ func TestToolSurfaceCallToolReturnsProvenanceEnvelope(t *testing.T) {
 	}
 	payload := structured(t, result)
 
-	if payload["server"] != "alpha" || payload["catalog_revision"] != h.assembly.CatalogRevision() {
-		t.Fatalf("envelope provenance = %v; want server alpha at the current revision", payload)
+	for _, key := range []string{"server", "tool_name", "request_id", "upstream_result"} {
+		if _, ok := payload[key]; !ok {
+			t.Fatalf("envelope is missing required field %q: %v", key, payload)
+		}
+	}
+	for _, key := range []string{"catalog_revision", "catalog_status", "availability"} {
+		if _, ok := payload[key]; ok {
+			t.Fatalf("envelope unexpectedly contains pruned field %q: %v", key, payload)
+		}
+	}
+	if payload["server"] != "alpha" {
+		t.Fatalf("envelope server = %v; want alpha", payload["server"])
 	}
 	if payload["tool_name"] != h.readName {
 		t.Fatalf("envelope tool_name = %v; want %q", payload["tool_name"], h.readName)
-	}
-	if payload["catalog_status"] == nil || payload["availability"] == nil {
-		t.Fatalf("envelope is missing catalog_status/availability: %v", payload)
 	}
 	requestID, _ := payload["request_id"].(string)
 	if requestID == "" {
@@ -434,9 +663,26 @@ func TestToolSurfaceCallToolRejectsBeforeAnyExecution(t *testing.T) {
 func TestToolSurfaceDescribeToolServesExactStoredSchema(t *testing.T) {
 	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")
 	t.Setenv("TOOLS_CLIENT_TOKEN", "client-token")
-	h := newToolHarness(t, parseReloadConfig(t, toolSurfaceConfig), service.ToolSurfaceConfig{
+	const outputSchema = `{"type":"object","properties":{"rows":{"type":"integer"}}}`
+	definitions := []core.ToolDefinition{
+		{
+			RawName:      "read",
+			Description:  "read one row",
+			InputSchema:  json.RawMessage(toolReadSchema),
+			OutputSchema: json.RawMessage(outputSchema),
+			Metadata: core.ToolMetadata{
+				Title:       "read one row",
+				Annotations: json.RawMessage(`{"readOnlyHint":true}`),
+				Meta:        json.RawMessage(`{"source":"test"}`),
+			},
+		},
+		{RawName: "write", Description: "write one row", InputSchema: json.RawMessage(toolUnsupportedSchema)},
+	}
+	metadataConfig := strings.Replace(toolSurfaceConfig, "    endpoint: https://alpha.invalid/mcp\n",
+		"    endpoint: https://alpha.invalid/mcp\n    tool_metadata:\n      defaults:\n        title: effective read\n", 1)
+	h := newToolHarnessWithDefinitions(t, parseReloadConfig(t, metadataConfig), service.ToolSurfaceConfig{
 		Model: search.ModelIdentity{Provider: "openai", Model: "embed-1", Dimensions: 4, FormatVersion: "v1"},
-	})
+	}, definitions)
 
 	result := h.call(t, catalog.ToolDescribeTool, map[string]any{
 		"tool_name":        h.readName,
@@ -446,6 +692,16 @@ func TestToolSurfaceDescribeToolServesExactStoredSchema(t *testing.T) {
 		t.Fatalf("describe_tool reported an error: %s", canonical(t, structured(t, result)))
 	}
 	payload := structured(t, result)
+	for _, key := range []string{"server", "catalog_revision", "tool_name", "upstream_name", "description", "pinned", "availability", "validation_status", "input_schema"} {
+		if _, ok := payload[key]; !ok {
+			t.Fatalf("describe payload is missing required field %q: %v", key, payload)
+		}
+	}
+	for _, key := range []string{"last_success_at", "catalog_status"} {
+		if _, ok := payload[key]; ok {
+			t.Fatalf("describe payload unexpectedly contains pruned field %q: %v", key, payload)
+		}
+	}
 	if payload["server"] != "alpha" || payload["upstream_name"] != "read" {
 		t.Fatalf("describe provenance = %v; want alpha/read", payload)
 	}
@@ -460,6 +716,20 @@ func TestToolSurfaceDescribeToolServesExactStoredSchema(t *testing.T) {
 	}
 	if payload["pinned"] != true {
 		t.Fatalf("pinned = %v; want true for the configured pin", payload["pinned"])
+	}
+	if got := canonical(t, payload["output_schema"]); got != canonical(t, json.RawMessage(outputSchema)) {
+		t.Fatalf("output_schema = %s; want the stored exact schema", got)
+	}
+	upstreamMetadata, ok := payload["upstream_metadata"].(map[string]any)
+	if !ok || upstreamMetadata["title"] != "read one row" {
+		t.Fatalf("upstream_metadata = %#v; want the source metadata", payload["upstream_metadata"])
+	}
+	effectiveMetadata, ok := payload["metadata"].(map[string]any)
+	if !ok || effectiveMetadata["title"] != "effective read" {
+		t.Fatalf("metadata = %#v; want the effective pin metadata", payload["metadata"])
+	}
+	if _, ok := payload["metadata_override_fields"]; !ok {
+		t.Fatalf("describe payload omitted metadata_override_fields: %v", payload)
 	}
 
 	unsupported := structured(t, h.call(t, catalog.ToolDescribeTool, map[string]any{
@@ -531,23 +801,40 @@ func TestToolSurfaceSearchToolsReturnsRankedProvenance(t *testing.T) {
 		t.Fatalf("results = %v; want both matching tools", payload["results"])
 	}
 	match, _ := results[0].(map[string]any)
-	// Pinned tools render by wire name (config.WireToolName): "alpha__read".
-	// The unpinned long tail keeps the opaque hash name.
+	// Search results use semantic wire names for both pinned and discovered tools.
 	if match["tool_name"] != "alpha__read" || match["server"] != "alpha" || match["upstream_name"] != "read" {
 		t.Fatalf("first result provenance = %v; want the read tool first under its wire name", match)
 	}
 	if match["pinned"] != true {
 		t.Fatalf("result pinned = %v; want true", match["pinned"])
 	}
-	if match["catalog_revision"] != h.assembly.CatalogRevision() {
-		t.Fatalf("result revision = %v; want the published revision", match["catalog_revision"])
+	for _, key := range []string{"catalog_revision", "mode", "degraded_reasons", "results"} {
+		if _, ok := payload[key]; !ok {
+			t.Fatalf("search payload is missing required field %q: %v", key, payload)
+		}
 	}
-	if second, _ := results[1].(map[string]any); second["upstream_name"] != "write" {
-		t.Fatalf("second result = %v; want the write tool after the better match", second)
+	if _, ok := payload["backends"]; ok {
+		t.Fatalf("search payload unexpectedly contains backends: %v", payload["backends"])
 	}
-	backends, ok := payload["backends"].([]any)
-	if !ok || len(backends) != 1 {
-		t.Fatalf("backends = %v; want the one configured server", payload["backends"])
+	for _, result := range results {
+		row, ok := result.(map[string]any)
+		if !ok {
+			t.Fatalf("search result = %T; want an object", result)
+		}
+		for _, key := range []string{"tool_name", "server", "upstream_name", "description", "score", "pinned", "availability"} {
+			if _, ok := row[key]; !ok {
+				t.Fatalf("search result is missing required field %q: %v", key, row)
+			}
+		}
+		for _, key := range []string{"last_success_at", "catalog_status", "catalog_revision"} {
+			if _, ok := row[key]; ok {
+				t.Fatalf("search result unexpectedly contains pruned field %q: %v", key, row)
+			}
+		}
+		availability, ok := row["availability"].(string)
+		if !ok || (availability != "available" && availability != "unavailable") {
+			t.Fatalf("search result availability = %v; want available or unavailable", row["availability"])
+		}
 	}
 
 	filtered := h.call(t, catalog.ToolSearchTools, map[string]any{"query": "read row", "servers": []string{"gamma"}})
@@ -558,6 +845,51 @@ func TestToolSurfaceSearchToolsReturnsRankedProvenance(t *testing.T) {
 		t.Fatalf("filter rejection code = %v; want %q", code, search.CodeInvalidFilter)
 	}
 }
+func TestToolSurfaceSearchToolsUsesWireBoundaryAndFallbackNames(t *testing.T) {
+	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")
+	t.Setenv("TOOLS_CLIENT_TOKEN", "client-token")
+	longRawName := strings.Repeat("x", 64)
+	boundaryRawName := strings.Repeat("x", 57)
+	definitions := []core.ToolDefinition{
+		{RawName: "read", Description: "read one row", InputSchema: json.RawMessage(toolReadSchema)},
+		{RawName: "read.v2", Description: "candidate invalid", InputSchema: json.RawMessage(toolReadSchema)},
+		{RawName: longRawName, Description: "candidate long", InputSchema: json.RawMessage(toolReadSchema)},
+		{RawName: boundaryRawName, Description: "candidate boundary", InputSchema: json.RawMessage(toolReadSchema)},
+	}
+	h := newToolHarnessWithDefinitions(t, parseReloadConfig(t, toolSurfaceConfig), service.ToolSurfaceConfig{
+		Model: search.ModelIdentity{Provider: "openai", Model: "embed-1", Dimensions: 4, FormatVersion: "v1"},
+	}, definitions)
+
+	result := h.call(t, catalog.ToolSearchTools, map[string]any{"query": "candidate"})
+	if result.IsError {
+		t.Fatalf("search_tools reported an error: %s", canonical(t, structured(t, result)))
+	}
+	results, ok := structured(t, result)["results"].([]any)
+	if !ok || len(results) != 3 {
+		t.Fatalf("search results = %v; want the invalid, long, and boundary tools", structured(t, result)["results"])
+	}
+	expected := map[string]string{
+		"read.v2":        core.PublicName("alpha", "read.v2"),
+		longRawName:      core.PublicName("alpha", longRawName),
+		boundaryRawName: "alpha__" + boundaryRawName,
+	}
+	for _, item := range results {
+		entry, ok := item.(map[string]any)
+		if !ok {
+			t.Fatalf("search result = %T; want an object", item)
+		}
+		rawName, _ := entry["upstream_name"].(string)
+		want, found := expected[rawName]
+		if !found || entry["tool_name"] != want {
+			t.Errorf("search result for %q has tool_name %v; want fallback %q", rawName, entry["tool_name"], want)
+		}
+		delete(expected, rawName)
+	}
+	if len(expected) != 0 {
+		t.Errorf("search omitted fallback targets: %v", expected)
+	}
+}
+
 
 // The advertised tool list remains stable across reload, with one of each built-in
 // plus its configured pin.

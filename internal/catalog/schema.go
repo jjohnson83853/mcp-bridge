@@ -14,9 +14,10 @@ const Draft202012 = "https://json-schema.org/draft/2020-12/schema"
 
 // Exact §4.4 patterns for the bridge's own parameter values.
 const (
-	PublicToolNamePattern  = `^(t_[a-z2-7]{52}|[a-z][a-z0-9-]{0,31}__[a-zA-Z0-9_-]{1,94})$`
-	CatalogRevisionPattern = "^[a-f0-9]{64}$"
-	ServerIDPattern        = "^[a-z][a-z0-9-]{0,31}$"
+	PublicToolNamePattern           = `^(t_[a-z2-7]{52}|[a-z][a-z0-9-]{0,31}__[a-zA-Z0-9_-]{1,94})$`
+	CatalogRevisionPattern          = "^[a-f0-9]{64}$"
+	ToolInputCatalogRevisionPattern = "^$|^[a-f0-9]{64}$"
+	ServerIDPattern                 = "^[a-z][a-z0-9-]{0,31}$"
 )
 
 // Bounds fixed by r8 §4.2/§4.4 for the bridge's own parameters.
@@ -61,10 +62,10 @@ func DescribeToolInputSchema() map[string]any {
 	return map[string]any{
 		"type":                 "object",
 		"additionalProperties": false,
-		"required":             []any{"tool_name", "catalog_revision"},
+		"required":             []any{"tool_name"},
 		"properties": map[string]any{
 			"tool_name":        map[string]any{"type": "string", "pattern": PublicToolNamePattern},
-			"catalog_revision": map[string]any{"type": "string", "pattern": CatalogRevisionPattern},
+			"catalog_revision": map[string]any{"type": "string", "pattern": ToolInputCatalogRevisionPattern},
 		},
 	}
 }
@@ -74,10 +75,10 @@ func CallToolInputSchema() map[string]any {
 	return map[string]any{
 		"type":                 "object",
 		"additionalProperties": false,
-		"required":             []any{"tool_name", "catalog_revision", "arguments"},
+		"required":             []any{"tool_name", "arguments"},
 		"properties": map[string]any{
 			"tool_name":        map[string]any{"type": "string", "pattern": PublicToolNamePattern},
-			"catalog_revision": map[string]any{"type": "string", "pattern": CatalogRevisionPattern},
+			"catalog_revision": map[string]any{"type": "string", "pattern": ToolInputCatalogRevisionPattern},
 			"arguments": map[string]any{
 				"type":                 "object",
 				"additionalProperties": true,

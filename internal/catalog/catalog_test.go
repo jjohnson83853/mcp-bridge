@@ -69,31 +69,59 @@ func TestSearchToolsSchemaMatchesContract(t *testing.T) {
 }
 
 func TestDescribeToolSchemaMatchesContract(t *testing.T) {
-	properties := assertSchema(t, "describe_tool", catalog.DescribeToolInputSchema(), "tool_name", "catalog_revision")
+	properties := assertSchema(t, "describe_tool", catalog.DescribeToolInputSchema(), "tool_name")
 
 	toolName := properties["tool_name"].(map[string]any)
 	if toolName["pattern"] != catalog.PublicToolNamePattern {
 		t.Fatalf("describe_tool tool_name pattern = %v; want %s", toolName["pattern"], catalog.PublicToolNamePattern)
 	}
 	revision := properties["catalog_revision"].(map[string]any)
-	if revision["pattern"] != catalog.CatalogRevisionPattern {
-		t.Fatalf("describe_tool catalog_revision pattern = %v; want %s", revision["pattern"], catalog.CatalogRevisionPattern)
+	if revision["pattern"] != catalog.ToolInputCatalogRevisionPattern {
+		t.Fatalf("describe_tool catalog_revision pattern = %v; want %s", revision["pattern"], catalog.ToolInputCatalogRevisionPattern)
 	}
 }
 
 func TestCallToolSchemaMatchesContract(t *testing.T) {
-	properties := assertSchema(t, "call_tool", catalog.CallToolInputSchema(), "tool_name", "catalog_revision", "arguments")
+	properties := assertSchema(t, "call_tool", catalog.CallToolInputSchema(), "tool_name", "arguments")
 
 	if properties["tool_name"].(map[string]any)["pattern"] != catalog.PublicToolNamePattern {
 		t.Fatalf("call_tool tool_name pattern = %v", properties["tool_name"])
 	}
-	if properties["catalog_revision"].(map[string]any)["pattern"] != catalog.CatalogRevisionPattern {
-		t.Fatalf("call_tool catalog_revision pattern = %v", properties["catalog_revision"])
+	if properties["catalog_revision"].(map[string]any)["pattern"] != catalog.ToolInputCatalogRevisionPattern {
+		t.Fatalf("call_tool catalog_revision pattern = %v; want %s", properties["catalog_revision"], catalog.ToolInputCatalogRevisionPattern)
 	}
 	arguments := properties["arguments"].(map[string]any)
 	if arguments["type"] != "object" || arguments["additionalProperties"] != true ||
 		arguments["description"] == "" {
 		t.Fatalf("call_tool arguments = %v; want extensible described object", arguments)
+	}
+}
+func TestCatalogRevisionPatterns(t *testing.T) {
+	strictPattern := regexp.MustCompile(catalog.CatalogRevisionPattern)
+	toolInputPattern := regexp.MustCompile(catalog.ToolInputCatalogRevisionPattern)
+	digest := strings.Repeat("a", 64)
+
+	if !strictPattern.MatchString(digest) {
+		t.Errorf("expected %q to match CatalogRevisionPattern", digest)
+	}
+	if strictPattern.MatchString("") {
+		t.Error("expected empty string to be rejected by CatalogRevisionPattern")
+	}
+	for _, input := range []string{"not-hex", "1234", strings.Repeat("A", 64)} {
+		if strictPattern.MatchString(input) {
+			t.Errorf("expected %q to be rejected by CatalogRevisionPattern", input)
+		}
+	}
+
+	for _, input := range []string{"", digest} {
+		if !toolInputPattern.MatchString(input) {
+			t.Errorf("expected %q to match ToolInputCatalogRevisionPattern", input)
+		}
+	}
+	for _, input := range []string{"not-hex", "1234", strings.Repeat("A", 64)} {
+		if toolInputPattern.MatchString(input) {
+			t.Errorf("expected %q to be rejected by ToolInputCatalogRevisionPattern", input)
+		}
 	}
 }
 

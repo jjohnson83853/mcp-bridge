@@ -678,7 +678,7 @@ func TestProgressiveMetadataUnionReferences(t *testing.T) {
 		t.Errorf("generic call to departed catalog target alpha__old = (%#v, %v); want an MCP tool error", departed, err)
 	}
 
-	dynamicName := core.PublicName("alpha", "new")
+	dynamicName := "alpha__new"
 	callNamed := func(stage, name string) {
 		t.Helper()
 		result, err := progressiveCallTool(t, client, runtime.Current().CatalogRevision(), name, json.RawMessage(`{}`))
@@ -735,9 +735,6 @@ func TestProgressiveMetadataUnionReferences(t *testing.T) {
 	if tool := dynamicListed[dynamicName]; tool == nil || tool.Title != "new pin descriptor" {
 		t.Errorf("tools/list after pin-to-dynamic rebase %s = %#v; want retained descriptor", dynamicName, tool)
 	}
-	if dynamicListed["alpha__new"] != nil {
-		t.Errorf("tools/list after pin-to-dynamic rebase retained canonical alias alpha__new: %#v", dynamicListed["alpha__new"])
-	}
 	if dynamicListed["alpha__old"] != nil {
 		t.Errorf("tools/list after dynamic rebase retained departed alpha__old: %#v", dynamicListed["alpha__old"])
 	}
@@ -770,9 +767,6 @@ func TestProgressiveMetadataUnionReferences(t *testing.T) {
 	}
 	if tool := repinnedListed["alpha__new"]; tool == nil || tool.Title != "new pin descriptor" {
 		t.Errorf("tools/list after dynamic-to-pin rebase alpha__new = %#v; want the pinned descriptor", tool)
-	}
-	if repinnedListed[dynamicName] != nil {
-		t.Errorf("tools/list after dynamic-to-pin rebase retained opaque alias %s: %#v", dynamicName, repinnedListed[dynamicName])
 	}
 	if repinnedListed["alpha__old"] != nil {
 		t.Errorf("tools/list after dynamic-to-pin rebase retained departed alpha__old: %#v", repinnedListed["alpha__old"])
@@ -1013,7 +1007,7 @@ func TestProgressiveMetadataUnpinPreservesEffectiveMetadata(t *testing.T) {
 	if err := surface.Published(unpinned); err != nil {
 		t.Fatalf("publish unpinned generation: %v", err)
 	}
-	assertEffectiveMetadata("accepted unpin", core.PublicName("alpha", "read"))
+	assertEffectiveMetadata("accepted unpin", "alpha__read")
 	if bindings := unpinned.Catalog().Bindings(); len(bindings) != 1 ||
 		bindings[0].Def.Metadata.Title != "Source title" {
 		t.Fatalf("unpin mutated source catalog metadata: %#v", bindings)
@@ -1035,7 +1029,7 @@ func TestProgressiveMetadataUnpinPreservesEffectiveMetadata(t *testing.T) {
 	if err := surface.Published(unpinnedAgain); err != nil {
 		t.Fatalf("publish second unpin: %v", err)
 	}
-	assertEffectiveMetadata("second accepted unpin", core.PublicName("alpha", "read"))
+	assertEffectiveMetadata("second accepted unpin", "alpha__read")
 }
 
 func TestProgressiveMetadataRegisteredCallRejectsUnownedSession(t *testing.T) {

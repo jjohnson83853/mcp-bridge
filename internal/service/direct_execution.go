@@ -31,12 +31,12 @@ func (e boundDirectExecution) call(ctx context.Context, args json.RawMessage) (*
 
 	if len(e.inputSchema) > 0 {
 		if err := catalog.ValidateSchemaDocument(string(e.inputSchema)); err != nil {
-			e.surface.logToolAdmissionFailure(ctx, e.requestID, e.operationID, e.correlation, e.requestStart, "invalid_arguments")
+			e.surface.logAdmissionFailure(ctx, e.requestID, e.operationID, e.correlation, e.requestStart, "call_tool", "invalid_arguments")
 			return errorResult(search.CodeInvalidArguments, "arguments do not satisfy the tool's stored input schema", core.ExecutionNotStarted), nil
 		}
 		if err := catalog.ValidateSchema(string(e.inputSchema), string(args)); err != nil {
 			// The validator's own text may quote submitted values, so use a fixed message.
-			e.surface.logToolAdmissionFailure(ctx, e.requestID, e.operationID, e.correlation, e.requestStart, "invalid_arguments")
+			e.surface.logAdmissionFailure(ctx, e.requestID, e.operationID, e.correlation, e.requestStart, "call_tool", "invalid_arguments")
 			return errorResult(search.CodeInvalidArguments, "arguments do not satisfy the tool's stored input schema", core.ExecutionNotStarted), nil
 		}
 	}

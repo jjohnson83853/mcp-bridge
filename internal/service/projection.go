@@ -325,7 +325,7 @@ func preparePinProjection(owner projectionOwner, previous *toolProjection, assem
 					}
 				}
 				specs = append(specs, projectionToolSpec{
-					name:    core.PublicName(interest.serverID, interest.rawName),
+					name:    effectiveWireName(interest.serverID, interest.rawName),
 					binding: binding,
 				})
 			}

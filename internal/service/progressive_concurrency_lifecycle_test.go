@@ -669,11 +669,8 @@ func TestProgressiveMetadataPaginationLargeDescriptorTraversal(t *testing.T) {
 		t.Fatalf("final page next cursor = %q; want empty", finalCursor)
 	}
 	expectedNames := make(map[string]struct{}, descriptorCount)
-	for index, definition := range definitions {
-		name := core.PublicName("alpha", definition.RawName)
-		if index == 0 {
-			name = config.WireToolName("alpha", definition.RawName)
-		}
+	for _, definition := range definitions {
+		name := config.WireToolName("alpha", definition.RawName)
 		expectedNames[name] = struct{}{}
 	}
 	if len(expectedNames) != descriptorCount {
