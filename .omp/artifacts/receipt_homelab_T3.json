@@ -1,0 +1,8 @@
+{
+  "task_id": "T3",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_homelab_T3.json",
+  "telemetry_ref": null,
+  "summary": "T3 payload pruning complete. RED: initial focused run found old fields. Metadata fixture corrected after a focused failure. PASS: focused tests and go test -v -count=1 ./internal/service/...; MCP tests assert retained/omitted keys.",
+  "error_code": null
+}

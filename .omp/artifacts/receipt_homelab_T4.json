@@ -1,0 +1,8 @@
+{
+  "task_id": "T4",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_homelab_T4.json",
+  "telemetry_ref": null,
+  "summary": "Correlated http_complete wait fixed. PASS: go test -v -count=1 ./internal/service -run 'TestToolSurface(Describe|Call)CatalogRevisionAdmission$'; go test -race ./...; go vet ./...; go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck (90.3%, 6305/6985).",
+  "error_code": null
+}

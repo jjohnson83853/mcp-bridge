@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "homelab-llm-ergonomics",
+  "revision": "r7",
+  "requests": [
+    {
+      "name": "ImplementT2",
+      "taskId": "T2",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/tools.go",
+          "internal/service/projection.go",
+          "internal/service/tools_test.go",
+          "internal/service/service_edge_test.go",
+          "internal/service/progressive_discovery_test.go",
+          "internal/service/progressive_session_test.go",
+          "internal/service/progressive_projection_test.go",
+          "internal/service/progressive_concurrency_lifecycle_test.go",
+          "cmd/mcp-bridge/serve_endpoint_rebind_test.go",
+          ".omp/artifacts/receipt_homelab_T2.json"
+        ]
+      }
+    }
+  ]
+}

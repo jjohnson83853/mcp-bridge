@@ -1,0 +1,25 @@
+{
+  "statePath": ".omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "homelab-llm-ergonomics",
+  "revision": "r7",
+  "requests": [
+    {
+      "name": "ImplementT1",
+      "taskId": "T1",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/catalog/schema.go",
+          "internal/catalog/catalog_test.go",
+          "internal/service/tools.go",
+          "internal/service/direct_execution.go",
+          "internal/service/tools_test.go",
+          ".omp/artifacts/receipt_homelab_T1.json"
+        ]
+      }
+    }
+  ]
+}

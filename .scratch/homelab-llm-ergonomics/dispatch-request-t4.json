@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "homelab-llm-ergonomics",
+  "revision": "r7",
+  "requests": [
+    {
+      "name": "ImplementT4",
+      "taskId": "T4",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/catalog/schema.go",
+          "internal/catalog/catalog_test.go",
+          "internal/service/tools_test.go",
+          "cmd/mcp-bridge/serve_test.go",
+          "cmd/mcp-bridge/serve_oauth_test.go",
+          "cmd/mcp-bridge/serve_hybrid_coexistence_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_defaults_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_exceptions_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_source_test.go",
+          "cmd/mcp-bridge/serve_upstream_restart_test.go",
+          "README.md",
+          "coverage.out",
+          ".omp/artifacts/receipt_homelab_T4.json"
+        ]
+      }
+    }
+  ]
+}

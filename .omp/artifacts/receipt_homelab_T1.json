@@ -1,0 +1,8 @@
+{
+  "task_id": "T1",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_homelab_T1.json",
+  "telemetry_ref": null,
+  "summary": "RED: catalog required/pattern and service omitted/malformed admission assertions failed. GREEN: go test -v -count=1 ./internal/catalog/... (1 packages ok); go test -v -count=1 ./internal/service/... -run 'TestToolSurface(Describe|Call)' (1 packages ok). T1 complete.",
+  "error_code": null
+}

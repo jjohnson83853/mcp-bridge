@@ -1,0 +1,8 @@
+{
+  "task_id": "T2",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_homelab_T2.json",
+  "telemetry_ref": null,
+  "summary": "Updated dynamic discovery test inputs to semantic alpha__new names and corrected stale revision fixture to 64-hex. PASS: go test -v -count=1 ./internal/service/...; PASS: go test -v -count=1 ./cmd/mcp-bridge -run 'TestBridgeRebindsServerEndpointOnRestartAndReload'. RED not observed: wire-name implementation was already present at first inspection.",
+  "error_code": null
+}
