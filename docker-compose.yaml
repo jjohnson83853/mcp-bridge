@@ -34,6 +34,19 @@ services:
     stop_grace_period: 20s
     command: ["--config", "/app/configs/config.mcp-grafana-stack.yaml"]
     environment:
+      # --- Runtime Behavior & Protocol Flags ---
+      # Stateless MCP mode: "false" for session-aware streamable HTTP, "true" for stateless mode.
+      MCP_STATELESS: "${MCP_STATELESS:-false}"
+      # Session-bound admission: admits valid Mcp-Session-Id requests without repeating Authorization header.
+      MCP_SESSION_ADMISSION_ENABLED: "${MCP_SESSION_ADMISSION_ENABLED:-true}"
+
+      # --- OAuth 2.0 & RFC 9728 Protected Resource Metadata ---
+      MCP_RESOURCE_URL: "${MCP_RESOURCE_URL:-https://mcp.bullprog.com/mcp}"
+      POCKET_ID_ISSUER: "${POCKET_ID_ISSUER:-https://id.bullprog.com}"
+      POCKET_ID_JWKS_URL: "${POCKET_ID_JWKS_URL:-https://id.bullprog.com/.well-known/jwks.json}"
+      MCP_REQUIRED_SCOPE: "${MCP_REQUIRED_SCOPE:-mcp:connect}"
+
+      # --- Secrets referenced by {env: NAME} in configuration documents ---
       # Every {env: NAME} reference in the mounted document must resolve to a
       # non-empty value or the bridge refuses to start (fail closed).
       BRIDGE_CLIENT_TOKEN: ${BRIDGE_CLIENT_TOKEN:?set it in ./.env}

@@ -1,3 +1,22 @@
+# Example mcp-bridge configuration
+#
+# Secrets & Environment Variables Reference:
+# - Environment variable secrets: {env: VARIABLE_NAME}
+#   * client_auth.bearer_tokens: Inbound client bearer tokens.
+#   * embedding.api_key: Upstream embedding model provider API key.
+#   * servers[].credentials.bearer: Upstream MCP server bearer token.
+#   * servers[].credentials.headers.<Header>: Custom HTTP header secret.
+# - Secret files: {file: "path/to/file"}
+#   * Paths are relative to this config file.
+#   * Must be regular, non-symlink, operator-owned files with 0400 or 0600 permissions.
+# - Runtime environment variables (honored directly by mcp-bridge):
+#   * MCP_STATELESS: "true" for stateless mode, "false" for session-aware streamable HTTP.
+#   * MCP_SESSION_ADMISSION_ENABLED: "true" to admit valid Mcp-Session-Id requests without repeating Bearer token.
+#   * MCP_RESOURCE_URL: Canonical MCP endpoint advertised in RFC 9728 metadata (e.g. "https://mcp.bullprog.com/mcp").
+#   * POCKET_ID_ISSUER: Pocket ID issuer URL (e.g. "https://id.bullprog.com").
+#   * POCKET_ID_JWKS_URL: JWKS endpoint for validating Bearer JWTs (e.g. "https://id.bullprog.com/.well-known/jwks.json").
+#   * MCP_REQUIRED_SCOPE: Optional required OAuth scope (e.g. "mcp:connect").
+
 schema_version: 1
 http:
   listen: "127.0.0.1:8080"

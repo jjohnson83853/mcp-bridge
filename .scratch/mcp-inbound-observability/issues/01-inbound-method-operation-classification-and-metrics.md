@@ -18,7 +18,8 @@ Classify inbound JSON-RPC messages and SSE stream requests into a closed finite 
   - `"prompts/list"` -> `"prompts_list"`
   - `"prompts/get"` -> `"prompts_get"`
   - Unparseable or non-standard bodies -> `"request"`
-- [ ] Inbound handler classifies incoming `GET` requests with SSE headers as `operation: "sse_stream"`.
-- [ ] Prometheus metric `RecordRequest` records the mapped `operation` value.
+- [ ] Inbound handler classifies incoming `GET` requests with SSE headers (`Accept: text/event-stream`) as `operation: "sse_stream"`.
+- [ ] In `internal/observe/metrics.go`, expand `requestOperations` allowlist to admit the expanded operation enum so `RecordRequest` increments `bridge_requests_total`.
+- [ ] Update `cmd/mcp-bridge/serve_logging_compatibility_test.go:TestCompatibilityMetrics` to allow and verify the updated operation counters (`initialize/success`, `initialized/success`).
 - [ ] Legacy diagnostic evidence (`observe.HTTPLegacyEvidence{Operation: ...}`) records the mapped `operation` value.
 - [ ] Unit tests in `internal/service/inbound_test.go` assert operation classification for each supported method and fallback cases.

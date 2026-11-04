@@ -29,6 +29,9 @@ func sessionMaximalFixture() (Entry, string) {
 		Reason:    "session_auth_failed",
 		HTTP: &HTTPDiagnostic{
 			LegacyStage:                  "session_admission",
+			Operation:                    "request",
+			ClientFamily:                 "openai",
+			HTTPBytes:                    0,
 			HTTPStatus:                   &status,
 			HTTPMethod:                   "POST",
 			Route:                        "mcp",

@@ -39,6 +39,7 @@ type httpOwnerInit struct {
 	route         string
 	pathClass     string
 	sessionHeader string
+	clientFamily  string
 }
 
 // httpDelegates caches the underlying writer's optional capabilities probed
@@ -100,6 +101,7 @@ func (o *httpOwner) init(state httpOwnerInit) {
 	o.method = state.method
 	o.route = state.route
 	o.pathClass = state.pathClass
+	o.clientFamily = state.clientFamily
 	o.sessionHeader = state.sessionHeader
 	o.writeFailure = HTTPWriteNone
 	if validHexID(state.requestID) {
@@ -131,6 +133,7 @@ type httpOwner struct {
 	route            string
 	pathClass        string
 	sessionHeader    string
+	clientFamily     string
 
 	// Response observation.
 	status         int
@@ -173,6 +176,7 @@ type httpOwner struct {
 	legacyStage        string
 	legacyReason       string
 	legacyOperation    string
+	exposedTools       *int
 }
 
 func (o *httpOwner) header() http.Header { return o.writer.Header() }

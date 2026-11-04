@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/catalog"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -50,7 +51,15 @@ func (t *ToolSurface) receivingMiddleware(next mcp.MethodHandler) mcp.MethodHand
 			if listReq != nil && listReq.Params != nil {
 				cursor = listReq.Params.Cursor
 			}
-			return t.ownerToolListPage(projection, cursor)
+			result, err := t.ownerToolListPage(projection, cursor)
+			if err == nil && result != nil {
+				requestID := ""
+				if extra := request.GetExtra(); extra != nil && extra.Header != nil {
+					requestID = extra.Header.Get("X-Mcp-Bridge-Internal-Request-Id")
+				}
+				observe.ContributeExposedTools(context.Background(), requestID, len(result.Tools))
+			}
+			return result, err
 		}
 		return next(ctx, method, request)
 	}

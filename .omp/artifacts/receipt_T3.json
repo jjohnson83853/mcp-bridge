@@ -1,8 +1,8 @@
 {
   "task_id": "T3",
   "status": "COMPLETED",
-  "artifact_receipt": "artifact://1647",
+  "artifact_receipt": "cmd/mcp-bridge/serve_oauth_test.go, coverage.out, .omp/artifacts/receipt_T3.json",
   "telemetry_ref": null,
-  "summary": "Set handshake Binding to not_evaluated for stateful and stateless evidence; go test -v ./internal/service/... passed.",
+  "summary": "Added invalid-cursor omission and valid tools/list recovery wire assertions. Focused test and full race suite passed; coverage gate passed at 90.2%.",
   "error_code": null
 }

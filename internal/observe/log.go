@@ -94,7 +94,7 @@ func (l *Logger) logLegacyEntry(entry Entry) {
 		"level":       finite(entry.Level, "info", "debug", "info", "warn", "error"),
 		"event":       finite(entry.Event, "unknown", "request", "auth", "backend_call", "search", "catalog_refresh", "breaker", "reload", "readiness", "http_complete", "mcp_complete", "backend_complete"),
 		"generation":  entry.Generation,
-		"operation":   finite(entry.Operation, "unknown", "request", "discover", "initialize", "tools_list", "tools_call", "call_tool", "search", "describe", "health", "describe_tool", "prompts_list", "prompts_get"),
+		"operation":   finite(entry.Operation, "unknown", "request", "discover", "initialize", "initialized", "tools_list", "tools_call", "call_tool", "resources_list", "resources_read", "ping", "sse_stream", "search", "describe", "health", "describe_tool", "prompts_list", "prompts_get"),
 		"duration_ms": entry.Duration.Milliseconds(),
 		"outcome":     finiteOutcome(entry.Outcome),
 		"reason":      finiteReason(entry.Reason),

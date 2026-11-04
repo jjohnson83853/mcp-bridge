@@ -52,9 +52,8 @@ const (
 	slotErrorClass
 )
 
-// numHTTPSlots is the total slot count: 59 core plus 3 optional, plus the
-// legacy outcome and canonical error fields.
-const numHTTPSlots = 64
+// numHTTPSlots is the existing 61 slots plus four appended diagnostic slots.
+const numHTTPSlots = 65
 
 // Optional slot indexes, in omission order.
 const (
@@ -81,6 +80,7 @@ var slotKeys = [numHTTPSlots]string{
 	"upstream_state", "error_detail_state", "error_detail", "operation_id",
 	"session_ref",
 	"outcome", "error",
+	"operation", "client_family", "http_bytes", "exposed_tools",
 }
 
 // httpErrorClassValues re-declared from the validation table for the
@@ -517,7 +517,29 @@ func (e *httpEncoder) build(entry Entry) bool {
 	} else if class := deliveryErrorClass(entry.Reason); class != "" {
 		e.slots[60] = httpSlotValue{present: true, kind: slotErrorClass, str: class}
 	}
-
+	// 61 operation
+	if !validOperation(diag.Operation) {
+		return false
+	}
+	e.slots[61] = httpSlotValue{present: true, str: diag.Operation}
+	// 62 client_family
+	clientFamily, ok := stringEnum(diag.ClientFamily, clientFamilyVocabulary)
+	if !ok {
+		return false
+	}
+	e.slots[62] = httpSlotValue{present: true, str: clientFamily}
+	// 63 http_bytes
+	if diag.HTTPBytes < 0 {
+		return false
+	}
+	e.slots[63] = httpSlotValue{present: true, kind: slotInt, i: diag.HTTPBytes}
+	// 64 exposed_tools: only successful tools/list counts are valid.
+	if diag.ExposedTools != nil {
+		if diag.Operation != "tools_list" || diag.HTTPOutcome != "success" || *diag.ExposedTools < 0 {
+			return false
+		}
+		e.slots[64] = httpSlotValue{present: true, kind: slotInt, i: int64(*diag.ExposedTools)}
+	}
 	core, optional := e.charges()
 	if core > httpCoreBudget || optional > httpOptionalBudget || core+optional+2 > httpRecordBudget {
 		e.dropForBudget()
@@ -528,6 +550,7 @@ func (e *httpEncoder) build(entry Entry) bool {
 	}
 	e.encode(core + optional + 2)
 	return true
+
 }
 
 // charges measures the encoded record cost: core plus optional bytes and the
@@ -551,7 +574,7 @@ func (e *httpEncoder) charges() (core, optional int) {
 			charge++ // comma before this slot, exactly as emitted
 		}
 		first = false
-		if index >= 56 && index <= 58 {
+		if (index >= 56 && index <= 58) || index == 64 {
 			optional += charge
 		} else {
 			core += charge
@@ -591,6 +614,8 @@ func (e *httpEncoder) dropForBudget() {
 	drop(56, 55, "omitted_for_budget")
 	drop(57, 26, "omitted_for_budget")
 	drop(58, 40, "omitted_for_budget")
+	// exposed_tools has no companion omission-state slot.
+	e.slots[64].present = false
 }
 
 // encode writes the validated record once into the bounded buffer. The exact

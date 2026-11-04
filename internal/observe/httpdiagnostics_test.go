@@ -2,6 +2,7 @@ package observe
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -300,6 +302,9 @@ func TestPrivacyCollisionAndBudgets(t *testing.T) {
 		Fields:    fields,
 		HTTP: &HTTPDiagnostic{
 			LegacyStage:                  "client_auth",
+			Operation:                    "request",
+			ClientFamily:                 "openai",
+			HTTPBytes:                    0,
 			HTTPStatus:                   &status,
 			HTTPMethod:                   "POST",
 			Route:                        "mcp",
@@ -394,6 +399,9 @@ func TestChargedBytesEqualEncodedRecord(t *testing.T) {
 		Reason:    "none",
 		HTTP: &HTTPDiagnostic{
 			LegacyStage:                  "client_auth",
+			Operation:                    "request",
+			ClientFamily:                 "openai",
+			HTTPBytes:                    0,
 			HTTPStatus:                   &status,
 			HTTPMethod:                   "POST",
 			Route:                        "mcp",
@@ -521,4 +529,194 @@ func TestGeneratorDeterminism(t *testing.T) {
 	if !bytes.Equal(first, checkedIn) {
 		t.Fatal("generated output does not match the checked-in file")
 	}
+}
+
+func TestClientFamilyAndExactBytes(t *testing.T) {
+	t.Run("all client families", func(t *testing.T) {
+		tests := []struct {
+			name      string
+			userAgent string
+			want      string
+		}{
+			{name: "openai", userAgent: "openai-connectors/1.0", want: "openai"},
+			{name: "claude", userAgent: "claude-client/2.0", want: "claude"},
+			{name: "anthropic", userAgent: "anthropic-sdk/1.0", want: "claude"},
+			{name: "cursor", userAgent: "cursor/0.1", want: "cursor"},
+			{name: "omp", userAgent: "omp/18.0", want: "omp"},
+			{name: "browser", userAgent: "Mozilla/5.0 Chrome/120", want: "browser"},
+			{name: "claude takes priority over browser", userAgent: "Mozilla/5.0 Claude/1.0", want: "claude"},
+			{name: "other", userAgent: "custom-agent/1.0", want: "other"},
+			{name: "whitespace is non-empty", userAgent: "   ", want: "other"},
+			{name: "empty is absent", userAgent: "", want: "absent"},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				sink := &bytes.Buffer{}
+				diag := newTestDiagnostics(sink, fixedNow(), fixedID(testID))
+				handler := diag.Wrap(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+					w.WriteHeader(http.StatusNoContent)
+				}))
+				r := httptest.NewRequest(http.MethodPost, "/mcp", nil)
+				r.Header.Set("User-Agent", tt.userAgent)
+				handler.ServeHTTP(httptest.NewRecorder(), r)
+				record := decodeTerminal(t, sink)
+				if got := record["client_family"]; got != tt.want {
+					t.Errorf("client_family for User-Agent %q = %v; want %q", tt.userAgent, got, tt.want)
+				}
+			})
+		}
+	})
+
+	t.Run("detached request ID contributes exposed tools", func(t *testing.T) {
+		sink := &bytes.Buffer{}
+		diag := newTestDiagnostics(sink, fixedNow(), fixedID(testID))
+		var requestID string
+		handler := diag.Wrap(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requestID = HTTPRequestID(r.Context())
+			ContributeLegacyEvidence(r.Context(), HTTPLegacyEvidence{Operation: "tools_list"})
+			ContributeExposedTools(context.Background(), requestID, 5)
+			w.WriteHeader(http.StatusOK)
+		}))
+		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/mcp", nil))
+		if requestID == "" {
+			t.Fatal("owned request identity is empty")
+		}
+		record := decodeTerminal(t, sink)
+		if got := record["exposed_tools"]; got != float64(5) {
+			t.Fatalf("exposed_tools = %v; want 5 from detached request-ID contribution", got)
+		}
+	})
+
+
+
+	t.Run("priority and zero-byte success", func(t *testing.T) {
+		sink := &bytes.Buffer{}
+		diag := newTestDiagnostics(sink, fixedNow(), fixedID(testID))
+		var completedRequest *http.Request
+		var completedOwner *httpOwner
+		handler := diag.Wrap(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			completedRequest = r
+			completedOwner = ownerFromContext(r.Context())
+			ContributeLegacyEvidence(r.Context(), HTTPLegacyEvidence{Operation: "tools_list"})
+			ContributeExposedTools(r.Context(), "", 0)
+			w.WriteHeader(http.StatusNoContent)
+		}))
+		r := httptest.NewRequest(http.MethodPost, "/mcp", nil)
+		r.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) Claude/1.0")
+		handler.ServeHTTP(httptest.NewRecorder(), r)
+		record := decodeTerminal(t, sink)
+		if got := record["client_family"]; got != "claude" {
+			t.Fatalf("client_family = %v; want claude", got)
+		}
+		if got := record["http_bytes"]; got != float64(0) {
+			t.Fatalf("http_bytes = %v; want 0", got)
+		}
+		if got := record["exposed_tools"]; got != float64(0) {
+			t.Fatalf("exposed_tools = %v; want 0", got)
+		}
+		if completedOwner == nil || completedOwner.exposedTools == nil || *completedOwner.exposedTools != 0 {
+			t.Fatal("successful zero-count exposure was not retained")
+		}
+		ContributeExposedTools(completedRequest.Context(), HTTPRequestID(completedRequest.Context()), 7)
+		if *completedOwner.exposedTools != 0 {
+			t.Fatalf("post-finish contribution changed exposed_tools to %d", *completedOwner.exposedTools)
+		}
+	})
+
+	t.Run("partial write records exact bytes and omits exposure", func(t *testing.T) {
+		sink := &bytes.Buffer{}
+		diag := newTestDiagnostics(sink, fixedNow(), fixedID(testID))
+		handler := diag.Wrap(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ContributeLegacyEvidence(r.Context(), HTTPLegacyEvidence{Operation: "tools_list"})
+			ContributeExposedTools(r.Context(), "", 3)
+			_, _ = w.Write([]byte("partial response"))
+		}))
+		r := httptest.NewRequest(http.MethodPost, "/mcp", nil)
+		handler.ServeHTTP(&partialHTTPWriter{}, r)
+		record := decodeTerminal(t, sink)
+		if got := record["http_bytes"]; got != float64(3) {
+			t.Fatalf("http_bytes = %v; want 3", got)
+		}
+		if got := record["http_outcome"]; got != "incomplete" {
+			t.Fatalf("http_outcome = %v; want incomplete", got)
+		}
+		if _, ok := record["exposed_tools"]; ok {
+			t.Fatal("failed delivery must omit exposed_tools")
+		}
+	})
+
+	t.Run("non-tools operation omits exposure", func(t *testing.T) {
+		sink := &bytes.Buffer{}
+		diag := newTestDiagnostics(sink, fixedNow(), fixedID(testID))
+		handler := diag.Wrap(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ContributeLegacyEvidence(r.Context(), HTTPLegacyEvidence{Operation: "ping"})
+			ContributeExposedTools(r.Context(), "", 2)
+			w.WriteHeader(http.StatusNoContent)
+		}))
+		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/mcp", nil))
+		record := decodeTerminal(t, sink)
+		if _, ok := record["exposed_tools"]; ok {
+			t.Fatal("non-tools/list operation must omit exposed_tools")
+		}
+	})
+}
+func TestConcurrentExposedToolsContributionAndFinish(t *testing.T) {
+	const iterations = 32
+	for iteration := range iterations {
+		sink := &bytes.Buffer{}
+		diag := newTestDiagnostics(sink, fixedNow(), fixedID(testID))
+		handler := diag.Wrap(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requestID := HTTPRequestID(r.Context())
+			owner := ownerFromContext(r.Context())
+			if requestID == "" || owner == nil {
+				t.Fatal("request has no diagnostic owner identity")
+			}
+			ContributeLegacyEvidence(r.Context(), HTTPLegacyEvidence{Operation: "tools_list"})
+			w.WriteHeader(http.StatusOK)
+
+			start := make(chan struct{})
+			ready := make(chan struct{}, 2)
+			var workers sync.WaitGroup
+			workers.Add(2)
+			go func() {
+				defer workers.Done()
+				ready <- struct{}{}
+				<-start
+				ContributeExposedTools(context.Background(), requestID, 5)
+			}()
+			go func() {
+				defer workers.Done()
+				ready <- struct{}{}
+				<-start
+				owner.finish()
+			}()
+			<-ready
+			<-ready
+			close(start)
+			workers.Wait()
+		}))
+		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/mcp", nil))
+		record := decodeTerminal(t, sink)
+		if got, ok := record["exposed_tools"]; ok && got != float64(5) {
+			t.Fatalf("iteration %d: exposed_tools = %v; want 5 when contribution wins", iteration, got)
+		}
+	}
+}
+
+
+type partialHTTPWriter struct {
+	header http.Header
+}
+
+func (w *partialHTTPWriter) Header() http.Header {
+	if w.header == nil {
+		w.header = make(http.Header)
+	}
+	return w.header
+}
+
+func (*partialHTTPWriter) WriteHeader(int) {}
+
+func (*partialHTTPWriter) Write([]byte) (int, error) {
+	return 3, io.ErrShortWrite
 }

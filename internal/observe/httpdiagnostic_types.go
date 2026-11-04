@@ -71,28 +71,29 @@ var (
 		"none", "route", "outer_oauth", "inner_credential", "host", "origin",
 		"session", "body_limit", "capacity", "protocol", "upstream", "unavailable",
 	}
-	httpAuthModeValues          = []string{"oauth", "static", "none", "bypass", "unavailable"}
-	httpCredentialValues        = []string{"not_evaluated", "missing", "accepted", "rejected", "unavailable"}
-	httpScopeStateValues        = []string{"not_evaluated", "not_required", "accepted", "rejected", "unavailable"}
-	httpSessionHeaderValues     = []string{"absent", "present"}
-	httpSessionStateValues      = []string{"not_evaluated", "not_supplied", "absent", "rehydrated", "existing", "created", "unavailable"}
-	httpBindingValues           = []string{"not_evaluated", "match", "mismatch", "unavailable"}
-	httpSessionRefValues        = []string{"available", "unavailable", "not_applicable", "omitted_for_budget"}
-	httpChallengeKindValues     = []string{"none", "resource_metadata", "insufficient_scope", "bearer_only", "other", "unavailable"}
-	httpChallengeTargetValues   = []string{"none", "root_well_known", "path_appended_well_known", "other", "unavailable"}
+	httpAuthModeValues           = []string{"oauth", "static", "none", "bypass", "unavailable"}
+	httpCredentialValues         = []string{"not_evaluated", "missing", "accepted", "rejected", "unavailable"}
+	httpScopeStateValues         = []string{"not_evaluated", "not_required", "accepted", "rejected", "unavailable"}
+	httpSessionHeaderValues      = []string{"absent", "present"}
+	httpSessionStateValues       = []string{"not_evaluated", "not_supplied", "absent", "rehydrated", "existing", "created", "unavailable"}
+	httpBindingValues            = []string{"not_evaluated", "match", "mismatch", "unavailable"}
+	httpSessionRefValues         = []string{"available", "unavailable", "not_applicable", "omitted_for_budget"}
+	httpChallengeKindValues      = []string{"none", "resource_metadata", "insufficient_scope", "bearer_only", "other", "unavailable"}
+	httpChallengeTargetValues    = []string{"none", "root_well_known", "path_appended_well_known", "other", "unavailable"}
 	httpMetadataRegisteredValues = []string{"yes", "no", "not_applicable", "unavailable"}
-	httpPolicySourceValues      = []string{"defaults", "environment", "file", "mixed", "unavailable"}
-	httpPathModeValues          = []string{"origin_only", "path_bearing", "unavailable"}
-	httpSessionBindingValues    = []string{"bearer_sha256", "unavailable"}
-	httpUpstreamValues          = []string{"not_attempted", "succeeded", "transport_failed", "auth_failed", "tool_error", "multiple", "unavailable"}
-	httpPathClassValues         = []string{"mcp", "metadata_root", "health", "other"}
-	httpRouteOutcomeValues      = []string{"oauth_protected", "inbound_direct", "metadata", "health", "not_found", "other", "unavailable"}
-	httpRelationValues          = []string{"none", "single", "multiple", "unavailable"}
-	httpOperationIDStateValues  = []string{"available", "not_applicable", "unavailable", "omitted_for_budget"}
-	httpBuildStateValues        = []string{"verified", "unavailable"}
-	httpDetailClassValues       = []string{"validation", "dependency", "admission", "protocol", "tool", "internal", "unavailable"}
-	httpDetailRetryValues       = []string{"not_attempted", "observed", "unavailable"}
-	httpErrorClassValues        = []string{"correlation_unavailable", "client_disconnected", "unknown"}
+	httpPolicySourceValues       = []string{"defaults", "environment", "file", "mixed", "unavailable"}
+	httpPathModeValues           = []string{"origin_only", "path_bearing", "unavailable"}
+	httpSessionBindingValues     = []string{"bearer_sha256", "unavailable"}
+	httpUpstreamValues           = []string{"not_attempted", "succeeded", "transport_failed", "auth_failed", "tool_error", "multiple", "unavailable"}
+	httpPathClassValues          = []string{"mcp", "metadata_root", "health", "other"}
+	httpRouteOutcomeValues       = []string{"oauth_protected", "inbound_direct", "metadata", "health", "not_found", "other", "unavailable"}
+	httpRelationValues           = []string{"none", "single", "multiple", "unavailable"}
+	httpOperationIDStateValues   = []string{"available", "not_applicable", "unavailable", "omitted_for_budget"}
+	httpBuildStateValues         = []string{"verified", "unavailable"}
+	httpDetailClassValues        = []string{"validation", "dependency", "admission", "protocol", "tool", "internal", "unavailable"}
+	httpDetailRetryValues        = []string{"not_attempted", "observed", "unavailable"}
+	httpErrorClassValues         = []string{"correlation_unavailable", "client_disconnected", "unknown"}
+	clientFamilyVocabulary       = []string{"openai", "claude", "cursor", "omp", "browser", "other", "absent"}
 )
 
 // HTTPDiagnosticError is the canonical nested core error object.
@@ -121,6 +122,10 @@ type HTTPDiagnostic struct {
 	Route           string `json:"route,omitempty"`
 	HTTPOutcome     string `json:"http_outcome,omitempty"`
 	HTTPBytesBucket string `json:"http_bytes_bucket,omitempty"`
+	Operation       string `json:"operation,omitempty"`
+	ClientFamily    string `json:"client_family,omitempty"`
+	HTTPBytes       int64  `json:"http_bytes,omitempty"`
+	ExposedTools    *int   `json:"exposed_tools,omitempty"`
 	StatusState     string `json:"status_state,omitempty"`
 
 	// Correlation.
@@ -148,31 +153,31 @@ type HTTPDiagnostic struct {
 	DurationCapped bool  `json:"duration_capped"`
 
 	// First decisive rejection and evaluation states.
-	FailureStage                 string `json:"failure_stage,omitempty"`
-	FailureReason                string `json:"failure_reason,omitempty"`
-	AuthMode                     string `json:"auth_mode,omitempty"`
-	CredentialState              string `json:"credential_state,omitempty"`
-	ScopeState                   string `json:"scope_state,omitempty"`
-	SessionHeader                string `json:"session_header,omitempty"`
-	SessionState                 string `json:"session_state,omitempty"`
-	BindingRelation              string `json:"binding_relation,omitempty"`
-	SessionRefState              string `json:"session_ref_state,omitempty"`
-	SessionRef                   string `json:"session_ref,omitempty"`
-	ChallengeKind                string `json:"challenge_kind,omitempty"`
-	ChallengeTarget              string `json:"challenge_target,omitempty"`
-	MetadataTargetRegistered     string `json:"metadata_target_registered,omitempty"`
-	DiagnosticPolicyRevision     string `json:"diagnostic_policy_revision,omitempty"`
-	EffectivePolicyRevisionState string `json:"effective_policy_revision_state,omitempty"`
-	EffectivePolicyRevision      string `json:"effective_policy_revision,omitempty"`
-	PolicySource                 string `json:"policy_source,omitempty"`
-	OAuthEnabled                 *bool  `json:"oauth_enabled"`
-	StaticConfigured             *bool  `json:"static_configured"`
-	ScopeRequired                *bool  `json:"scope_required"`
-	ResourcePathMode             string `json:"resource_path_mode,omitempty"`
-	SessionBinding               string `json:"session_binding,omitempty"`
-	ClockSkewSeconds             *int   `json:"clock_skew_seconds"`
-	UpstreamState                string `json:"upstream_state,omitempty"`
-	ErrorDetailState             string `json:"error_detail_state,omitempty"`
+	FailureStage                 string                     `json:"failure_stage,omitempty"`
+	FailureReason                string                     `json:"failure_reason,omitempty"`
+	AuthMode                     string                     `json:"auth_mode,omitempty"`
+	CredentialState              string                     `json:"credential_state,omitempty"`
+	ScopeState                   string                     `json:"scope_state,omitempty"`
+	SessionHeader                string                     `json:"session_header,omitempty"`
+	SessionState                 string                     `json:"session_state,omitempty"`
+	BindingRelation              string                     `json:"binding_relation,omitempty"`
+	SessionRefState              string                     `json:"session_ref_state,omitempty"`
+	SessionRef                   string                     `json:"session_ref,omitempty"`
+	ChallengeKind                string                     `json:"challenge_kind,omitempty"`
+	ChallengeTarget              string                     `json:"challenge_target,omitempty"`
+	MetadataTargetRegistered     string                     `json:"metadata_target_registered,omitempty"`
+	DiagnosticPolicyRevision     string                     `json:"diagnostic_policy_revision,omitempty"`
+	EffectivePolicyRevisionState string                     `json:"effective_policy_revision_state,omitempty"`
+	EffectivePolicyRevision      string                     `json:"effective_policy_revision,omitempty"`
+	PolicySource                 string                     `json:"policy_source,omitempty"`
+	OAuthEnabled                 *bool                      `json:"oauth_enabled"`
+	StaticConfigured             *bool                      `json:"static_configured"`
+	ScopeRequired                *bool                      `json:"scope_required"`
+	ResourcePathMode             string                     `json:"resource_path_mode,omitempty"`
+	SessionBinding               string                     `json:"session_binding,omitempty"`
+	ClockSkewSeconds             *int                       `json:"clock_skew_seconds"`
+	UpstreamState                string                     `json:"upstream_state,omitempty"`
+	ErrorDetailState             string                     `json:"error_detail_state,omitempty"`
 	ErrorDetail                  *HTTPDiagnosticErrorDetail `json:"error_detail,omitempty"`
 }
 

@@ -236,7 +236,7 @@ func compatibilityRequestCounters(t *testing.T, families map[string]*dto.MetricF
 		for _, pair := range metric.Label {
 			labels[pair.GetName()] = pair.GetValue()
 		}
-		if len(labels) != 3 || labels["server"] != "_bridge" || !slices.Contains([]string{"request", "prompts_list", "prompts_get"}, labels["operation"]) || !slices.Contains([]string{"success", "failure"}, labels["outcome"]) {
+		if len(labels) != 3 || labels["server"] != "_bridge" || !slices.Contains([]string{"request", "initialize", "initialized", "tools_list", "tools_call", "resources_list", "resources_read", "ping", "prompts_list", "prompts_get", "sse_stream"}, labels["operation"]) || !slices.Contains([]string{"success", "failure"}, labels["outcome"]) {
 			t.Errorf("inbound metrics label contract changed: %v", labels)
 		}
 		counts[labels["operation"]+"/"+labels["outcome"]] += metric.GetCounter().GetValue()
@@ -286,8 +286,8 @@ func testCompatibilityMetrics(t *testing.T) {
 	// attempts after request metrics, not repeated scraping or client EOF.
 	families := compatibilityMetrics(t, operations)
 	after := compatibilityRequestCounters(t, families)
-	wantDelta := map[string]float64{"request/success": 2, "request/failure": 1, "prompts_list/success": 1, "prompts_get/success": 1}
-	for _, operation := range []string{"request", "prompts_list", "prompts_get"} {
+	wantDelta := map[string]float64{"request/failure": 1, "initialize/success": 1, "initialized/success": 1, "prompts_list/success": 1, "prompts_get/success": 1}
+	for _, operation := range []string{"request", "initialize", "initialized", "prompts_list", "prompts_get"} {
 		for _, outcome := range []string{"success", "failure"} {
 			key := operation + "/" + outcome
 			if got := after[key] - before[key]; got != wantDelta[key] {

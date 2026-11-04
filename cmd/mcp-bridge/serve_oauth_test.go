@@ -383,7 +383,123 @@ func TestServeOAuthMissingAuthorizationDiagnostic(t *testing.T) {
 		t.Error("missing-credential request emitted a duplicate unstructured auth diagnostic")
 	}
 }
+func TestInboundObservabilityWire(t *testing.T) {
+	harness := startOAuthHarness(t, "alpha", "beta", "gamma")
+	harness.awaitLive(t)
+	harness.awaitReady(t)
+	token := harness.oauthToken(t, time.Now().UTC(), nil)
 
+	post := func(body, userAgent, sessionID string) (*http.Response, []byte) {
+		t.Helper()
+		request, err := http.NewRequest(http.MethodPost, harness.httpURL+"/mcp", strings.NewReader(body))
+		if err != nil {
+			t.Fatalf("build MCP request: %v", err)
+		}
+		request.Header.Set("Authorization", "Bearer "+token)
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Accept", "application/json, text/event-stream")
+		request.Header.Set("Mcp-Protocol-Version", "2025-03-26")
+		if userAgent != "" {
+			request.Header.Set("User-Agent", userAgent)
+		}
+		if sessionID != "" {
+			request.Header.Set("Mcp-Session-Id", sessionID)
+		}
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			t.Fatalf("POST /mcp: %v", err)
+		}
+		payload, err := io.ReadAll(response.Body)
+		_ = response.Body.Close()
+		if err != nil {
+			t.Fatalf("read MCP response: %v", err)
+		}
+		return response, payload
+	}
+	recordFor := func(response *http.Response, name string) map[string]any {
+		t.Helper()
+		diagnosticID := response.Header.Get("Mcp-Diagnostic-Id")
+		if diagnosticID == "" {
+			t.Fatalf("%s response omitted diagnostic ID", name)
+		}
+		records := waitForDiagnosticCompletion(t, harness, name, diagnosticID)
+		if len(records) != 1 {
+			t.Fatalf("%s completion records = %d; want exactly one", name, len(records))
+		}
+		return records[0]
+	}
+
+	initialize, _ := post(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"wire-test","version":"1"}}}`, "", "")
+	if initialize.StatusCode != http.StatusOK {
+		t.Fatalf("initialize status = %d; want %d", initialize.StatusCode, http.StatusOK)
+	}
+	sessionID := initialize.Header.Get("Mcp-Session-Id")
+	if sessionID == "" {
+		t.Fatal("initialize response omitted Mcp-Session-Id")
+	}
+
+	openAIResponse, openAIBody := post(`{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`, "openai-connectors/1.0", sessionID)
+	if openAIResponse.StatusCode != http.StatusOK {
+		t.Fatalf("OpenAI tools/list status = %d; want %d", openAIResponse.StatusCode, http.StatusOK)
+	}
+	openAIRecord := recordFor(openAIResponse, "OpenAI tools/list")
+	requireCompletionField(t, openAIRecord, "operation", "tools_list")
+	requireCompletionField(t, openAIRecord, "client_family", "openai")
+	if got, ok := openAIRecord["exposed_tools"].(float64); !ok || got != 3 {
+		t.Errorf("OpenAI exposed_tools = %v; want 3", openAIRecord["exposed_tools"])
+	}
+	if got, ok := openAIRecord["http_bytes"].(float64); !ok || got != float64(len(openAIBody)) {
+		t.Errorf("OpenAI http_bytes = %v; want response body length %d", openAIRecord["http_bytes"], len(openAIBody))
+	}
+
+	claudeResponse, _ := post(`{"jsonrpc":"2.0","id":3,"method":"tools/list","params":{}}`, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Claude/1.0", sessionID)
+	if claudeResponse.StatusCode != http.StatusOK {
+		t.Fatalf("Claude tools/list status = %d; want %d", claudeResponse.StatusCode, http.StatusOK)
+	}
+	requireCompletionField(t, recordFor(claudeResponse, "Claude tools/list"), "client_family", "claude")
+
+	pingResponse, _ := post(`{"jsonrpc":"2.0","id":4,"method":"ping"}`, "wire-test/1.0", sessionID)
+	if pingResponse.StatusCode != http.StatusOK {
+		t.Fatalf("ping status = %d; want %d", pingResponse.StatusCode, http.StatusOK)
+	}
+	pingRecord := recordFor(pingResponse, "ping")
+	if _, exists := pingRecord["exposed_tools"]; exists {
+		t.Errorf("ping diagnostic unexpectedly contains exposed_tools: %v", pingRecord["exposed_tools"])
+	}
+	invalidResponse, invalidBody := post(`{"jsonrpc":"2.0","id":5,"method":"tools/list","params":{"cursor":"invalid"}}`, "", sessionID)
+	var invalidRPCResponse struct {
+		JSONRPC string          `json:"jsonrpc"`
+		ID      int             `json:"id"`
+		Error   json.RawMessage `json:"error"`
+	}
+	invalidPayload := string(invalidBody)
+	if _, payload, ok := strings.Cut(invalidPayload, "data: "); ok {
+		invalidPayload, _, _ = strings.Cut(payload, "\n")
+	}
+	if err := json.Unmarshal([]byte(invalidPayload), &invalidRPCResponse); err != nil {
+		t.Fatalf("decode invalid-cursor response %q: %v", invalidBody, err)
+	}
+	if invalidRPCResponse.JSONRPC != "2.0" || invalidRPCResponse.ID != 5 {
+		t.Fatalf("invalid-cursor JSON-RPC response = %s; want version 2.0, id 5", invalidBody)
+	}
+	var rpcError map[string]any
+	if err := json.Unmarshal(invalidRPCResponse.Error, &rpcError); err != nil || rpcError == nil {
+		t.Fatalf("invalid-cursor error = %s; want JSON-RPC error object", invalidRPCResponse.Error)
+	}
+	invalidRecord := recordFor(invalidResponse, "invalid-cursor tools/list")
+	if _, exists := invalidRecord["exposed_tools"]; exists {
+		t.Errorf("invalid-cursor diagnostic unexpectedly contains exposed_tools: %v", invalidRecord["exposed_tools"])
+	}
+
+	recoveryResponse, _ := post(`{"jsonrpc":"2.0","id":6,"method":"tools/list","params":{}}`, "", sessionID)
+	if recoveryResponse.StatusCode != http.StatusOK {
+		t.Fatalf("recovery tools/list status = %d; want %d", recoveryResponse.StatusCode, http.StatusOK)
+	}
+	recoveryRecord := recordFor(recoveryResponse, "recovery tools/list")
+	if got, ok := recoveryRecord["exposed_tools"].(float64); !ok || got != 3 {
+		t.Errorf("recovery exposed_tools = %v; want 3", recoveryRecord["exposed_tools"])
+	}
+}
 func TestServeOAuthRouteNormalizationAndRootProbe(t *testing.T) {
 	harness := startOAuthHarness(t)
 	harness.awaitLive(t)

@@ -1,1 +1,8 @@
-{"task_id":"T1","status":"COMPLETED","artifact_receipt":"coverage.out","telemetry_ref":null,"summary":"Updated directRequestOwner to select publisher projection for stateless requests; discoveryOwnerValid and commitDiscovery now accept projectionPublisher; TestChatGPTDeveloperModeStatelessDiscoveryWire asserts pinned alpha__read and search_tools over live wire; full race test suite and 90.2% covcheck pass clean.","error_code":null}
+{
+  "task_id": "T1",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_T1.json",
+  "telemetry_ref": null,
+  "summary": "Ticket 01 implementation complete: inbound JSON-RPC method classification into closed finite enum across metrics and logs, Prometheus requests_total operation mapping, serve logging compatibility tests, and unit tests covering all cases.",
+  "error_code": null
+}

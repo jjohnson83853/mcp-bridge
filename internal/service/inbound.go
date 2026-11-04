@@ -396,7 +396,7 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if obs.Status >= http.StatusBadRequest || obs.WriteFailure != observe.HTTPWriteNone {
 				outcome = "failure"
 			}
-			operation := inboundOperation(captured)
+			operation := inboundOperation(r, captured)
 			h.metrics.RecordRequest(operation, outcome)
 		}
 
@@ -1077,7 +1077,7 @@ func (w *inboundResponseObserver) missingSession() bool {
 // from the owner observation and the recorded decisive rejection, mirroring
 // the branch order of the previous inner-only terminal defer.
 func (h *InboundHandler) legacyClassification(r *http.Request, obs observe.HTTPObservation, captured *bodyCapture, rejection legacyRejection) (stage, reason, operation string) {
-	operation = inboundOperation(captured)
+	operation = inboundOperation(r, captured)
 	if r.URL.Path != "/mcp" {
 		return "http_route", "route_not_found", operation
 	}
@@ -1237,10 +1237,12 @@ func captureRequestMethod(r *http.Request) *bodyCapture {
 }
 
 // inboundOperation classifies one inbound message into the finite metric
-// vocabulary. Only the prompt surface is named individually; every other
-// method stays the single aggregate "request" operation, so no client-chosen
-// text can reach a label.
-func inboundOperation(captured *bodyCapture) string {
+// vocabulary, mapping standard MCP methods to stable operation labels and
+// keeping unknown methods in the aggregate "request" operation.
+func inboundOperation(r *http.Request, captured *bodyCapture) string {
+	if r != nil && r.Method == http.MethodGet && strings.Contains(r.Header.Get("Accept"), "text/event-stream") {
+		return "sse_stream"
+	}
 	if captured == nil {
 		return "request"
 	}
@@ -1251,6 +1253,20 @@ func inboundOperation(captured *bodyCapture) string {
 		return "request"
 	}
 	switch header.Method {
+	case "initialize":
+		return "initialize"
+	case "notifications/initialized":
+		return "initialized"
+	case "tools/list":
+		return "tools_list"
+	case "tools/call":
+		return "tools_call"
+	case "resources/list":
+		return "resources_list"
+	case "resources/read":
+		return "resources_read"
+	case "ping":
+		return "ping"
 	case "prompts/list":
 		return "prompts_list"
 	case "prompts/get":

@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -54,8 +55,8 @@ func NewHTTPDiagnostics(logger *Logger, opts HTTPDiagnosticsOptions) *HTTPDiagno
 }
 
 var (
-	processOnce     sync.Once
-	sharedProcess   HTTPProcessContext
+	processOnce   sync.Once
+	sharedProcess HTTPProcessContext
 )
 
 // sharedProcessContext draws the independent 128-bit process incarnation once
@@ -240,6 +241,7 @@ func (d *HTTPDiagnostics) Claim(w http.ResponseWriter, r *http.Request) (http.Re
 		route:         legacyRoute(r.URL.Path),
 		pathClass:     pathClass(r.URL.Path),
 		sessionHeader: sessionHeader,
+		clientFamily:  classifyClientFamily(r.UserAgent()),
 	}, mask)
 
 	// Scrub caller diagnostic/internal values and install the owned response
@@ -261,10 +263,10 @@ func (d *HTTPDiagnostics) Claim(w http.ResponseWriter, r *http.Request) (http.Re
 
 // Header name constants shared with the inner edge and middleware.
 const (
-	sessionIDHeaderName        = "Mcp-Session-Id"
-	httpSessionHeaderAbsent    = "absent"
-	httpSessionHeaderPresent   = "present"
-	internalRequestIDHeader    = "X-Mcp-Bridge-Internal-Request-Id"
+	sessionIDHeaderName      = "Mcp-Session-Id"
+	httpSessionHeaderAbsent  = "absent"
+	httpSessionHeaderPresent = "present"
+	internalRequestIDHeader  = "X-Mcp-Bridge-Internal-Request-Id"
 )
 
 // HTTPRequestID returns the owner's generated identity for trusted downstream
@@ -374,6 +376,23 @@ func ContributeOperationEvidenceByID(requestID string, evidence HTTPOperationEvi
 	defer ownerStateMu.Unlock()
 	if !owner.finished {
 		owner.applyOperationEvidence(evidence)
+	}
+}
+
+// ContributeExposedTools records the number of exposed tools for a request.
+// The request context is preferred; requestID is the detached-owner fallback.
+func ContributeExposedTools(ctx context.Context, requestID string, count int) {
+	owner := ownerFromContext(ctx)
+	if owner == nil {
+		owner = ownerForRequestID(requestID)
+	}
+	if owner == nil {
+		return
+	}
+	ownerStateMu.Lock()
+	defer ownerStateMu.Unlock()
+	if !owner.finished {
+		owner.exposedTools = &count
 	}
 }
 
@@ -609,9 +628,30 @@ var legacyStageVocabulary = []string{
 	"unknown",
 }
 
+func classifyClientFamily(ua string) string {
+	lower := strings.ToLower(ua)
+	switch {
+	case strings.Contains(lower, "openai"):
+		return "openai"
+	case strings.Contains(lower, "claude"), strings.Contains(lower, "anthropic"):
+		return "claude"
+	case strings.Contains(lower, "cursor"):
+		return "cursor"
+	case strings.Contains(ua, "omp/"):
+		return "omp"
+	case strings.Contains(lower, "mozilla"), strings.Contains(lower, "chrome"), strings.Contains(lower, "safari"):
+		return "browser"
+	case ua != "":
+		return "other"
+	default:
+		return "absent"
+	}
+}
+
 var operationVocabulary = []string{
-	"unknown", "request", "discover", "initialize", "tools_list", "tools_call",
-	"call_tool", "search", "describe", "health", "describe_tool",
+	"unknown", "request", "discover", "initialize", "initialized", "tools_list",
+	"tools_call", "call_tool", "resources_list", "resources_read", "ping",
+	"sse_stream", "search", "describe", "health", "describe_tool",
 	"prompts_list", "prompts_get",
 }
 
@@ -707,39 +747,42 @@ func (o *httpOwner) buildSnapshot() (legacyEntry, *HTTPDiagnostic) {
 	level := severityLevel(legacyStage, legacyReason, o.status, o.upstreamState)
 
 	diagnostic := &HTTPDiagnostic{
-		LegacyStage:     legacyStage,
-		HTTPStatus:      status,
-		HTTPMethod:      httpMethodValue(o.method),
-		Route:           o.route,
-		HTTPOutcome:     httpOutcome,
-		HTTPBytesBucket: bucket,
-		StatusState:     statusState,
-		CorrelationState: orDefault(o.correlationState, CorrelationUnavailable),
-		DiagSchema:      "oauth_diag_v1",
-		DiagEnvironment: o.diagnostics.provenance.Environment,
-		SourceRevision:  o.diagnostics.provenance.SourceRevision,
-		BuildState:      o.diagnostics.provenance.BuildState,
-		ProcessState:    o.diagnostics.process.State,
-		ProcessID:       o.diagnostics.process.ID,
-		OperationRelation: orDefault(o.operationRelation, "none"),
-		OperationIDState:  orDefault(o.operationIDState, "not_applicable"),
-		PathClass:       orDefault(o.pathClass, "other"),
-		RouteOutcome:    orDefault(o.routeOutcome, "unavailable"),
-		DiagDurationMS:  diagMS,
-		DurationCapped:  capped,
-		FailureStage:    orDefault(o.failureStage, "none"),
-		FailureReason:   orDefault(o.failureReason, "none"),
-		AuthMode:        orDefault(o.authMode, "unavailable"),
-		CredentialState: orDefault(o.credentialState, "not_evaluated"),
-		ScopeState:      orDefault(o.scopeState, "not_evaluated"),
-		SessionHeader:   orDefault(o.sessionHeader, httpSessionHeaderAbsent),
-		SessionState:    orDefault(o.sessionState, "not_evaluated"),
-		BindingRelation: orDefault(o.bindingRelation, "not_evaluated"),
-		SessionRefState: orDefault(o.sessionRefState, "not_applicable"),
-		ChallengeKind:   orDefault(o.challengeKind, "none"),
-		ChallengeTarget: orDefault(o.challengeTarget, "none"),
-		MetadataTargetRegistered: orDefault(o.metadataRegistered, "not_applicable"),
-		DiagnosticPolicyRevision: "oauth-diag-policy-v1",
+		LegacyStage:                  legacyStage,
+		HTTPStatus:                   status,
+		HTTPMethod:                   httpMethodValue(o.method),
+		Route:                        o.route,
+		HTTPOutcome:                  httpOutcome,
+		HTTPBytesBucket:              bucket,
+		Operation:                    operation,
+		ClientFamily:                 o.clientFamily,
+		HTTPBytes:                    o.bytes,
+		StatusState:                  statusState,
+		CorrelationState:             orDefault(o.correlationState, CorrelationUnavailable),
+		DiagSchema:                   "oauth_diag_v1",
+		DiagEnvironment:              o.diagnostics.provenance.Environment,
+		SourceRevision:               o.diagnostics.provenance.SourceRevision,
+		BuildState:                   o.diagnostics.provenance.BuildState,
+		ProcessState:                 o.diagnostics.process.State,
+		ProcessID:                    o.diagnostics.process.ID,
+		OperationRelation:            orDefault(o.operationRelation, "none"),
+		OperationIDState:             orDefault(o.operationIDState, "not_applicable"),
+		PathClass:                    orDefault(o.pathClass, "other"),
+		RouteOutcome:                 orDefault(o.routeOutcome, "unavailable"),
+		DiagDurationMS:               diagMS,
+		DurationCapped:               capped,
+		FailureStage:                 orDefault(o.failureStage, "none"),
+		FailureReason:                orDefault(o.failureReason, "none"),
+		AuthMode:                     orDefault(o.authMode, "unavailable"),
+		CredentialState:              orDefault(o.credentialState, "not_evaluated"),
+		ScopeState:                   orDefault(o.scopeState, "not_evaluated"),
+		SessionHeader:                orDefault(o.sessionHeader, httpSessionHeaderAbsent),
+		SessionState:                 orDefault(o.sessionState, "not_evaluated"),
+		BindingRelation:              orDefault(o.bindingRelation, "not_evaluated"),
+		SessionRefState:              orDefault(o.sessionRefState, "not_applicable"),
+		ChallengeKind:                orDefault(o.challengeKind, "none"),
+		ChallengeTarget:              orDefault(o.challengeTarget, "none"),
+		MetadataTargetRegistered:     orDefault(o.metadataRegistered, "not_applicable"),
+		DiagnosticPolicyRevision:     "oauth-diag-policy-v1",
 		EffectivePolicyRevisionState: o.diagnostics.provenance.EffectivePolicyRevisionState,
 		EffectivePolicyRevision:      o.diagnostics.provenance.EffectivePolicyRevision,
 		PolicySource:                 o.diagnostics.provenance.PolicySource,
@@ -747,17 +790,20 @@ func (o *httpOwner) buildSnapshot() (legacyEntry, *HTTPDiagnostic) {
 		StaticConfigured:             o.diagnostics.provenance.StaticConfigured,
 		ScopeRequired:                o.diagnostics.provenance.ScopeRequired,
 		ResourcePathMode:             o.diagnostics.provenance.ResourcePathMode,
-		SessionBinding:  orDefault(o.sessionBinding, "unavailable"),
-		ClockSkewSeconds: o.diagnostics.provenance.ClockSkewSeconds,
-		UpstreamState:   orDefault(o.upstreamState, "not_attempted"),
-		ErrorDetailState: orDefault(o.errorDetailState, "not_applicable"),
-		ErrorDetail:     o.errorDetail,
+		SessionBinding:               orDefault(o.sessionBinding, "unavailable"),
+		ClockSkewSeconds:             o.diagnostics.provenance.ClockSkewSeconds,
+		UpstreamState:                orDefault(o.upstreamState, "not_attempted"),
+		ErrorDetailState:             orDefault(o.errorDetailState, "not_applicable"),
+		ErrorDetail:                  o.errorDetail,
 	}
 	if o.correlationState == CorrelationAvailable {
 		diagnostic.RequestID = o.requestID
 	}
 	diagnostic.OperationID = o.operationID
 	diagnostic.SessionRef = o.sessionRef
+	if o.legacyOperation == "tools_list" && httpOutcome == "success" && o.exposedTools != nil {
+		diagnostic.ExposedTools = o.exposedTools
+	}
 
 	entry := legacyEntry{
 		Time:      now,

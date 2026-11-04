@@ -32,15 +32,23 @@ var (
 	reloadReasons  = map[string]bool{"none": true, "invalid_configuration": true, "admission_failed": true}
 )
 
-// requestOperations and requestOutcomes bound the inbound request metric's
-// labels to the finite vocabulary the bridge classifies. Recording is refused
-// for anything else, so a prompt or tool name can never become a series
-// (R-27/AC-29): the prompt surface contributes exactly the two prompt
-// operations, and every other inbound request stays the single aggregate
-// "request" operation.
+// requestOperations and requestOutcomes bound inbound metric labels to their
+// finite vocabularies, so unrecognized values cannot create metric series.
 var (
-	requestOperations = map[string]bool{"request": true, "prompts_list": true, "prompts_get": true}
-	requestOutcomes   = map[string]bool{"success": true, "failure": true}
+	requestOperations = map[string]struct{}{
+		"request":        {},
+		"initialize":     {},
+		"initialized":    {},
+		"tools_list":     {},
+		"tools_call":     {},
+		"resources_list": {},
+		"resources_read": {},
+		"ping":           {},
+		"prompts_list":   {},
+		"prompts_get":    {},
+		"sse_stream":     {},
+	}
+	requestOutcomes = map[string]bool{"success": true, "failure": true}
 )
 
 type serverSet struct {
@@ -181,7 +189,7 @@ func (m *Metrics) ServerIDs() []string {
 // labels are validated against the finite vocabularies above, so an
 // out-of-vocabulary caller is refused instead of creating a series.
 func (m *Metrics) RecordRequest(operation, outcome string) bool {
-	if !requestOperations[operation] || !requestOutcomes[outcome] {
+	if _, ok := requestOperations[operation]; !ok || !requestOutcomes[outcome] {
 		return false
 	}
 	m.requestsTotal.WithLabelValues(bridgeServerID, operation, outcome).Inc()

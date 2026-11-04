@@ -1,0 +1,492 @@
+{
+  "schemaVersion": 2,
+  "feature": "mcp-inbound-observability",
+  "revision": "r8",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/mcp-inbound-observability/spec.md",
+    "sha256": "70df9c845eec0af4dbd5851ff0ed0e6a4cd3297d067a02768172d255301fd76c",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r8",
+        "sha256": "3419e07c84d95e2734ccad66479c5402d883b1fc2415c95d2f536bf9723c267e"
+      },
+      "design": {
+        "revision": "r8",
+        "sha256": "a7a85f0427d73093035f49fbf4ffe4fc233d72f66d8bae8f865d60c02e7a88fb"
+      },
+      "tasks": {
+        "revision": "r8",
+        "sha256": "cb416a7add34f80e2afdf3ea1a23334d02805249a1e15ca5b668ae062683b83d"
+      },
+      "envelope": {
+        "revision": "r8",
+        "sha256": "9c33d8aa8c43a13c02091c1ece41cac2b01f2af8db4bc9882aaac2241c45cbc8"
+      }
+    }
+  },
+  "packet": {
+    "digest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
+    "branches": [
+      {
+        "id": "approved-mcp-inbound-observability",
+        "answerIds": [],
+        "taskIds": [
+          "T1",
+          "T2",
+          "T3"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r8",
+            "sha256": "3419e07c84d95e2734ccad66479c5402d883b1fc2415c95d2f536bf9723c267e"
+          },
+          "design": {
+            "revision": "r8",
+            "sha256": "a7a85f0427d73093035f49fbf4ffe4fc233d72f66d8bae8f865d60c02e7a88fb"
+          },
+          "tasks": {
+            "revision": "r8",
+            "sha256": "cb416a7add34f80e2afdf3ea1a23334d02805249a1e15ca5b668ae062683b83d"
+          },
+          "envelope": {
+            "revision": "r8",
+            "sha256": "9c33d8aa8c43a13c02091c1ece41cac2b01f2af8db4bc9882aaac2241c45cbc8"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "approved-mcp-inbound-observability"
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Unified Inbound Operation Classification & Metric Recording"
+    },
+    {
+      "id": "R2",
+      "summary": "Client Family Classification"
+    },
+    {
+      "id": "R3",
+      "summary": "Exact HTTP Response Bytes"
+    },
+    {
+      "id": "R4",
+      "summary": "Exposed Tool Count Recording & Failure Omission"
+    },
+    {
+      "id": "R5",
+      "summary": "End-to-End Loopback Wire Verification, Docs & Coverage Gate"
+    }
+  ],
+  "authorization": {
+    "mode": "bounded",
+    "id": "auth-1",
+    "packetDigest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
+    "selectedBranchId": "approved-mcp-inbound-observability",
+    "receipt": {
+      "sourceId": "src-user",
+      "recordedAt": "2026-11-03T23:58:00Z",
+      "response": {
+        "origin": "user",
+        "explicit": true,
+        "timedOut": false,
+        "automatic": false,
+        "packetDigest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
+        "selectedBranchId": "approved-mcp-inbound-observability"
+      }
+    }
+  },
+  "reviews": {
+    "specification": {
+      "verdict": "pass",
+      "reviewerId": "critic",
+      "packetDigest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
+      "receipt": {
+        "sourceId": "src-review-critic",
+        "recordedAt": "2026-11-03T23:58:00Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    },
+    "tasks": {
+      "verdict": "pass",
+      "reviewerId": "code-reviewer",
+      "packetDigest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
+      "receipt": {
+        "sourceId": "src-review-reviewer",
+        "recordedAt": "2026-11-03T23:58:00Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    }
+  },
+  "sources": [
+    {
+      "id": "src-user",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/mcp-inbound-observability/user-auth.txt",
+        "sha256": "762425727323abdf4d9611d78078857444451681fd95ec7c8b58d8ab7e39e220"
+      },
+      "locator": "user conversation backlog prompt",
+      "recordedAt": "2026-11-03T23:58:00Z"
+    },
+    {
+      "id": "src-review-critic",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/mcp-inbound-observability/review-critic.md",
+        "sha256": "9e1dd4861605ecdb63371a43fc0997bea278772e39993c4ab10e69d1519d6ead"
+      },
+      "locator": "critic review receipt r8",
+      "recordedAt": "2026-11-03T23:58:00Z"
+    },
+    {
+      "id": "src-review-reviewer",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/mcp-inbound-observability/review-code-reviewer.md",
+        "sha256": "675c251e0eb091f4f90233d34e15b33a88e2ea92f077dd62d285fd1bfed7a398"
+      },
+      "locator": "code-reviewer receipt r8",
+      "recordedAt": "2026-11-03T23:58:00Z"
+    }
+  ],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "T1",
+      "T2",
+      "T3"
+    ],
+    "readPaths": [
+      ".scratch/mcp-inbound-observability/spec.md",
+      ".scratch/mcp-inbound-observability/issues/01-inbound-method-operation-classification-and-metrics.md",
+      ".scratch/mcp-inbound-observability/issues/02-client-family-classification-and-exact-bytes.md",
+      ".scratch/mcp-inbound-observability/issues/03-exposed-tool-count-and-wire-verification.md"
+    ],
+    "writePaths": [
+      "internal/service/inbound.go",
+      "internal/service/inbound_test.go",
+      "internal/service/session_exposure.go",
+      "internal/observe/metrics.go",
+      "internal/observe/httpdiagnostics.go",
+      "internal/observe/httpdiagnostic_types.go",
+      "internal/observe/httpdiagnostic_encode.go",
+      "internal/observe/httpwriter.go",
+      "internal/observe/log.go",
+      "internal/observe/httpdiagnostics_test.go",
+      "internal/observe/session_slot_diag_test.go",
+      "cmd/mcp-bridge/serve_logging_compatibility_test.go",
+      "cmd/mcp-bridge/serve_oauth_test.go",
+      "README.md",
+      "CHANGELOG.md",
+      ".scratch/mcp-inbound-observability/spec.md",
+      ".scratch/mcp-inbound-observability/map.md",
+      ".scratch/mcp-inbound-observability/issues/01-inbound-method-operation-classification-and-metrics.md",
+      ".scratch/mcp-inbound-observability/issues/02-client-family-classification-and-exact-bytes.md",
+      ".scratch/mcp-inbound-observability/issues/03-exposed-tool-count-and-wire-verification.md",
+      ".omp/artifacts/receipt_T1.json",
+      ".omp/artifacts/receipt_T2.json",
+      ".omp/artifacts/receipt_T3.json",
+      "coverage.out"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/inbound.go",
+          "internal/service/inbound_test.go",
+          "internal/observe/metrics.go",
+          "cmd/mcp-bridge/serve_logging_compatibility_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC-1",
+        "AC-2"
+      ],
+      "evidenceIds": [
+        "ev-T1-test"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T2",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/observe/httpdiagnostics.go",
+          "internal/observe/httpdiagnostic_types.go",
+          "internal/observe/httpdiagnostic_encode.go",
+          "internal/observe/httpwriter.go",
+          "internal/observe/log.go",
+          "internal/observe/httpdiagnostics_test.go",
+          "internal/observe/session_slot_diag_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC-3",
+        "AC-4",
+        "AC-5"
+      ],
+      "evidenceIds": [
+        "ev-T2-test"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T3",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/session_exposure.go",
+          "cmd/mcp-bridge/serve_oauth_test.go",
+          "README.md",
+          "CHANGELOG.md",
+          "coverage.out"
+        ]
+      },
+      "acceptanceIds": [
+        "AC-5",
+        "AC-6",
+        "AC-7"
+      ],
+      "evidenceIds": [
+        "ev-T3-test"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC-1",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-2",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-3",
+      "requirementIds": [
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-4",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-5",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T2",
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-6",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-7",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-T1-test",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "a7e0cce883708ea0c0b3bfa3023a77d8e381bf5aa0772f330d6805579969dc1d"
+      },
+      "feature": "mcp-inbound-observability",
+      "packetDigest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
+      "selectedBranchId": "approved-mcp-inbound-observability",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC-1",
+        "AC-2"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-04T02:00:00Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test -v -count=1 -race -run TestInboundOperationClassification ./internal/service && go test -v -count=1 -race -run TestServeLoggingCompatibility ./cmd/mcp-bridge",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T2-test",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
+        "sha256": "fdbd42565abde8c01bfb447dbf758cae16cbcf302bd73b81551cce80b5b7a7cc"
+      },
+      "feature": "mcp-inbound-observability",
+      "packetDigest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
+      "selectedBranchId": "approved-mcp-inbound-observability",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC-3",
+        "AC-4",
+        "AC-5"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-04T00:30:00Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test -race -v -count=1 -run TestClientFamilyAndExactBytes ./internal/observe/",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T3-test",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T3.json",
+        "sha256": "00c8684e0cf8787a9dd078d561dd1c3f67dbbe94b7369867c2caa4eceb72ac4f"
+      },
+      "feature": "mcp-inbound-observability",
+      "packetDigest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
+      "selectedBranchId": "approved-mcp-inbound-observability",
+      "taskIds": [
+        "T3"
+      ],
+      "acceptanceIds": [
+        "AC-5",
+        "AC-6",
+        "AC-7"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-04T03:30:00Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test -v -count=1 -run TestInboundObservabilityWire ./cmd/mcp-bridge && go test -race -p 1 -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck",
+        "exitCode": 0
+      }
+    }
+  ],
+  "blockers": [],
+  "gate": {
+    "markerPath": ".superpowers/sdd/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}

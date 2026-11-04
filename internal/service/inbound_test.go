@@ -1171,3 +1171,48 @@ func inboundOAuthTestMiddleware(t *testing.T) (func(http.Handler) http.Handler, 
 	}
 	return auth.NewAuthMiddleware(config, auth.StaticKeySet{Set: keys}, auth.WithNow(func() time.Time { return now })), string(signed)
 }
+func TestInboundOperationClassification(t *testing.T) {
+	tests := []struct {
+		name, method, body, accept, wantOperation string
+	}{
+		{name: "initialize", method: http.MethodPost, body: `{"method":"initialize"}`, wantOperation: "initialize"},
+		{name: "initialized", method: http.MethodPost, body: `{"method":"notifications/initialized"}`, wantOperation: "initialized"},
+		{name: "tools list", method: http.MethodPost, body: `{"method":"tools/list"}`, wantOperation: "tools_list"},
+		{name: "tools call", method: http.MethodPost, body: `{"method":"tools/call"}`, wantOperation: "tools_call"},
+		{name: "resources list", method: http.MethodPost, body: `{"method":"resources/list"}`, wantOperation: "resources_list"},
+		{name: "resources read", method: http.MethodPost, body: `{"method":"resources/read"}`, wantOperation: "resources_read"},
+		{name: "ping", method: http.MethodPost, body: `{"method":"ping"}`, wantOperation: "ping"},
+		{name: "prompts list", method: http.MethodPost, body: `{"method":"prompts/list"}`, wantOperation: "prompts_list"},
+		{name: "prompts get", method: http.MethodPost, body: `{"method":"prompts/get"}`, wantOperation: "prompts_get"},
+		{name: "SSE GET", method: http.MethodGet, accept: "text/event-stream", wantOperation: "sse_stream"},
+		{name: "malformed body", method: http.MethodPost, body: `{"method":`, wantOperation: "request"},
+		{name: "empty body", method: http.MethodPost, wantOperation: "request"},
+		{name: "unknown method", method: http.MethodPost, body: `{"method":"other"}`, wantOperation: "request"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			metrics := observe.NewMetrics(nil)
+			handler := service.NewInboundHandler(
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_, _ = io.ReadAll(r.Body)
+					w.WriteHeader(http.StatusNoContent)
+				}),
+				tokenHash("client-token"),
+				service.InboundOptions{Metrics: metrics},
+			)
+			request := httptest.NewRequest(test.method, "/mcp", strings.NewReader(test.body))
+			request.Header.Set("Authorization", "Bearer client-token")
+			if test.accept != "" {
+				request.Header.Set("Accept", test.accept)
+			}
+			handler.ServeHTTP(httptest.NewRecorder(), request)
+
+			scrape := httptest.NewRecorder()
+			metrics.Handler().ServeHTTP(scrape, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+			if !strings.Contains(scrape.Body.String(), `operation="`+test.wantOperation+`"`) {
+				t.Errorf("metrics did not record operation %q:\n%s", test.wantOperation, scrape.Body.String())
+			}
+		})
+	}
+}

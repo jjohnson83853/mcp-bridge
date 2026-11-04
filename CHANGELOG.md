@@ -6,6 +6,17 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Inbound observability enrichment and operation-partitioned request metrics.**
+  Incoming requests are classified by inbound method/transport into a closed
+  finite operation enum (`initialize`, `initialized`, `tools_list`, `tools_call`,
+  `resources_list`, `resources_read`, `ping`, `prompts_list`, `prompts_get`,
+  `sse_stream`, or fallback `request`).
+  Prometheus counter `bridge_requests_total` partitions requests by this enum,
+  and terminal `http_complete` diagnostic logs emit `operation`, exact response-body
+  byte count (`http_bytes`),
+  `client_family` (`openai`, `claude`, `cursor`, `omp`, `browser`, `other`, `absent`),
+  and `exposed_tools` count on successful `tools/list` requests.
+
 
 - **Progressive metadata reveal and session-scoped projections.** Initial
   `tools/list` exposure serves built-ins and configured pins. Calls to

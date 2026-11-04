@@ -543,18 +543,28 @@ lose the record, and broken sinks do not self-report:
   severities are never downgraded and no duplicate failure stream exists.
 - **Transport fields:** `http_method` (`GET`, `POST`, `DELETE`, `HEAD`,
   `OPTIONS`, `PUT`, `PATCH`, `OTHER`), `route` (`mcp`, `not_found`),
+  `operation` (inbound method/transport classification: `initialize`,
+  `initialized`, `tools_list`, `tools_call`, `resources_list`, `resources_read`,
+  `ping`, `prompts_list`, `prompts_get`, `sse_stream`, or fallback `request`),
+  `client_family` (closed client classification derived by strict priority substring
+  match from `User-Agent`: `openai`, `claude`, `cursor`, `omp`, `browser`, `other`,
+  or `absent`; raw User-Agent headers are never logged),
   `http_status` (observed integer `100`–`599`, or explicit JSON `null` when no
   response evidence exists), `http_outcome` (`success`, `failure`, `incomplete`,
-  `unknown`), `http_bytes_bucket` (`empty`, `le_1k`, `le_16k`, `le_256k`,
-  `le_1m`, `gt_1m`, `unavailable`), and `duration_ms` (signed elapsed
+  `unknown`), `http_bytes` (exact response-body byte count written, including
+  `0` for zero-byte writes and observed body bytes before an error on partial writes),
+  `http_bytes_bucket` (`empty`, `le_1k`, `le_16k`, `le_256k`, `le_1m`, `gt_1m`,
+  `unavailable`), `exposed_tools` (exact count of exposed tools returned on
+  successful `tools/list` response pages; omitted on write failures, list errors,
+  and non-`tools/list` operations), and `duration_ms` (signed elapsed
   milliseconds from outer-owner entry — before routing, OAuth evaluation, and
   correlation-ID generation — through handler return/unwind; this is wider
   than the former inner-handler interval). A separate bounded
   `diag_duration_ms` field (`0`–`86400000`, with `duration_capped: true` when
   clamped, including negative clock deltas clamped to `0`) measures the same
-  interval within the semantic bounds. Existing Prometheus metrics and counts
-  remain unchanged. Raw paths, queries, and arbitrary verbs are never
-  reflected.
+  interval within the semantic bounds. Inbound request counters
+  (`bridge_requests_total`) partition requests by this operation enum. Raw
+  paths, queries, and arbitrary verbs are never reflected.
 - **Internal correlation:** `request_id` is an internal lowercase 32-hex ID
   minted independently of caller-supplied identifiers; `correlation_state`
   reports `available` or `unavailable`. The same owned ID is returned to the
@@ -803,9 +813,14 @@ lose the record, and broken sinks do not self-report:
   diagnostic field is absence of
   evidence, never a positive diagnosis (e.g. a missing header is not proof of
   expiry).
-- **Metrics unchanged:** Prometheus metrics, exposition formats, label names,
-  and cardinality remain unchanged; new logging classifications do not alter
-  metric series.
+- **Metrics repartitioning:** Inbound request counter
+  `bridge_requests_total{server="_bridge", operation="<operation>", outcome="<outcome>"}`
+  partitions incoming traffic into the finite operation enum (`initialize`,
+  `initialized`, `tools_list`, `tools_call`, `resources_list`, `resources_read`,
+  `ping`, `prompts_list`, `prompts_get`, `sse_stream`, `request`). Label names
+  and server scopes remain strictly bounded; total traffic aggregations over all
+  operations remain continuous while panels or alerts filtering strictly on
+  `operation="request"` reflect the partitioned operations.
 
 ## Behaviour worth knowing
 
