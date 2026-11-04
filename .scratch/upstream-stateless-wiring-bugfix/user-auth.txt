@@ -1,0 +1,4 @@
+kickoff a bugfix
+User confirms issue: "I think if I restart a backend mcp server the bridge doesn't cleanup and fails trying to connect the old dead server. Confirm that is happening"
+User requests: "kickoff a bugfix"
+Target: upstream backend servers never receive ServerStateless() in cmd/mcp-bridge/wiring.go:175, defaulting to stateful mode and retaining dead sessions across restarts.

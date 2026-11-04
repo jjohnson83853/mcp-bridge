@@ -172,7 +172,7 @@ func (r *upstreamRegistry) newClient(server config.Server) (core.Upstream, error
 	if limits.CallTimeout != nil {
 		options.CallTimeout = *limits.CallTimeout
 	}
-	client, err := upstream.NewDedicated(upstream.DedicatedOptions{Server: options})
+	client, err := upstream.NewDedicated(upstream.DedicatedOptions{Server: options, Stateless: server.ServerStateless()})
 	if err != nil {
 		return nil, err
 	}

@@ -1,0 +1,328 @@
+{
+  "schemaVersion": 2,
+  "feature": "upstream-stateless-wiring-bugfix",
+  "revision": "r6",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-stateless-wiring-bugfix/spec.md",
+    "sha256": "abab0e2a167ceee31c1315ceae9dcfdebe44a9b01efdc891eec5adf9e5b380fe",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r6",
+        "sha256": "5820de8bc59c4045e23d1037746410926502cf0b1c3fcd00030785059dd76e33"
+      },
+      "design": {
+        "revision": "r6",
+        "sha256": "9f0ce0f6610d347598015aa7f72e93ce1380d7a0d719324543cb4348e8e8d1b0"
+      },
+      "tasks": {
+        "revision": "r6",
+        "sha256": "4c8996b29b294cb16340c9abf8ad14cae7b41b45a4975924d097db14485077a7"
+      },
+      "envelope": {
+        "revision": "r6",
+        "sha256": "071d5b0663442f23071db9cdb7db4198e6be030bc38d2684424636b0715a1d2c"
+      }
+    }
+  },
+  "packet": {
+    "digest": "1484d8e0833e70b322aa534cc1c7280120ac6a19a1585b858896d51ba5a0d3d0",
+    "branches": [
+      {
+        "id": "approved-upstream-stateless-wiring-bugfix",
+        "answerIds": [],
+        "taskIds": [
+          "T1"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r6",
+            "sha256": "5820de8bc59c4045e23d1037746410926502cf0b1c3fcd00030785059dd76e33"
+          },
+          "design": {
+            "revision": "r6",
+            "sha256": "9f0ce0f6610d347598015aa7f72e93ce1380d7a0d719324543cb4348e8e8d1b0"
+          },
+          "tasks": {
+            "revision": "r6",
+            "sha256": "4c8996b29b294cb16340c9abf8ad14cae7b41b45a4975924d097db14485077a7"
+          },
+          "envelope": {
+            "revision": "r6",
+            "sha256": "071d5b0663442f23071db9cdb7db4198e6be030bc38d2684424636b0715a1d2c"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "approved-upstream-stateless-wiring-bugfix"
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Upstream Server Stateless Wiring in newClient"
+    },
+    {
+      "id": "R2",
+      "summary": "Default Stateless Upstream Restart Resilience"
+    },
+    {
+      "id": "R3",
+      "summary": "Explicit Stateful Mode Session Preservation"
+    },
+    {
+      "id": "R4",
+      "summary": "Full Suite and Coverage Gate Verification"
+    }
+  ],
+  "authorization": {
+    "mode": "bounded",
+    "id": "auth-1",
+    "packetDigest": "1484d8e0833e70b322aa534cc1c7280120ac6a19a1585b858896d51ba5a0d3d0",
+    "selectedBranchId": "approved-upstream-stateless-wiring-bugfix",
+    "receipt": {
+      "sourceId": "src-user",
+      "recordedAt": "2026-11-04T14:56:07.639Z",
+      "response": {
+        "origin": "user",
+        "explicit": true,
+        "timedOut": false,
+        "automatic": false,
+        "packetDigest": "1484d8e0833e70b322aa534cc1c7280120ac6a19a1585b858896d51ba5a0d3d0",
+        "selectedBranchId": "approved-upstream-stateless-wiring-bugfix"
+      }
+    }
+  },
+  "reviews": {
+    "specification": {
+      "verdict": "pass",
+      "reviewerId": "critic",
+      "packetDigest": "1484d8e0833e70b322aa534cc1c7280120ac6a19a1585b858896d51ba5a0d3d0",
+      "receipt": {
+        "sourceId": "src-review-critic",
+        "recordedAt": "2026-11-04T14:56:07.639Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    },
+    "tasks": {
+      "verdict": "pass",
+      "reviewerId": "code-reviewer",
+      "packetDigest": "1484d8e0833e70b322aa534cc1c7280120ac6a19a1585b858896d51ba5a0d3d0",
+      "receipt": {
+        "sourceId": "src-review-reviewer",
+        "recordedAt": "2026-11-04T14:56:07.639Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    }
+  },
+  "sources": [
+    {
+      "id": "src-user",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-stateless-wiring-bugfix/user-auth.txt",
+        "sha256": "61b85669546d72ef2e67c8537e202f632333d0e1cafebe6f24c51eff092bba88"
+      },
+      "locator": "user conversation message kickoff a bugfix for upstream server restart dead session failure",
+      "recordedAt": "2026-11-04T14:56:07.639Z"
+    },
+    {
+      "id": "src-review-critic",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-stateless-wiring-bugfix/review-critic.md",
+        "sha256": "40e687feda25288d97fd1cfe30521cead2418c330f9eb72064a3a02b26f9ab1d"
+      },
+      "locator": "critic review receipt r6",
+      "recordedAt": "2026-11-04T14:56:07.639Z"
+    },
+    {
+      "id": "src-review-reviewer",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-stateless-wiring-bugfix/review-code-reviewer.md",
+        "sha256": "534c150e0c12de42377f90939d697c295eed4d3c6d7401c6f21fc6e41f1d1f01"
+      },
+      "locator": "code-reviewer review receipt r3",
+      "recordedAt": "2026-11-04T14:56:07.639Z"
+    },
+    {
+      "id": "src-receipt-t1",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "3b67cd534ba58f1c24b06bc55c5d8869eb0492b25e6aa59b51d329e8b65d00a5"
+      },
+      "locator": "engineer receipt T1",
+      "recordedAt": "2026-11-04T14:56:07.639Z"
+    }
+  ],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "T1"
+    ],
+    "readPaths": [
+      ".scratch/upstream-stateless-wiring-bugfix/spec.md",
+      ".scratch/upstream-stateless-wiring-bugfix/issues/01-upstream-stateless-wiring.md",
+      "cmd/mcp-bridge/wiring.go",
+      "cmd/mcp-bridge/serve_upstream_restart_test.go",
+      "internal/config/config.go",
+      "internal/upstream/dedicated.go"
+    ],
+    "writePaths": [
+      "cmd/mcp-bridge/wiring.go",
+      "cmd/mcp-bridge/serve_upstream_restart_test.go",
+      "coverage.out"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/wiring.go",
+          "cmd/mcp-bridge/serve_upstream_restart_test.go",
+          "coverage.out"
+        ]
+      },
+      "acceptanceIds": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4"
+      ],
+      "evidenceIds": [
+        "ev-t1-test"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC1",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2",
+      "requirementIds": [
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC3",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC4",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-t1-test",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "3b67cd534ba58f1c24b06bc55c5d8869eb0492b25e6aa59b51d329e8b65d00a5"
+      },
+      "feature": "upstream-stateless-wiring-bugfix",
+      "packetDigest": "1484d8e0833e70b322aa534cc1c7280120ac6a19a1585b858896d51ba5a0d3d0",
+      "selectedBranchId": "approved-upstream-stateless-wiring-bugfix",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-04T14:56:07.639Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test -race -p 1 -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck",
+        "exitCode": 0
+      }
+    }
+  ],
+  "blockers": [],
+  "gate": {
+    "markerPath": ".superpowers/sdd/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}

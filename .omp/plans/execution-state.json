@@ -1,63 +1,61 @@
 {
   "schemaVersion": 2,
-  "feature": "mcp-inbound-observability",
-  "revision": "r8",
+  "feature": "upstream-stateless-wiring-bugfix",
+  "revision": "r6",
   "projectRoot": "/home/opencode/projects/default/mcp-bridge",
   "spec": {
-    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/mcp-inbound-observability/spec.md",
-    "sha256": "70df9c845eec0af4dbd5851ff0ed0e6a4cd3297d067a02768172d255301fd76c",
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-stateless-wiring-bugfix/spec.md",
+    "sha256": "abab0e2a167ceee31c1315ceae9dcfdebe44a9b01efdc891eec5adf9e5b380fe",
     "sectionBindings": {
       "requirements": {
-        "revision": "r8",
-        "sha256": "3419e07c84d95e2734ccad66479c5402d883b1fc2415c95d2f536bf9723c267e"
+        "revision": "r6",
+        "sha256": "5820de8bc59c4045e23d1037746410926502cf0b1c3fcd00030785059dd76e33"
       },
       "design": {
-        "revision": "r8",
-        "sha256": "a7a85f0427d73093035f49fbf4ffe4fc233d72f66d8bae8f865d60c02e7a88fb"
+        "revision": "r6",
+        "sha256": "9f0ce0f6610d347598015aa7f72e93ce1380d7a0d719324543cb4348e8e8d1b0"
       },
       "tasks": {
-        "revision": "r8",
-        "sha256": "cb416a7add34f80e2afdf3ea1a23334d02805249a1e15ca5b668ae062683b83d"
+        "revision": "r6",
+        "sha256": "4c8996b29b294cb16340c9abf8ad14cae7b41b45a4975924d097db14485077a7"
       },
       "envelope": {
-        "revision": "r8",
-        "sha256": "9c33d8aa8c43a13c02091c1ece41cac2b01f2af8db4bc9882aaac2241c45cbc8"
+        "revision": "r6",
+        "sha256": "071d5b0663442f23071db9cdb7db4198e6be030bc38d2684424636b0715a1d2c"
       }
     }
   },
   "packet": {
-    "digest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
+    "digest": "1484d8e0833e70b322aa534cc1c7280120ac6a19a1585b858896d51ba5a0d3d0",
     "branches": [
       {
-        "id": "approved-mcp-inbound-observability",
+        "id": "approved-upstream-stateless-wiring-bugfix",
         "answerIds": [],
         "taskIds": [
-          "T1",
-          "T2",
-          "T3"
+          "T1"
         ],
         "envelopeId": "env-1",
         "sectionBindings": {
           "requirements": {
-            "revision": "r8",
-            "sha256": "3419e07c84d95e2734ccad66479c5402d883b1fc2415c95d2f536bf9723c267e"
+            "revision": "r6",
+            "sha256": "5820de8bc59c4045e23d1037746410926502cf0b1c3fcd00030785059dd76e33"
           },
           "design": {
-            "revision": "r8",
-            "sha256": "a7a85f0427d73093035f49fbf4ffe4fc233d72f66d8bae8f865d60c02e7a88fb"
+            "revision": "r6",
+            "sha256": "9f0ce0f6610d347598015aa7f72e93ce1380d7a0d719324543cb4348e8e8d1b0"
           },
           "tasks": {
-            "revision": "r8",
-            "sha256": "cb416a7add34f80e2afdf3ea1a23334d02805249a1e15ca5b668ae062683b83d"
+            "revision": "r6",
+            "sha256": "4c8996b29b294cb16340c9abf8ad14cae7b41b45a4975924d097db14485077a7"
           },
           "envelope": {
-            "revision": "r8",
-            "sha256": "9c33d8aa8c43a13c02091c1ece41cac2b01f2af8db4bc9882aaac2241c45cbc8"
+            "revision": "r6",
+            "sha256": "071d5b0663442f23071db9cdb7db4198e6be030bc38d2684424636b0715a1d2c"
           }
         }
       }
     ],
-    "selectedBranchId": "approved-mcp-inbound-observability"
+    "selectedBranchId": "approved-upstream-stateless-wiring-bugfix"
   },
   "actors": {
     "plannerId": "planner",
@@ -68,40 +66,36 @@
   "requirements": [
     {
       "id": "R1",
-      "summary": "Unified Inbound Operation Classification & Metric Recording"
+      "summary": "Upstream Server Stateless Wiring in newClient"
     },
     {
       "id": "R2",
-      "summary": "Client Family Classification"
+      "summary": "Default Stateless Upstream Restart Resilience"
     },
     {
       "id": "R3",
-      "summary": "Exact HTTP Response Bytes"
+      "summary": "Explicit Stateful Mode Session Preservation"
     },
     {
       "id": "R4",
-      "summary": "Exposed Tool Count Recording & Failure Omission"
-    },
-    {
-      "id": "R5",
-      "summary": "End-to-End Loopback Wire Verification, Docs & Coverage Gate"
+      "summary": "Full Suite and Coverage Gate Verification"
     }
   ],
   "authorization": {
     "mode": "bounded",
     "id": "auth-1",
-    "packetDigest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
-    "selectedBranchId": "approved-mcp-inbound-observability",
+    "packetDigest": "1484d8e0833e70b322aa534cc1c7280120ac6a19a1585b858896d51ba5a0d3d0",
+    "selectedBranchId": "approved-upstream-stateless-wiring-bugfix",
     "receipt": {
       "sourceId": "src-user",
-      "recordedAt": "2026-11-03T23:58:00Z",
+      "recordedAt": "2026-11-04T14:56:07.639Z",
       "response": {
         "origin": "user",
         "explicit": true,
         "timedOut": false,
         "automatic": false,
-        "packetDigest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
-        "selectedBranchId": "approved-mcp-inbound-observability"
+        "packetDigest": "1484d8e0833e70b322aa534cc1c7280120ac6a19a1585b858896d51ba5a0d3d0",
+        "selectedBranchId": "approved-upstream-stateless-wiring-bugfix"
       }
     }
   },
@@ -109,10 +103,10 @@
     "specification": {
       "verdict": "pass",
       "reviewerId": "critic",
-      "packetDigest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
+      "packetDigest": "1484d8e0833e70b322aa534cc1c7280120ac6a19a1585b858896d51ba5a0d3d0",
       "receipt": {
         "sourceId": "src-review-critic",
-        "recordedAt": "2026-11-03T23:58:00Z",
+        "recordedAt": "2026-11-04T14:56:07.639Z",
         "response": {
           "origin": "reviewer",
           "verdict": "pass"
@@ -122,10 +116,10 @@
     "tasks": {
       "verdict": "pass",
       "reviewerId": "code-reviewer",
-      "packetDigest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
+      "packetDigest": "1484d8e0833e70b322aa534cc1c7280120ac6a19a1585b858896d51ba5a0d3d0",
       "receipt": {
         "sourceId": "src-review-reviewer",
-        "recordedAt": "2026-11-03T23:58:00Z",
+        "recordedAt": "2026-11-04T14:56:07.639Z",
         "response": {
           "origin": "reviewer",
           "verdict": "pass"
@@ -138,31 +132,41 @@
       "id": "src-user",
       "kind": "user-message",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/mcp-inbound-observability/user-auth.txt",
-        "sha256": "762425727323abdf4d9611d78078857444451681fd95ec7c8b58d8ab7e39e220"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-stateless-wiring-bugfix/user-auth.txt",
+        "sha256": "61b85669546d72ef2e67c8537e202f632333d0e1cafebe6f24c51eff092bba88"
       },
-      "locator": "user conversation backlog prompt",
-      "recordedAt": "2026-11-03T23:58:00Z"
+      "locator": "user conversation message kickoff a bugfix for upstream server restart dead session failure",
+      "recordedAt": "2026-11-04T14:56:07.639Z"
     },
     {
       "id": "src-review-critic",
       "kind": "observation",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/mcp-inbound-observability/review-critic.md",
-        "sha256": "9e1dd4861605ecdb63371a43fc0997bea278772e39993c4ab10e69d1519d6ead"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-stateless-wiring-bugfix/review-critic.md",
+        "sha256": "40e687feda25288d97fd1cfe30521cead2418c330f9eb72064a3a02b26f9ab1d"
       },
-      "locator": "critic review receipt r8",
-      "recordedAt": "2026-11-03T23:58:00Z"
+      "locator": "critic review receipt r6",
+      "recordedAt": "2026-11-04T14:56:07.639Z"
     },
     {
       "id": "src-review-reviewer",
       "kind": "observation",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/mcp-inbound-observability/review-code-reviewer.md",
-        "sha256": "675c251e0eb091f4f90233d34e15b33a88e2ea92f077dd62d285fd1bfed7a398"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-stateless-wiring-bugfix/review-code-reviewer.md",
+        "sha256": "534c150e0c12de42377f90939d697c295eed4d3c6d7401c6f21fc6e41f1d1f01"
       },
-      "locator": "code-reviewer receipt r8",
-      "recordedAt": "2026-11-03T23:58:00Z"
+      "locator": "code-reviewer review receipt r3",
+      "recordedAt": "2026-11-04T14:56:07.639Z"
+    },
+    {
+      "id": "src-receipt-t1",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "3b67cd534ba58f1c24b06bc55c5d8869eb0492b25e6aa59b51d329e8b65d00a5"
+      },
+      "locator": "engineer receipt T1",
+      "recordedAt": "2026-11-04T14:56:07.639Z"
     }
   ],
   "decisions": [],
@@ -170,40 +174,19 @@
     "id": "env-1",
     "root": "/home/opencode/projects/default/mcp-bridge",
     "allowedTaskIds": [
-      "T1",
-      "T2",
-      "T3"
+      "T1"
     ],
     "readPaths": [
-      ".scratch/mcp-inbound-observability/spec.md",
-      ".scratch/mcp-inbound-observability/issues/01-inbound-method-operation-classification-and-metrics.md",
-      ".scratch/mcp-inbound-observability/issues/02-client-family-classification-and-exact-bytes.md",
-      ".scratch/mcp-inbound-observability/issues/03-exposed-tool-count-and-wire-verification.md"
+      ".scratch/upstream-stateless-wiring-bugfix/spec.md",
+      ".scratch/upstream-stateless-wiring-bugfix/issues/01-upstream-stateless-wiring.md",
+      "cmd/mcp-bridge/wiring.go",
+      "cmd/mcp-bridge/serve_upstream_restart_test.go",
+      "internal/config/config.go",
+      "internal/upstream/dedicated.go"
     ],
     "writePaths": [
-      "internal/service/inbound.go",
-      "internal/service/inbound_test.go",
-      "internal/service/session_exposure.go",
-      "internal/observe/metrics.go",
-      "internal/observe/httpdiagnostics.go",
-      "internal/observe/httpdiagnostic_types.go",
-      "internal/observe/httpdiagnostic_encode.go",
-      "internal/observe/httpwriter.go",
-      "internal/observe/log.go",
-      "internal/observe/httpdiagnostics_test.go",
-      "internal/observe/session_slot_diag_test.go",
-      "cmd/mcp-bridge/serve_logging_compatibility_test.go",
-      "cmd/mcp-bridge/serve_oauth_test.go",
-      "README.md",
-      "CHANGELOG.md",
-      ".scratch/mcp-inbound-observability/spec.md",
-      ".scratch/mcp-inbound-observability/map.md",
-      ".scratch/mcp-inbound-observability/issues/01-inbound-method-operation-classification-and-metrics.md",
-      ".scratch/mcp-inbound-observability/issues/02-client-family-classification-and-exact-bytes.md",
-      ".scratch/mcp-inbound-observability/issues/03-exposed-tool-count-and-wire-verification.md",
-      ".omp/artifacts/receipt_T1.json",
-      ".omp/artifacts/receipt_T2.json",
-      ".omp/artifacts/receipt_T3.json",
+      "cmd/mcp-bridge/wiring.go",
+      "cmd/mcp-bridge/serve_upstream_restart_test.go",
       "coverage.out"
     ],
     "allowedEffects": [
@@ -234,76 +217,19 @@
       "effects": {
         "kind": "write",
         "paths": [
-          "internal/service/inbound.go",
-          "internal/service/inbound_test.go",
-          "internal/observe/metrics.go",
-          "cmd/mcp-bridge/serve_logging_compatibility_test.go"
-        ]
-      },
-      "acceptanceIds": [
-        "AC-1",
-        "AC-2"
-      ],
-      "evidenceIds": [
-        "ev-T1-test"
-      ],
-      "agentRoles": [
-        "engineer"
-      ]
-    },
-    {
-      "id": "T2",
-      "stage": "implementation",
-      "status": "done",
-      "blockedBy": [],
-      "requires": [],
-      "effects": {
-        "kind": "write",
-        "paths": [
-          "internal/observe/httpdiagnostics.go",
-          "internal/observe/httpdiagnostic_types.go",
-          "internal/observe/httpdiagnostic_encode.go",
-          "internal/observe/httpwriter.go",
-          "internal/observe/log.go",
-          "internal/observe/httpdiagnostics_test.go",
-          "internal/observe/session_slot_diag_test.go"
-        ]
-      },
-      "acceptanceIds": [
-        "AC-3",
-        "AC-4",
-        "AC-5"
-      ],
-      "evidenceIds": [
-        "ev-T2-test"
-      ],
-      "agentRoles": [
-        "engineer"
-      ]
-    },
-    {
-      "id": "T3",
-      "stage": "implementation",
-      "status": "done",
-      "blockedBy": [],
-      "requires": [],
-      "effects": {
-        "kind": "write",
-        "paths": [
-          "internal/service/session_exposure.go",
-          "cmd/mcp-bridge/serve_oauth_test.go",
-          "README.md",
-          "CHANGELOG.md",
+          "cmd/mcp-bridge/wiring.go",
+          "cmd/mcp-bridge/serve_upstream_restart_test.go",
           "coverage.out"
         ]
       },
       "acceptanceIds": [
-        "AC-5",
-        "AC-6",
-        "AC-7"
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4"
       ],
       "evidenceIds": [
-        "ev-T3-test"
+        "ev-t1-test"
       ],
       "agentRoles": [
         "engineer"
@@ -313,7 +239,7 @@
   "capabilities": [],
   "acceptance": [
     {
-      "id": "AC-1",
+      "id": "AC1",
       "requirementIds": [
         "R1"
       ],
@@ -326,25 +252,12 @@
       ]
     },
     {
-      "id": "AC-2",
-      "requirementIds": [
-        "R1"
-      ],
-      "ownerTaskIds": [
-        "T1"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC-3",
+      "id": "AC2",
       "requirementIds": [
         "R2"
       ],
       "ownerTaskIds": [
-        "T2"
+        "T1"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -352,12 +265,12 @@
       ]
     },
     {
-      "id": "AC-4",
+      "id": "AC3",
       "requirementIds": [
         "R3"
       ],
       "ownerTaskIds": [
-        "T2"
+        "T1"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -365,39 +278,12 @@
       ]
     },
     {
-      "id": "AC-5",
+      "id": "AC4",
       "requirementIds": [
         "R4"
       ],
       "ownerTaskIds": [
-        "T2",
-        "T3"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC-6",
-      "requirementIds": [
-        "R5"
-      ],
-      "ownerTaskIds": [
-        "T3"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC-7",
-      "requirementIds": [
-        "R5"
-      ],
-      "ownerTaskIds": [
-        "T3"
+        "T1"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -407,79 +293,29 @@
   ],
   "evidence": [
     {
-      "id": "ev-T1-test",
+      "id": "ev-t1-test",
       "kind": "test",
       "artifact": {
         "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
-        "sha256": "a7e0cce883708ea0c0b3bfa3023a77d8e381bf5aa0772f330d6805579969dc1d"
+        "sha256": "3b67cd534ba58f1c24b06bc55c5d8869eb0492b25e6aa59b51d329e8b65d00a5"
       },
-      "feature": "mcp-inbound-observability",
-      "packetDigest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
-      "selectedBranchId": "approved-mcp-inbound-observability",
+      "feature": "upstream-stateless-wiring-bugfix",
+      "packetDigest": "1484d8e0833e70b322aa534cc1c7280120ac6a19a1585b858896d51ba5a0d3d0",
+      "selectedBranchId": "approved-upstream-stateless-wiring-bugfix",
       "taskIds": [
         "T1"
       ],
       "acceptanceIds": [
-        "AC-1",
-        "AC-2"
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4"
       ],
       "outcome": "pass",
-      "observedAt": "2026-11-04T02:00:00Z",
+      "observedAt": "2026-11-04T14:56:07.639Z",
       "producer": "engineer",
       "details": {
-        "command": "go test -v -count=1 -race -run TestInboundOperationClassification ./internal/service && go test -v -count=1 -race -run TestServeLoggingCompatibility ./cmd/mcp-bridge",
-        "exitCode": 0
-      }
-    },
-    {
-      "id": "ev-T2-test",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
-        "sha256": "fdbd42565abde8c01bfb447dbf758cae16cbcf302bd73b81551cce80b5b7a7cc"
-      },
-      "feature": "mcp-inbound-observability",
-      "packetDigest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
-      "selectedBranchId": "approved-mcp-inbound-observability",
-      "taskIds": [
-        "T2"
-      ],
-      "acceptanceIds": [
-        "AC-3",
-        "AC-4",
-        "AC-5"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-04T00:30:00Z",
-      "producer": "engineer",
-      "details": {
-        "command": "go test -race -v -count=1 -run TestClientFamilyAndExactBytes ./internal/observe/",
-        "exitCode": 0
-      }
-    },
-    {
-      "id": "ev-T3-test",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T3.json",
-        "sha256": "00c8684e0cf8787a9dd078d561dd1c3f67dbbe94b7369867c2caa4eceb72ac4f"
-      },
-      "feature": "mcp-inbound-observability",
-      "packetDigest": "17d469d6ff1e1021f3df481b4bcbf9af97dfc57d599a50299857e5c3daadbb6b",
-      "selectedBranchId": "approved-mcp-inbound-observability",
-      "taskIds": [
-        "T3"
-      ],
-      "acceptanceIds": [
-        "AC-5",
-        "AC-6",
-        "AC-7"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-04T03:30:00Z",
-      "producer": "engineer",
-      "details": {
-        "command": "go test -v -count=1 -run TestInboundObservabilityWire ./cmd/mcp-bridge && go test -race -p 1 -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck",
+        "command": "go test -race -p 1 -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck",
         "exitCode": 0
       }
     }
