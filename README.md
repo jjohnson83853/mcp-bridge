@@ -312,9 +312,9 @@ One MCP server, three tools:
 
 | Tool | Purpose |
 | --- | --- |
-| `search_tools` | hybrid keyword/vector search over the current catalogs, optionally narrowed with `servers: []` |
-| `describe_tool` | exact schema for one tool name, with validation status |
-| `call_tool` | one forwarded execution, carrying the expected `catalog_revision` |
+| `search_tools` | hybrid keyword/vector search over current catalogs; optionally narrowed with `servers: []` |
+| `describe_tool` | exact schema for a tool name; `catalog_revision` is optional |
+| `call_tool` | one forwarded execution; `catalog_revision` is optional |
 
 All three declare standard MCP tool annotations (advisory hints — never
 authorization and never a promise of zero confirmation prompts):
@@ -333,19 +333,33 @@ upstream servers. The annotations carry no guarantee that a client will skip
 its permission prompts — clients decide independently — and they never grant
 execution authority or bypass any policy.
 
-Names are server-derived and stable: `t_` plus unpadded lowercase base32 of
-`SHA-256([server_id, raw_name])` (RFC 4648 §6). A schema change moves the catalog
-revision without moving the public name.
+Unpinned tools returned by `search_tools` and revealed in a session projection
+use semantic wire names of the form `<server>__<tool>` when the name is a valid
+identifier and at most 64 characters long. If it is longer or contains invalid
+identifier characters, the bridge uses the deterministic fallback `t_` plus
+unpadded lowercase base32 of `SHA-256([server_id, raw_name])` (RFC 4648 §6).
+A schema change moves the catalog revision without moving the public name.
+
+Discovery responses are intentionally pruned: `search_tools` returns the
+catalog revision once at the root and keeps per-tool `availability`, but omits
+the `backends` cluster-health dump and redundant per-result health/revision
+fields. `describe_tool` also retains `availability` while omitting
+`last_success_at` and `catalog_status`. `call_tool` keeps its outer provenance
+envelope and complete upstream result without duplicating discovery-health
+fields.
 
 The catalog revision is **global**: it hashes the sorted bound server identities
 and their exact definitions (schemas compared whitespace-insensitively), plus
 each definition's upstream metadata (title, icons, annotations, `_meta`). A
 metadata-only upstream change therefore moves the revision without moving the
-public name. Search
-returns it with every result, and `describe_tool`/`call_tool` require it. A
-mismatch — including one caused by an unrelated server's definition changing — is
-`catalog_changed` with zero dispatch; refresh explicitly rather than relying on
-implicit rerouting.
+public name. `search_tools` includes the revision at the response root.
+`catalog_revision` is optional for `describe_tool` and `call_tool`: omitting it
+or passing `""` uses the current published revision. A non-empty value must be
+exactly 64 lowercase hexadecimal characters and match the current revision;
+malformed values return `invalid_arguments`, while stale revisions return
+`catalog_changed` without upstream dispatch. Refresh discovery before retrying
+with a current revision.
+
 
 ### Server metadata defaults
 
@@ -475,9 +489,9 @@ explicitly re-list; no zero-prompt behavior is promised for any client
 
 Executions return the upstream result unaltered inside a provenance envelope:
 `structuredContent.upstream_result` is the complete original `CallToolResult`
-(content blocks, structured content, `isError`, metadata) and the outer envelope
-adds `server`, `catalog_revision`, `catalog_status`, `availability`, `tool_name`,
-and `request_id`.
+(content blocks, structured content, `isError`, metadata). The outer
+`call_tool` envelope contains `server`, `tool_name`, `request_id`, and
+`upstream_result`; discovery revision and health fields are not duplicated.
 
 ## Prompt surface
 
