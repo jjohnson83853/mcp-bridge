@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -84,6 +86,86 @@ func NewToolSurface(runtime *Runtime, cfg ToolSurfaceConfig) (*ToolSurface, erro
 // never share a mutable hint value.
 func boolPtr(value bool) *bool { return &value }
 
+func renderBuiltinDescriptors(resolvedPins []core.ResolvedPin) []*mcp.Tool {
+	pinnedNames := make([]string, 0, len(resolvedPins))
+	for _, pin := range resolvedPins {
+		if pin.Binding == nil {
+			continue
+		}
+		pinnedNames = append(pinnedNames, config.WireToolName(pin.PinnedTool.ServerID, pin.PinnedTool.RawName))
+	}
+	sort.Strings(pinnedNames)
+
+	searchDescription := "Search the bridge's indexed tools. Tools declared in your tools list MUST be invoked directly instead of searching. Unpinned tools remain discoverable through this tool."
+	if len(pinnedNames) > 0 {
+		searchDescription = "Search the bridge's indexed tools. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: " +
+			strings.Join(pinnedNames, ", ") +
+			". Unpinned tools remain discoverable through this tool."
+	}
+
+	return []*mcp.Tool{
+		{
+			Name:        catalog.ToolSearchTools,
+			Description: searchDescription,
+			InputSchema: catalog.SearchToolsInputSchema(),
+			Annotations: &mcp.ToolAnnotations{
+				ReadOnlyHint:    true,
+				DestructiveHint: boolPtr(false),
+				IdempotentHint:  true,
+				OpenWorldHint:   boolPtr(false),
+			},
+		},
+		{
+			Name:        catalog.ToolDescribeTool,
+			Description: "Describe one indexed tool with its exact stored schema. DO NOT use this tool to discover input schemas for tools that are already declared in your tools list; invoke those tools directly. Use this tool only to inspect tool metadata, provenance, or unpinned tools.",
+			InputSchema: catalog.DescribeToolInputSchema(),
+			Annotations: &mcp.ToolAnnotations{
+				ReadOnlyHint:    true,
+				DestructiveHint: boolPtr(false),
+				IdempotentHint:  true,
+				OpenWorldHint:   boolPtr(false),
+			},
+		},
+		{
+			Name:        catalog.ToolCallTool,
+			Description: "Call one indexed upstream tool through the bridge. Directly declared tools in your active tools list MUST be invoked directly instead of calling this multiplexer. Use this tool only to invoke unpinned upstream tools discovered via search_tools.",
+			InputSchema: catalog.CallToolInputSchema(),
+			Annotations: &mcp.ToolAnnotations{
+				DestructiveHint: boolPtr(true),
+				IdempotentHint:  false,
+				OpenWorldHint:   boolPtr(true),
+			},
+		},
+	}
+}
+
+func (t *ToolSurface) registerBuiltinTools(server *mcp.Server, descriptors []*mcp.Tool) {
+	for _, descriptor := range descriptors {
+		switch descriptor.Name {
+		case catalog.ToolSearchTools:
+			server.AddTool(descriptor, t.searchTools)
+		case catalog.ToolDescribeTool:
+			server.AddTool(descriptor, t.describeTool)
+		case catalog.ToolCallTool:
+			server.AddTool(descriptor, t.callTool)
+		}
+	}
+}
+
+func (t *ToolSurface) publishBuiltinTools(descriptors []*mcp.Tool) {
+	t.mu.Lock()
+	server := t.server
+	previous := t.builtinTools
+	t.mu.Unlock()
+	if server == nil || sameBuiltinTools(previous, descriptors) {
+		return
+	}
+	t.registerBuiltinTools(server, descriptors)
+	t.mu.Lock()
+	t.builtinTools = descriptors
+	t.mu.Unlock()
+}
+
 // Register installs exactly the three bridge tools on server with the exact
 // §4.4 input schemas. It is not safe for concurrent use with tool calls.
 func (t *ToolSurface) Register(server *mcp.Server) error {
@@ -96,47 +178,15 @@ func (t *ToolSurface) Register(server *mcp.Server) error {
 	if err := c.attachServer(server); err != nil {
 		return err
 	}
+	descriptors := renderBuiltinDescriptors(nil)
 	t.mu.Lock()
 	t.server = server
+	t.builtinTools = descriptors
 	t.mu.Unlock()
-	searchTool := &mcp.Tool{
-		Name:        catalog.ToolSearchTools,
-		Description: "Search the bridge's indexed tools.",
-		InputSchema: catalog.SearchToolsInputSchema(),
-		Annotations: &mcp.ToolAnnotations{
-			ReadOnlyHint:    true,
-			DestructiveHint: boolPtr(false),
-			IdempotentHint:  true,
-			OpenWorldHint:   boolPtr(false),
-		},
-	}
-	describeTool := &mcp.Tool{
-		Name:        catalog.ToolDescribeTool,
-		Description: "Describe one indexed tool with its exact stored schema.",
-		InputSchema: catalog.DescribeToolInputSchema(),
-		Annotations: &mcp.ToolAnnotations{
-			ReadOnlyHint:    true,
-			DestructiveHint: boolPtr(false),
-			IdempotentHint:  true,
-			OpenWorldHint:   boolPtr(false),
-		},
-	}
-	callTool := &mcp.Tool{
-		Name:        catalog.ToolCallTool,
-		Description: "Call one indexed upstream tool through the bridge.",
-		InputSchema: catalog.CallToolInputSchema(),
-		Annotations: &mcp.ToolAnnotations{
-			DestructiveHint: boolPtr(true),
-			IdempotentHint:  false,
-			OpenWorldHint:   boolPtr(true),
-		},
-	}
-	t.builtinTools = []*mcp.Tool{searchTool, describeTool, callTool}
-	server.AddTool(searchTool, t.searchTools)
-	server.AddTool(describeTool, t.describeTool)
-	server.AddTool(callTool, t.callTool)
+	t.registerBuiltinTools(server, descriptors)
 	return nil
 }
+
 
 // Published rebases pinned projections for every live owner after the runtime
 // accepts an assembly. Reconciliation failures do not roll back accepted

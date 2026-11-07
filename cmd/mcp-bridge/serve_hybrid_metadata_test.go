@@ -6,7 +6,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strings"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -67,6 +72,7 @@ type bridgeAnnotations struct {
 // metadata classification test cares about.
 type metadataListedTools struct {
 	Annotations json.RawMessage `json:"annotations"`
+	Description string          `json:"description"`
 	Name        string          `json:"name"`
 }
 
@@ -129,12 +135,24 @@ func TestServeHybridMetadataBuiltinAnnotations(t *testing.T) {
 	}
 
 	annotations := make(map[string]bridgeAnnotations, len(envelope.Result.Tools))
+	descriptions := make(map[string]string, len(envelope.Result.Tools))
 	for _, tool := range envelope.Result.Tools {
 		annotations[tool.Name] = decodeBridgeAnnotations(t, tool.Name, tool.Annotations)
+		descriptions[tool.Name] = tool.Description
 	}
 	for _, name := range []string{"search_tools", "describe_tool", "call_tool"} {
 		if _, present := annotations[name]; !present {
 			t.Fatalf("tools/list missing bridge tool %q (tools=%v; body=%s)", name, toolNames(annotations, envelope.Result.Tools), body)
+		}
+	}
+	wantDescriptions := map[string]string{
+		"search_tools":  "Search the bridge's indexed tools. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: alpha__read. Unpinned tools remain discoverable through this tool.",
+		"describe_tool": "Describe one indexed tool with its exact stored schema. DO NOT use this tool to discover input schemas for tools that are already declared in your tools list; invoke those tools directly. Use this tool only to inspect tool metadata, provenance, or unpinned tools.",
+		"call_tool":     "Call one indexed upstream tool through the bridge. Directly declared tools in your active tools list MUST be invoked directly instead of calling this multiplexer. Use this tool only to invoke unpinned upstream tools discovered via search_tools.",
+	}
+	for name, want := range wantDescriptions {
+		if got := descriptions[name]; got != want {
+			t.Errorf("%s description = %q; want %q", name, got, want)
 		}
 	}
 
@@ -308,4 +326,132 @@ func toolNames(annotations map[string]bridgeAnnotations, tools []metadataListedT
 		names = append(names, tool.Name)
 	}
 	return names
+}
+
+func searchToolsDescriptionOnWire(t *testing.T, ctx context.Context, client *http.Client, httpURL, session string) string {
+	t.Helper()
+	response, body := mcpSend(t, ctx, client, httpURL, session, `{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`)
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("tools/list status = %d; want 200 (body=%s)", response.StatusCode, body)
+	}
+	var envelope struct {
+		Result *struct {
+			Tools []metadataListedTools `json:"tools"`
+		} `json:"result"`
+		Error *struct {
+			Code    int    `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(ssePayload(body), &envelope); err != nil {
+		t.Fatalf("decode tools/list response: %v (%s)", err, body)
+	}
+	if envelope.Error != nil {
+		t.Fatalf("tools/list returned JSON-RPC error %+v (body=%s)", envelope.Error, body)
+	}
+	if envelope.Result == nil {
+		t.Fatalf("tools/list response omitted result (body=%s)", body)
+	}
+	for _, tool := range envelope.Result.Tools {
+		if tool.Name == "search_tools" {
+			return tool.Description
+		}
+	}
+	t.Fatalf("tools/list omitted search_tools (body=%s)", body)
+	return ""
+}
+
+// TestServeHybridMetadataReloadUpdatesGuidance checks the same live HTTP
+// session before and after SIGHUP reloads, including a multi-pin replacement
+// and a transition to the zero-pin baseline.
+func TestServeHybridMetadataReloadUpdatesGuidance(t *testing.T) {
+	t.Setenv("SERVE_CLIENT_TOKEN", serveClientToken)
+	t.Setenv("SERVE_EMBEDDING_KEY", serveEmbeddingKey)
+
+	hup := make(chan os.Signal, 1)
+	signal.Notify(hup, syscall.SIGHUP)
+	defer signal.Stop(hup)
+
+	alpha := fakeUpstreamReadWrite(t)
+	beta := fakeUpstreamReadWrite(t)
+	embeddings := fakeEmbeddings(t)
+	httpAddress, operationsAddress := freeAddress(t), freeAddress(t)
+	for attempts := 0; operationsAddress == httpAddress && attempts < 8; attempts++ {
+		operationsAddress = freeAddress(t)
+	}
+	if operationsAddress == httpAddress {
+		t.Fatal("could not choose distinct public and operations addresses")
+	}
+	directory := t.TempDir()
+	configPath := filepath.Join(directory, "bridge.yaml")
+	servers := []bridgeServerSpec{
+		{id: "alpha", endpoint: alpha.URL},
+		{id: "beta", endpoint: beta.URL},
+	}
+	rewriteHybridReloadPins(t, configPath, httpAddress, operationsAddress, filepath.Join(directory, "state"), embeddings.URL, servers,
+		[]string{"alpha/read", "alpha/write"})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	stdout, stderr := &syncWriter{}, &syncWriter{}
+	done := make(chan int, 1)
+	go func() { done <- runContext(ctx, []string{"--config", configPath}, stdout, stderr) }()
+	t.Cleanup(func() {
+		cancel()
+		select {
+		case status := <-done:
+			if status != 0 {
+				t.Errorf("run status = %d; want 0 (stderr=%s)", status, stderr.String())
+			}
+		case <-time.After(30 * time.Second):
+			t.Error("the process did not shut down after cancellation")
+		}
+	})
+	waitFor(t, "readiness of both configured servers", func() bool {
+		status, body, ok := probeBody(t, "http://"+operationsAddress+"/readyz")
+		return ok && status == http.StatusOK &&
+			strings.Contains(body, `"status":"ready"`) &&
+			strings.Contains(body, "alpha") &&
+			strings.Contains(body, "beta")
+	})
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	httpURL := "http://" + httpAddress
+	response, body := mcpSend(t, ctx, client, httpURL, "", `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"metadata-reload-guidance-client","version":"1"}}}`)
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("initialize status = %d; want 200 (body=%s)", response.StatusCode, body)
+	}
+	session := response.Header.Get("Mcp-Session-Id")
+	if session == "" {
+		t.Fatal("initialize omitted Mcp-Session-Id")
+	}
+	response, body = mcpSend(t, ctx, client, httpURL, session, `{"jsonrpc":"2.0","method":"notifications/initialized"}`)
+	if response.StatusCode != http.StatusAccepted {
+		t.Fatalf("initialized notification status = %d; want 202 (body=%s)", response.StatusCode, body)
+	}
+
+	assertDescription := func(phase, want string) {
+		t.Helper()
+		waitFor(t, phase, func() bool {
+			return searchToolsDescriptionOnWire(t, ctx, client, httpURL, session) == want
+		})
+	}
+	reloadAndAssert := func(phase, want string) {
+		t.Helper()
+		sendReload(t)
+		select {
+		case <-hup:
+		case <-time.After(10 * time.Second):
+			t.Fatal("SIGHUP was not delivered to the test process")
+		}
+		assertDescription(phase, want)
+	}
+
+	assertDescription("initial two-pin guidance", "Search the bridge's indexed tools. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: alpha__read, alpha__write. Unpinned tools remain discoverable through this tool.")
+
+	rewriteHybridReloadPins(t, configPath, httpAddress, operationsAddress, filepath.Join(directory, "state"), embeddings.URL, servers,
+		[]string{"beta/read", "beta/write"})
+	reloadAndAssert("guidance for the reloaded beta pins", "Search the bridge's indexed tools. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: beta__read, beta__write. Unpinned tools remain discoverable through this tool.")
+
+	rewriteHybridReloadPins(t, configPath, httpAddress, operationsAddress, filepath.Join(directory, "state"), embeddings.URL, servers, nil)
+	reloadAndAssert("zero-pin guidance after reload", "Search the bridge's indexed tools. Tools declared in your tools list MUST be invoked directly instead of searching. Unpinned tools remain discoverable through this tool.")
 }

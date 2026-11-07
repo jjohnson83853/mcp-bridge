@@ -6,6 +6,12 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Dynamic direct-first guidance for gateway built-ins.** `search_tools`
+  descriptions list the exact, sorted wire names of published configured pins
+  (with clean baseline guidance when none are published), while `describe_tool`
+  and `call_tool` steer clients away from redundant discovery and multiplexing.
+  Unpinned tools remain discoverable; schemas, safety annotations, dispatch, and
+  upstream metadata are unchanged.
 - **Inbound observability enrichment and operation-partitioned request metrics.**
   Incoming requests are classified by inbound method/transport into a closed
   finite operation enum (`initialize`, `initialized`, `tools_list`, `tools_call`,

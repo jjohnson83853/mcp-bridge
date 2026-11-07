@@ -333,6 +333,15 @@ upstream servers. The annotations carry no guarantee that a client will skip
 its permission prompts — clients decide independently — and they never grant
 execution authority or bypass any policy.
 
+The built-in descriptions steer clients toward tools already declared in their
+active list. `search_tools` includes the exact, alphabetically sorted wire names
+of published configured pins; with no published pins it uses a baseline
+direct-first description without an empty inventory. `describe_tool` discourages
+redundant schema discovery, and `call_tool` reserves generic dispatch for
+unpinned tools. These are advisory descriptions: unpinned tools remain
+discoverable, and schemas, annotations, dispatch behavior, and upstream
+metadata are unchanged.
+
 Unpinned tools returned by `search_tools` and revealed in a session projection
 use semantic wire names of the form `<server>__<tool>` when the name is a valid
 identifier and at most 64 characters long. If it is longer or contains invalid

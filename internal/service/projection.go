@@ -56,9 +56,10 @@ type toolProjection struct {
 	owner             projectionOwner
 	generation        uint64
 	runtimeGeneration uint64
-	tools             []*mcp.Tool
-	byName            map[string]projectedTool
-	interests         map[logicalToolTarget]struct{}
+	builtinTools       []*mcp.Tool
+	tools              []*mcp.Tool
+	byName             map[string]projectedTool
+	interests          map[logicalToolTarget]struct{}
 }
 
 type unionTool struct {
@@ -222,6 +223,14 @@ func (c *projectionCoordinator) superseded(generation uint64) bool {
 }
 
 func prepareProjection(owner projectionOwner, previous *toolProjection, runtimeGeneration uint64, specs []projectionToolSpec, interests map[logicalToolTarget]struct{}) (*toolProjection, error) {
+	builtinTools := renderBuiltinDescriptors(nil)
+	if previous != nil {
+		builtinTools = previous.builtinTools
+	}
+	return prepareProjectionWithBuiltinTools(owner, previous, runtimeGeneration, specs, interests, builtinTools)
+}
+
+func prepareProjectionWithBuiltinTools(owner projectionOwner, previous *toolProjection, runtimeGeneration uint64, specs []projectionToolSpec, interests map[logicalToolTarget]struct{}, builtinTools []*mcp.Tool) (*toolProjection, error) {
 	generation := uint64(1)
 	if previous != nil {
 		generation = previous.generation + 1
@@ -233,6 +242,7 @@ func prepareProjection(owner projectionOwner, previous *toolProjection, runtimeG
 		tools:             make([]*mcp.Tool, 0, len(specs)),
 		byName:            make(map[string]projectedTool, len(specs)),
 		interests:         cloneInterests(interests),
+		builtinTools:      builtinTools,
 	}
 	for _, spec := range specs {
 		if spec.binding == nil {
@@ -290,11 +300,13 @@ func preparePinProjection(owner projectionOwner, previous *toolProjection, assem
 	}
 	specs := make([]projectionToolSpec, 0, len(assembly.pins))
 	pinnedTargets := make(map[logicalToolTarget]struct{}, len(assembly.pins))
+	resolvedPins := make([]core.ResolvedPin, 0, len(assembly.pins))
 	for i := range assembly.pins {
 		pin := &assembly.pins[i]
 		if pin.Binding == nil {
 			continue
 		}
+		resolvedPins = append(resolvedPins, *pin)
 		target := logicalToolTarget{serverID: pin.Binding.ServerID, rawName: pin.Binding.RawName}
 		pinnedTargets[target] = struct{}{}
 		specs = append(specs, projectionToolSpec{
@@ -331,7 +343,7 @@ func preparePinProjection(owner projectionOwner, previous *toolProjection, assem
 			}
 		}
 	}
-	return prepareProjection(owner, previous, assembly.Generation(), specs, interests)
+	return prepareProjectionWithBuiltinTools(owner, previous, assembly.Generation(), specs, interests, renderBuiltinDescriptors(resolvedPins))
 }
 
 func (t *ToolSurface) discoveryOwnerValid(owner projectionOwner, assembly *Assembly) bool {
@@ -621,7 +633,8 @@ func sameProjection(left, right *toolProjection) bool {
 	}
 	if left.runtimeGeneration != right.runtimeGeneration ||
 		len(left.byName) != len(right.byName) ||
-		len(left.interests) != len(right.interests) {
+		len(left.interests) != len(right.interests) ||
+		!sameBuiltinTools(left.builtinTools, right.builtinTools) {
 		return false
 	}
 	for name, entry := range left.byName {
@@ -637,6 +650,24 @@ func sameProjection(left, right *toolProjection) bool {
 	}
 	return true
 }
+func sameBuiltinTools(left, right []*mcp.Tool) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for index := range left {
+		if left[index] == nil || right[index] == nil {
+			if left[index] != right[index] {
+				return false
+			}
+			continue
+		}
+		if left[index].Name != right[index].Name || left[index].Description != right[index].Description {
+			return false
+		}
+	}
+	return true
+}
+
 
 func (c *projectionCoordinator) replaceProjectionLocked(owner projectionOwner, next *toolProjection) (registryDelta, error) {
 	if next != nil {
@@ -989,8 +1020,9 @@ func (t *ToolSurface) publishProjection(owner projectionOwner, assembly *Assembl
 		delta = staged.delta
 	}
 	c.barrier.Unlock()
-
+	t.publishBuiltinTools(next[owner].builtinTools)
 	t.applyRegistryDelta(delta)
+
 	return nil
 }
 
