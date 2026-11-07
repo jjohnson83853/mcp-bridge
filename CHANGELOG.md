@@ -149,6 +149,10 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Explicit discovery-tool advisory hints.** `search_tools` and
+  `describe_tool` now declare `destructiveHint: false` and
+  `openWorldHint: false`, matching their read-only, closed-world catalog behavior.
+
 - **Metadata defaults and exceptions apply to revealed tools.**
   `tool_metadata.defaults` and `tool_metadata.tools` exception patches apply
   to unpinned tools discovered via `search_tools` or `describe_tool`, matching

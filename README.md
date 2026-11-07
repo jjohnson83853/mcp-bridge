@@ -321,8 +321,8 @@ authorization and never a promise of zero confirmation prompts):
 
 | Tool | `readOnlyHint` | `destructiveHint` | `idempotentHint` | `openWorldHint` |
 | --- | --- | --- | --- | --- |
-| `search_tools` | true | unset | true | true |
-| `describe_tool` | true | unset | true | true |
+| `search_tools` | true | false | true | false |
+| `describe_tool` | true | false | true | false |
 | `call_tool` | false | true | false | true |
 
 `search_tools`/`describe_tool` are read-only, idempotent discovery over the
