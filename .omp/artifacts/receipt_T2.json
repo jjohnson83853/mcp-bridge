@@ -3,6 +3,6 @@
   "status": "COMPLETED",
   "artifact_receipt": ".omp/artifacts/receipt_T2.json",
   "telemetry_ref": null,
-  "summary": "T2 implementation revised with comprehensive family table tests, detached-ID exposure contribution, concurrent finish guard, and strict whitespace classification.",
+  "summary": "Coverage gate passed: source-line coverage 90.3% (6305/6985), gate 90% true; `go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck` and `go test -race ./...` passed (exit 0); unit tests passed cleanly.",
   "error_code": null
 }

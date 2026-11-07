@@ -1,64 +1,62 @@
 {
   "schemaVersion": 2,
-  "feature": "homelab-llm-ergonomics",
-  "revision": "r7",
+  "feature": "gateway-tool-annotations",
+  "revision": "r3",
   "projectRoot": "/home/opencode/projects/default/mcp-bridge",
   "spec": {
-    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/homelab-llm-ergonomics/spec.md",
-    "sha256": "7c34c7482a478fbe3338aad694d5c27a4cb2a0efbdb3528f30536a65c756bc28",
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/gateway-tool-annotations/spec.md",
+    "sha256": "66515cdffdb32027a03a8480b265e551c0660e106b884893f8564fbf83966a6d",
     "sectionBindings": {
       "requirements": {
-        "revision": "r7",
-        "sha256": "8ffc0f75f31ba96a6bf704f96eae79d5ed3a89a0ef337988a09534b49c031f75"
+        "revision": "r3",
+        "sha256": "5bf3d0e660f6c5115496f296ec829a6eae9ec0b0ae33be790fcdd998fcb7c351"
       },
       "design": {
-        "revision": "r7",
-        "sha256": "4b8bc39a9661a76812efa7c9870cc71e24c1aca7eefac09ca36dde65ca14799f"
+        "revision": "r3",
+        "sha256": "36fef8a47f78328e58c9ab7dc711f1de0d2768e412b00eb32abff916b5e57963"
       },
       "tasks": {
-        "revision": "r7",
-        "sha256": "74476c31dbdef7ab6042041246c8c425797a2d884316fe829c7e13601d4ee650"
+        "revision": "r3",
+        "sha256": "4951d5f87e8f3056f2a4a80a502889139dd14c47d5aaed5647838d63522539a2"
       },
       "envelope": {
-        "revision": "r7",
-        "sha256": "c1bba5ed5c2a5ba05509d7e3d92acf2dc45168f0bbb2d35d923898f07c11dfd4"
+        "revision": "r3",
+        "sha256": "391e78cb6af458cf40e368654156590a1030534917184e7cfedd76b562a22ebc"
       }
     }
   },
   "packet": {
-    "digest": "10db7fe51cbdfc52d354970748ce3541165c1ca5be27246890a96b8c85aac643",
+    "digest": "678235546af8315e5e4409fe9a3ca14a6d65a2120fb9cc746868a935cc77addc",
     "branches": [
       {
-        "id": "approved-homelab-llm-ergonomics",
+        "id": "approved-gateway-tool-annotations",
         "answerIds": [],
         "taskIds": [
           "T1",
-          "T2",
-          "T3",
-          "T4"
+          "T2"
         ],
         "envelopeId": "env-1",
         "sectionBindings": {
           "requirements": {
-            "revision": "r7",
-            "sha256": "8ffc0f75f31ba96a6bf704f96eae79d5ed3a89a0ef337988a09534b49c031f75"
+            "revision": "r3",
+            "sha256": "5bf3d0e660f6c5115496f296ec829a6eae9ec0b0ae33be790fcdd998fcb7c351"
           },
           "design": {
-            "revision": "r7",
-            "sha256": "4b8bc39a9661a76812efa7c9870cc71e24c1aca7eefac09ca36dde65ca14799f"
+            "revision": "r3",
+            "sha256": "36fef8a47f78328e58c9ab7dc711f1de0d2768e412b00eb32abff916b5e57963"
           },
           "tasks": {
-            "revision": "r7",
-            "sha256": "74476c31dbdef7ab6042041246c8c425797a2d884316fe829c7e13601d4ee650"
+            "revision": "r3",
+            "sha256": "4951d5f87e8f3056f2a4a80a502889139dd14c47d5aaed5647838d63522539a2"
           },
           "envelope": {
-            "revision": "r7",
-            "sha256": "c1bba5ed5c2a5ba05509d7e3d92acf2dc45168f0bbb2d35d923898f07c11dfd4"
+            "revision": "r3",
+            "sha256": "391e78cb6af458cf40e368654156590a1030534917184e7cfedd76b562a22ebc"
           }
         }
       }
     ],
-    "selectedBranchId": "approved-homelab-llm-ergonomics"
+    "selectedBranchId": "approved-gateway-tool-annotations"
   },
   "actors": {
     "plannerId": "planner",
@@ -69,51 +67,56 @@
   "requirements": [
     {
       "id": "R1",
-      "summary": "Optional catalog_revision on describe_tool and call_tool"
+      "summary": "search_tools explicitly emits readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false"
     },
     {
       "id": "R2",
-      "summary": "Semantic Wire Name (<server>__<tool>) Publication with Deterministic Fallback"
+      "summary": "describe_tool explicitly emits readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false"
     },
     {
       "id": "R3",
-      "summary": "Pruned search_tools and describe_tool Payloads"
+      "summary": "Discovery tools have non-contradictory annotations"
     },
     {
       "id": "R4",
-      "summary": "Streamlined Generic call_tool Response Envelope"
+      "summary": "call_tool retains conservative classification unchanged"
     },
     {
       "id": "R5",
-      "summary": "End-to-End Wire Verification, Documentation, and Coverage Gate"
+      "summary": "Upstream and revealed tools pass through without heuristic injection"
+    },
+    {
+      "id": "R6",
+      "summary": "Operator documentation matches wire contract"
     }
   ],
   "authorization": {
-    "mode": "bounded",
-    "id": "auth-1",
-    "packetDigest": "10db7fe51cbdfc52d354970748ce3541165c1ca5be27246890a96b8c85aac643",
-    "selectedBranchId": "approved-homelab-llm-ergonomics",
+    "mode": "milestone",
+    "id": "auth-milestone",
+    "packetDigest": "678235546af8315e5e4409fe9a3ca14a6d65a2120fb9cc746868a935cc77addc",
+    "selectedBranchId": "approved-gateway-tool-annotations",
     "receipt": {
       "sourceId": "src-user",
-      "recordedAt": "2026-11-04T18:49:07.946Z",
+      "recordedAt": "2026-11-07T12:00:00Z",
       "response": {
         "origin": "user",
         "explicit": true,
         "timedOut": false,
         "automatic": false,
-        "packetDigest": "10db7fe51cbdfc52d354970748ce3541165c1ca5be27246890a96b8c85aac643",
-        "selectedBranchId": "approved-homelab-llm-ergonomics"
+        "packetDigest": "678235546af8315e5e4409fe9a3ca14a6d65a2120fb9cc746868a935cc77addc",
+        "selectedBranchId": "approved-gateway-tool-annotations",
+        "milestone": true
       }
     }
   },
   "reviews": {
     "specification": {
       "verdict": "pass",
-      "reviewerId": "critic",
-      "packetDigest": "10db7fe51cbdfc52d354970748ce3541165c1ca5be27246890a96b8c85aac643",
+      "reviewerId": "code-reviewer",
+      "packetDigest": "678235546af8315e5e4409fe9a3ca14a6d65a2120fb9cc746868a935cc77addc",
       "receipt": {
-        "sourceId": "src-review-critic",
-        "recordedAt": "2026-11-04T18:49:07.946Z",
+        "sourceId": "src-review-reviewer",
+        "recordedAt": "2026-11-07T12:00:00Z",
         "response": {
           "origin": "reviewer",
           "verdict": "pass"
@@ -122,11 +125,11 @@
     },
     "tasks": {
       "verdict": "pass",
-      "reviewerId": "code-reviewer",
-      "packetDigest": "10db7fe51cbdfc52d354970748ce3541165c1ca5be27246890a96b8c85aac643",
+      "reviewerId": "critic",
+      "packetDigest": "678235546af8315e5e4409fe9a3ca14a6d65a2120fb9cc746868a935cc77addc",
       "receipt": {
-        "sourceId": "src-review-reviewer",
-        "recordedAt": "2026-11-04T18:49:07.946Z",
+        "sourceId": "src-review-critic",
+        "recordedAt": "2026-11-07T12:00:00Z",
         "response": {
           "origin": "reviewer",
           "verdict": "pass"
@@ -139,71 +142,51 @@
       "id": "src-user",
       "kind": "user-message",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/homelab-llm-ergonomics/user-auth.txt",
-        "sha256": "ef202021ce6efa02790529b2d156fb33c5314c634aa5c1a4336b1fc2ab1548fd"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/gateway-tool-annotations/user-auth.txt",
+        "sha256": "91b0a8b806c9f4df47695394559204705a95009e6780ef25bc70d577047e76d7"
       },
-      "locator": "user conversation message kickoff homelab llm ergonomics backlog under RULES.md S14",
-      "recordedAt": "2026-11-04T18:49:07.946Z"
+      "locator": "user conversation message kickoff gateway tool annotations backlog under RULES.md S14",
+      "recordedAt": "2026-11-07T12:00:00Z"
     },
     {
       "id": "src-review-critic",
       "kind": "observation",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/homelab-llm-ergonomics/review-critic.md",
-        "sha256": "b2aabe6e80d2cbd1457b042ac3018b9645a39b10a805b42df9a97939908847fe"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/gateway-tool-annotations/review-critic.md",
+        "sha256": "7d1b0b8284e1e76815b4af7bf8ae6a58883faff7381d82ce9eb55e9d802e0450"
       },
-      "locator": "critic review receipt r7",
-      "recordedAt": "2026-11-04T18:49:07.946Z"
+      "locator": "critic review receipt r3",
+      "recordedAt": "2026-11-07T12:00:00Z"
     },
     {
       "id": "src-review-reviewer",
       "kind": "observation",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/homelab-llm-ergonomics/review-code-reviewer.md",
-        "sha256": "0e8a0ba5bb45a996eba59ca7e696259a3ac5d849c454382ee5c872d8a8ac6469"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/gateway-tool-annotations/review-code-reviewer.md",
+        "sha256": "e6d4ffaf999013c367133d2cac7df44afe9cbe50c9c928f736594c389168a614"
       },
-      "locator": "code-reviewer review receipt r7",
-      "recordedAt": "2026-11-04T18:49:07.946Z"
+      "locator": "code-reviewer review receipt r3",
+      "recordedAt": "2026-11-07T12:00:00Z"
     },
     {
       "id": "src-receipt-t1",
       "kind": "observation",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_homelab_T1.json",
-        "sha256": "d22f8d3a0ac67c34bb911a1f2e70c0024112046db4e16c65a2d83fdd08fb3cb9"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "0e5a388024493f1fb364e746493d31f9136b24d6e2540b822c38997cd03676bb"
       },
-      "locator": "engineer receipt homelab T1",
-      "recordedAt": "2026-11-04T18:49:07.946Z"
+      "locator": "engineer receipt T1",
+      "recordedAt": "2026-11-07T12:00:00Z"
     },
     {
       "id": "src-receipt-t2",
       "kind": "observation",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_homelab_T2.json",
-        "sha256": "2a0841aadd9c5b11c88c5a7c0d539a5c75710cfbd9cd2a48e8d7536992b91a11"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
+        "sha256": "38f8a68dda1373583b944b09e45e7604cf2e5344ad73f073da55361e899156e7"
       },
-      "locator": "engineer receipt homelab T2",
-      "recordedAt": "2026-11-04T18:49:07.946Z"
-    },
-    {
-      "id": "src-receipt-t3",
-      "kind": "observation",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_homelab_T3.json",
-        "sha256": "f647992765f14349b929d98e2f29f80f39740103b8be5f0b16a61ace30dba5bf"
-      },
-      "locator": "engineer receipt homelab T3",
-      "recordedAt": "2026-11-04T18:49:07.946Z"
-    },
-    {
-      "id": "src-receipt-t4",
-      "kind": "observation",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_homelab_T4.json",
-        "sha256": "b0dc33dc814935fc9716667b610818748c0c933ddc45e604c888994a172a2f00"
-      },
-      "locator": "engineer receipt homelab T4",
-      "recordedAt": "2026-11-04T18:49:07.946Z"
+      "locator": "engineer receipt T2",
+      "recordedAt": "2026-11-07T12:00:00Z"
     }
   ],
   "decisions": [],
@@ -212,75 +195,40 @@
     "root": "/home/opencode/projects/default/mcp-bridge",
     "allowedTaskIds": [
       "T1",
-      "T2",
-      "T3",
-      "T4"
+      "T2"
     ],
     "readPaths": [
-      ".scratch/homelab-llm-ergonomics/spec.md",
-      ".scratch/homelab-llm-ergonomics/issues/01-optional-catalog-revision.md",
-      ".scratch/homelab-llm-ergonomics/issues/02-semantic-wire-name-publication.md",
-      ".scratch/homelab-llm-ergonomics/issues/03-prune-search-describe-call-payloads.md",
-      ".scratch/homelab-llm-ergonomics/issues/04-integrated-wire-verification-and-coverage.md",
-      "internal/catalog/schema.go",
-      "internal/catalog/catalog_test.go",
-      "internal/service/tools.go",
-      "internal/service/direct_execution.go",
-      "internal/service/projection.go",
-      "internal/service/tools_test.go",
-      "internal/service/service_edge_test.go",
-      "internal/service/progressive_discovery_test.go",
-      "internal/service/progressive_session_test.go",
-      "internal/service/progressive_projection_test.go",
-      "internal/service/progressive_concurrency_lifecycle_test.go",
-      "cmd/mcp-bridge/serve_test.go",
-      "cmd/mcp-bridge/serve_oauth_test.go",
-      "cmd/mcp-bridge/serve_endpoint_rebind_test.go",
-      "cmd/mcp-bridge/serve_hybrid_coexistence_test.go",
-      "cmd/mcp-bridge/serve_hybrid_metadata_defaults_test.go",
-      "cmd/mcp-bridge/serve_hybrid_metadata_exceptions_test.go",
-      "cmd/mcp-bridge/serve_hybrid_metadata_source_test.go",
-      "cmd/mcp-bridge/serve_upstream_restart_test.go",
+      "spec.md",
+      "internal/service/",
+      "cmd/mcp-bridge/",
       "README.md",
+      "CHANGELOG.md",
       "coverage.out",
-      ".omp/artifacts/receipt_homelab_T1.json",
-      ".omp/artifacts/receipt_homelab_T2.json",
-      ".omp/artifacts/receipt_homelab_T3.json",
-      ".omp/artifacts/receipt_homelab_T4.json"
+      ".omp/artifacts/"
     ],
     "writePaths": [
-      "internal/catalog/schema.go",
-      "internal/catalog/catalog_test.go",
       "internal/service/tools.go",
-      "internal/service/direct_execution.go",
-      "internal/service/projection.go",
-      "internal/service/tools_test.go",
-      "internal/service/service_edge_test.go",
-      "internal/service/progressive_discovery_test.go",
-      "internal/service/progressive_session_test.go",
-      "internal/service/progressive_projection_test.go",
-      "internal/service/progressive_concurrency_lifecycle_test.go",
-      "cmd/mcp-bridge/serve_test.go",
-      "cmd/mcp-bridge/serve_oauth_test.go",
-      "cmd/mcp-bridge/serve_endpoint_rebind_test.go",
-      "cmd/mcp-bridge/serve_hybrid_coexistence_test.go",
-      "cmd/mcp-bridge/serve_hybrid_metadata_defaults_test.go",
+      "cmd/mcp-bridge/serve_hybrid_metadata_test.go",
       "cmd/mcp-bridge/serve_hybrid_metadata_exceptions_test.go",
-      "cmd/mcp-bridge/serve_hybrid_metadata_source_test.go",
-      "cmd/mcp-bridge/serve_upstream_restart_test.go",
       "README.md",
+      "CHANGELOG.md",
       "coverage.out",
-      ".omp/artifacts/receipt_homelab_T1.json",
-      ".omp/artifacts/receipt_homelab_T2.json",
-      ".omp/artifacts/receipt_homelab_T3.json",
-      ".omp/artifacts/receipt_homelab_T4.json"
+      ".omp/artifacts/receipt_T1.json",
+      ".omp/artifacts/receipt_T2.json"
     ],
     "allowedEffects": [
       "read",
       "write",
       "test"
     ],
-    "forbiddenEffects": [],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
     "decisionPolicy": {
       "technicalDecisionIds": [],
       "ownerCategories": []
@@ -303,17 +251,18 @@
       "effects": {
         "kind": "write",
         "paths": [
-          "internal/catalog/schema.go",
-          "internal/catalog/catalog_test.go",
           "internal/service/tools.go",
-          "internal/service/direct_execution.go",
-          "internal/service/tools_test.go",
-          ".omp/artifacts/receipt_homelab_T1.json"
+          "cmd/mcp-bridge/serve_hybrid_metadata_test.go",
+          "README.md",
+          "CHANGELOG.md",
+          ".omp/artifacts/receipt_T1.json"
         ]
       },
       "acceptanceIds": [
         "AC-1",
-        "AC-2"
+        "AC-2",
+        "AC-3",
+        "AC-5"
       ],
       "evidenceIds": [
         "ev-t1-test"
@@ -333,86 +282,17 @@
       "effects": {
         "kind": "write",
         "paths": [
-          "internal/service/tools.go",
-          "internal/service/projection.go",
-          "internal/service/tools_test.go",
-          "internal/service/service_edge_test.go",
-          "internal/service/progressive_discovery_test.go",
-          "internal/service/progressive_session_test.go",
-          "internal/service/progressive_projection_test.go",
-          "internal/service/progressive_concurrency_lifecycle_test.go",
-          "cmd/mcp-bridge/serve_endpoint_rebind_test.go",
-          ".omp/artifacts/receipt_homelab_T2.json"
-        ]
-      },
-      "acceptanceIds": [
-        "AC-3"
-      ],
-      "evidenceIds": [
-        "ev-t2-test"
-      ],
-      "agentRoles": [
-        "engineer"
-      ]
-    },
-    {
-      "id": "T3",
-      "stage": "implementation",
-      "status": "done",
-      "blockedBy": [
-        "T2"
-      ],
-      "requires": [],
-      "effects": {
-        "kind": "write",
-        "paths": [
-          "internal/service/tools.go",
-          "internal/service/tools_test.go",
-          ".omp/artifacts/receipt_homelab_T3.json"
+          "cmd/mcp-bridge/serve_hybrid_metadata_exceptions_test.go",
+          "coverage.out",
+          ".omp/artifacts/receipt_T2.json"
         ]
       },
       "acceptanceIds": [
         "AC-4",
-        "AC-5",
         "AC-6"
       ],
       "evidenceIds": [
-        "ev-t3-test"
-      ],
-      "agentRoles": [
-        "engineer"
-      ]
-    },
-    {
-      "id": "T4",
-      "stage": "implementation",
-      "status": "done",
-      "blockedBy": [],
-      "requires": [],
-      "effects": {
-        "kind": "write",
-        "paths": [
-          "internal/catalog/schema.go",
-          "internal/catalog/catalog_test.go",
-          "internal/service/tools_test.go",
-          "cmd/mcp-bridge/serve_test.go",
-          "cmd/mcp-bridge/serve_oauth_test.go",
-          "cmd/mcp-bridge/serve_hybrid_coexistence_test.go",
-          "cmd/mcp-bridge/serve_hybrid_metadata_defaults_test.go",
-          "cmd/mcp-bridge/serve_hybrid_metadata_exceptions_test.go",
-          "cmd/mcp-bridge/serve_hybrid_metadata_source_test.go",
-          "cmd/mcp-bridge/serve_upstream_restart_test.go",
-          "README.md",
-          "coverage.out",
-          ".omp/artifacts/receipt_homelab_T4.json"
-        ]
-      },
-      "acceptanceIds": [
-        "AC-7",
-        "AC-8"
-      ],
-      "evidenceIds": [
-        "ev-t4-test"
+        "ev-t2-test"
       ],
       "agentRoles": [
         "engineer"
@@ -424,7 +304,8 @@
     {
       "id": "AC-1",
       "requirementIds": [
-        "R1"
+        "R1",
+        "R3"
       ],
       "ownerTaskIds": [
         "T1"
@@ -437,7 +318,8 @@
     {
       "id": "AC-2",
       "requirementIds": [
-        "R1"
+        "R2",
+        "R3"
       ],
       "ownerTaskIds": [
         "T1"
@@ -450,7 +332,20 @@
     {
       "id": "AC-3",
       "requirementIds": [
-        "R2"
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-4",
+      "requirementIds": [
+        "R5"
       ],
       "ownerTaskIds": [
         "T2"
@@ -461,25 +356,12 @@
       ]
     },
     {
-      "id": "AC-4",
-      "requirementIds": [
-        "R3"
-      ],
-      "ownerTaskIds": [
-        "T3"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
       "id": "AC-5",
       "requirementIds": [
-        "R3"
+        "R6"
       ],
       "ownerTaskIds": [
-        "T3"
+        "T1"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -489,36 +371,13 @@
     {
       "id": "AC-6",
       "requirementIds": [
-        "R4"
-      ],
-      "ownerTaskIds": [
-        "T3"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC-7",
-      "requirementIds": [
+        "R1",
+        "R2",
+        "R4",
         "R5"
       ],
       "ownerTaskIds": [
-        "T4"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC-8",
-      "requirementIds": [
-        "R5"
-      ],
-      "ownerTaskIds": [
-        "T4"
+        "T2"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -531,24 +390,26 @@
       "id": "ev-t1-test",
       "kind": "test",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_homelab_T1.json",
-        "sha256": "d22f8d3a0ac67c34bb911a1f2e70c0024112046db4e16c65a2d83fdd08fb3cb9"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "0e5a388024493f1fb364e746493d31f9136b24d6e2540b822c38997cd03676bb"
       },
-      "feature": "homelab-llm-ergonomics",
-      "packetDigest": "10db7fe51cbdfc52d354970748ce3541165c1ca5be27246890a96b8c85aac643",
-      "selectedBranchId": "approved-homelab-llm-ergonomics",
+      "feature": "gateway-tool-annotations",
+      "packetDigest": "678235546af8315e5e4409fe9a3ca14a6d65a2120fb9cc746868a935cc77addc",
+      "selectedBranchId": "approved-gateway-tool-annotations",
       "taskIds": [
         "T1"
       ],
       "acceptanceIds": [
         "AC-1",
-        "AC-2"
+        "AC-2",
+        "AC-3",
+        "AC-5"
       ],
       "outcome": "pass",
-      "observedAt": "2026-11-04T18:49:07.946Z",
+      "observedAt": "2026-11-07T12:00:00Z",
       "producer": "engineer",
       "details": {
-        "command": "go test -v -count=1 ./internal/catalog/... && go test -v -count=1 ./internal/service/... -run 'TestToolSurface(Describe|Call)'",
+        "command": "go test -v ./cmd/mcp-bridge -run TestServeHybridMetadata && go test ./...",
         "exitCode": 0
       }
     },
@@ -556,38 +417,14 @@
       "id": "ev-t2-test",
       "kind": "test",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_homelab_T2.json",
-        "sha256": "2a0841aadd9c5b11c88c5a7c0d539a5c75710cfbd9cd2a48e8d7536992b91a11"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
+        "sha256": "38f8a68dda1373583b944b09e45e7604cf2e5344ad73f073da55361e899156e7"
       },
-      "feature": "homelab-llm-ergonomics",
-      "packetDigest": "10db7fe51cbdfc52d354970748ce3541165c1ca5be27246890a96b8c85aac643",
-      "selectedBranchId": "approved-homelab-llm-ergonomics",
+      "feature": "gateway-tool-annotations",
+      "packetDigest": "678235546af8315e5e4409fe9a3ca14a6d65a2120fb9cc746868a935cc77addc",
+      "selectedBranchId": "approved-gateway-tool-annotations",
       "taskIds": [
         "T2"
-      ],
-      "acceptanceIds": [
-        "AC-3"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-04T18:49:07.946Z",
-      "producer": "engineer",
-      "details": {
-        "command": "go test -v -count=1 ./internal/service/... && go test -v -count=1 ./cmd/mcp-bridge -run 'TestBridgeRebindsServerEndpointOnRestartAndReload'",
-        "exitCode": 0
-      }
-    },
-    {
-      "id": "ev-t3-test",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_homelab_T3.json",
-        "sha256": "f647992765f14349b929d98e2f29f80f39740103b8be5f0b16a61ace30dba5bf"
-      },
-      "feature": "homelab-llm-ergonomics",
-      "packetDigest": "10db7fe51cbdfc52d354970748ce3541165c1ca5be27246890a96b8c85aac643",
-      "selectedBranchId": "approved-homelab-llm-ergonomics",
-      "taskIds": [
-        "T3"
       ],
       "acceptanceIds": [
         "AC-4",
@@ -595,35 +432,10 @@
         "AC-6"
       ],
       "outcome": "pass",
-      "observedAt": "2026-11-04T18:49:07.946Z",
+      "observedAt": "2026-11-07T12:00:00Z",
       "producer": "engineer",
       "details": {
-        "command": "go test -v -count=1 ./internal/service/...",
-        "exitCode": 0
-      }
-    },
-    {
-      "id": "ev-t4-test",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_homelab_T4.json",
-        "sha256": "b0dc33dc814935fc9716667b610818748c0c933ddc45e604c888994a172a2f00"
-      },
-      "feature": "homelab-llm-ergonomics",
-      "packetDigest": "10db7fe51cbdfc52d354970748ce3541165c1ca5be27246890a96b8c85aac643",
-      "selectedBranchId": "approved-homelab-llm-ergonomics",
-      "taskIds": [
-        "T4"
-      ],
-      "acceptanceIds": [
-        "AC-7",
-        "AC-8"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-04T18:49:07.946Z",
-      "producer": "engineer",
-      "details": {
-        "command": "go test -race ./... && go vet ./... && go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck",
+        "command": "go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck && go test -race ./...",
         "exitCode": 0
       }
     }
