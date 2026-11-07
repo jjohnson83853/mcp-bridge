@@ -3,6 +3,6 @@
   "status": "COMPLETED",
   "artifact_receipt": ".omp/artifacts/receipt_T2.json",
   "telemetry_ref": null,
-  "summary": "Coverage gate passed: source-line coverage 90.3% (6305/6985), gate 90% true; `go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck` and `go test -race ./...` passed (exit 0); unit tests passed cleanly.",
+  "summary": "PASS: HTTP JSON-RPC regression covers alpha-to-beta multi-pin and zero-pin reloads in one session. Focused test and go test -race ./... passed. Coverage gate: 90.2% (6338/7023). Regression was green on first run; no RED was observed.",
   "error_code": null
 }
