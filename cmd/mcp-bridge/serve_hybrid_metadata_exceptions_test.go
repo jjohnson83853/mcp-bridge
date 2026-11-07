@@ -139,8 +139,8 @@ func initializeMetadataExceptionsClient(t *testing.T, ctx context.Context, clien
 }
 
 // listMetadataExceptionsTools re-lists tools and returns the alpha__read and
-// alpha__write entries plus the search_tools built-in.
-func listMetadataExceptionsTools(t *testing.T, ctx context.Context, client *http.Client, httpURL, session string) (read, write, builtin *listedTool) {
+// alpha__write entries plus both built-in discovery tools.
+func listMetadataExceptionsTools(t *testing.T, ctx context.Context, client *http.Client, httpURL, session string) (read, write, searchTools, describeTool *listedTool) {
 	t.Helper()
 	response, body := mcpSend(t, ctx, client, httpURL, session, `{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`)
 	if response.StatusCode != http.StatusOK {
@@ -161,13 +161,15 @@ func listMetadataExceptionsTools(t *testing.T, ctx context.Context, client *http
 		case "alpha__write":
 			write = &envelope.Result.Tools[index]
 		case "search_tools":
-			builtin = &envelope.Result.Tools[index]
+			searchTools = &envelope.Result.Tools[index]
+		case "describe_tool":
+			describeTool = &envelope.Result.Tools[index]
 		}
 	}
-	if read == nil || write == nil || builtin == nil {
+	if read == nil || write == nil || searchTools == nil || describeTool == nil {
 		t.Fatalf("tools/list omitted fixture tools: %s", body)
 	}
-	return read, write, builtin
+	return read, write, searchTools, describeTool
 }
 
 // describeMetadataExceptionsTool describes one tool by name through the
@@ -243,7 +245,7 @@ func TestServeHybridMetadataExactToolExceptions(t *testing.T) {
 	client := &http.Client{Timeout: 5 * time.Second}
 	session := initializeMetadataExceptionsClient(t, ctx, client, httpURL)
 
-	read, write, builtin := listMetadataExceptionsTools(t, ctx, client, httpURL, session)
+	read, write, searchTools, describeTool := listMetadataExceptionsTools(t, ctx, client, httpURL, session)
 	var readHints, writeHints struct {
 		ReadOnly    *bool `json:"readOnlyHint"`
 		Destructive *bool `json:"destructiveHint"`
@@ -261,8 +263,24 @@ func TestServeHybridMetadataExactToolExceptions(t *testing.T) {
 	if writeHints.ReadOnly == nil || *writeHints.ReadOnly || writeHints.Destructive == nil || !*writeHints.Destructive || writeHints.Idempotent == nil || *writeHints.Idempotent {
 		t.Fatalf("alpha__write did not carry the exact-tool exception: %s (RED)", write.Annotations)
 	}
-	if !strings.Contains(string(builtin.Annotations), `"readOnlyHint":true`) || strings.Contains(string(builtin.Annotations), "destructiveHint\":true") {
-		t.Fatalf("built-in search_tools classification changed: %s (RED)", builtin.Annotations)
+	for _, builtin := range []struct {
+		name string
+		tool *listedTool
+	}{
+		{name: "search_tools", tool: searchTools},
+		{name: "describe_tool", tool: describeTool},
+	} {
+		var hints struct {
+			ReadOnly    *bool `json:"readOnlyHint"`
+			Destructive *bool `json:"destructiveHint"`
+			OpenWorld   *bool `json:"openWorldHint"`
+		}
+		if err := json.Unmarshal(builtin.tool.Annotations, &hints); err != nil {
+			t.Fatalf("decode built-in %s annotations: %v (%s)", builtin.name, err, builtin.tool.Annotations)
+		}
+		if hints.ReadOnly == nil || !*hints.ReadOnly || hints.Destructive == nil || *hints.Destructive || hints.OpenWorld == nil || *hints.OpenWorld {
+			t.Fatalf("built-in %s annotations changed: %s (RED)", builtin.name, builtin.tool.Annotations)
+		}
 	}
 
 	payload := describeMetadataExceptionsTool(t, ctx, client, httpURL, session, "alpha__write")
@@ -306,7 +324,7 @@ func TestServeHybridMetadataExactToolExceptions(t *testing.T) {
 		t.Fatal("SIGHUP was not delivered to the test process")
 	}
 	waitFor(t, "write reverting to the defaults", func() bool {
-		read, write, _ = listMetadataExceptionsTools(t, ctx, client, httpURL, session)
+		read, write, _, _ = listMetadataExceptionsTools(t, ctx, client, httpURL, session)
 		if err := json.Unmarshal(write.Annotations, &writeHints); err != nil {
 			t.Fatalf("decode alpha__write annotations after reload: %v (%s)", err, write.Annotations)
 		}

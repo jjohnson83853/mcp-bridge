@@ -70,9 +70,9 @@ type metadataListedTools struct {
 	Name        string          `json:"name"`
 }
 
-// TestServeHybridMetadataBuiltinAnnotations verifies the r7 built-in tool
-// classifications on the real /mcp seam: search_tools and describe_tool are
-// read-only, idempotent, open-world discovery with no destructive hint;
+// TestServeHybridMetadataBuiltinAnnotations verifies built-in tool classifications
+// on the real /mcp seam: search_tools and describe_tool are read-only,
+// idempotent, closed-world discovery with explicit destructiveHint false;
 // call_tool stays potentially mutating, potentially destructive, non-idempotent
 // and open-world; discovery calls perform zero upstream operations.
 func TestServeHybridMetadataBuiltinAnnotations(t *testing.T) {
@@ -149,11 +149,11 @@ func TestServeHybridMetadataBuiltinAnnotations(t *testing.T) {
 		if got.Idempotent == nil || !*got.Idempotent {
 			t.Errorf("%s idempotentHint = %v; want true", name, derefBool(got.Idempotent))
 		}
-		if got.OpenWorld == nil || !*got.OpenWorld {
-			t.Errorf("%s openWorldHint = %v; want true", name, derefBool(got.OpenWorld))
+		if got.OpenWorld == nil || *got.OpenWorld {
+			t.Errorf("%s openWorldHint = %v; want false", name, derefBool(got.OpenWorld))
 		}
-		if got.Destructive != nil {
-			t.Errorf("%s destructiveHint present (%v); want unspecified for read-only discovery", name, *got.Destructive)
+		if got.Destructive == nil || *got.Destructive {
+			t.Errorf("%s destructiveHint = %v; want false", name, derefBool(got.Destructive))
 		}
 	}
 

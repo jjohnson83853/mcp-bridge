@@ -104,9 +104,10 @@ func (t *ToolSurface) Register(server *mcp.Server) error {
 		Description: "Search the bridge's indexed tools.",
 		InputSchema: catalog.SearchToolsInputSchema(),
 		Annotations: &mcp.ToolAnnotations{
-			ReadOnlyHint:   true,
-			IdempotentHint: true,
-			OpenWorldHint:  boolPtr(true),
+			ReadOnlyHint:    true,
+			DestructiveHint: boolPtr(false),
+			IdempotentHint:  true,
+			OpenWorldHint:   boolPtr(false),
 		},
 	}
 	describeTool := &mcp.Tool{
@@ -114,9 +115,10 @@ func (t *ToolSurface) Register(server *mcp.Server) error {
 		Description: "Describe one indexed tool with its exact stored schema.",
 		InputSchema: catalog.DescribeToolInputSchema(),
 		Annotations: &mcp.ToolAnnotations{
-			ReadOnlyHint:   true,
-			IdempotentHint: true,
-			OpenWorldHint:  boolPtr(true),
+			ReadOnlyHint:    true,
+			DestructiveHint: boolPtr(false),
+			IdempotentHint:  true,
+			OpenWorldHint:   boolPtr(false),
 		},
 	}
 	callTool := &mcp.Tool{
