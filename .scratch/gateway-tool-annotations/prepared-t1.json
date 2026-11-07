@@ -1,0 +1,12 @@
+{
+  "i": "Implement Ticket 01 explicit discovery tool annotations",
+  "context": "{\"instructions\":\"Execute only the reviewed bounded assignment. Modify internal/service/tools.go and cmd/mcp-bridge/serve_hybrid_metadata_test.go, update README.md and CHANGELOG.md, and write receipt_T1.json.\",\"workflowDispatch\":{\"statePath\":\".omp/plans/execution-state.json\",\"schemaVersion\":1,\"projectRoot\":\"/home/opencode/projects/default/mcp-bridge\",\"feature\":\"gateway-tool-annotations\",\"revision\":\"r3\",\"requests\":[{\"name\":\"ImplementTicket01\",\"taskId\":\"T1\",\"agent\":\"engineer\",\"effects\":{\"kind\":\"write\",\"paths\":[\"internal/service/tools.go\",\"cmd/mcp-bridge/serve_hybrid_metadata_test.go\",\"README.md\",\"CHANGELOG.md\",\".omp/artifacts/receipt_T1.json\"]}}]}}",
+  "tasks": [
+    {
+      "name": "ImplementTicket01",
+      "agent": "engineer",
+      "task": "Execute only the assigned bounded work for Ticket 01.",
+      "solutionSpace": "Reviewed assignment and exact scope supplied in context."
+    }
+  ]
+}
