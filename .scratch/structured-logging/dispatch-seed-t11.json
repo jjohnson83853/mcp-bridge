@@ -1,0 +1,39 @@
+{
+  "intent": "Dispatch Task T11 to engineer",
+  "instructions": "Implement path parity and logger fallback end to end per .scratch/structured-logging/spec.md (revision r8-pin-diagnostics-narrow9), ticket 11, and decisions rulings 10,16-18.",
+  "workflowDispatch": {
+    "statePath": ".omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "structured-logging-pin-diagnostics",
+    "revision": "r8-pin-diagnostics-narrow9",
+    "requests": [
+      {
+        "name": "ImplementT11",
+        "taskId": "T11",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/service/loop.go",
+            "cmd/mcp-bridge/wiring.go",
+            "internal/observe/log.go",
+            "internal/observe/envelope.go",
+            "internal/observe/fallback_test.go",
+            "internal/service/parity_test.go",
+            "internal/service/loop_test.go",
+            ".omp/artifacts/receipt_T11.json"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ImplementT11",
+      "agent": "engineer",
+      "task": "# Target\nTask T11 — Path parity and logger fallback. Feature `structured-logging-pin-diagnostics`, spec revision r8-pin-diagnostics-narrow9.\n\nRead first, bounded: `.scratch/structured-logging/spec.md` §4 (AD21), §5 AC11-1..AC11-3, §6 T11; `.scratch/structured-logging/decisions.md` rulings 10, 16-18; `.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md`.\n\n# Change\n1. `internal/service/loop.go`: reload revision/trigger attribution (trigger sources: loop.go watch, Refresher tick/Trigger).\n2. `cmd/mcp-bridge/wiring.go`: `config_reload_rejected` gains `config_revision`/`trigger`; `config_reload_applied` emission.\n3. `internal/observe/log.go`/`envelope.go`: +2 events, the `logging` operation, and the fallback path (single attempt, no recursion).\n4. Tests: `internal/observe/fallback_test.go` (new), `internal/service/parity_test.go` (new), `internal/service/loop_test.go` (extends) — AC11-1..3.\n\n# Acceptance (AC11-1..AC11-3)\n- AC11-1: a config-validation pin rejection — the same malformed-pin document — reports the same core detail on the SIGHUP reload path and on the configuration-validation path. Carriers: reload → `config_reload_rejected` (AD7; the `*config.Diagnostics` branch of `operatorLog`, wiring.go:428-438, first record per AD4); configuration validation → `config_validation_failed` (AD7/AD14, operation `load_config`) — both rendered by the ONE shared AD3 renderer. Compared key forms: `config.property_path` with one-based `config.line`/`config.column` on every compared pin class; `config.pin_server`/`config.pin_tool` on both sides only where the diagnostic class carries validated pin identity — absent for the `pin_fields`/`pin_server_missing`/`pin_tool_missing` classes (config.go:222-322). A RUNTIME pinned-catalog rejection on the reload leg emits `reload_rejected` (internal_error, no `config` object, wiring.go:461-467); parity for it is DEFERRED to backlog ticket 19, not asserted here.\n- AC11-2: neither surviving path's pin failure is obtainable only through SIGHUP — the configuration-validation record (`config_validation_failed`, operation `load_config`) alone carries the full AC11-1 detail set.\n- AC11-3: a failed log encode or write surfaces `logging_write_failed` — minimal, credential-free — instead of failing silently, written as one JSON line to the lane OPPOSITE the one the failed record routed to (the declared D5 exception, AD21: failed stderr warn/error write → warn-level fallback on stdout; failed stdout debug/info write → fallback on stderr).\n\n# RED/GREEN\nRED first: the parity test drives the SAME config-validation pin rejection document through the SIGHUP reload path and the configuration-validation path (`--check-config`) and asserts equal AC11-1 key forms plus `config_revision`/`trigger` on the reload record — expected failure (`config_reload_rejected` carries no `config_revision`/`trigger` today and the parity test does not exist); the fallback test asserts encode-failure surfaces `logging_write_failed` — expected failure. Capture both, then implement to GREEN.\n\n# Verify\n`go test ./internal/service ./internal/observe ./cmd/mcp-bridge -run 'Parity|Reload|Fallback'`, `go vet ./...`, `gofmt -l` changed files (empty).\n\n# Receipt\nWrite `.omp/artifacts/receipt_T11.json` per the receipt schema (task_id T11, status COMPLETED, evidence entries with command and exitCode).\n\n# Constraints\n- Only the files in the dispatch effects. No other production files.\n- No alteration of r7 record assertions (additive fields only, AD21); no recursion in the fallback (single attempt).\n- No metric additions or changes (`bridge_catalog_refresh_total` untouched); no schema_version increment; no debug-only diagnostics.\n- No induced-failure review gate or shared fault-injection harness; per-test doubles named in the RED permitted (ruling 19).\n- At most 42 read/search operations before the first edit; if exceeded, stop and report stalled.\n- No external SDK/vendor research.",
+      "solutionSpace": "Implementation is bounded by the spec: reload revision/trigger attribution, the two new events and logging operation, the single-attempt fallback, and the AC11-1..3 tests. No architectural choices remain open."
+    }
+  ]
+}

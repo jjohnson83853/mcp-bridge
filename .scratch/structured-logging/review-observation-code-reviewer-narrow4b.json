@@ -1,0 +1,69 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "structured-logging-r8-pin-diagnostics-narrow4b",
+  "revision": "r8-pin-diagnostics-narrow4b",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+      "sha256": "ee5b9d44281ae057d796c1ccad10389eb0b1b62e0e4d2bd9d138413c310d967e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+      "sha256": "b2d7cf2f5d438d747a6af32790523ac46523a42287b1edf3419c8274d9f72a69"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+      "sha256": "aedf7837ae22c5a851ea7ee44aca0b31e245fefc6287270ae4d6ed385a33e127"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+      "sha256": "c6cb89ea2e020beddc820a41397e703b48b0ce02c474de1052a9e41bbf656818"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+      "sha256": "10a6174d5e5916b7461c56da104ff57300d2f7a1f6463b231e5136f1c6868bd8"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+      "sha256": "10188767a7462aaae3c73bc693600a9bbd5bc820613fa12383a0a53c73eb69ca"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+      "sha256": "405d2547fceb38cb7bc4c0c3f1d59949860800fc6379d709005be54f80645a65"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+      "sha256": "a5f40ab466d6dd5327d8816dc56cd62f6a4dad19d562b2a59615a37b3dab7a1e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing4b-delta.md",
+      "sha256": "c735e21843716b3e130730cb8b82667e9fae537ffe0502c16d4d941bac1f0a58"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow4-final.md",
+      "sha256": "f496f56d088c5f900d883e2be764a23ae3f0d6b2f28786432af6cd10c6989f53"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewR8Narrow4bSpec",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "cb67feb41fdb0b7dc03d60942521f9d172961dfaf7616bca03e9a3ed3692a937",
+      "instructionsSha256": "c365e281e7f17adcdd76ffab78dccdd4cdbb4fda12ce128def8b96bd6b522016"
+    },
+    {
+      "name": "CritiqueR8Narrow4bSpec",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskSha256": "cc198afc47712f0e756a90d21ac61505c1d57ba34f27f42817fdd0e75198229e",
+      "instructionsSha256": "c365e281e7f17adcdd76ffab78dccdd4cdbb4fda12ce128def8b96bd6b522016"
+    }
+  ],
+  "invocationId": "c477ea64-c99d-43d8-a583-8bb7b6662f18",
+  "output": "r8-pin-diagnostics-narrow4b spec review (R20–R25, AC08-1..AC12-3, T8–T12). Read-only; hashes not recomputed.\nREVIEWER: code-reviewer\nPACKET: 8a3bba8d6242fc62e72beb63d9f61b1fb86bf12b2e5b0fd9bf91eaf60ca62c8a\nVERDICT: revise\n\n1 MARKERS – pass. Tokens only at spec.md:40/67,169/204,271/287,289/303: 4 unique pairs, correctly ordered, non-nested, own lines.\n\n2 COVERAGE – pass. :267 maps R20–R25; AC08-1..AC12-3 (:240-265) name their ticket and each has exactly one state owner (state:369-375,403-410,440-444,474-476,504-506). R25 clause 1 is asserted only for catalog_refresh_failed (:246).\n\n2b NARROWING CLOSURE – revise. Closed: H1 spec (:64,:260,:261; issues/11:7,12,13); H1 ledger (:285 RED now the config-validation pin document via SIGHUP + --check-config, +config_revision/trigger); H2 (issues/10:17); G3 (:251, issues/09:18); G4 (:63); G5 (:258); M1 spec (:240,:246); M1 ledger/env/ticket (:284 Deps: T9; :292 T9 after T8, T10 after T9; issues/10:4); M2 incl. issues/08:20 mirror; L1 (:284/:285 clauses); L2 (:63); L3 (:273). Deferred and recorded, not grounds: tickets 13–19 (backlog.md; M3 at decisions.md:176/ticket 15; drift :165/issues/17). UNCLOSED: the prior R25 open question, still unrecorded: no AC09/AC10 asserts `level` (:247-259) and T9 (:283) lacks the \"no debug-only diagnostics\" clause T10/T11 carry, so a debug-level pin_blocker_detail passes every AC. Fix: append \"and `level` `warn` (AD18)\" to AC09-1 and \"(AD17)\" to AC10-1 (no new id), else a backlog row.\n\n3 ACs – revise (same root). AC08/AC11 are falsifiable and producer-named; AC09/AC10 cannot fail on R25 level. AC12-3 reuses AC12-1's oracle.\n\n4 RULINGS – revise (minor). Metric freeze (T8:282,T10:284,T11:285), no schema_version (AD20:201,:299), no raw text (R8:48,T9:283), additive-only (AD21:203,T11:285), no induced-failure review gate (T12:286) match decisions.md. But :284/:285/:299 forbid \"induced-failure test infrastructure\" while T10/T11 REDs and AC10-1/AC11-3 require inducing those failures; ruling 19 bars a review gate, not doubles. Fix: \"no induced-failure review gate or shared fault-injection harness; per-test doubles named in the RED permitted\".\n\n5 ENVELOPE/STATE – pass. Edges state:355,386-388,421-423,455-458,487-491 = :273/:284/:292 and tickets 08-12 Blocked-by; strictly serial. issues/17 drift is owner-deferred (:165), not grounds (T10 extra paths, missing service_edge_test.go, T8 blockedBy [] vs :282). state:4 and :175/:185 packet match; spec hash binding (:11) not recomputed.\n\n6 DEFECT SITES – pass. refresh.go:195-206 none; :210-241 err unread, fallback runtime.Current() :224; reload.go:562-564 text-only wrap (identity only core.go:311); ops.go:19 Reason omitempty; wiring.go:373-407 publish-only; dedicated.go:113,151,158-171 raw discovery errors, no stage/status; log.go:185-219 no catalog/pin event. Other unaddressed LOW: :199 \"17 -> 24\" vs 16 names (log.go:185-219; correct only if the default row counts); T9 must replace first-only core.AddPins (:311) within its files; :203 \"fallback stream\" undefined; AC10-5 needs a hook (refresh.go:211).\n\n### Recommendation\nREQUEST CHANGES\n"
+}

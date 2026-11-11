@@ -1,0 +1,882 @@
+{
+  "schemaVersion": 2,
+  "feature": "structured-logging-pin-diagnostics",
+  "revision": "r8-pin-diagnostics-narrow5",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+    "sha256": "83cd82340d352d4a1d64c9941c7d9894ce7c3af2862e30e3aa2858e23c907aba",
+    "sectionBindings": {
+      "requirements": {
+        "sha256": "14d52112bc087e6bc8b9ced60cbb681d482af8d07b24682f47f73e09d5938df9",
+        "revision": "r8-pin-diagnostics-narrow5"
+      },
+      "design": {
+        "sha256": "b1b8188284a3835987fcde46775200bdd873aebd97a02676bdb9ce17e3245ad2",
+        "revision": "r8-pin-diagnostics-narrow5"
+      },
+      "tasks": {
+        "sha256": "fc1eafe775b3c52cb9137bc90a2c0d2490c7fea60124301889ea22d507f3396d",
+        "revision": "r8-pin-diagnostics-narrow5"
+      },
+      "envelope": {
+        "sha256": "e63d79a6b9e3ba07e10b2a82e1d06b78c281bbd27c34b0bfef707bea0d69a00c",
+        "revision": "r8-pin-diagnostics-narrow5"
+      }
+    }
+  },
+  "packet": {
+    "digest": "35ab8658c9df716c26c0d309076de239fd62cc32e44681b417a8ef93f6de0519",
+    "branches": [
+      {
+        "id": "approved-structured-logging",
+        "answerIds": [],
+        "taskIds": [
+          "T8",
+          "T9",
+          "T10",
+          "T11",
+          "T12"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "sha256": "14d52112bc087e6bc8b9ced60cbb681d482af8d07b24682f47f73e09d5938df9",
+            "revision": "r8-pin-diagnostics-narrow5"
+          },
+          "design": {
+            "sha256": "b1b8188284a3835987fcde46775200bdd873aebd97a02676bdb9ce17e3245ad2",
+            "revision": "r8-pin-diagnostics-narrow5"
+          },
+          "tasks": {
+            "sha256": "fc1eafe775b3c52cb9137bc90a2c0d2490c7fea60124301889ea22d507f3396d",
+            "revision": "r8-pin-diagnostics-narrow5"
+          },
+          "envelope": {
+            "sha256": "e63d79a6b9e3ba07e10b2a82e1d06b78c281bbd27c34b0bfef707bea0d69a00c",
+            "revision": "r8-pin-diagnostics-narrow5"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "approved-structured-logging"
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Every application log record and CLI error is one newline-delimited JSON envelope, including service, upstream handshake, and HTTP lane records"
+    },
+    {
+      "id": "R2",
+      "summary": "Application-owned envelope fields are schema_version, level, service, event, message, operation, outcome, nested error, config/resource objects, typed entry fields, and the closed AD8 vocabulary"
+    },
+    {
+      "id": "R3",
+      "summary": "The application never emits timestamps, subsystem, container identity, host, environment, or version"
+    },
+    {
+      "id": "R4",
+      "summary": "debug/info to stdout, warn/error to stderr; one JSON object per line, one write, no retry, no plaintext fallback"
+    },
+    {
+      "id": "R5",
+      "summary": "Nested error carries code, kind, retryable, remediation; message is human-only; the HTTP lane uses the same nested shape"
+    },
+    {
+      "id": "R6",
+      "summary": "Configuration diagnostics carry path, property path, one-based line and column, safe identifiers, and related location, with documented position exceptions"
+    },
+    {
+      "id": "R7",
+      "summary": "Pin ceiling reports pins[64] at its document-order position with validated identity only, plus counts and first excess index"
+    },
+    {
+      "id": "R8",
+      "summary": "No record serializes secret values, URLs, query strings, headers, payloads, raw YAML, or arbitrary Go error text"
+    },
+    {
+      "id": "R9",
+      "summary": "Fail-fast: first error in deterministic document order, exactly one detailed event, no summary event"
+    },
+    {
+      "id": "R10",
+      "summary": "Startup rejection is error with exit 1; reload rejection is warn and retains the active configuration"
+    },
+    {
+      "id": "R11",
+      "summary": "Non-configuration failures use the same envelope with stable codes, kinds, retryability, remediation, and safe resources"
+    },
+    {
+      "id": "R12",
+      "summary": "--help stays human-readable and emits no JSON record"
+    },
+    {
+      "id": "R13",
+      "summary": "Validation success emits config_validation_succeeded with no error object and no configuration contents"
+    },
+    {
+      "id": "R14",
+      "summary": "Exit code for configuration failure stays 1"
+    },
+    {
+      "id": "R15",
+      "summary": "No panic recovery; Go crash report untouched (non-goal)"
+    },
+    {
+      "id": "R16",
+      "summary": "No raw-cause diagnostic mode (non-goal)"
+    },
+    {
+      "id": "R17",
+      "summary": "No legacy aliases: time, environment, version, flat reason, flat error.class are removed with consumers and docs migrated"
+    },
+    {
+      "id": "R18",
+      "summary": "schema_version starts at 1; breaking field changes increment it; optional additions do not"
+    },
+    {
+      "id": "R19",
+      "summary": "Docker Compose log prefix is orchestrator output; the application does not work around it (non-goal)"
+    },
+    {
+      "id": "R20",
+      "summary": "Pins are mandatory: an unresolved mandatory pin rejects the candidate catalog while the previously published catalog keeps serving, and every pin-failure record states whether it blocked publication or left a degraded candidate publishable (owner rulings 1, 5)."
+    },
+    {
+      "id": "R21",
+      "summary": "A failed pin check reports every unresolved pin, each with safe server/tool identity and configuration source location; discovery-failed pins are reported unverifiable, never tool-absent; discovered tool names are listed for affected servers only, chunked without silent truncation; every failed pass repeats complete details (owner rulings 2, 3, 4, 13)."
+    },
+    {
+      "id": "R22",
+      "summary": "Logs alone are the diagnostic path: start and outcome records share one refresh correlation id and state the configuration revision and trigger, with the next attempt on the start record; a failed pass distinguishes the retained catalog from no usable catalog; a successful pass reports counts only (owner rulings 6, 7, 11, 12, 14, 15)."
+    },
+    {
+      "id": "R23",
+      "summary": "An upstream discovery failure names the failing stage from the closed set dns|connect|tls|auth|initialize|tools_list with a bounded cause and HTTP status or timeout; the endpoint is sanitized to scheme, host, port and path; each failure states retry-scheduled versus correction-required with the next attempt (owner rulings 8, 9)."
+    },
+    {
+      "id": "R24",
+      "summary": "The log shows a configuration edit reaching the running process: refresh records name the configuration revision and trigger they used; SIGHUP reload and periodic refresh report identical pin diagnostic detail (owner rulings 10, 18)."
+    },
+    {
+      "id": "R25",
+      "summary": "Pin and refresh diagnostics appear at default log levels; no failure diagnostic is debug-only; defects in the logging path itself are surfaced as a minimal credential-free fallback (owner rulings 16, 17)."
+    }
+  ],
+  "authorization": {
+    "mode": "milestone",
+    "id": "owner-standing-plan-change-loop",
+    "packetDigest": "35ab8658c9df716c26c0d309076de239fd62cc32e44681b417a8ef93f6de0519",
+    "selectedBranchId": "approved-structured-logging",
+    "receipt": {
+      "sourceId": "src-owner-authorization-r8-narrow5",
+      "recordedAt": "2026-11-11T16:35:11.360Z",
+      "response": {
+        "origin": "user",
+        "explicit": true,
+        "timedOut": false,
+        "automatic": false,
+        "packetDigest": "35ab8658c9df716c26c0d309076de239fd62cc32e44681b417a8ef93f6de0519",
+        "selectedBranchId": "approved-structured-logging",
+        "milestone": true
+      }
+    }
+  },
+  "reviews": null,
+  "sources": [
+    {
+      "id": "src-grilling-pin-diagnostics",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/owner-grilling-pin-diagnostics.txt",
+        "sha256": "88d2c9b78487208754c3f5156e30c8e3092bbf5c35dff8270356ddfada5dff33"
+      },
+      "locator": "owner grilling answers fixing pin-diagnostics behaviour; scope limited to pins by owner ruling",
+      "recordedAt": "2026-11-11T12:00:00.000Z"
+    },
+    {
+      "id": "src-owner-authorization-r8",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/owner-authorization-r8.txt",
+        "sha256": "3558f493f104623264fbbaf9d0c1a105d76d6ed4f46c06f5d1178746765d8652"
+      },
+      "locator": "owner milestone authorization for the r8-pin-diagnostics branch and T8-T12 execution; digest re-confirmed by addendum; no review waiver, owner directed the reviewer-run gate defect be fixed",
+      "recordedAt": "2026-11-11T12:30:00.000Z"
+    },
+    {
+      "id": "src-owner-authorization-r8-narrow1",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/owner-authorization-r8-narrow1.txt",
+        "sha256": "0c450465309189ec1ccc6dfd7326d197b625f1e7933b5dbabcd04f3fd9201045"
+      },
+      "locator": "owner authorization of revision r8-pin-diagnostics-narrow1 (narrowing amendment per owner decision 2026-11-11, option 2): bind packet digest 15567c2bf834ec903608e884d4bcf0d56e76f00c1b5071ee8875600a51b31327, accept residual gaps G1-G4 as known deferred gaps, startup leg means the first post-startup refresh pass; no requirement or acceptance id added or removed",
+      "recordedAt": "2026-11-11T13:05:00.000Z"
+    },
+    {
+      "id": "src-owner-authorization-r8-narrow2",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/owner-authorization-r8-narrow2.txt",
+        "sha256": "3e8c5682622aebdb48fb9ce9f8f46a3d1fbdf26440070e43f40c41fb2287ed54"
+      },
+      "locator": "owner authorization of revision r8-pin-diagnostics-narrow2: closes review packet 15567c2b findings 1-6, narrowing only; binds packet digest 8486fd04268f00b1f370600c5bedb10d7e8987794610d34ce2abaa74e7bb43a4",
+      "recordedAt": "2026-11-11T13:30:00.000Z"
+    },
+    {
+      "id": "src-owner-authorization-r8-narrow3",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/owner-authorization-r8-narrow3.txt",
+        "sha256": "e12d274891802a9e6889dc1c5b8595f25caf0f4481be479cc616c42cb265bdbf"
+      },
+      "locator": "owner authorization for r8-pin-diagnostics-narrow3",
+      "recordedAt": "2026-11-11T14:40:52.000Z"
+    },
+    {
+      "id": "src-owner-authorization-r8-narrow4",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/owner-authorization-r8-narrow4.txt",
+        "sha256": "0cfd8415a2b061a2ec25423493e07375243a9b7b0f0413b49e9680729783f417"
+      },
+      "locator": "owner authorization of revision r8-pin-diagnostics-narrow4: closes review packet db7551a1 findings H1-H2, M1-M3, L1-L3, narrowing only; M3 declined (recorded in decisions.md item 5); binds packet digest c46c23dc18196a9cfa7029c19fc7e6f9656091e62ffabf0aea410ef3b563fe75",
+      "recordedAt": "2026-11-11T15:03:02.518Z"
+    },
+    {
+      "id": "src-owner-authorization-r8-narrow4b",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/owner-authorization-r8-narrow4b.txt",
+        "sha256": "5ec942e3a145e44f7bb19b5282ad9463ad7b859a00fc1935b4807f7aef3f8c7e"
+      },
+      "locator": "owner authorization of revision r8-pin-diagnostics-narrow4b: applies the narrow4 residuals (two skipped :284/:285 rows, row-M1 dependency alignment, issues/08:20 mirror), narrowing only; binds packet digest 8a3bba8d6242fc62e72beb63d9f61b1fb86bf12b2e5b0fd9bf91eaf60ca62c8a",
+      "recordedAt": "2026-11-11T16:08:39.217Z"
+    },
+    {
+      "id": "src-owner-authorization-r8-narrow5",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/owner-authorization-r8-narrow5.txt",
+        "sha256": "6e57791f245a90cdaec4e72abed17918236a1b4588d6ea1b16121729902c63f9"
+      },
+      "locator": "standing owner authorization: plan-change loop continues while each planner request is meaningfully different and fewer than 4 consecutive rounds have failed; binds packet digest 35ab8658c9df716c26c0d309076de239fd62cc32e44681b417a8ef93f6de0519",
+      "recordedAt": "2026-11-11T16:35:11.360Z"
+    }
+  ],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "T8",
+      "T9",
+      "T10",
+      "T11",
+      "T12"
+    ],
+    "readPaths": [
+      "internal/observe/",
+      "internal/config/",
+      "internal/service/",
+      "internal/upstream/",
+      "internal/auth/",
+      "cmd/mcp-bridge/",
+      ".scratch/structured-logging/",
+      "docs/",
+      "README.md",
+      "go.mod",
+      ".omp/artifacts/",
+      ".scratch/structured-logging/spec.md",
+      ".scratch/structured-logging/spec-r7-closure1.md",
+      ".scratch/structured-logging/decisions.md",
+      ".scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+      ".scratch/structured-logging/issues/09-pin-blocker-detail.md",
+      ".scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+      ".scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+      ".scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md"
+    ],
+    "writePaths": [
+      "internal/service/refresh.go",
+      "internal/observe/log.go",
+      "internal/observe/envelope.go",
+      "internal/service/refresh_test.go",
+      "internal/service/refresh_lifecycle_test.go",
+      ".omp/artifacts/receipt_T8.json",
+      "internal/service/reload.go",
+      "internal/service/pin_blocker_test.go",
+      ".omp/artifacts/receipt_T9.json",
+      "internal/upstream/dedicated.go",
+      "internal/upstream/runtime.go",
+      "cmd/mcp-bridge/serve.go",
+      "internal/service/ops.go",
+      "cmd/mcp-bridge/wiring.go",
+      "internal/upstream/dedicated_test.go",
+      "cmd/mcp-bridge/serve_edge_test.go",
+      ".omp/artifacts/receipt_T10.json",
+      "internal/service/loop.go",
+      "internal/observe/fallback_test.go",
+      "internal/service/parity_test.go",
+      "internal/service/loop_test.go",
+      ".omp/artifacts/receipt_T11.json",
+      "docs/logging-contract.md",
+      "README.md",
+      "CHANGELOG.md",
+      "cmd/mcp-bridge/logging_contract_test.go",
+      ".omp/artifacts/receipt_T12.json"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "T8",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/refresh.go",
+          "internal/observe/log.go",
+          "internal/observe/envelope.go",
+          "internal/service/refresh_test.go",
+          "internal/service/refresh_lifecycle_test.go",
+          ".omp/artifacts/receipt_T8.json"
+        ]
+      },
+      "acceptanceIds": [
+        "AC08-1",
+        "AC08-2",
+        "AC08-3",
+        "AC08-4",
+        "AC08-5",
+        "AC08-6",
+        "AC08-7"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T9",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T8"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/reload.go",
+          "internal/service/refresh.go",
+          "internal/observe/log.go",
+          "internal/observe/envelope.go",
+          "internal/service/pin_blocker_test.go",
+          "internal/service/refresh_lifecycle_test.go",
+          ".omp/artifacts/receipt_T9.json"
+        ]
+      },
+      "acceptanceIds": [
+        "AC09-1",
+        "AC09-2",
+        "AC09-3",
+        "AC09-4",
+        "AC09-5",
+        "AC09-6",
+        "AC09-7",
+        "AC09-8"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T10",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T9"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/upstream/dedicated.go",
+          "internal/upstream/runtime.go",
+          "cmd/mcp-bridge/serve.go",
+          "internal/service/refresh.go",
+          "internal/service/ops.go",
+          "cmd/mcp-bridge/wiring.go",
+          "internal/upstream/dedicated_test.go",
+          "cmd/mcp-bridge/serve_edge_test.go",
+          ".omp/artifacts/receipt_T10.json"
+        ]
+      },
+      "acceptanceIds": [
+        "AC10-1",
+        "AC10-2",
+        "AC10-3",
+        "AC10-4",
+        "AC10-5"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T11",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T9",
+        "T10"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/loop.go",
+          "cmd/mcp-bridge/wiring.go",
+          "internal/observe/log.go",
+          "internal/observe/envelope.go",
+          "internal/observe/fallback_test.go",
+          "internal/service/parity_test.go",
+          "internal/service/loop_test.go",
+          ".omp/artifacts/receipt_T11.json"
+        ]
+      },
+      "acceptanceIds": [
+        "AC11-1",
+        "AC11-2",
+        "AC11-3"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T12",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T9",
+        "T10",
+        "T11"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "docs/logging-contract.md",
+          "README.md",
+          "CHANGELOG.md",
+          "cmd/mcp-bridge/logging_contract_test.go",
+          ".omp/artifacts/receipt_T12.json"
+        ]
+      },
+      "acceptanceIds": [
+        "AC12-1",
+        "AC12-2",
+        "AC12-3"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC08-1",
+      "requirementIds": [
+        "R20",
+        "R22",
+        "R25"
+      ],
+      "ownerTaskIds": [
+        "T8"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC08-2",
+      "requirementIds": [
+        "R22",
+        "R24"
+      ],
+      "ownerTaskIds": [
+        "T8"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC08-3",
+      "requirementIds": [
+        "R22"
+      ],
+      "ownerTaskIds": [
+        "T8"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC08-4",
+      "requirementIds": [
+        "R22"
+      ],
+      "ownerTaskIds": [
+        "T8"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC08-5",
+      "requirementIds": [
+        "R22",
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T8"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC08-6",
+      "requirementIds": [
+        "R21"
+      ],
+      "ownerTaskIds": [
+        "T8"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC08-7",
+      "requirementIds": [
+        "R25"
+      ],
+      "ownerTaskIds": [
+        "T8"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC09-1",
+      "requirementIds": [
+        "R21"
+      ],
+      "ownerTaskIds": [
+        "T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC09-2",
+      "requirementIds": [
+        "R21",
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC09-3",
+      "requirementIds": [
+        "R21"
+      ],
+      "ownerTaskIds": [
+        "T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC09-4",
+      "requirementIds": [
+        "R21"
+      ],
+      "ownerTaskIds": [
+        "T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC09-5",
+      "requirementIds": [
+        "R21"
+      ],
+      "ownerTaskIds": [
+        "T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC09-6",
+      "requirementIds": [
+        "R21",
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC09-7",
+      "requirementIds": [
+        "R20"
+      ],
+      "ownerTaskIds": [
+        "T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC09-8",
+      "requirementIds": [
+        "R21"
+      ],
+      "ownerTaskIds": [
+        "T9"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC10-1",
+      "requirementIds": [
+        "R23"
+      ],
+      "ownerTaskIds": [
+        "T10"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC10-2",
+      "requirementIds": [
+        "R23"
+      ],
+      "ownerTaskIds": [
+        "T10"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC10-3",
+      "requirementIds": [
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T10"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC10-4",
+      "requirementIds": [
+        "R23"
+      ],
+      "ownerTaskIds": [
+        "T10"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC10-5",
+      "requirementIds": [
+        "R23"
+      ],
+      "ownerTaskIds": [
+        "T10"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC11-1",
+      "requirementIds": [
+        "R24"
+      ],
+      "ownerTaskIds": [
+        "T11"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC11-2",
+      "requirementIds": [
+        "R24"
+      ],
+      "ownerTaskIds": [
+        "T11"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC11-3",
+      "requirementIds": [
+        "R25"
+      ],
+      "ownerTaskIds": [
+        "T11"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC12-1",
+      "requirementIds": [
+        "R18"
+      ],
+      "ownerTaskIds": [
+        "T12"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC12-2",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T12"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC12-3",
+      "requirementIds": [
+        "R20",
+        "R21",
+        "R22",
+        "R23",
+        "R24",
+        "R25"
+      ],
+      "ownerTaskIds": [
+        "T12"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": ".superpowers/sdd/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}

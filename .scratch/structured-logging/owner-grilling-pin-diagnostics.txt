@@ -1,0 +1,111 @@
+OWNER GRILLING — pin-resolution diagnostics
+Session: 2026-11-11, /grilling (grill-me), project /home/opencode/projects/default/mcp-bridge
+Feature: structured-logging. Scope set by the owner during this session: pin diagnostics only.
+Answers below are the owner's, verbatim where quoted.
+
+Q1: When a configured pin cannot resolve, should the bridge reject the entire catalog refresh, or publish the valid tools and report the unresolved pins?
+A1: mandatory
+
+Q2: Should one failed pass report every unresolved pin, or only the first?
+A2: "I'm more interested in frilling on whether we have enough logging"
+
+Q3: A refresh fails and the catalog stays empty. From logs alone - without metrics, /readyz, or another restart - must an operator identify every blocking pin and distinguish upstream discovery failure from tool-absent and from candidate publication failure?
+A3: yes
+
+Q4: Is reporting only the first blocking pin acceptable?
+A4: no
+
+Q5: When a refresh fails, must logs distinguish what remains usable (previous catalog retained with generation/tool count/age, versus no usable catalog)?
+A5: yes
+
+Q6: Must upstream failures identify the failing stage and cause, not just "discovery failed"?
+A6: yes
+
+Q7: Must logs show that a configuration edit actually reached the running process (revision, trigger, accepted or rejected)?
+A7: yes
+
+Q8: Must a successful refresh explicitly close the failure (completion record with revision, generation, counts, duration, recovery)?
+A8: yes
+
+Q9: If the same failure repeats every refresh interval, should every failed pass remain visible?
+A9: yes
+
+Q10: Must logs distinguish a stalled refresh from one waiting for its next scheduled run?
+A10: yes
+
+Q11: If discovery fails for a server, should its pins be reported as unverifiable rather than tool-missing?
+A11: yes
+
+Q12: What proves the logging is sufficient before we ship - independent reviewer reconstruction from captured logs?
+A12: "independent review by myself."
+
+Q13: Do you want captured logs from deliberately induced failures, or will you judge logs during normal deployment?
+A13: no
+
+Q14: When a mandatory pin is missing, must the log list the actual tool names discovered on that server?
+A14: yes
+
+Q15: Should failure logs include every discovered tool name, chunked across bounded records without silent truncation?
+A15: yes
+
+Q16: Should logging failures themselves be visible (encode failure or writer rejection surfaced, credential-free)?
+A16: yes
+
+Q17: Should routine successful refreshes log every server and tool name?
+A17: no
+
+Q18: Then what should a successful refresh log?
+A18: "should not log every server or every toolname on success. Can log count of each succesfull tool and sucesful servers"
+
+Q19: Must rejected reload logs identify the exact configuration location - file, property path, line and column - alongside every blocker?
+A19: yes
+
+Q20: If configuration passes validation but fails later during discovery or pin resolution, must logs still point to the originating YAML entry?
+A20: yes
+
+Q21: Should discovery retryability be explicit in failure logs (automatic retry scheduled versus configuration or credentials need correction, with next attempt time)?
+A21: yes
+
+Q22: Must the logs show whether each upstream failure blocks publication?
+A22: yes
+
+Q23: When discovery fails, should logs identify the configured endpoint?
+A23: yes
+
+Q24: What counts as a "successful tool" in the success summary?
+A24: "published and discovered."
+
+Q25: On a rejected refresh, must logs distinguish candidate counts from the retained catalog's counts?
+A25: yes
+
+Q26: Must these diagnostics appear at the default log level, without enabling debug?
+A26: yes
+
+Q27: Should complete blocker details appear on every failed pass, or may unchanged details be referenced by an earlier failure ID?
+A27: "repeat complete details"
+
+Q28: When a missing pin causes the discovered-name list to be logged, should that list cover only the affected server?
+A28: yes
+
+Q29: Must startup logs distinguish "HTTP listener ready" from "mandatory pins resolved and catalog ready"?
+A29: yes
+
+Q30: Should this logging audit cover every configuration-driven failure path, or is this change limited to discovery, pins, and refresh?
+A30: "probably should get back to that but lets just focus on pins"
+
+Q31: For a pin whose server discovery fails, must the log name every affected pin and its YAML location alongside the shared discovery cause?
+A31: yes
+
+Q32: Must a failed pin check report all blockers from that same refresh attempt rather than mixing current discovery with an older catalog?
+A32: yes
+
+Q33: Does a missing pin in a rejected reload need the same complete diagnostics as a periodic refresh failure?
+A33: yes
+
+Q34 (ticket decomposition quiz): granularity / scope / dispatch order?
+A34: granularity = approve (five tickets 08-12 as proposed); scope = with08 (include the pass-lifecycle ticket); order = serial (strictly serial dispatch)
+
+Q35: Proceed with the approved path?
+A35: proceed
+
+Coordinator note: these rulings were recorded by the coordinator; the normative requirement IDs, ACs, event names and field vocabulary are authored by the planner in the r8 revision. This file is a faithful transcription of the owner's answers.

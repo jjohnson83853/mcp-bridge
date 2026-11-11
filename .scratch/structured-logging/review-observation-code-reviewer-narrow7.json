@@ -1,0 +1,69 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "structured-logging-r8-pin-diagnostics-narrow7",
+  "revision": "r8-pin-diagnostics-narrow7",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+      "sha256": "2265463019eb7229bef44dda895e3de33a6c1e9e73bdc2396a514837bdbd0165"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+      "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+      "sha256": "672019e8d0ecc1e8a511fa6a9d3bb53c5fc3ea59570fdd00f7c681ff82fd2570"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+      "sha256": "a6d4850f232121854225d66101e6d63086617e3cc0036df358ab1d6ada963674"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+      "sha256": "dda148336de008bce769ed5c69e4d0bc472b4385f720b239cdea3bbd98acbfd6"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+      "sha256": "10188767a7462aaae3c73bc693600a9bbd5bc820613fa12383a0a53c73eb69ca"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+      "sha256": "c00eb56b9315f1ae383d33e3865fce4c5dfa415fefa2d60fd0fc013d887cab34"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+      "sha256": "456f16085a8271726a583fbf8a6e846edb431daa78ad355685870299cc2c6462"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing7-delta.md",
+      "sha256": "7513259f2763e477e661a182b2cde2abe85c77f18c6e2c1bf20776f9377171a5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow6-final.md",
+      "sha256": "cd0ac1fff9120968026b224048417ecdf9482eb1a7dbf847b3b13d4567a79915"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewR8Narrow7Spec",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "72624a651ab37929803a0ebcb1cd09eef2b4ed537771535afad669c265304940",
+      "instructionsSha256": "98cf0ef12cca956b5e599667b4ef552d15b0a2485fb3f6ce6f2618bb83857464"
+    },
+    {
+      "name": "CritiqueR8Narrow7Spec",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskSha256": "b574998786af51f67b96849634bb748b78a782e83f221a5daa06824725cf0c75",
+      "instructionsSha256": "98cf0ef12cca956b5e599667b4ef552d15b0a2485fb3f6ce6f2618bb83857464"
+    }
+  ],
+  "invocationId": "8b650ad5-afad-4ec5-889e-5120e26340d4",
+  "output": "## Review — SPEC-STRUCTURED-LOGGING r8-pin-diagnostics-narrow7\nSpec-only, read-only. Findings: HIGH 1, MEDIUM 1, LOW 3.\n\nREVIEWER: code-reviewer\nPACKET: 08c91efdc41f83fd6d141e3d71ad544b4c147fed0d4d39a6b9d8438ae4371144\nVERDICT: revise\n\n1 MARKERS — pass. Four pairs, 8 tokens, own lines, unique, ordered, non-nested: :40/:67, :169/:204, :271/:287, :289/:303.\n\n2 COVERAGE — pass. :267 maps R20→AC08-1/AC09-7; R21→AC08-6/AC09-1..6,8; R22→AC08-1..6; R23→AC10-1..5; R24→AC08-2/AC11-1..2; R25→AC08-1,7/AC09-1/AC10-1/AC11-3. State `ownerTaskIds` give exactly one owner each (AC08*→T8 … AC12*→T12), and the T8-T12 `acceptanceIds` sets are disjoint. LOW: :267 omits AC12-1..3, which the state tags R18/R5/R20-R25.\n\n2b NARROWING CLOSURE — revise. All five prior groups are closed in the spec: AD21:203 + §7:312 declare the D5 lane exception and AC11-3:262 asserts it (F1); AC08-3:242 + issues/08:16 add the ruling-12 candidate counts (F2); AC12-1:263 asserts the 23-name eventMessage set and per-record operations (F3); :247/:255 add R25 (F4); AD16:193 makes `next_attempt_ms` conditional (F5). Defect: three closures never reach the tickets the tasks execute — issues/09:14 carries R21 only, 10:14 R23 only; 11:14 AC-3 lacks the opposite-lane clause; 12:12 AC-1 lacks the eventMessage/operation doc-drift obligation. [HIGH] for 11:14 (a same-lane fallback passes the ticket, defeating ruling 17), [MEDIUM] for 12:12, [LOW] for the tags. narrow6 closed this identical class by mirroring 09/10/12; narrow7's delta §2 mirrors only issues/08. Smallest fix: mirror those four amended lines into the tickets.\n\n3 ACs — pass. AC08-1..AC12-3 are falsifiable and producer-named; AC09-5 carries its own ≤64 oracle; AC10-5 is behavioral and its hook is real (refresh.go:210-224, `err` read only at :211, fallback :219-224).\n\n4 RULINGS — pass. Ledger prohibitions match decisions: T8 no metric/reload.go-wiring/schema_version + R8 blocker (:282), T9 no raw text/no debug-only (:283), T10 metric/schema/debug/induced-failure (:284), T11 additive-only AD21 (:285), T12 (:286). LOW: §7:315 still calls the counter gap \"acceptance pending owner ruling\"; decisions.md r8 checkpoint item 3 ACCEPTED it — replace that phrase.\n\n5 ENVELOPE/STATE — pass. State packet 08c91efd…, all four section revisions narrow7; T8-T12 effects mirror :283-286; blockedBy T8<T9<T10<T11<T12 is one total chain ⇒ strictly serial. Owner-deferred, not grounds (issue 17 / spec:165): T8 `blockedBy` [] (missing T7 edge), T10 `runtime.go`/`serve.go`/`dedicated_test.go`, `service_edge_test.go` absent from effects, decisions' 26842ba7 packet mismatch. LOW: issue 17's own evidence is stale (T10 `blockedBy` is now [\"T9\"]).\n\n6 DEFECT SITES — pass. refresh.go:210-224 (err never recorded), `runPass` :195-204 (no records), reload.go:563-565 (text-only wrap), core.go:311 (first-only), wiring.go:373-409 (readiness on publish only), ops.go:19 (omitempty), log.go:185-220 (16 names, no catalog/pin event), dedicated.go `Discover` (raw text, no stage), loop.go:191 / refresh.go:134 (triggers). The cited reload.go:562-564 is one line off; the defect is real.\n\nPositive: AD20's 20-key list covers AD16-18 including `endpoint`; AC12-3 is its own `go test ./...` oracle.\n\n### Recommendation\n\nREQUEST CHANGES\n"
+}

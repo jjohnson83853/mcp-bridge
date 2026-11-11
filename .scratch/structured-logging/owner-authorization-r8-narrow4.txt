@@ -1,0 +1,20 @@
+Owner authorization - structured-logging-pin-diagnostics revision r8-pin-diagnostics-narrow4
+packet digest: c46c23dc18196a9cfa7029c19fc7e6f9656091e62ffabf0aea410ef3b563fe75
+question: "Authorize a narrow4 pass on exactly rows H1-H2, M1-M3, L1-L3 (narrowing only, M3 declined), then rebuild, re-review, critic, T8-T12; if it returns revise again, stop and report rather than ask a fifth time"
+response: {"next4":"narrow4"}
+answered: 2026-11-11
+basis: code-reviewer REQUEST CHANGES on packet db7551a19d53ee518e0aaf975f4796e44cc9b7beaaeabb7361a57f2a6692d503, rows H1-H2, M1-M3, L1-L3; M3 (AD21 AC coverage) DECLINED under the narrowing rule (an AC per AD would add an acceptance-criterion id), recorded in decisions.md item 5
+
+packet digest under authorization:
+  c46c23dc18196a9cfa7029c19fc7e6f9656091e62ffabf0aea410ef3b563fe75
+  (supersedes db7551a19d53ee518e0aaf975f4796e44cc9b7beaaeabb7361a57f2a6692d503, which stops
+  binding the moment any bound spec section changes.)
+  For reference, the narrowed bindings:
+    requirements 14d52112bc087e6bc8b9ced60cbb681d482af8d07b24682f47f73e09d5938df9
+    design       a6a6b1333b30aff00daa1d0cebcb59a0984462467343b3293494b6a24e4a336e
+    tasks        1c26001fa76c6ca0795bce030df2cf05bcd9685aa3559a907afda6e728b2075c
+    envelope     eb8463230d03df7103036c73251667de122171b8f4f2e4dfbb5fc608c26096de
+    spec.md      a927292cd4618510d082661c932b784ef74e8b7047b93b0f71940dabb5a1ec21
+  Scope note: the digest above fingerprints the planner's narrow4 delta (.scratch/structured-logging/
+  r8-narrowing4-delta.md) applied verbatim by apply-delta.mjs under this authorization; no new evidence
+  was gathered and no test was run.

@@ -1,0 +1,63 @@
+OWNER MILESTONE AUTHORIZATION — structured-logging revision r8-pin-diagnostics
+Date: 2026-11-11
+Surface: the coordinator's checkpoint form in this session, questions 1-3.
+Context the owner was shown before answering: r8 merged and verified (spec sha256
+a76abbb7a63c6f0f7158c6355a2cacd8346deb3dfd67ba8af338498e437b2f41, four specdd
+marker pairs unique and ordered); r8 branch packet digest
+26842ba717f57e320b9b6c27885e43ba26dd946557b44e9cbc3cbe96b16d6fb3; the state is
+status: invalid because appending to the digest-bound decisions.md staled src-decisions;
+the gate refuses coordinator state edits (E_COORDINATOR_EDIT_FORBIDDEN).
+
+Question 1 — "Milestone authorization — authorize the r8 branch and T8-T12 execution?"
+Owner answer: yes
+
+Authorized by this answer:
+  - the r8-pin-diagnostics revision of the specification for feature `structured-logging`;
+  - the reviewed branch `approved-structured-logging` as extended with tasks T8, T9, T10, T11, T12;
+  - that branch's packet digest 26842ba717f57e320b9b6c27885e43ba26dd946557b44e9cbc3cbe96b16d6fb3;
+  - execution of tickets 08, 09, 10, 11 and 12 (tasks T8-T12), strictly serial in ticket order.
+
+Question 2 — "Independent review arrangement for r8"
+Owner answer: "Fix the gate."
+  - The owner directed that the reviewer-run harness defect be fixed so that BOTH independent
+    reviews (code-reviewer and critic) can run for r8, instead of accepting the r7-style waiver.
+  - Consequence: no waiver of reviews.specification or reviews.tasks is authorized by this
+    message. A waiver remains available only on a further explicit owner decision.
+
+Question 3 — the one gap the planner documented rather than tasked (the refresh counter that
+still reports outcome="none" for a rejected pass)
+Owner answer: "I need more detail"
+  - Decision pending; no acceptance and no scope extension is authorized yet.
+
+Explicitly NOT authorized by this message: any change to acceptance criteria or requirement text
+beyond the reviewed r8 revision; any additional task ID; any infrastructure, network or credential
+action; pushing or releasing anything before the tickets are verified.
+
+Recorded by the coordinator as a faithful transcription of the owner's answers.
+
+---
+
+ADDENDUM (2026-11-11, same session) - re-confirmation of the authorized packet digest
+
+The projection packaging changed after the answers above, which changed the packet the
+authorization must bind. The digest recorded above
+(26842ba717f57e320b9b6c27885e43ba26dd946557b44e9cbc3cbe96b16d6fb3) was computed for a state that
+kept the feature named `structured-logging` and whose branch covered tasks T1-T12. After the owner
+chose the new-projection route, the live feature became `structured-logging-pin-diagnostics` with
+tasks T8-T12 in the branch, so the harness derives a different digest for it; the earlier value
+therefore does not bind the actual packet.
+
+The owner was shown both alternatives (new feature name versus same feature name) and confirmed the
+new projection. Authorized packet:
+
+  feature:   structured-logging-pin-diagnostics
+  revision:  r8-pin-diagnostics
+  branch:    approved-structured-logging
+  taskIds:   T8, T9, T10, T11, T12
+  digest:    358ee090950567ab87950f7c296d4a966df1e782c7a7dc58b83e1cf1728d4d3c
+
+This addendum supersedes the digest value above and is the binding consent for the installed state.
+The substance is unchanged: the r8-pin-diagnostics revision (spec sha256
+a76abbb7a63c6f0f7158c6355a2cacd8346deb3dfd67ba8af338498e437b2f41), tickets 08-12, tasks T8-T12,
+acceptance criteria AC08-1..AC12-3, strictly serial dispatch in ticket order, and no waiver of
+either independent review (the owner directed the reviewer-run gate defect be fixed instead).

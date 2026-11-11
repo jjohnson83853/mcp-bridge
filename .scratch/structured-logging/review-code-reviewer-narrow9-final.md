@@ -1,0 +1,29 @@
+## Review — SPEC-STRUCTURED-LOGGING `r8-pin-diagnostics-narrow9` (closure round)
+
+REVIEWER: code-reviewer
+PACKET: a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea
+VERDICT: pass
+
+**1 MARKERS — pass.** Four pairs, own lines, unique, correctly ordered, non-nested: `spec.md:40/:67`, `:169/:204`, `:271/:287`, `:289/:303`. Line numbers identical to narrow8 ⇒ nothing inserted/deleted around them. Header `:1` and §1 `:34` both say narrow9 and match delta D0a/D0b.
+
+**2 NARROWING CLOSURE — pass.**
+- [HIGH] false counter-gap acceptance → CLOSED at `spec.md:315`: "known gap; acceptance pending owner ruling, backlog ticket 18" — the "owner-ACCEPTED … per decisions.md r8 checkpoint item 3" claim is gone; wording matches the only transcribed answer (`issues/18:9-13`).
+- [MEDIUM] AC12-1 oracle → CLOSED at `spec.md:263`: "…and that every emitted r8 record carries `schema_version` 1 (AD20)" makes the `:267` AD20 claim assertable (an emitted `schema_version: 2` now fails AC12-1).
+- [MEDIUM] `:165` deferral record → CLOSED at `issues/17:22`, which records `tasks[T8].blockedBy` = `[]` vs the required T7 edge and cites `spec.md:165`; drift confirmed against the installed state (`tasks[T8].blockedBy: []`).
+- Prior LOW advisories (`:246` AC08-7 restatement, `:264` AC12-2 key check, AC08-6/AC09-8 positive-only tails, stale issue-17 bullets/packet `358ee090…`) remain unaddressed — advisory, non-blocking under the spec's own advisory policy (`spec.md:3-5`).
+
+**3 REGRESSIONS — pass.** Exactly the claimed edits are present (`spec.md:1`, `:34`, `:263`, `:315`; append at `issues/17:22` after the last pre-existing bullet). No other text moved (marker/AC/ledger offsets unchanged from narrow8), no R/AC/T/AD id added or removed, no ruling weakened.
+
+**4 NEW DEFECTS — none at HIGH/MEDIUM.**
+- [LOW] `issues/12:12` AC12-1 was not mirrored: it still ends at "`reload` for `config_reload_applied`" and omits the new `schema_version` 1 clause in `spec.md:263`, although delta §2 says "TICKET WHOLE-LINE REPLACEMENTS: NONE". Non-blocking: the spec criterion is falsifiable and a test passing without the assertion does not satisfy it. Smallest fix: append the same clause to `issues/12:12`.
+- [LOW] `decisions.md:162` still records the counter gap as ACCEPTED while `spec.md:315` says pending; the spec no longer cites item 3 as acceptance authority and `issues/18` (needs-info) owns reconciliation — conservative and criterion-neutral.
+
+**5 STATE BINDING — pass (with one verification limit).** State `revision` = `r8-pin-diagnostics-narrow9`; `spec.sha256` = `0643286d…` (equals the supplied input digest); `packet.digest` and the authorization receipt both bind `a1ea473e…`; all four section bindings are labelled narrow9. I could not recompute the four section hashes read-only — recorded as a limit, not a finding.
+
+**6 DEFECT-SITE / RULING AREAS untouched by the delta** — not re-audited per scope.
+
+Positive: the two blocking repairs are surgical and id-neutral; the drift append records a real, verified condition rather than a claim.
+
+### Recommendation
+
+APPROVE

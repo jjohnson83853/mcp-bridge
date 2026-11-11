@@ -1,0 +1,20 @@
+Owner authorization - structured-logging-pin-diagnostics revision r8-pin-diagnostics-narrow4b
+packet digest: 8a3bba8d6242fc62e72beb63d9f61b1fb86bf12b2e5b0fd9bf91eaf60ca62c8a
+question: "Apply the four residual rows (the two skipped :284/:285 pairs, the row-M1 dependency alignment, the issues/08:20 mirror) as narrow4b, re-review once, then critic, then T8-T12"
+response: {"next5":"Approved but also pause for a minute to discuss if this is a gate causing you to ask for approval after each review or skill/prompt causing it."}
+answered: 2026-11-11
+basis: code-reviewer REQUEST CHANGES on packet c46c23dc18196a9cfa7029c19fc7e6f9656091e62ffabf0aea410ef3b563fe75 (report review-code-reviewer-narrow4-final.md); rows 1-2 are the narrow4 delta's own verbatim text, skipped by a transcription label bug in apply-delta.mjs (now fixed, with a completeness guard); rows 3-4 are the reviewer's own fix sentences
+
+packet digest under authorization:
+  8a3bba8d6242fc62e72beb63d9f61b1fb86bf12b2e5b0fd9bf91eaf60ca62c8a
+  (supersedes c46c23dc18196a9cfa7029c19fc7e6f9656091e62ffabf0aea410ef3b563fe75, which stops
+  binding the moment any bound spec section changes.)
+  For reference, the narrowed bindings:
+    requirements 14d52112bc087e6bc8b9ced60cbb681d482af8d07b24682f47f73e09d5938df9
+    design       a6a6b1333b30aff00daa1d0cebcb59a0984462467343b3293494b6a24e4a336e
+    tasks        70d8fc0c2af57bd12b490e701ffe1aec73ea837f82a0988c797f1b339229e04d
+    envelope     adfcc5c9bb2eecc5f3bf851f1f4cc73bfc4a1f3e073598ee7148f8b0d30e0fdb
+    spec.md      ee5b9d44281ae057d796c1ccad10389eb0b1b62e0e4d2bd9d138413c310d967e
+  Scope note: the digest above fingerprints the coordinator's narrow4b delta (r8-narrowing4b-delta.md),
+  whose spec rows are the planner's verbatim narrow4 text plus the reviewer's fix sentences; no new
+  evidence was gathered and no test was run.

@@ -1,0 +1,69 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "structured-logging-r8-pin-diagnostics-narrow8",
+  "revision": "r8-pin-diagnostics-narrow8",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+      "sha256": "a0b5fc9e1d52616bc7e6153a1c235b0c1fe3e0f2b8fd0f0805e36263855483d1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+      "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+      "sha256": "672019e8d0ecc1e8a511fa6a9d3bb53c5fc3ea59570fdd00f7c681ff82fd2570"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+      "sha256": "8fc71322fa70379e83c849fb0e330f5413f00a66bd40edb5ae62b0b6778c5409"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+      "sha256": "31779458bab42e8ed5880de660c68b9156493f7f1f4ec769a23e6742097315b9"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+      "sha256": "d7bf99c1d8bedd73c89ada117304d0c3313b15c154a9cc2b6c35868a237dbae7"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+      "sha256": "9f332df6e5d91af2a6dba6b8fc6eed03a7bb9e782f309d0de3b795a1a1fafd06"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+      "sha256": "7e3e5ebfc8b7d0ff93672135f764c8ebdea501033e27343b223d950325ef329b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing8-delta.md",
+      "sha256": "fdb98493d32f16d55c9e0a9b47d973620ee98a0333f292bbdb8823e04a250c92"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow7-final.md",
+      "sha256": "580f193835693c43c802ea18ad09e3d61bd13d8a38cffd3fc7aac80c99492c1b"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewR8Narrow8Spec",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "b9a4595bafd5a9909ec1484ca4a3f3d6ba39c120c492dd83b7d92cba2682186e",
+      "instructionsSha256": "3494459d48a716a51473df680bd7df7144630b5c15c54975d641e1811cf3ee0a"
+    },
+    {
+      "name": "CritiqueR8Narrow8Spec",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskSha256": "1233f6f8327de79240c71eafb20585330e2f5166c46afc1fc5b74714e3985666",
+      "instructionsSha256": "3494459d48a716a51473df680bd7df7144630b5c15c54975d641e1811cf3ee0a"
+    }
+  ],
+  "invocationId": "3f77f031-1fbc-43d2-9d79-3c7caf4f7af0",
+  "output": "## Review — SPEC-STRUCTURED-LOGGING r8-pin-diagnostics-narrow8\nSpec-only, read-only. Findings: HIGH 1, MEDIUM 2, LOW 4.\n\nREVIEWER: code-reviewer\nPACKET: 23a6e42fe8a4a60fad498f64c140e7028e02370329354e5dbc5d41de69a7a838\nVERDICT: revise\n\n**1 MARKERS — pass.** 8 tokens / 4 pairs, own lines, unique, ordered, non-nested: `spec.md:40/:67`, `:169/:204`, `:271/:287`, `:289/:303`. Header `:1` and §1 `:34` both narrow8; state binds this exact spec digest.\n\n**2 COVERAGE — pass.** R20–R25 (`:56-62`) all map to ACs; r8 map `:267` now includes AC12-1..3; every AC tag `:240-265` names exactly one producer; state `ownerTaskIds` are one-per-AC and disjoint (T8→AC08-1..7, T9→AC09-1..8, T10→AC10-1..5, T11→AC11-1..3, T12→AC12-1..3).\n\n**2b NARROWING CLOSURE — revise.** Closed: issues/11:14 opposite-lane (matches `:262`), /12:12 eventMessage+operations (matches `:263`), /09:14 and /10:14 R25 tags, `:267` AC12 anchors, issues/17:20. **[HIGH]** `:315` closes the prior LOW by asserting \"owner-ACCEPTED … per decisions.md r8 checkpoint item 3, backlog ticket 18\"; the only transcribed owner answer on this gap says otherwise — `owner-authorization-r8.txt` Q3 \"Decision pending; no acceptance and no scope extension is authorized yet\" — and `issues/18` (needs-info) exists to reconcile that conflict, so `:315` cites the ticket that contradicts it. Fix: restore \"acceptance pending owner ruling (backlog ticket 18)\"; nothing else changes.\n\n**3 ACs — revise [MEDIUM].** AC08-1..AC12-3 are falsifiable and producer-named; AC09-5 carries its own ≤64 oracle; AC10-5 names the real hook (`refresh.go:211`). Defect: `:267` claims \"AD20 ruling (no schema_version change) is itself asserted by AC12-1\", but AC12-1's oracle is docs text + eventMessage names + operations (`:263`), and AC04-1 (`:223`) asserts schema_version *presence* only — an emitted `schema_version: 2` passes every oracle. Fix (id-neutral): add to AC12-1 \"every emitted r8 record carries `schema_version` 1\". LOW: AC08-7 (`:246`) restates AC08-1's level clause; AC12-2 (`:264`) lacks AC07-2's \"keys ∈ `EnvelopeFieldNames()`\" check; AC08-6/AC09-8 tail clauses are only positively observable.\n\n**4 RULINGS — pass.** T8 `:282` no metric / reload.go-wiring / schema_version + R8 BLOCKED rule; T9 `:283` no raw text, no debug-only; T10 `:284` no metric, no schema_version, no debug, no induced-failure, endpoint scheme/host/port/path only; T11 `:285` additive-only per AD21, `bridge_catalog_refresh_total` untouched; envelope `:300` mirrors. AD20 `:196` keeps 1; AD21 `:203` additive. Matches decisions rulings 6–9, 16–17, 19.\n\n**5 ENVELOPE/STATE — pass [MEDIUM/LOW].** `state.spec.sha256` = reviewed digest, all four sections narrow8, packet 23a6e42f…; chain T8→T9→T10→T11→T12 is total ⇒ strictly serial. Effects match `:283-286` except the recorded drift (T10 adds `internal/upstream/runtime.go`; spec `:296` `service_edge_test.go` has no effect) — issue 17, deferred. **[MEDIUM]** `:165` says issue 17 records \"`tasks[T8].blockedBy` missing its T7 prerequisite\"; issue 17 does not (only T10's, now resolved), so that deferral record is incomplete. Fix: add the bullet to issues/17 or drop it from `:165`. LOW: issue 17's other bullets are stale (AC12-1/2 now `method: test`; state binds 23a6e42f, not 358ee090).\n\n**6 DEFECT SITES — pass.** `refresh.go:195-205` (runPass emits nothing); `:210-224` (`err` read only in the `err == nil` guard; failure falls through to `runtime.Current()` at `:218-221`); `reload.go:562-564` text-only `%w` identity with `core.go:311` first-only (T9 scope note accurate, core untouched); `wiring.go:373-406` readiness only on publish; `ops.go:19` `reason,omitempty`; `dedicated.go:122-168` raw `%w`, no stage; `log.go:186-219` 16 names, no catalog/pin event. The prior \"one line off\" citation is now exact.\n\nPositive: ticket mirrors are near-verbatim; several ACs own their oracles; section bindings are honest.\n\n### Recommendation\n\nREQUEST CHANGES\n"
+}

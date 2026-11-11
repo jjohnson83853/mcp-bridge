@@ -1,0 +1,12 @@
+{
+  "i": "Dispatch Task T12 to engineer",
+  "context": "{\"instructions\":\"Implement Contract docs and verification closeout end to end per .scratch/structured-logging/spec.md (revision r8-pin-diagnostics), ticket 12, and the recorded decisions.\",\"workflowDispatch\":{\"statePath\":\".omp/plans/execution-state.json\",\"schemaVersion\":1,\"projectRoot\":\"/home/opencode/projects/default/mcp-bridge\",\"feature\":\"structured-logging-pin-diagnostics\",\"revision\":\"r8-pin-diagnostics\",\"requests\":[{\"name\":\"ImplementT12\",\"taskId\":\"T12\",\"agent\":\"engineer\",\"effects\":{\"kind\":\"write\",\"paths\":[\"docs/logging-contract.md\",\"README.md\",\"CHANGELOG.md\",\"cmd/mcp-bridge/logging_contract_test.go\",\".omp/artifacts/receipt_T12.json\"]}}]}}",
+  "tasks": [
+    {
+      "name": "ImplementT12",
+      "agent": "engineer",
+      "task": "# Target\nTask T12 - Contract docs and verification closeout. Feature `structured-logging-pin-diagnostics`, revision `r8-pin-diagnostics`. Ticket 12.\n\nRead first, bounded: `.scratch/structured-logging/spec.md` section 7 (observability), section 5 (AC12-1..AC12-3), section 6 T12; the AD20 rulings per event and the final vocabulary; `.scratch/structured-logging/issues/12-*.md`.\n\n# Change\n1. `docs/logging-contract.md`: document the new events and fields, and the optional-versus-`schema_version` ruling per AD20.\n2. `README.md` and `CHANGELOG.md`: the new events/fields.\n3. `cmd/mcp-bridge/logging_contract_test.go`: doc-drift test for the new events, query-key tests, and full-suite consolidation covering the AC08..AC12 producers.\n\n# Test first\nAuthor the doc-drift test for the new events first; it must fail before the docs are written. Capture the RED output.\n\n# Verify\n`go test ./...` (full-suite gate), `go vet ./...`, `gofmt -l` over the changed files (must be empty).\n\n# Receipt\nWrite `.omp/artifacts/receipt_T12.json` with task_id T12, status, and evidence entries carrying command and exitCode.\n\n# Constraints\n- Only the files in this dispatch's effects. No other production files.\n- At most 42 read/search operations before the first edit; if exceeded, stop and report stalled.\n- No external SDK/vendor research.\n- No documented claim beyond records that are actually emitted.\n- No induced-failure review gate (owner ruling 19).",
+      "solutionSpace": "Implementation is bounded by the spec: Contract docs and verification closeout, its acceptance criteria and its listed RED/GREEN tests. No architectural choices remain open."
+    }
+  ]
+}

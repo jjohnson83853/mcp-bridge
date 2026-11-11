@@ -1,0 +1,37 @@
+{
+  "intent": "Dispatch Task T8 to engineer",
+  "instructions": "Implement the refresh pass lifecycle records end to end per .scratch/structured-logging/spec.md (revision r8-pin-diagnostics-narrow9), ticket 08, and decisions rulings 6,7,11-15.",
+  "workflowDispatch": {
+    "statePath": ".omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "structured-logging-pin-diagnostics",
+    "revision": "r8-pin-diagnostics-narrow9",
+    "requests": [
+      {
+        "name": "ImplementT8",
+        "taskId": "T8",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/service/refresh.go",
+            "internal/observe/log.go",
+            "internal/observe/envelope.go",
+            "internal/service/refresh_test.go",
+            "internal/service/refresh_lifecycle_test.go",
+            ".omp/artifacts/receipt_T8.json"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ImplementT8",
+      "agent": "engineer",
+      "task": "# Target\nTask T8 — Refresh pass lifecycle records. Feature `structured-logging-pin-diagnostics`, spec revision r8-pin-diagnostics-narrow9.\n\nRead first, bounded: `.scratch/structured-logging/spec.md` §4 (AD16/AD19/AD20), §5 AC08-1..AC08-7, §6 T8; `.scratch/structured-logging/decisions.md` rulings 6,7,11-15; `.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md`.\n\n# Change\n1. `internal/service/refresh.go`: `runPass()` emits the pass lifecycle records — `catalog_refresh_started` (with `refresh_id`, `config_revision`, `trigger`, `next_attempt_ms`) and exactly one outcome record (`catalog_refresh_completed` on success, `catalog_refresh_failed` on failure) sharing the same `refresh_id`. The error discarded in `report(assembly, err)` must be carried into the failure record's nested `error` (code = finite pass class, kind `dependency` retryable true, or `configuration` retryable false for pin rejections) — no raw error text (R8).\n2. `internal/observe/log.go`: add the three eventMessage entries (`catalog_refresh_started`, `catalog_refresh_completed`, `catalog_refresh_failed`) and the whitelist additions.\n3. `internal/observe/envelope.go`: extend the union with the AD20 keys owned by this task.\n4. Tests: `internal/service/refresh_test.go` (existing assertions only), `internal/service/refresh_lifecycle_test.go` (new) — AC08-1..7.\n\n# Acceptance (AC08-1..AC08-7)\n- AC08-1: a refresh pass whose candidate is rejected emits exactly one pass-level failure record, `catalog_refresh_failed` (per-pin `pin_blocker_detail` records are additional and not counted by this oracle), at the AD16-pinned level — warn when `catalog_state` is `retained_published`, error when `none_available`.\n- AC08-2: start and outcome records share `refresh_id` and each carries `config_revision`, `trigger`; the start record carries `next_attempt_ms`.\n- AC08-3: a failed pass states `catalog_state` — retained (`retained_generation`, `catalog_tools`) or `none_available` — and, per ruling 12, the CANDIDATE side as counts: `candidate_servers` and `candidate_tools` asserted on the failed-pass record, counts only (never per-server or per-tool listings).\n- AC08-4: a successful pass reports `servers_discovered`, `tools_discovered`, `tools_published`, `pins_resolved`, `pins_total` as separate counts.\n- AC08-5: a successful pass lists NO individual server or tool name.\n- AC08-6: each failed pass repeats its complete diagnostic; no deduplication, no truncation of detail.\n- AC08-7: every `catalog_refresh_failed` record carries `level` `warn` or `error` exactly as pinned by AC08-1 — positively asserted on each emitted record (`warn` with `retained_published`, `error` with `none_available`).\n\n# RED/GREEN\nRED first: add the failing tests, run them, capture the failure output. Then implement to GREEN.\n\n# Verify\n`go test ./internal/service -run Refresh`, `go vet ./...`, `gofmt -l` over changed files (empty).\n\n# Receipt\nWrite `.omp/artifacts/receipt_T8.json` per the receipt schema (task_id T8, status COMPLETED, evidence entries with command and exitCode).\n\n# Constraints\n- Only the files in the dispatch effects. No other production files.\n- No metric changes, no reload.go/wiring.go changes, no schema_version change.\n- At most 42 read/search operations before the first edit; if exceeded, stop and report stalled.\n- No external SDK/vendor research.\n- Any blocker field that cannot be sourced without raw error text (R8) → BLOCKED with evidence.",
+      "solutionSpace": "Implementation is bounded by the spec: the AD16 pass lifecycle records, the AD19 eventMessage entries, the AD20 envelope keys, and the AC08-1..7 tests. No architectural choices remain open."
+    }
+  ]
+}

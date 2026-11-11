@@ -1,0 +1,38 @@
+OWNER AUTHORIZATION — r8-pin-diagnostics -> r8-pin-diagnostics-narrow1 (addendum)
+Recorded 2026-11-11. Coordinator-prepared question. The ANSWER block is the owner's selection,
+recorded verbatim; this file is a source artifact, so its digest is re-bound whenever it changes.
+
+Q1. Do you authorize revision r8-pin-diagnostics-narrow1 as the reviewed revision — the planner's
+    18 whole-line trims (R21, R22, R24, AD18, AC08-1, AC08-2, AC09-2, AC09-8, AC10-2, AC11-1,
+    AC11-2, AC12-3, T8, T9, T10, T11, title/section 1, section 7 counter bullet), with no
+    requirement or acceptance id added or removed and no acceptance criterion created?
+    Packet digest under authorization:
+      15567c2bf834ec903608e884d4bcf0d56e76f00c1b5071ee8875600a51b31327
+    (supersedes 358ee090950567ab87950f7c296d4a966df1e782c7a7dc58b83e1cf1728d4d3c, which stops
+    binding the moment any bound spec section changes.)
+    For reference, the narrowed bindings:
+      requirements 667ffb1b336a7e6d6c39867f22a09325c1bfd4f6c9ef2b263023d0e32e7b47d9
+      design       9172b7bbab12a673fb2316b215e41c373ab804739546b7151bd109969bd23dd1
+      tasks        dc89162e11962847b6117480130f6999d5c5517d280cbb4ba9dcead5692337ba
+      envelope     eb8463230d03df7103036c73251667de122171b8f4f2e4dfbb5fc608c26096de (unchanged)
+      spec.md      04786e403d2eac981e306fdd01b7fb9a6c17b1b0f16a429920e84a5ed85222d6
+
+Q2. Do you accept the residual gaps as known, deferred gaps on this revision, each resolving
+    through its backlog ticket and none blocking T8-T12?
+      G1 AD16 catalog_refresh_failed candidate_servers/candidate_tools/retained_age_ms (ticket 14)
+      G2 AD21 config_reload_applied plus the additive config_revision/trigger on
+         config_reload_rejected, emitted by T11 and asserted by no acceptance criterion (ticket 15)
+      G3 misleading bridge_catalog_refresh_total{outcome="none"} acceptance status (ticket 18)
+      G4 startup pin-evaluation leg (ticket 13)
+
+Q3. Startup pin evaluation (ticket 13): rule (a) the startup leg means the first post-startup
+    refresh pass, narrated by AD16 records — no code change; or (b) authorize an explicit startup
+    pin check in internal/service/reload.go with its own envelope entry and RED test.
+    Recommend (a).
+
+ANSWER (owner), recorded 2026-11-11 from the authorization form (selection transcribed verbatim):
+A1. "Authorize r8-pin-diagnostics-narrow1 (bind the new digest
+    15567c2bf834ec903608e884d4bcf0d56e76f00c1b5071ee8875600a51b31327), then install, rebuild the
+    review candidate, re-review (code-reviewer then critic), then run T8-T12"
+A2. "Accept all four as known deferred gaps"
+A3. "Startup leg = the first post-startup refresh pass, narrated by AD16 records (no code change)"

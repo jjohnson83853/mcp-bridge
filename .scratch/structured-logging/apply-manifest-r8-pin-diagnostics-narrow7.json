@@ -1,0 +1,9 @@
+{
+  "delta": "7513259f2763e477e661a182b2cde2abe85c77f18c6e2c1bf20776f9377171a5",
+  "revisionFrom": "r8-pin-diagnostics-narrow6",
+  "revisionTo": "r8-pin-diagnostics-narrow7",
+  "files": {
+    "spec.md": "05a4a8e90bbcce4643a043323b5dff1315523bc39a3c46e7f3c81789b90bbbb7",
+    "issues/08-refresh-pass-lifecycle-records.md": "aedf7837ae22c5a851ea7ee44aca0b31e245fefc6287270ae4d6ed385a33e127"
+  }
+}

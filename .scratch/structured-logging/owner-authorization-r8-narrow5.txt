@@ -1,0 +1,26 @@
+Standing owner authorization - structured-logging-pin-diagnostics revision r8-pin-diagnostics-narrow5
+packet digest: 35ab8658c9df716c26c0d309076de239fd62cc32e44681b417a8ef93f6de0519
+
+Owner instructions in force (verbatim, 2026-11-11):
+  1. "update your prompting so that you only stop submitting plan changes if you fail to apply a
+     different request to the planner that is meaninful different then before or you have failed
+     4 in a row."
+  2. "proceed to next steps with r8"
+
+Basis: the round-6 code-reviewer report (review-code-reviewer-narrow4b-final.md, packet
+8a3bba8d6242fc62e72beb63d9f61b1fb86bf12b2e5b0fd9bf91eaf60ca62c8a) returned REVISE on six
+residual defects. The narrow5 delta closes them with no R/AC/T id added or removed and no
+envelope widening, so under the standing instruction it proceeds without a new per-round ask.
+The planner authored every replacement line (agent AuthorNarrow5Delta); the coordinator applied
+them mechanically with apply-delta.mjs.
+
+packet digest under authorization:
+  35ab8658c9df716c26c0d309076de239fd62cc32e44681b417a8ef93f6de0519
+  (supersedes 8a3bba8d6242fc62e72beb63d9f61b1fb86bf12b2e5b0fd9bf91eaf60ca62c8a, which stops
+  binding the moment any bound spec section changes.)
+  For reference, the narrowed bindings:
+    requirements 14d52112bc087e6bc8b9ced60cbb681d482af8d07b24682f47f73e09d5938df9
+    design       b1b8188284a3835987fcde46775200bdd873aebd97a02676bdb9ce17e3245ad2
+    tasks        fc1eafe775b3c52cb9137bc90a2c0d2490c7fea60124301889ea22d507f3396d
+    envelope     e63d79a6b9e3ba07e10b2a82e1d06b78c281bbd27c34b0bfef707bea0d69a00c
+    spec.md      83cd82340d352d4a1d64c9941c7d9894ce7c3af2862e30e3aa2858e23c907aba

@@ -1,0 +1,13 @@
+{
+  "delta": "4a65661a89975df3b9c2a8f00db53605c59d04d98023f927823eb44d074c2644",
+  "revisionFrom": "r8-pin-diagnostics-narrow3",
+  "revisionTo": "r8-pin-diagnostics-narrow4",
+  "files": {
+    "spec.md": "7e8f8e654ab7306a73999e1af87f8ef034e480d089c9aec6eab4feb9e5c94071",
+    "issues/10-discovery-attribution-and-readiness-reason.md": "92086d6c28c912248f59d85f6a7604e61712b161312a5e1be8ef12a456923c06",
+    "issues/08-refresh-pass-lifecycle-records.md": "48886d3010f44a1909aa9f13ca8af447cf321b292417909b24b43a0bac867fe4",
+    "issues/09-pin-blocker-detail.md": "aa4f6523d9dfc692025a317475e131a2dfe013d4da8e960d5013017f007dd618",
+    "issues/12-contract-docs-and-verification-closeout.md": "9f476f56746e4331e90368326af3473b29b2b41b05a35253d18132ce3b3c31d4",
+    "issues/11-path-parity-and-logger-fallback.md": "966bdf4dfb4e21369a9a05e7bcfa09281ac43ee2720c9fbcaad67d01c708aa16"
+  }
+}

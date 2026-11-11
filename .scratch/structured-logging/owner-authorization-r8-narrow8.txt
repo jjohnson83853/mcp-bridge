@@ -1,0 +1,27 @@
+Standing owner authorization - structured-logging-pin-diagnostics revision r8-pin-diagnostics-narrow8
+packet digest: 23a6e42fe8a4a60fad498f64c140e7028e02370329354e5dbc5d41de69a7a838
+
+Owner instructions in force (verbatim, 2026-11-11):
+  1. "update, proced to next round of plan and review"
+  2. "update your prompting so that you only stop submitting plan changes if you fail to apply a
+     different request to the planner that is meaninful different then before or you have failed
+     4 in a row."
+
+Basis: round-9 code-reviewer report (review-code-reviewer-narrow7-final.md, packet
+08c91efdc41f83fd6d141e3d71ad544b4c147fed0d4d39a6b9d8438ae4371144) returned REVISE on a
+ticket-mirror class: the spec already carried every fix, the tickets the tasks execute did not.
+This round mirrors the four spec lines into tickets 09/10/11/12, completes the r8 coverage map
+with AC12-1..3, records the counter gap as owner-accepted, and refreshes issue 17's stale
+evidence. No R/AC/T id added or removed, no envelope widening. Planner authored every
+replacement line (agent AuthorNarrow8Delta); the coordinator applied them mechanically with
+apply-delta.mjs.
+
+packet digest under authorization:
+  23a6e42fe8a4a60fad498f64c140e7028e02370329354e5dbc5d41de69a7a838
+  (supersedes 08c91efdc41f83fd6d141e3d71ad544b4c147fed0d4d39a6b9d8438ae4371144.)
+  For reference, the narrowed bindings:
+    requirements 14d52112bc087e6bc8b9ced60cbb681d482af8d07b24682f47f73e09d5938df9
+    design       115635e28683ebf22e65d809ec5e6f48cd93f606f1c2a5efdda07d0ad7fe493b
+    tasks        fc1eafe775b3c52cb9137bc90a2c0d2490c7fea60124301889ea22d507f3396d
+    envelope     e63d79a6b9e3ba07e10b2a82e1d06b78c281bbd27c34b0bfef707bea0d69a00c
+    spec.md      a0b5fc9e1d52616bc7e6153a1c235b0c1fe3e0f2b8fd0f0805e36263855483d1

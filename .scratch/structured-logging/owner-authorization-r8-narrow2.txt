@@ -1,0 +1,40 @@
+OWNER AUTHORIZATION — r8-pin-diagnostics-narrow1 -> r8-pin-diagnostics-narrow2 (second narrowing addendum)
+Recorded 2026-11-11T13:30:00.000Z. Coordinator-prepared question. The ANSWER block is the owner's selection, recorded
+verbatim from the authorization form; this file is a source artifact, so its digest is re-bound
+whenever it changes.
+
+Q1. r8-pin-diagnostics-narrow1 did not pass its review. Two independent code-reviewer runs on
+    identical bytes returned APPROVE and then REQUEST CHANGES (packet
+    15567c2bf834ec903608e884d4bcf0d56e76f00c1b5071ee8875600a51b31327). The stricter verdict is
+    operative: the earlier APPROVE is bound to a superseded reviewer-run invocation and cannot be
+    recorded. The REQUEST CHANGES report names six findings:
+      1 tickets 08/09/11 still carry pre-narrowing text while spec.md claims a 1:1 ticket-AC mapping
+      2 AC11-1 requires reload/refresh parity that no design element defines for the reload path
+      3 AC09-5 leaves the discovered_tools chunk bound unpinned, so chunk_count=1 can pass
+      4 AC10-4 demands next_attempt_ms on every failure, contradicting AD17's conditional
+      5 AD20 lists failure_stage as new though it is already in the 109-name union; AC12-1/AC12-2
+        carry method "inspection" in the installed state while the spec calls them "test (doc-drift)"
+      6 decisions.md lacks the r8-narrow append and T10 blockedBy ["T8"] lets T9 and T10 run in
+        parallel over shared files although the spec requires strictly serial dispatch
+    Do you authorize revision r8-pin-diagnostics-narrow2, closing findings 1-6 by NARROWING ONLY — no requirement,
+    acceptance or task id added or removed, no new AD, no new acceptance criterion, no widened
+    envelope — with the remaining ticket-17 artifact drift left as an owner-deferred, recorded gap?
+    Packet digest under authorization:
+      8486fd04268f00b1f370600c5bedb10d7e8987794610d34ce2abaa74e7bb43a4
+    (supersedes 15567c2bf834ec903608e884d4bcf0d56e76f00c1b5071ee8875600a51b31327, which stops
+    binding the moment any bound spec section changes.)
+    For reference, the narrowed bindings:
+      requirements 667ffb1b336a7e6d6c39867f22a09325c1bfd4f6c9ef2b263023d0e32e7b47d9 (unchanged)
+      design       1a02b4bf77f2bdb473ce7118921ab4f144102709dbee0825f74c1700404eef4b
+      tasks        dc89162e11962847b6117480130f6999d5c5517d280cbb4ba9dcead5692337ba (unchanged)
+      envelope     eb8463230d03df7103036c73251667de122171b8f4f2e4dfbb5fc608c26096de (unchanged)
+      spec.md      925246d9ce4231051c8ce63169b118e12b3da89451b8bfd514603f262a1d03a9
+    Scope note: the digest above fingerprints the planner's narrow2 delta
+    (.scratch/structured-logging/r8-narrowing2-delta.md) authored under this same instruction; the
+    coordinator transcribed that delta and reproduced all four narrow1 baseline section digests
+    before deriving these values.
+
+ANSWER (owner), recorded 2026-11-11T13:30:00.000Z from the authorization form (selection transcribed verbatim):
+A1. "Authorize r8-pin-diagnostics-narrow2: fix 1-6 (narrowing only, no new ACs), then rebuild,
+    re-review (code-reviewer -> critic), then run T8-T12"
+    raw answer: {"next":"narrow2"}

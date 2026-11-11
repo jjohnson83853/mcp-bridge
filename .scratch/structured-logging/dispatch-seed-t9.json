@@ -1,0 +1,38 @@
+{
+  "intent": "Dispatch Task T9 to engineer",
+  "instructions": "Implement the pin blocker detail end to end per .scratch/structured-logging/spec.md (revision r8-pin-diagnostics-narrow9), ticket 09, and decisions rulings 2-5,13.",
+  "workflowDispatch": {
+    "statePath": ".omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "structured-logging-pin-diagnostics",
+    "revision": "r8-pin-diagnostics-narrow9",
+    "requests": [
+      {
+        "name": "ImplementT9",
+        "taskId": "T9",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/service/reload.go",
+            "internal/service/refresh.go",
+            "internal/observe/log.go",
+            "internal/observe/envelope.go",
+            "internal/service/pin_blocker_test.go",
+            "internal/service/refresh_lifecycle_test.go",
+            ".omp/artifacts/receipt_T9.json"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ImplementT9",
+      "agent": "engineer",
+      "task": "# Target\nTask T9 — Pin blocker detail. Feature `structured-logging-pin-diagnostics`, spec revision r8-pin-diagnostics-narrow9.\n\nRead first, bounded: `.scratch/structured-logging/spec.md` §4 (AD18), §5 AC09-1..AC09-8, §6 T9; `.scratch/structured-logging/decisions.md` rulings 2-5, 13; `.scratch/structured-logging/issues/09-pin-blocker-detail.md`.\n\n# Change\n1. `internal/service/reload.go`: structured pin identity alongside the existing wrap (defect site reload.go:562-564 is text-only today). Collect ALL unresolved pins, not the first.\n2. `internal/service/refresh.go`: blocker collection — emit one `pin_blocker_detail` per unresolved pin, each with server and tool identity, `config.property_path`, the classification (`server_unverified` with the discovery cause, or `tool_absent`), `discovered_tools` chunked at 64 per record with `chunk_index`/`chunk_count`, and `publication_impact`.\n3. `internal/observe/log.go` / `internal/observe/envelope.go`: the `pin_blocker_detail` event and its keys.\n4. Tests: `internal/service/pin_blocker_test.go` (new), `internal/service/refresh_lifecycle_test.go` (extends) — AC09-1..8.\n\n# Acceptance (AC09-1..AC09-8)\n- AC09-1: several unresolved mandatory pins → ALL reported via `pin_blocker_detail` (AD18), each with server and tool identity, not only the first; every such record carries `level` `warn` per AD18/ruling 16 — a `pin_blocker_detail` emitted at any other level (in particular `debug`) fails this criterion.\n- AC09-2: each reported pin carries `config.property_path` (the pin's `pins[i]` path).\n- AC09-3: a discovery-failed server's pin is `server_unverified` with the discovery cause, never tool-absent.\n- AC09-4: a successfully discovered server lacking the named tool is `tool_absent`.\n- AC09-5: for each server with a missing pin, `discovered_tools` listed; large lists split across records sharing `refresh_id`, `server`, `chunk_index`/`chunk_count`; each chunk record carries at most 64 `discovered_tools` names (this acceptance criterion's own oracle bound, asserted per chunk record), so `chunk_count` ≥ 2 whenever a server's listing exceeds 64; no silent truncation.\n- AC09-6: discovered tool names only for servers with missing pins — never healthy servers.\n- AC09-7: each failure states `publication_impact` (`candidate_rejected` or `degraded_published`).\n- AC09-8: all evidence in one failure correlates to one `refresh_id` and, through the shared `catalog_refresh_failed` record, to that pass's `config_revision`; no result mixes catalog generations.\n\n# RED/GREEN\nRED first: the multi-unresolved-pin test asserts ALL pins reported with `config.property_path` identity — expected failure (first-only/text-only today). Capture it, then implement to GREEN.\n\n# Verify\n`go test ./internal/service -run 'Pin|Blocker|Refresh'`, `go vet ./...`, `gofmt -l` changed files (empty).\n\n# Receipt\nWrite `.omp/artifacts/receipt_T9.json` per the receipt schema (task_id T9, status COMPLETED, evidence entries with command and exitCode).\n\n# Constraints\n- Only the files in the dispatch effects. No other production files.\n- No raw error text in any field (R8); no debug-only diagnostics (ruling 16 — every `pin_blocker_detail` at `level` `warn` per AD18).\n- No changes to the r7 config-diagnostic renderer or its tests.\n- `internal/core/core.go` is NOT a T9 write path and must not be modified; T9's all-pins collection replaces the first-only `core.AddPins` failure within T9's own file set.\n- At most 42 read/search operations before the first edit; if exceeded, stop and report stalled.\n- No external SDK/vendor research.",
+      "solutionSpace": "Implementation is bounded by the spec: all-pins collection, the AD18 pin_blocker_detail records with chunking, and the AC09-1..8 tests. No architectural choices remain open."
+    }
+  ]
+}

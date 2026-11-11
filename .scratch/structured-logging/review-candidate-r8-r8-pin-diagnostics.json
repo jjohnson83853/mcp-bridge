@@ -1,0 +1,58 @@
+{
+  "id": "structured-logging-r8-pin-diagnostics",
+  "revision": "r8-pin-diagnostics",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+      "sha256": "a76abbb7a63c6f0f7158c6355a2cacd8346deb3dfd67ba8af338498e437b2f41"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+      "sha256": "426b23b7c946d8322f2bc457e296bcf25bfb9d24b2046f828fed1561946172e1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+      "sha256": "a5b2294442adfaf0f7313568fa24f9ed335044d28e478bcf199a441b13178459"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+      "sha256": "2bf2d3539796c26727c07de90438f87377a4eafc682d9e6b2073ee08aeadb70d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+      "sha256": "6a5b3c9c87783febcff3b63da0ec1ced1da1b75a1812091fab214f3a093f1b5b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+      "sha256": "65a385305b2eb8ffdcfde040d9fbad49caa678977be5c76a5494ffe442956595"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+      "sha256": "9f476f56746e4331e90368326af3473b29b2b41b05a35253d18132ce3b3c31d4"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+      "sha256": "37057404a3d61fb6d67ae5efd99a13f216e5dec534dc4fc84a432df78831ff38"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewR8PinDiagnosticsSpec",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "3fdb7d07fb790902f27a7bdd7ecf696988353e73d2924c9d99edc356309a75d2",
+      "instructionsSha256": "e36d8da0d25d458b60c2c5139a75d9223eb91cc4f95945a4481e055e2b04714b"
+    },
+    {
+      "name": "CritiqueR8PinDiagnosticsSpec",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskSha256": "9a7bb32318dae6a9d62fa5964493c21c3aa6476dba5144ef8e44e700b5fb6b10",
+      "instructionsSha256": "e36d8da0d25d458b60c2c5139a75d9223eb91cc4f95945a4481e055e2b04714b"
+    }
+  ],
+  "codeReview": null
+}

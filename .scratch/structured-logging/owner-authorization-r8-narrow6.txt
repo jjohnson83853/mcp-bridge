@@ -1,0 +1,26 @@
+Standing owner authorization - structured-logging-pin-diagnostics revision r8-pin-diagnostics-narrow6
+packet digest: 4b3770469ee9da8fc1b23650c2d0db2492d685341b146f79636831e7c021ca42
+
+Owner instructions in force (verbatim, 2026-11-11):
+  1. "update your prompting so that you only stop submitting plan changes if you fail to apply a
+     different request to the planner that is meaninful different then before or you have failed
+     4 in a row."
+  2. "proceed to next steps with r8"
+
+Basis: round-7 code-reviewer report (review-code-reviewer-narrow5-final.md, packet
+35ab8658c9df716c26c0d309076de239fd62cc32e44681b417a8ef93f6de0519) returned REVISE on ticket-mirror
+drift (issues/09:14, 10:14, 12:14), the AC10-5 hook-site wording and the R25 coverage mapping.
+This round is a different defect class from the previous AC-falsifiability round. No R/AC/T id
+added or removed, no envelope widening, so it proceeds under the standing instruction.
+Planner authored every replacement line (agent AuthorNarrow6Delta); the coordinator applied them
+mechanically with apply-delta.mjs.
+
+packet digest under authorization:
+  4b3770469ee9da8fc1b23650c2d0db2492d685341b146f79636831e7c021ca42
+  (supersedes 35ab8658c9df716c26c0d309076de239fd62cc32e44681b417a8ef93f6de0519.)
+  For reference, the narrowed bindings:
+    requirements 14d52112bc087e6bc8b9ced60cbb681d482af8d07b24682f47f73e09d5938df9
+    design       b1b8188284a3835987fcde46775200bdd873aebd97a02676bdb9ce17e3245ad2
+    tasks        fc1eafe775b3c52cb9137bc90a2c0d2490c7fea60124301889ea22d507f3396d
+    envelope     e63d79a6b9e3ba07e10b2a82e1d06b78c281bbd27c34b0bfef707bea0d69a00c
+    spec.md      05a4a8e90bbcce4643a043323b5dff1315523bc39a3c46e7f3c81789b90bbbb7

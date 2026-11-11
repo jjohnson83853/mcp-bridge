@@ -1,0 +1,26 @@
+Standing owner authorization - structured-logging-pin-diagnostics revision r8-pin-diagnostics-narrow7
+packet digest: 08c91efdc41f83fd6d141e3d71ad544b4c147fed0d4d39a6b9d8438ae4371144
+
+Owner instructions in force (verbatim, 2026-11-11):
+  1. "update your prompting so that you only stop submitting plan changes if you fail to apply a
+     different request to the planner that is meaninful different then before or you have failed
+     4 in a row."
+  2. "proceed to next steps with r8"
+
+Basis: round-8 code-reviewer report (review-code-reviewer-narrow6-final.md, packet
+4b3770469ee9da8fc1b23650c2d0db2492d685341b146f79636831e7c021ca42) returned REVISE on five
+design-consistency defects (D5 fallback-lane exception, ruling-12 candidate counts, eventMessage/
+operation assertions, R25 tags, next_attempt_ms conditionality). Different defect class from the
+previous mirror-drift round. No R/AC/T id added or removed, no envelope widening.
+Planner authored every replacement line (agent AuthorNarrow7Delta); the coordinator applied them
+mechanically with apply-delta.mjs.
+
+packet digest under authorization:
+  08c91efdc41f83fd6d141e3d71ad544b4c147fed0d4d39a6b9d8438ae4371144
+  (supersedes 4b3770469ee9da8fc1b23650c2d0db2492d685341b146f79636831e7c021ca42.)
+  For reference, the narrowed bindings:
+    requirements 14d52112bc087e6bc8b9ced60cbb681d482af8d07b24682f47f73e09d5938df9
+    design       115635e28683ebf22e65d809ec5e6f48cd93f606f1c2a5efdda07d0ad7fe493b
+    tasks        fc1eafe775b3c52cb9137bc90a2c0d2490c7fea60124301889ea22d507f3396d
+    envelope     e63d79a6b9e3ba07e10b2a82e1d06b78c281bbd27c34b0bfef707bea0d69a00c
+    spec.md      2265463019eb7229bef44dda895e3de33a6c1e9e73bdc2396a514837bdbd0165

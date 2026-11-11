@@ -1,0 +1,66 @@
+{
+  "id": "structured-logging-r8-pin-diagnostics-narrow9",
+  "revision": "r8-pin-diagnostics-narrow9",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+      "sha256": "0643286d56a36dec7ce844b669e28d8810f6ffdff4af91ad266adeef6a1eeaed"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+      "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+      "sha256": "672019e8d0ecc1e8a511fa6a9d3bb53c5fc3ea59570fdd00f7c681ff82fd2570"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+      "sha256": "8fc71322fa70379e83c849fb0e330f5413f00a66bd40edb5ae62b0b6778c5409"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+      "sha256": "31779458bab42e8ed5880de660c68b9156493f7f1f4ec769a23e6742097315b9"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+      "sha256": "d7bf99c1d8bedd73c89ada117304d0c3313b15c154a9cc2b6c35868a237dbae7"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+      "sha256": "9f332df6e5d91af2a6dba6b8fc6eed03a7bb9e782f309d0de3b795a1a1fafd06"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+      "sha256": "d9f670e9188d520d611afd9e9a2de81543b0f11af456622a67eb487f29eefb39"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing9-delta.md",
+      "sha256": "a7ebfc852b9aeae00e9cc99eae28d8b3ff21b89fabb79b7862c2fcd279c52a95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow8-final.md",
+      "sha256": "e393c337d0e65b2d29bf982e2b58d08adce84a46219bb1c2dfc86c648537d24c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewR8Narrow9Spec",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "dcf82212e3e9c9a40c3ab4d0b917f725102840b39e727f0f22e489d3acd48639",
+      "instructionsSha256": "66d3d4dc00205fd095cf46552c5777b0a000f9da50fbe563611784767b5bcc17"
+    },
+    {
+      "name": "CritiqueR8Narrow9Spec",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskSha256": "3ea84c788e2e055abae58dd740766ee2a719ce0c64cef7df1ffbd3d2f2bd4e86",
+      "instructionsSha256": "66d3d4dc00205fd095cf46552c5777b0a000f9da50fbe563611784767b5bcc17"
+    }
+  ],
+  "codeReview": null
+}

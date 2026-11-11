@@ -1,0 +1,28 @@
+Standing owner authorization - structured-logging-pin-diagnostics revision r8-pin-diagnostics-narrow9
+packet digest: a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea
+
+Owner instructions in force (verbatim, 2026-11-11):
+  1. "approve path 1 and add to the backlog to build a plan arbitrator subagent to help the
+     orchestrator get through these loops when the stop condition occurs."
+  2. "update your prompting so that you only stop submitting plan changes if you fail to apply a
+     different request to the planner that is meaninful different then before or you have failed
+     4 in a row."
+
+Basis: round-10 code-reviewer report (review-code-reviewer-narrow8-final.md, packet
+23a6e42fe8a4a60fad498f64c140e7028e02370329354e5dbc5d41de69a7a838) returned REVISE on three
+findings: the :315 false acceptance claim (a regression introduced by narrow8), the missing
+AC12-1 schema_version oracle, and the missing issues/17 T8 dependency bullet. Path 1 approved:
+close exactly those three, then review under a closure prompt with a severity gate (LOW findings
+advisory, APPROVE when every prior finding is closed and no new HIGH/MEDIUM exists).
+Planner authored every replacement line (agent AuthorNarrow9Delta); the coordinator applied them
+mechanically with apply-delta.mjs.
+
+packet digest under authorization:
+  a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea
+  (supersedes 23a6e42fe8a4a60fad498f64c140e7028e02370329354e5dbc5d41de69a7a838.)
+  For reference, the narrowed bindings:
+    requirements 14d52112bc087e6bc8b9ced60cbb681d482af8d07b24682f47f73e09d5938df9
+    design       115635e28683ebf22e65d809ec5e6f48cd93f606f1c2a5efdda07d0ad7fe493b
+    tasks        fc1eafe775b3c52cb9137bc90a2c0d2490c7fea60124301889ea22d507f3396d
+    envelope     e63d79a6b9e3ba07e10b2a82e1d06b78c281bbd27c34b0bfef707bea0d69a00c
+    spec.md      0643286d56a36dec7ce844b669e28d8810f6ffdff4af91ad266adeef6a1eeaed

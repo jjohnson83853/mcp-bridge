@@ -1,0 +1,11 @@
+{
+  "delta": "989442370d5d9a0e8a4738c0da1c6a9f0c984ceb8c1e85b710693d300acbfd88",
+  "revisionFrom": "r8-pin-diagnostics-narrow5",
+  "revisionTo": "r8-pin-diagnostics-narrow6",
+  "files": {
+    "spec.md": "83cd82340d352d4a1d64c9941c7d9894ce7c3af2862e30e3aa2858e23c907aba",
+    "issues/09-pin-blocker-detail.md": "c6cb89ea2e020beddc820a41397e703b48b0ce02c474de1052a9e41bbf656818",
+    "issues/10-discovery-attribution-and-readiness-reason.md": "10a6174d5e5916b7461c56da104ff57300d2f7a1f6463b231e5136f1c6868bd8",
+    "issues/12-contract-docs-and-verification-closeout.md": "405d2547fceb38cb7bc4c0c3f1d59949860800fc6379d709005be54f80645a65"
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "structured-logging-r8-pin-diagnostics-narrow9",
+  "revision": "r8-pin-diagnostics-narrow9",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+      "sha256": "0643286d56a36dec7ce844b669e28d8810f6ffdff4af91ad266adeef6a1eeaed"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+      "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+      "sha256": "672019e8d0ecc1e8a511fa6a9d3bb53c5fc3ea59570fdd00f7c681ff82fd2570"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+      "sha256": "8fc71322fa70379e83c849fb0e330f5413f00a66bd40edb5ae62b0b6778c5409"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+      "sha256": "31779458bab42e8ed5880de660c68b9156493f7f1f4ec769a23e6742097315b9"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+      "sha256": "d7bf99c1d8bedd73c89ada117304d0c3313b15c154a9cc2b6c35868a237dbae7"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+      "sha256": "9f332df6e5d91af2a6dba6b8fc6eed03a7bb9e782f309d0de3b795a1a1fafd06"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+      "sha256": "d9f670e9188d520d611afd9e9a2de81543b0f11af456622a67eb487f29eefb39"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing9-delta.md",
+      "sha256": "a7ebfc852b9aeae00e9cc99eae28d8b3ff21b89fabb79b7862c2fcd279c52a95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow8-final.md",
+      "sha256": "e393c337d0e65b2d29bf982e2b58d08adce84a46219bb1c2dfc86c648537d24c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewR8Narrow9Spec",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "dcf82212e3e9c9a40c3ab4d0b917f725102840b39e727f0f22e489d3acd48639",
+      "instructionsSha256": "66d3d4dc00205fd095cf46552c5777b0a000f9da50fbe563611784767b5bcc17"
+    },
+    {
+      "name": "CritiqueR8Narrow9Spec",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskSha256": "3ea84c788e2e055abae58dd740766ee2a719ce0c64cef7df1ffbd3d2f2bd4e86",
+      "instructionsSha256": "66d3d4dc00205fd095cf46552c5777b0a000f9da50fbe563611784767b5bcc17"
+    }
+  ],
+  "invocationId": "d372817e-2918-449a-9211-6dc7fd532fd5",
+  "output": "REVIEWER: critic\nPACKET: a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea\nVERDICT: pass\n\nReviewed: `r8-pin-diagnostics-narrow9`. **ACCEPT**, technical closure only; no execution permission granted.\n\nPaths below are relative to `.scratch/structured-logging/`, except execution state.\n\n### Closure — pass\n- **C1 HIGH, closed:** false counter-gap acceptance removed at `spec.md:315`. Pending-ruling wording agrees with `owner-authorization-r8.txt:28-31`; reconciliation remains explicitly deferred in `issues/18-owner-ruling-misleading-counter-gap.md:6-19`.\n- **C2 MEDIUM, closed:** `spec.md:263` now requires **every emitted r8 record** to carry `schema_version: 1`. The previous counterexample—emitting version 2 while satisfying AC12-1—now fails. AD20 coverage at `spec.md:267` is supported.\n- **C3 MEDIUM, closed by recorded deferral:** `issues/17-r8-artifact-consistency-drift.md:22` explicitly records the missing T7 dependency. Independently confirmed at `.omp/plans/execution-state.json:402-405`; `spec.md:165` identifies this as owner-deferred drift.\n\nPrevious LOW comments remain unresolved, not blockers: redundant AC08-7 (`spec.md:246`), AC12-2’s weaker query-key check (`:264`), positive-only AC08-6/AC09-8 tails (`:245/:254`), and stale issue-17 method/digest descriptions (`issues/17-r8-artifact-consistency-drift.md:18-21`).\n\n### Regressions — pass within inspected delta\nThe before/after anchors in `spec-r8-pin-diagnostics-narrow8.md:1,34,263,315` match the declared replacements in `r8-narrowing9-delta.md:3-23`; the dependency append is present at issue 17, line 22. No undeclared semantic change found in the inspected contracts, tickets or projection. A complete byte-for-byte repository comparison was **not verified**.\n\n### New blocking defects — none\nAttacks exercised: version-2 escape, forged owner acceptance, undocumented dependency deferral, competing task ownership, and ticket-only acceptance bypass. The canonical AC12-1 remains falsifiable; T12 uniquely owns it (`.omp/plans/execution-state.json:874-884`). The observability change preserves logs as the diagnostic path and explicitly exposes the counter limitation (`spec.md:315`).\n\n**Nonblocking comment:** `issues/12-contract-docs-and-verification-closeout.md:12` omits the new version-1 assertion. Smallest amendment: mirror `spec.md:263`. This does not weaken the canonical criterion.\n\n### Marker integrity — pass\nExactly four unique, ordered, non-nested pairs at `spec.md:40/67`, `169/204`, `271/287`, `289/303`.\n\nLimits: specification review only; no implementation/runtime checks or digest recomputation. State’s revision and packet match the supplied identifiers (`.omp/plans/execution-state.json:4,29`). Untouched areas were not re-audited.\n\n### Recommendation\nAPPROVE\n"
+}

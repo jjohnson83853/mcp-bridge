@@ -1,0 +1,8 @@
+{
+  "delta": "a7ebfc852b9aeae00e9cc99eae28d8b3ff21b89fabb79b7862c2fcd279c52a95",
+  "revisionFrom": "r8-pin-diagnostics-narrow8",
+  "revisionTo": "r8-pin-diagnostics-narrow9",
+  "files": {
+    "spec.md": "a0b5fc9e1d52616bc7e6153a1c235b0c1fe3e0f2b8fd0f0805e36263855483d1"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "delta": "c735e21843716b3e130730cb8b82667e9fae537ffe0502c16d4d941bac1f0a58",
+  "revisionFrom": "r8-pin-diagnostics-narrow4",
+  "revisionTo": "r8-pin-diagnostics-narrow4b",
+  "files": {
+    "spec.md": "a927292cd4618510d082661c932b784ef74e8b7047b93b0f71940dabb5a1ec21",
+    "issues/10-discovery-attribution-and-readiness-reason.md": "07e4d8018a6fe776291501de190b9a90716a65f1816fdcf4d2a83f02d6d7eed3",
+    "issues/08-refresh-pass-lifecycle-records.md": "208ba1098b98b3c80f33501ab39767d3e8538e14c5e323c66bc298b41c56d9f4"
+  }
+}

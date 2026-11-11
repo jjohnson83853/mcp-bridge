@@ -1,0 +1,6 @@
+Owner authorization - structured-logging-pin-diagnostics revision r8-pin-diagnostics-narrow3
+packet digest: db7551a19d53ee518e0aaf975f4796e44cc9b7beaaeabb7361a57f2a6692d503
+question: "Authorize a narrow3 pass on exactly the six residual rows (narrowing only), then rebuild, re-review, critic, T8-T12"
+response: {"next3":"narrow3"}
+answered: 2026-11-11
+basis: code-reviewer REQUEST CHANGES on packet 8486fd04268f00b1f370600c5bedb10d7e8987794610d34ce2abaa74e7bb43a4, residuals R1-R6

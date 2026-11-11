@@ -1,0 +1,13 @@
+{
+  "delta": "fdb98493d32f16d55c9e0a9b47d973620ee98a0333f292bbdb8823e04a250c92",
+  "revisionFrom": "r8-pin-diagnostics-narrow7",
+  "revisionTo": "r8-pin-diagnostics-narrow8",
+  "files": {
+    "spec.md": "2265463019eb7229bef44dda895e3de33a6c1e9e73bdc2396a514837bdbd0165",
+    "issues/11-path-parity-and-logger-fallback.md": "10188767a7462aaae3c73bc693600a9bbd5bc820613fa12383a0a53c73eb69ca",
+    "issues/12-contract-docs-and-verification-closeout.md": "c00eb56b9315f1ae383d33e3865fce4c5dfa415fefa2d60fd0fc013d887cab34",
+    "issues/09-pin-blocker-detail.md": "a6d4850f232121854225d66101e6d63086617e3cc0036df358ab1d6ada963674",
+    "issues/10-discovery-attribution-and-readiness-reason.md": "dda148336de008bce769ed5c69e4d0bc472b4385f720b239cdea3bbd98acbfd6",
+    "issues/17-r8-artifact-consistency-drift.md": "d1099743d67848ede5897f40907f74cfd592b540c450ac9dbabb5c7b62ea71f1"
+  }
+}
