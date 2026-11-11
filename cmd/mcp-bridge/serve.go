@@ -229,6 +229,7 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 				Close:               registry.close,
 				Now:                 time.Now,
 				ModelIdentityDigest: model.Digest(),
+				Logger:              logger,
 			}},
 		Interval:      settings.RefreshInterval,
 		Signals:       reloads,
@@ -237,7 +238,8 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 		Published: func(assembly *service.Assembly) error {
 			return publishAcceptedAssembly(assembly, promptSurface.Published, surface.Published, published)
 		},
-		Logf: operatorLogf,
+		Logf:   operatorLogf,
+		Logger: logger,
 	})
 	if err != nil {
 		return catalogLoopFailure()

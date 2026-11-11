@@ -516,7 +516,9 @@ func operatorLog(output io.Writer) func(string, ...any) {
 
 		mu.Lock()
 		defer mu.Unlock()
-		observe.WriteJSONLine(destination, envelope)
+		if err := observe.WriteJSONLine(destination, envelope); err != nil {
+			observe.WriteLoggingFailureFallback(destination)
+		}
 	}
 }
 

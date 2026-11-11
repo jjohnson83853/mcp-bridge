@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/search"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
@@ -794,5 +796,31 @@ func TestLoopWatchLogsAcceptedReloadAttribution(t *testing.T) {
 		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("loop did not stop after cancellation")
+	}
+}
+func TestLoopWiresLoggerToRefresherPinBlockers(t *testing.T) {
+	h := newReloadHarness(t)
+	reloadEnv(t)
+	h.setDefs("alpha", core.ToolDefinition{RawName: "read", InputSchema: json.RawMessage(`{"type":"object"}`)})
+
+	candidate := parseReloadConfig(t, reloadAlphaOnly)
+	var output bytes.Buffer
+	loop, err := service.NewLoop(h.runtime, service.LoopOptions{
+		Load:   func() (*config.Config, error) { return candidate, nil },
+		Deps:   refreshDeps(h),
+		Logger: observe.NewLogger(&output, &output),
+	})
+	if err != nil {
+		t.Fatalf("new loop: %v", err)
+	}
+	if err := loop.Reload(); err != nil {
+		t.Fatalf("initial reload: %v", err)
+	}
+
+	rejected := parseReloadConfig(t, strings.Replace(reloadAlphaOnly, "pins: []", "pins:\n  - {server: alpha, tool: missing}", 1))
+	*candidate = *rejected
+	runRefreshLifecyclePass(t, loop.Refresher(), 1)
+	if !strings.Contains(output.String(), `"event":"pin_blocker_detail"`) {
+		t.Fatalf("loop refresher did not emit pin blocker details: %s", output.String())
 	}
 }

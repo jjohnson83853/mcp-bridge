@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
 
@@ -44,6 +45,8 @@ type LoopOptions struct {
 	Published func(assembly *Assembly) error
 	// Logf records operator-facing diagnostics without carrying secret values.
 	Logf func(format string, args ...any)
+	// Logger receives structured lifecycle records for the refresh driver.
+	Logger *observe.Logger
 }
 
 // Loop owns one process's configuration lifecycle: the startup admission,
@@ -77,6 +80,7 @@ func NewLoop(runtime *Runtime, options LoopOptions) (*Loop, error) {
 		Metrics:   options.Metrics,
 		Published: options.Published,
 		Logf:      options.Logf,
+		Logger:    options.Logger,
 	})
 	return loop, nil
 }

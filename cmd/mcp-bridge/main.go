@@ -80,6 +80,8 @@ func checkConfig(path string, stdout, stderr io.Writer) int {
 		"success",
 	)
 	envelope.Config = &observe.ConfigInfo{Path: path, DiagnosticsIncomplete: false}
-	observe.WriteJSONLine(stdout, envelope)
+	if err := observe.WriteJSONLine(stdout, envelope); err != nil {
+		observe.WriteLoggingFailureFallback(stdout)
+	}
 	return 0
 }

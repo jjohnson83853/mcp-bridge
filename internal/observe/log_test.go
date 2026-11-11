@@ -3,6 +3,8 @@ package observe_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"io"
 	"reflect"
 	"sort"
 	"strings"
@@ -200,5 +202,35 @@ func TestLoggerEmitsTypedEnvelopeToSeverityStream(t *testing.T) {
 	}
 	if strings.Contains(stderr.String(), `"time":`) || strings.Contains(stderr.String(), `"reason":`) {
 		t.Fatalf("legacy fields present in envelope: %s", stderr.String())
+	}
+}
+
+type failingWriter struct {
+	err error
+}
+
+func (w failingWriter) Write([]byte) (int, error) {
+	return 0, w.err
+}
+
+type shortWriter struct{}
+
+func (shortWriter) Write(p []byte) (int, error) {
+	return len(p) - 1, nil
+}
+
+func TestWriteJSONLineReturnsWriteFailures(t *testing.T) {
+	writeErr := errors.New("write failed")
+	if err := observe.WriteJSONLine(failingWriter{err: writeErr}, struct{}{}); !errors.Is(err, writeErr) {
+		t.Fatalf("failing writer error = %v; want %v", err, writeErr)
+	}
+	if err := observe.WriteJSONLine(shortWriter{}, struct{}{}); !errors.Is(err, io.ErrShortWrite) {
+		t.Fatalf("short writer error = %v; want %v", err, io.ErrShortWrite)
+	}
+	if err := observe.WriteJSONLine(nil, struct{}{}); err == nil {
+		t.Fatal("nil output returned no error")
+	}
+	if err := observe.WriteJSONLine(io.Discard, make(chan int)); err == nil {
+		t.Fatal("marshal failure returned no error")
 	}
 }

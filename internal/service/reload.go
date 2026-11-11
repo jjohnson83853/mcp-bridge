@@ -12,6 +12,7 @@ import (
 
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/search"
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
@@ -26,6 +27,8 @@ type ReloadDeps struct {
 	DiscoverPrompts func(server config.Server) ([]storage.Prompt, error)
 	LoadPrompts     func() (*storage.PromptSnapshot, error)
 	PersistPrompts  func(snapshot *storage.PromptSnapshot) error
+	// Logger receives structured warnings for prompt persistence fallbacks.
+	Logger *observe.Logger
 	// NewClient builds one dedicated upstream client for a server whose
 	// identity or credentials are new in this candidate.
 	NewClient func(server config.Server) (core.Upstream, error)
@@ -532,7 +535,18 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 		next.prompts = previous.Prompts()
 	}
 	if in.mode == buildStartup && in.deps.LoadPrompts != nil {
-		if loaded, err := in.deps.LoadPrompts(); err == nil && loaded != nil {
+		loaded, err := in.deps.LoadPrompts()
+		if err != nil {
+			if in.deps.Logger != nil {
+				in.deps.Logger.Log(observe.Entry{
+					Level:     "warn",
+					Event:     "internal_warning",
+					Operation: "prompt_load",
+					Outcome:   "degraded",
+					Error:     observe.RuntimeErrorInfo("internal_error"),
+				})
+			}
+		} else if loaded != nil {
 			next.prompts = append([]storage.Prompt(nil), loaded.Prompts...)
 		}
 	}
@@ -713,8 +727,19 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 	}
 	if in.mode != buildStartup && in.deps.PersistPrompts != nil {
 		candidatePrompts := &storage.PromptSnapshot{SchemaVersion: storage.PromptSchemaVersion, Prompts: append([]storage.Prompt(nil), next.prompts...)}
-		if err := in.deps.PersistPrompts(candidatePrompts); err != nil && previous != nil {
-			next.prompts = previous.Prompts()
+		if err := in.deps.PersistPrompts(candidatePrompts); err != nil {
+			if in.deps.Logger != nil {
+				in.deps.Logger.Log(observe.Entry{
+					Level:     "warn",
+					Event:     "internal_warning",
+					Operation: "prompt_persist",
+					Outcome:   "degraded",
+					Error:     observe.RuntimeErrorInfo("internal_error"),
+				})
+			}
+			if previous != nil {
+				next.prompts = previous.Prompts()
+			}
 		}
 	}
 	next.snapshot = snapshot

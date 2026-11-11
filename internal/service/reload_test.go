@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/json"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
@@ -708,5 +710,69 @@ func TestReloadResolvesPinsAndFailsClosedOnUnknownPin(t *testing.T) {
 	}
 	if h.runtime.Current() != before {
 		t.Fatal("a rejected pin reload published a generation")
+	}
+}
+
+func TestLoadPromptsFailureEmitsWarning(t *testing.T) {
+	reloadEnv(t)
+	h := newReloadHarness(t)
+	deps := h.deps()
+	deps.LoadPrompts = func() (*storage.PromptSnapshot, error) {
+		return nil, errors.New("load failed")
+	}
+	var stdout, stderr bytes.Buffer
+	deps.Logger = observe.NewLogger(&stdout, &stderr)
+
+	if _, err := h.runtime.AdmitStartup(parseReloadConfig(t, reloadAlphaOnly), deps, nil); err != nil {
+		t.Fatalf("startup admission: %v", err)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("warning was written to stdout: %s", stdout.String())
+	}
+	assertPromptFailureWarning(t, &stderr, "prompt_load")
+}
+
+func TestPersistPromptsFailureEmitsWarningAndRestoresPreviousPrompts(t *testing.T) {
+	reloadEnv(t)
+	h := newReloadHarness(t)
+	candidate := parseReloadConfig(t, reloadAlphaOnly)
+	previous := storage.Prompt{ServerID: "alpha", RawName: "old", PublicName: "p_old", Description: "previous"}
+	deps := h.deps()
+	deps.LoadPrompts = func() (*storage.PromptSnapshot, error) {
+		return &storage.PromptSnapshot{SchemaVersion: storage.PromptSchemaVersion, Prompts: []storage.Prompt{previous}}, nil
+	}
+	deps.PersistPrompts = func(*storage.PromptSnapshot) error {
+		return errors.New("persist failed")
+	}
+	var stdout, stderr bytes.Buffer
+	deps.Logger = observe.NewLogger(&stdout, &stderr)
+
+	if _, err := h.runtime.AdmitStartup(candidate, deps, nil); err != nil {
+		t.Fatalf("startup admission: %v", err)
+	}
+	reloaded, err := h.runtime.Reload(candidate, deps)
+	if err != nil {
+		t.Fatalf("reload: %v", err)
+	}
+	if prompts := reloaded.Prompts(); len(prompts) != 1 || prompts[0].ServerID != previous.ServerID || prompts[0].RawName != previous.RawName || prompts[0].PublicName != previous.PublicName || prompts[0].Description != previous.Description {
+		t.Fatalf("prompts after failed persistence = %#v; want previous prompt %#v", prompts, previous)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("warning was written to stdout: %s", stdout.String())
+	}
+	assertPromptFailureWarning(t, &stderr, "prompt_persist")
+}
+
+func assertPromptFailureWarning(t *testing.T, output *bytes.Buffer, operation string) {
+	t.Helper()
+	if count := bytes.Count(output.Bytes(), []byte{'\n'}); count != 1 {
+		t.Fatalf("warning record count = %d; want 1: %q", count, output.String())
+	}
+	var record map[string]any
+	if err := json.Unmarshal(bytes.TrimSpace(output.Bytes()), &record); err != nil {
+		t.Fatalf("decode warning record: %v: %q", err, output.String())
+	}
+	if record["event"] != "internal_warning" || record["operation"] != operation {
+		t.Fatalf("warning event/operation = %v/%v; want internal_warning/%s", record["event"], record["operation"], operation)
 	}
 }

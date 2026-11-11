@@ -4,7 +4,9 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -37,17 +39,36 @@ func NewLogger(stdout, stderr io.Writer) *Logger {
 }
 
 // WriteJSONLine marshals one application record and attempts one newline-
-// terminated write. Encoding or sink failures are suppressed without retry.
-func WriteJSONLine(output io.Writer, record any) {
+// terminated write. Encoding or sink failures are returned without retry.
+func WriteJSONLine(output io.Writer, record any) error {
 	if output == nil {
-		return
+		return errors.New("observe: nil log output")
 	}
 	encoded, err := json.Marshal(record)
 	if err != nil {
-		return
+		return err
 	}
 	encoded = append(encoded, '\n')
-	_, _ = output.Write(encoded)
+	written, err := output.Write(encoded)
+	if err != nil {
+		return err
+	}
+	if written != len(encoded) {
+		return io.ErrShortWrite
+	}
+	return nil
+}
+
+// WriteLoggingFailureFallback writes the minimal logging failure record to the
+// opposite standard stream from output.
+func WriteLoggingFailureFallback(output io.Writer) {
+	fallback := os.Stderr
+	if output == os.Stderr {
+		fallback = os.Stdout
+	}
+	if fallback != nil {
+		_, _ = fallback.Write(loggingWriteFailedLine)
+	}
 }
 
 func CorrelationID(header string) string {

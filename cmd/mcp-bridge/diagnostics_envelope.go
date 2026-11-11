@@ -9,7 +9,9 @@ import (
 )
 
 func writeConfigValidationFailure(output io.Writer, err error) {
-	observe.WriteJSONLine(output, configValidationFailureEnvelope(err))
+	if err := observe.WriteJSONLine(output, configValidationFailureEnvelope(err)); err != nil {
+		observe.WriteLoggingFailureFallback(output)
+	}
 }
 
 func configValidationFailureEnvelope(err error) observe.Envelope {

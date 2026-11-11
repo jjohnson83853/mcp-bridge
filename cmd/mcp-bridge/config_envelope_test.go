@@ -259,7 +259,7 @@ func TestConfigValidationDiagnosticAttributionAndCompleteness(t *testing.T) {
 		RemainingStages: "not_checked",
 	}
 	var output bytes.Buffer
-	observe.WriteJSONLine(&output, configValidationFailureEnvelope(diagnostics))
+	_ = observe.WriteJSONLine(&output, configValidationFailureEnvelope(diagnostics))
 	record := decodeEnvelopeLine(t, output.String())
 	configRecord, ok := record["config"].(map[string]any)
 	if !ok {

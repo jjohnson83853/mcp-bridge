@@ -28,7 +28,7 @@ func stateDirectoryFailure(path string) startupFailure {
 		event: "startup_failed", operation: "startup", level: "error", outcome: "failure",
 		code: "state_directory", kind: "resource", retryable: false,
 		remediation: "create the configured state directory or fix its permissions",
-		message: "application startup failed", resource: map[string]string{"path": path},
+		message:     "application startup failed", resource: map[string]string{"path": path},
 	}
 }
 
@@ -37,7 +37,7 @@ func jwksCacheFailure() startupFailure {
 		event: "startup_failed", operation: "startup", level: "error", outcome: "failure",
 		code: "jwks_cache", kind: "dependency", retryable: true,
 		remediation: "verify the identity provider URL and network reachability, then restart",
-		message: "application startup failed",
+		message:     "application startup failed",
 	}
 }
 
@@ -46,7 +46,7 @@ func embeddingProviderFailure() startupFailure {
 		event: "startup_failed", operation: "startup", level: "error", outcome: "failure",
 		code: "embedding_provider", kind: "dependency", retryable: false,
 		remediation: "fix the embedding provider configuration or credentials",
-		message: "application startup failed",
+		message:     "application startup failed",
 	}
 }
 
@@ -55,7 +55,7 @@ func toolSurfaceFailure() startupFailure {
 		event: "startup_failed", operation: "startup", level: "error", outcome: "failure",
 		code: "tool_surface", kind: "internal", retryable: false,
 		remediation: "report this failure; the tool surface failed to initialize",
-		message: "application startup failed",
+		message:     "application startup failed",
 	}
 }
 
@@ -64,7 +64,7 @@ func catalogLoopFailure() startupFailure {
 		event: "startup_failed", operation: "startup", level: "error", outcome: "failure",
 		code: "catalog_loop", kind: "internal", retryable: false,
 		remediation: "report this failure; the catalog loop failed to start",
-		message: "application startup failed",
+		message:     "application startup failed",
 	}
 }
 
@@ -73,8 +73,8 @@ func listenerBindFailure(listener, address string) startupFailure {
 		event: "startup_failed", operation: "startup", level: "error", outcome: "failure",
 		code: "listener_bind", kind: "resource", retryable: true,
 		remediation: "free the configured address or change the listen setting",
-		message: "application startup failed",
-		resource: map[string]string{"listener": listener, "address": address},
+		message:     "application startup failed",
+		resource:    map[string]string{"listener": listener, "address": address},
 	}
 }
 
@@ -83,7 +83,7 @@ func cliUsageFailure() startupFailure {
 		event: "cli_usage_failed", operation: "cli", level: "error", outcome: "failure",
 		code: "cli_usage", kind: "usage", retryable: false,
 		remediation: "use valid flags and arguments; run mcp-bridge --help for usage",
-		message: "command-line arguments are invalid",
+		message:     "command-line arguments are invalid",
 	}
 }
 
@@ -92,7 +92,7 @@ func startupPublicationFailure() startupFailure {
 		event: "startup_publication_failed", operation: "startup", level: "error", outcome: "failure",
 		code: "publication_failed", kind: "internal", retryable: true,
 		remediation: "verify the startup catalog and restart the service",
-		message: "startup publication failed",
+		message:     "startup publication failed",
 	}
 }
 
@@ -101,7 +101,7 @@ func fallbackStartupFailure() startupFailure {
 		event: "startup_failed", operation: "startup", level: "error", outcome: "failure",
 		code: "internal_error", kind: "internal", retryable: false,
 		remediation: "report this failure; no specific class matched",
-		message: "application startup failed",
+		message:     "application startup failed",
 	}
 }
 
@@ -127,5 +127,7 @@ func writeStartupFailure(output io.Writer, failure startupFailure) {
 			Address:  failure.resource["address"],
 		}
 	}
-	observe.WriteJSONLine(output, envelope)
+	if err := observe.WriteJSONLine(output, envelope); err != nil {
+		observe.WriteLoggingFailureFallback(output)
+	}
 }
