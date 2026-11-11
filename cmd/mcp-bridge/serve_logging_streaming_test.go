@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -73,8 +74,11 @@ func assertDeadlineExceededLogs(t *testing.T, captured string) {
 	if outcome != "timeout" && outcome != "error" {
 		t.Errorf("backend_complete outcome = %v; want timeout or error", backend["outcome"])
 	}
-	if got := backend["reason"]; got != "deadline_exceeded" {
-		t.Errorf("backend_complete reason = %v; want deadline_exceeded", got)
+	if errorInfo, ok := backend["error"].(map[string]any); !ok || errorInfo["code"] != "deadline_exceeded" || len(errorInfo) != 4 {
+		t.Errorf("backend_complete error = %#v; want nested code deadline_exceeded", backend["error"])
+	}
+	if backend["operation"] != "call_tool" {
+		t.Errorf("backend_complete operation = %v; want call_tool", backend["operation"])
 	}
 	wantInternalHexID(t, backend, "backend_call_id")
 	wantNonnegativeDuration(t, backend, "backend_complete")
@@ -96,8 +100,11 @@ func assertDeadlineExceededLogs(t *testing.T, captured string) {
 	if got := mcp["outcome"]; got != "error" {
 		t.Errorf("mcp_complete outcome = %v; want error", got)
 	}
-	if got := mcp["reason"]; got != "deadline_exceeded" {
-		t.Errorf("mcp_complete reason = %v; want deadline_exceeded", got)
+	if errorInfo, ok := mcp["error"].(map[string]any); !ok || errorInfo["code"] != "deadline_exceeded" || len(errorInfo) != 4 {
+		t.Errorf("mcp_complete error = %#v; want nested code deadline_exceeded", mcp["error"])
+	}
+	if mcp["operation"] != "call_tool" {
+		t.Errorf("mcp_complete operation = %v; want call_tool", mcp["operation"])
 	}
 	wantInternalHexID(t, mcp, "operation_id")
 	wantNonnegativeDuration(t, mcp, "mcp_complete")
@@ -159,7 +166,7 @@ func startHTTPLoggingBridgeWithUpstreamCallTimeout(t *testing.T, upstream *httpt
 	ctx, cancel := context.WithCancel(context.Background())
 	stderr := &syncWriter{}
 	done := make(chan int, 1)
-	go func() { done <- runContext(ctx, []string{"--config", configPath}, stdout, stderr) }()
+	go func() { done <- runContext(ctx, []string{"--config", configPath}, stdout, io.MultiWriter(stderr, stdout)) }()
 	stopped := false
 	stop := func() {
 		t.Helper()

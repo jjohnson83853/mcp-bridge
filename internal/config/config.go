@@ -19,6 +19,7 @@ import (
 )
 
 const maxConfigBytes = 1 << 20
+const maxPins = 64
 
 // sessionIdleMinDuration and sessionIdleMaxDuration bound the SERVER SESSION
 // LIFETIME key `session_idle_timeout`. It is not a request timeout: the value
@@ -113,8 +114,13 @@ func Parse(data []byte, configPath string) (*Config, error) {
 	}
 	var extra yaml.Node
 	if err := decoder.Decode(&extra); err != io.EOF {
+		var extraNode *yaml.Node
+		if len(extra.Content) > 0 {
+			extraNode = extra.Content[0]
+		}
 		return nil, single(Diagnostic{
 			Path: configPath, Key: "<document>",
+			Line: nodeLine(extraNode), Column: nodeColumn(extraNode),
 			Code: "yaml_documents", Property: "document_count", Shape: "not_one",
 			Reason: "configuration must contain one YAML document",
 		})
@@ -124,22 +130,25 @@ func Parse(data []byte, configPath string) (*Config, error) {
 		if len(root.Content) == 1 && root.Content[0].Kind == yaml.ScalarNode {
 			shape = "scalar-" + shape
 		}
+		rootNode := root.Content[0]
 		return nil, single(Diagnostic{
-			Path: configPath, Key: "<document>",
+			Path: configPath, Key: "<document>", Line: rootNode.Line, Column: rootNode.Column,
 			Code: "yaml_root_type", Property: "root", Shape: shape,
 			Reason: "configuration must be a mapping",
 		})
 	}
-	v := &docValidator{configPath: configPath}
-	if diags := v.validateNode(root.Content[0], "", "root", ""); diags != nil {
+	document := root.Content[0]
+	v := &docValidator{configPath: configPath, root: document}
+	if diags := v.validateNode(document, "", "root", ""); diags != nil {
 		return nil, diags
 	}
 	var cfg Config
 	strict := yaml.NewDecoder(bytes.NewReader(data))
 	strict.KnownFields(true)
 	if err := strict.Decode(&cfg); err != nil {
+		line, column := yamlSyntaxPosition(err)
 		return nil, single(Diagnostic{
-			Path: configPath, Key: "<document>",
+			Path: configPath, Key: "<document>", Line: line, Column: column,
 			Code: "yaml_type", Property: "type", Shape: "schema",
 			Reason: "configuration does not match the schema",
 		})
@@ -149,46 +158,58 @@ func Parse(data []byte, configPath string) (*Config, error) {
 		if cfg.SchemaVersion == 0 {
 			shape = "missing"
 		}
+		node := mappingChild(document, "schema_version")
 		return nil, single(Diagnostic{
-			Path: configPath, Key: "schema_version",
+			Path: configPath, Key: "schema_version", Line: nodeLine(node), Column: nodeColumn(node),
 			Code: "schema_version", Property: "schema_version", Shape: shape,
 			Reason: "schema_version must equal 1",
 		})
 	}
+	serversNode := mappingChild(document, "servers")
 	if len(cfg.Servers) == 0 || len(cfg.Servers) > 1024 {
 		shape := "empty"
+		source := serversNode
 		if len(cfg.Servers) > 1024 {
 			shape = "over_limit"
+			source = serversNode.Content[1024]
 		}
 		return nil, single(Diagnostic{
-			Path: configPath, Key: "servers",
+			Path: configPath, Key: "servers", Line: nodeLine(source), Column: nodeColumn(source),
 			Code: "server_count", Property: "server_count", Shape: shape,
 			Reason: "servers must contain 1..1024 entries",
 		})
 	}
 	ids := make(map[string]bool, len(cfg.Servers))
 	firstIDIndex := make(map[string]int, len(cfg.Servers))
+	firstIDNode := make(map[string]*yaml.Node, len(cfg.Servers))
 	for index, server := range cfg.Servers {
+		serverNode := serversNode.Content[index]
+		idNode := mappingChild(serverNode, "id")
 		if !serverIDPattern.MatchString(server.ID) {
 			// An invalid id is withheld from the owner field entirely (spec
 			// §3.1:99/§4.1/AC-37): the record locates the failure by index and
 			// never echoes the unvalidated scalar.
 			return nil, single(Diagnostic{
 				Path: configPath, Key: fmt.Sprintf("servers[%d].id", index),
+				Line: nodeLine(idNode), Column: nodeColumn(idNode),
 				Code: "server_id_invalid", Property: "id", Shape: "invalid_identifier",
 				Reason: "invalid server id",
 			})
 		}
 		if ids[server.ID] {
+			first := firstIDNode[server.ID]
 			return nil, single(Diagnostic{
 				Path: configPath, Key: fmt.Sprintf("servers[%d].id", index), Server: server.ID,
+				Line: nodeLine(idNode), Column: nodeColumn(idNode),
 				Code: "server_id_duplicate", Property: "id", Shape: "duplicate",
-				Reason:     "duplicate server id",
-				RelatedKey: fmt.Sprintf("servers[%d].id", firstIDIndex[server.ID]),
+				Reason:      "duplicate server id",
+				RelatedKey:  fmt.Sprintf("servers[%d].id", firstIDIndex[server.ID]),
+				RelatedLine: nodeLine(first), RelatedColumn: nodeColumn(first),
 			})
 		}
 		ids[server.ID] = true
 		firstIDIndex[server.ID] = index
+		firstIDNode[server.ID] = idNode
 		normalized, err := normalizeURL(server.Endpoint)
 		if err != nil {
 			// The owning URL is attributed by key/server id only; neither the
@@ -199,26 +220,44 @@ func Parse(data []byte, configPath string) (*Config, error) {
 			if strings.Contains(reason, "secret parameter") {
 				code, property, shape = "url_secret_parameter", "query", "credential_parameter"
 			}
+			endpointNode := mappingChild(serverNode, "endpoint")
 			return nil, single(Diagnostic{
 				Path: configPath, Key: fmt.Sprintf("servers[%d].endpoint", index), Server: server.ID,
+				Line: nodeLine(endpointNode), Column: nodeColumn(endpointNode),
 				Code: code, Property: property, Shape: shape,
 				Reason: reason,
 			})
 		}
 		cfg.Servers[index].Endpoint = normalized
 	}
-	if len(cfg.Pins) > 64 {
-		return nil, single(Diagnostic{
-			Path: configPath, Key: "pins",
-			Code: "pin_ceiling", Property: "pins", Shape: "out_of_bounds",
-			Reason: "pins list may contain at most 64 entries",
-		})
+	pinsNode := mappingChild(document, "pins")
+	type seenPin struct {
+		index int
+		node  *yaml.Node
 	}
-	seenPins := make(map[string]int, len(cfg.Pins))
+	seenPins := make(map[string]seenPin, len(cfg.Pins))
 	for index, pin := range cfg.Pins {
+		pinNode := pinsNode.Content[index]
+		serverNode, toolNode := mappingChild(pinNode, "server"), mappingChild(pinNode, "tool")
+		if index == maxPins {
+			record := Diagnostic{
+				Path: configPath, Key: fmt.Sprintf("pins[%d]", index),
+				Line: pinNode.Line, Column: pinNode.Column,
+				Code: "pin_ceiling", Property: "pins", Shape: "out_of_bounds",
+				Reason:      "pins list may contain at most 64 entries",
+				ActualCount: len(cfg.Pins), MaxCount: maxPins, FirstExcessIndex: index,
+			}
+			server, tool := pin["server"], pin["tool"]
+			if len(pin) == 2 && serverIDPattern.MatchString(server) && ids[server] &&
+				pinToolNamePattern.MatchString(tool) && len(tool) <= 94 && len(server)+2+len(tool) <= 128 {
+				record.PinServer, record.PinTool = server, tool
+			}
+			return nil, single(record)
+		}
 		if len(pin) != 2 || pin["server"] == "" || pin["tool"] == "" || !ids[pin["server"]] {
 			record := Diagnostic{
 				Path: configPath, Key: fmt.Sprintf("pins[%d]", index),
+				Line: pinNode.Line, Column: pinNode.Column,
 				Code: "pin_fields", Property: "identity", Shape: "malformed",
 				Reason: "pin must contain exactly server and tool",
 			}
@@ -226,18 +265,21 @@ func Parse(data []byte, configPath string) (*Config, error) {
 			case len(pin) == 2 && pin["server"] == "":
 				record = Diagnostic{
 					Path: configPath, Key: fmt.Sprintf("pins[%d].server", index),
+					Line: nodeLine(serverNode), Column: nodeColumn(serverNode),
 					Code: "pin_server_missing", Property: "server", Shape: "empty",
 					Reason: "pin server must be nonempty",
 				}
 			case len(pin) == 2 && pin["tool"] == "":
 				record = Diagnostic{
 					Path: configPath, Key: fmt.Sprintf("pins[%d].tool", index),
+					Line: nodeLine(toolNode), Column: nodeColumn(toolNode),
 					Code: "pin_tool_missing", Property: "tool", Shape: "empty",
 					Reason: "pin tool must be nonempty",
 				}
 			case len(pin) == 2 && pin["server"] != "" && !ids[pin["server"]]:
 				record = Diagnostic{
 					Path: configPath, Key: fmt.Sprintf("pins[%d].server", index),
+					Line: nodeLine(serverNode), Column: nodeColumn(serverNode),
 					Code: "pin_server_unknown", Property: "server", Shape: "unknown_server",
 					Reason: "pin references unknown server",
 					// The configured pin identity is safe metadata (U-02);
@@ -252,6 +294,7 @@ func Parse(data []byte, configPath string) (*Config, error) {
 		if !pinToolNamePattern.MatchString(tool) {
 			return nil, single(Diagnostic{
 				Path: configPath, Key: fmt.Sprintf("pins[%d].tool", index),
+				Line: nodeLine(toolNode), Column: nodeColumn(toolNode),
 				Code: "pin_tool_name", Property: "tool", Shape: "invalid_chars",
 				Reason:    "pin tool name must contain only standard identifier characters",
 				PinServer: pin["server"],
@@ -261,6 +304,7 @@ func Parse(data []byte, configPath string) (*Config, error) {
 		if len(tool) > 94 || len(pin["server"])+2+len(tool) > 128 {
 			return nil, single(Diagnostic{
 				Path: configPath, Key: fmt.Sprintf("pins[%d].tool", index),
+				Line: nodeLine(toolNode), Column: nodeColumn(toolNode),
 				Code: "pin_tool_name", Property: "tool", Shape: "too_long",
 				Reason:    "pin tool name exceeds 94 characters or wire name exceeds 128 characters",
 				PinServer: pin["server"],
@@ -271,14 +315,16 @@ func Parse(data []byte, configPath string) (*Config, error) {
 		if first, duplicate := seenPins[key]; duplicate {
 			return nil, single(Diagnostic{
 				Path: configPath, Key: fmt.Sprintf("pins[%d]", index),
+				Line: pinNode.Line, Column: pinNode.Column,
 				Code: "pin_duplicate", Property: "identity", Shape: "duplicate",
 				Reason:     "duplicate pin",
 				PinServer:  pin["server"],
 				PinTool:    pin["tool"],
-				RelatedKey: fmt.Sprintf("pins[%d]", first),
+				RelatedKey: fmt.Sprintf("pins[%d]", first.index),
+				RelatedLine: first.node.Line, RelatedColumn: first.node.Column,
 			})
 		}
-		seenPins[key] = index
+		seenPins[key] = seenPin{index: index, node: pinNode}
 	}
 	// Exact-tool metadata exceptions must name configured pins of their own
 	// server; the join runs once pins are fully validated (spec ticket-05).
@@ -287,9 +333,11 @@ func Parse(data []byte, configPath string) (*Config, error) {
 			continue
 		}
 		if err := server.ToolMetadata.ValidatePins(server.ID, cfg.Pins); err != nil {
+			metadata := mappingChild(mappingChild(serversNode.Content[index], "tool_metadata"), "tools")
 			return nil, single(Diagnostic{
 				Path: configPath,
 				Key:  fmt.Sprintf("servers[%d].tool_metadata.tools", index), Server: server.ID,
+				Line: nodeLine(metadata), Column: nodeColumn(metadata),
 				Code: "tool_metadata_tool_unknown", Property: "tool_metadata", Shape: "unknown_tool",
 				Reason: err.Error(),
 			})
@@ -311,7 +359,7 @@ func Parse(data []byte, configPath string) (*Config, error) {
 	} else {
 		cfg.embeddingSnapshot = &embeddingSnapshotData{values: embeddingSnapshot}
 	}
-	if baseURL := findScalar(root.Content[0], "base_url"); baseURL != "" {
+	if baseURL := findScalar(document, "base_url"); baseURL != "" {
 		if err := validateURL(baseURL); err != nil {
 			// The owning URL is attributed by key only; neither the URL, a
 			// query name, nor a value is echoed (spec §3.1:183/:189, §4.3).
@@ -320,8 +368,10 @@ func Parse(data []byte, configPath string) (*Config, error) {
 			if strings.Contains(reason, "secret parameter") {
 				code, property, shape = "url_secret_parameter", "query", "credential_parameter"
 			}
+			baseURLNode := mappingChild(mappingChild(document, "embedding"), "base_url")
 			return nil, single(Diagnostic{
 				Path: configPath, Key: "embedding.base_url",
+				Line: nodeLine(baseURLNode), Column: nodeColumn(baseURLNode),
 				Code: code, Property: property, Shape: shape,
 				Reason: reason,
 			})
@@ -367,6 +417,7 @@ func Parse(data []byte, configPath string) (*Config, error) {
 			kind, name := refParts(occurrence.reference)
 			return nil, single(Diagnostic{
 				Path: configPath, Key: occurrence.location,
+				Line: occurrence.line, Column: occurrence.column,
 				RefKind: kind, RefName: name,
 				Code: "reference_unresolved", Property: "reference", Shape: "unresolved",
 				Reason: "secret reference does not resolve",
@@ -388,10 +439,12 @@ func Parse(data []byte, configPath string) (*Config, error) {
 		return nil, &Diagnostics{Records: []Diagnostic{{
 			Path:       configPath,
 			Key:        occurrence.location,
+			Line:       occurrence.line,
+			Column:     occurrence.column,
 			RefKind:    kind,
 			RefName:    name,
 			RelatedKey: other.location,
-
+			RelatedLine: other.line, RelatedColumn: other.column,
 			RelatedRefKind: relatedKind,
 			RelatedRefName: relatedName,
 			Code:           "credential_overlap",
@@ -448,6 +501,7 @@ func resolveEmbeddingEnv(embedding *yaml.Node, configPath string) (map[string]st
 			if err := validateEffectiveURL(effective); err != nil {
 				return nil, single(Diagnostic{
 					Path: configPath, Key: "embedding.base_url",
+					Line: nodeLine(value), Column: nodeColumn(value),
 					Code: "url_invalid", Property: "absolute_http_url", Shape: "invalid_url",
 					Reason: err.Error(),
 				})
@@ -470,7 +524,7 @@ func resolveEmbeddingEnv(embedding *yaml.Node, configPath string) (map[string]st
 func resolveEmbeddingRef(node *yaml.Node, configPath, keyPath string) (string, *Diagnostics) {
 	if node.Kind != yaml.MappingNode || len(node.Content) != 2 || node.Content[0].Value != "env" {
 		return "", single(Diagnostic{
-			Path: configPath, Key: keyPath,
+			Path: configPath, Key: keyPath, Line: nodeLine(node), Column: nodeColumn(node),
 			Code: "reference_shape", Property: "reference", Shape: shapeOf(node),
 			Reason: "embedding value must be a literal string or an env reference",
 		})
@@ -478,7 +532,7 @@ func resolveEmbeddingRef(node *yaml.Node, configPath, keyPath string) (string, *
 	key, value := node.Content[0], node.Content[1]
 	if key.Kind != yaml.ScalarNode || value.Kind != yaml.ScalarNode || value.Tag != "!!str" {
 		return "", single(Diagnostic{
-			Path: configPath, Key: keyPath,
+			Path: configPath, Key: keyPath, Line: nodeLine(node), Column: nodeColumn(node),
 			Code: "reference_shape", Property: "reference", Shape: shapeOf(node),
 			Reason: "embedding value must be a literal string or an env reference",
 		})
@@ -489,14 +543,14 @@ func resolveEmbeddingRef(node *yaml.Node, configPath, keyPath string) (string, *
 	// (spec §5); the rejected name itself is never echoed.
 	if strings.ContainsAny(name, "$`") {
 		return "", single(Diagnostic{
-			Path: configPath, Key: keyPath,
+			Path: configPath, Key: keyPath, Line: nodeLine(node), Column: nodeColumn(node),
 			Code: "reference_literal_required", Property: "reference", Shape: "literal",
 			Reason: "environment references cannot contain interpolation or commands",
 		})
 	}
 	if !envNamePattern.MatchString(name) {
 		return "", single(Diagnostic{
-			Path: configPath, Key: keyPath,
+			Path: configPath, Key: keyPath, Line: nodeLine(node), Column: nodeColumn(node),
 			Code: "reference_env_name", Property: "name", Shape: "invalid_identifier",
 			Reason: "invalid environment variable name (name withheld)",
 		})
@@ -504,14 +558,14 @@ func resolveEmbeddingRef(node *yaml.Node, configPath, keyPath string) (string, *
 	resolved, present := os.LookupEnv(name)
 	if !present {
 		return "", single(Diagnostic{
-			Path: configPath, Key: keyPath,
+			Path: configPath, Key: keyPath, Line: nodeLine(node), Column: nodeColumn(node),
 			Code: "reference_unresolved", Property: "reference", Shape: "missing",
 			Reason: "environment variable is not set",
 		})
 	}
 	if resolved == "" {
 		return "", single(Diagnostic{
-			Path: configPath, Key: keyPath,
+			Path: configPath, Key: keyPath, Line: nodeLine(node), Column: nodeColumn(node),
 			Code: "reference_unresolved", Property: "reference", Shape: "empty",
 			Reason: "environment variable is empty",
 		})
@@ -622,10 +676,16 @@ func set(words string) map[string]bool {
 // via single().
 type docValidator struct {
 	configPath string
+	root       *yaml.Node
 }
 
 func (v *docValidator) fail(record Diagnostic) *Diagnostics {
 	record.Path = v.configPath
+	if record.Line == 0 {
+		if node := nodeAtPath(v.root, record.Key); node != nil {
+			record.Line, record.Column = node.Line, node.Column
+		}
+	}
 	return single(record)
 }
 
@@ -675,12 +735,11 @@ func (v *docValidator) validateNode(node *yaml.Node, path, section, server strin
 			})
 		}
 		if first, duplicate := seen[key.Value]; duplicate {
-			// The duplicate names the first occurrence: its location as
-			// RelatedKey and its parser position, never the raw key text
-			// (spec §3.1:256).
+			// Keep both locations, pointing at the key nodes themselves.
 			return v.fail(Diagnostic{
 				Key: childPath, RelatedKey: first.path,
-				Line: first.line, Column: first.column,
+				Line: key.Line, Column: key.Column,
+				RelatedLine: first.line, RelatedColumn: first.column,
 				Code: "yaml_key_duplicate", Property: "key", Shape: "duplicate",
 				Reason: "duplicate key",
 			})
@@ -710,7 +769,7 @@ func (v *docValidator) validateNode(node *yaml.Node, path, section, server strin
 			continue
 		}
 		if section == "defaults" {
-			if err := v.validateDefaultsValue(childPath, key.Value, value, server); err != nil {
+			if err := v.validateDefaultsValue(childPath, key.Value, key, value, server); err != nil {
 				return err
 			}
 			continue
@@ -973,7 +1032,12 @@ func (v *docValidator) validateHeaders(node *yaml.Node, path, server string) *Di
 			Reason: "credentials.headers must be a mapping",
 		})
 	}
-	seen := make(map[string]string, len(node.Content)/2)
+	type seenHeader struct {
+		path   string
+		line   int
+		column int
+	}
+	seen := make(map[string]seenHeader, len(node.Content)/2)
 	for i := 0; i < len(node.Content); i += 2 {
 		header := node.Content[i]
 		entryPath := path + "[" + fmt.Sprintf("%q", header.Value) + "]"
@@ -989,16 +1053,19 @@ func (v *docValidator) validateHeaders(node *yaml.Node, path, server string) *Di
 		key := strings.ToLower(header.Value)
 		if first, exists := seen[key]; exists {
 			return v.fail(Diagnostic{
-				Key: entryPath, RelatedKey: first, Server: server,
+				Key: entryPath, RelatedKey: first.path,
+				Line: header.Line, Column: header.Column,
+				RelatedLine: first.line, RelatedColumn: first.column,
+				Server: server,
 				Code: "header_duplicate", Property: "name", Shape: "casefold",
 				Reason: "duplicate credential header",
 			})
 		}
-		seen[key] = entryPath
+		seen[key] = seenHeader{path: entryPath, line: header.Line, column: header.Column}
 		for _, forbidden := range []string{"authorization", "host", "cookie", "origin", "mcp-session-id", "mcp-protocol-version", "x-request-id", "connection", "proxy-", "transfer-encoding", "upgrade", "keep-alive", "te", "trailer"} {
 			if key == forbidden || strings.HasPrefix(forbidden, "proxy-") && strings.HasPrefix(key, forbidden) {
 				return v.fail(Diagnostic{
-					Key: entryPath, Server: server,
+					Key: entryPath, Line: header.Line, Column: header.Column, Server: server,
 					Code: "header_forbidden", Property: "name", Shape: "forbidden",
 					Reason: "credential header is forbidden",
 				})
@@ -1035,8 +1102,10 @@ func validHeaderFieldName(value string) bool {
 // location it appears at (header names in the validated bracket form). The
 // overlap stage reports the first document-order pair (spec §4.2).
 type refOccurrence struct {
-	reference string
-	location  string
+	reference     string
+	location      string
+	line          int
+	column        int
 }
 
 func collectRefOccurrences(node *yaml.Node, path string, occurrences []refOccurrence) []refOccurrence {
@@ -1051,7 +1120,10 @@ func collectRefOccurrences(node *yaml.Node, path string, occurrences []refOccurr
 			if path == "embedding.model" || path == "embedding.base_url" {
 				return occurrences
 			}
-			return append(occurrences, refOccurrence{node.Content[0].Value + ":" + node.Content[1].Value, path})
+			return append(occurrences, refOccurrence{
+				reference: node.Content[0].Value + ":" + node.Content[1].Value,
+				location: path, line: node.Line, column: node.Column,
+			})
 		}
 		for i := 0; i < len(node.Content); i += 2 {
 			key, child := node.Content[i], node.Content[i+1]
@@ -1091,6 +1163,29 @@ func findScalar(node *yaml.Node, key string) string {
 	return ""
 }
 
+func findScalarWithNode(node *yaml.Node, key string) (string, *yaml.Node) {
+	if node == nil {
+		return "", nil
+	}
+	if node.Kind == yaml.MappingNode {
+		for i := 0; i < len(node.Content); i += 2 {
+			value := node.Content[i+1]
+			if node.Content[i].Value == key && value.Kind == yaml.ScalarNode {
+				return value.Value, value
+			}
+			if found, source := findScalarWithNode(value, key); found != "" {
+				return found, source
+			}
+		}
+	}
+	for _, child := range node.Content {
+		if found, source := findScalarWithNode(child, key); found != "" {
+			return found, source
+		}
+	}
+	return "", nil
+}
+
 // mappingChild returns the direct child mapping named key, or nil. Unlike
 // findScalar it never searches nested sections, so an embedding env reference
 // is attributed to its own field without scanning unrelated parts of the
@@ -1105,6 +1200,56 @@ func mappingChild(node *yaml.Node, key string) *yaml.Node {
 		}
 	}
 	return nil
+}
+
+func nodeLine(node *yaml.Node) int {
+	if node != nil {
+		return node.Line
+	}
+	return 0
+}
+
+func nodeColumn(node *yaml.Node) int {
+	if node != nil {
+		return node.Column
+	}
+	return 0
+}
+
+func nodeAtPath(root *yaml.Node, path string) *yaml.Node {
+	node := root
+	for offset := 0; offset < len(path); {
+		switch path[offset] {
+		case '.':
+			offset++
+		case '[':
+			end := strings.IndexByte(path[offset:], ']')
+			if end < 0 {
+				return nil
+			}
+			part := path[offset+1 : offset+end]
+			if key, err := strconv.Unquote(part); err == nil {
+				node = mappingChild(node, key)
+			} else {
+				index, err := strconv.Atoi(part)
+				if err != nil || node == nil || node.Kind != yaml.SequenceNode || index < 0 || index >= len(node.Content) {
+					return nil
+				}
+				node = node.Content[index]
+			}
+			offset += end + 1
+		default:
+			start := offset
+			for offset < len(path) && path[offset] != '.' && path[offset] != '[' {
+				offset++
+			}
+			node = mappingChild(node, path[start:offset])
+		}
+		if node == nil {
+			return nil
+		}
+	}
+	return node
 }
 
 // WireToolName formats a preloaded tool's canonical wire name as <server_id>__<upstream_tool_name>.

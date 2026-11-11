@@ -309,7 +309,7 @@ func TestInboundHandlerLogsAndCountsWithoutLoggingCredentials(t *testing.T) {
 			w.WriteHeader(http.StatusNoContent)
 		}),
 		tokenHash("sensitive-token"),
-		service.InboundOptions{Logger: observe.NewLogger(&logs), Metrics: metrics},
+		service.InboundOptions{Logger: observe.NewLogger(&logs, &logs), Metrics: metrics},
 	)
 	req := httptest.NewRequest(http.MethodGet, "/mcp", nil)
 	req.Header.Set("Authorization", "Bearer sensitive-token")
@@ -383,7 +383,7 @@ func TestInboundInitializeHandshakeSessionEvidence(t *testing.T) {
 				_, _ = io.WriteString(w, `{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","capabilities":{},"serverInfo":{"name":"inbound-test","version":"1"}}}`)
 			})
 			handler := service.NewInboundHandler(next, tokenHash("token"), service.InboundOptions{
-				Logger:        observe.NewLogger(&logs),
+				Logger:        observe.NewLogger(&logs, &logs),
 				NewSessionRef: test.newSessionRef,
 			})
 			request := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"inbound-test","version":"1"}}}`))
@@ -727,7 +727,7 @@ func TestInboundRehydratesAuthenticatedUnknownSession(t *testing.T) {
 		sessionID := initializeInboundTestSession(t, first, token)
 
 		sink := &bytes.Buffer{}
-		diag := observe.NewHTTPDiagnostics(observe.NewLogger(sink), observe.HTTPDiagnosticsOptions{
+		diag := observe.NewHTTPDiagnostics(observe.NewLogger(sink, sink), observe.HTTPDiagnosticsOptions{
 			NewID: func() string { return "0123456789abcdef0123456789abcdef" },
 		})
 		sdkSessions := &inboundSDKSessionRecorder{next: service.NewStreamableHandler(service.NewMCPServer()), initialized: make(chan string, 2)}
@@ -759,7 +759,7 @@ func TestInboundRehydratesAuthenticatedUnknownSession(t *testing.T) {
 		sessionID := initializeInboundTestSession(t, first, "client-token")
 
 		sink := &bytes.Buffer{}
-		diag := observe.NewHTTPDiagnostics(observe.NewLogger(sink), observe.HTTPDiagnosticsOptions{
+		diag := observe.NewHTTPDiagnostics(observe.NewLogger(sink, sink), observe.HTTPDiagnosticsOptions{
 			NewID: func() string { return "0123456789abcdef0123456789abcdef" },
 		})
 		restarted := service.NewInboundHandler(
@@ -902,7 +902,7 @@ func TestInboundRehydratesAfterMappedSDKSessionDisappears(t *testing.T) {
 	clientID := initializeInboundTestSession(t, first, "client-token")
 
 	sink := &bytes.Buffer{}
-	diag := observe.NewHTTPDiagnostics(observe.NewLogger(sink), observe.HTTPDiagnosticsOptions{
+	diag := observe.NewHTTPDiagnostics(observe.NewLogger(sink, sink), observe.HTTPDiagnosticsOptions{
 		NewID: func() string { return "0123456789abcdef0123456789abcdef" },
 	})
 	sdkSessions := &inboundSDKSessionRecorder{
@@ -991,7 +991,7 @@ func TestInboundRehydratedSessionRemainsBearerBound(t *testing.T) {
 	sessionID := initializeInboundTestSession(t, first, "token-one")
 
 	sink := &bytes.Buffer{}
-	diag := observe.NewHTTPDiagnostics(observe.NewLogger(sink), observe.HTTPDiagnosticsOptions{
+	diag := observe.NewHTTPDiagnostics(observe.NewLogger(sink, sink), observe.HTTPDiagnosticsOptions{
 		NewID: func() string { return "0123456789abcdef0123456789abcdef" },
 	})
 	forwarded := 0

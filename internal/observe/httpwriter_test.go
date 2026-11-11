@@ -753,7 +753,7 @@ func TestFacadeCapabilityMatrix(t *testing.T) {
 	for mask := range 64 {
 		mask := mask
 		t.Run(maskName(uint8(mask)), func(t *testing.T) {
-			logger := NewLogger(&bytes.Buffer{})
+			logger := NewLogger(&bytes.Buffer{}, &bytes.Buffer{})
 			diag := NewHTTPDiagnostics(logger, HTTPDiagnosticsOptions{})
 			handler := diag.Wrap(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// Presence assertions inside the handler.

@@ -1,0 +1,10 @@
+Owner message, 2026-11-10 (grilling session kickoff):
+
+"I'm struggling with the mcp-bridge because logging information is not good enough. Lets upgrade this so I am not guessing what the root cause of the error is. The error I'm looking at is:
+
+mcp-bridge-network | mcp-bridge: configuration: config="/app/configs/config.yaml" key="pins" code=pin_ceiling property=pins shape=out_of_bounds: pins list may contain at most 64 entries; remaining_stages=not_checked
+mcp-bridge-network exited with code 1 (restarting)
+
+also we should be logging in json format. I would expect to be able to see what entry in the configuration file mcp-bridge is rejecting."
+
+Follow-up owner answers during the same session settled the contract recorded in decisions.md, including: one schema for all records; nested error object; no application timestamps or deployment metadata; errors to stderr; every configuration node attributed with line and column; pin ceiling names pins[64]; fail-fast single event; startup error vs reload warn; typed non-configuration failures; JSON validation success; exit code 1 preserved; no legacy aliases; schema_version 1.

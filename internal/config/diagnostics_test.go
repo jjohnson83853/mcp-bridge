@@ -2,8 +2,11 @@ package config
 
 import (
 	"errors"
+	"sort"
 	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 // TestDiagnosticCollectionRecordsMetadataOnly verifies the T-15 contract: a
@@ -73,4 +76,122 @@ func TestDirectConfigOriginIsMemory(t *testing.T) {
 	if got := cfg.Origin(); got != "<memory>" {
 		t.Fatalf("expected <memory> origin for directly constructed Config, got %q", got)
 	}
+}
+
+
+func TestSecretStageDiagnosticCarriesReferenceNodePosition(t *testing.T) {
+	t.Setenv("DIAG_MISSING_TOKEN", "")
+	_, err := Parse([]byte("schema_version: 1\nservers:\n  - id: alpha\n    endpoint: https://alpha.invalid/mcp\n    credentials:\n      bearer:\n        env: DIAG_MISSING_TOKEN\npins: []\n"), "/tmp/diag-config.yaml")
+	diags := requireDiagnostics(t, err)
+	record := diags.Records[0]
+	if record.Code != "secret_empty" {
+		t.Fatalf("code = %q, want secret_empty", record.Code)
+	}
+	if record.Line != 7 || record.Column != 9 {
+		t.Fatalf("secret reference position = %d:%d, want 7:9", record.Line, record.Column)
+	}
+}
+
+func TestBoundsStageDiagnosticCarriesInspectedValuePosition(t *testing.T) {
+	input := "schema_version: 1\nservers:\n  - id: alpha\n    endpoint: https://alpha.invalid/mcp\n    limits:\n      max_concurrent_calls: 0\npins: []\n"
+	_, err := Parse([]byte(input), "/tmp/bounds-config.yaml")
+	diags := requireDiagnostics(t, err)
+	record := diags.Records[0]
+	if record.Code != "bound_range" || record.Key != "servers[0].limits.max_concurrent_calls" {
+		t.Fatalf("diagnostic = %+v, want bound_range for max_concurrent_calls", record)
+	}
+	if record.Line != 6 || record.Column != 29 {
+		t.Fatalf("bound position = %d:%d, want 6:29", record.Line, record.Column)
+	}
+}
+
+func TestEmbeddingReferenceDiagnosticCarriesReferenceNodePosition(t *testing.T) {
+	input := "schema_version: 1\nservers:\n  - id: alpha\n    endpoint: https://alpha.invalid/mcp\nembedding:\n  model: {env: 'BAD-$NAME'}\npins: []\n"
+	_, err := Parse([]byte(input), "/tmp/embedding-config.yaml")
+	diags := requireDiagnostics(t, err)
+	record := diags.Records[0]
+	if record.Code != "reference_literal_required" || record.Key != "embedding.model" {
+		t.Fatalf("diagnostic = %+v, want embedding reference_literal_required", record)
+	}
+	if record.Line != 6 || record.Column != 10 {
+		t.Fatalf("embedding reference position = %d:%d, want 6:10", record.Line, record.Column)
+	}
+}
+
+func TestDiagnosticCodesAreSortedUniqueAndDefensive(t *testing.T) {
+	codes := DiagnosticCodes()
+	if len(codes) == 0 || !sort.StringsAreSorted(codes) {
+		t.Fatalf("DiagnosticCodes() = %v, want a nonempty sorted set", codes)
+	}
+	for index := 1; index < len(codes); index++ {
+		if codes[index] == codes[index-1] {
+			t.Fatalf("DiagnosticCodes() contains duplicate %q", codes[index])
+		}
+	}
+	codes[0] = "caller_mutation"
+	if got := DiagnosticCodes()[0]; got == "caller_mutation" {
+		t.Fatal("DiagnosticCodes() exposes its backing storage")
+	}
+}
+
+func assertConfigNodePosition(t *testing.T, record Diagnostic, line, column int) {
+	t.Helper()
+	if record.Line != line || record.Column != column {
+		t.Fatalf("%s position = %d:%d, want %d:%d", record.Code, record.Line, record.Column, line, column)
+	}
+}
+
+func assertDiagnosticAtYAMLPath(t *testing.T, input []byte, record Diagnostic, path string) {
+	t.Helper()
+	var document yaml.Node
+	if err := yaml.Unmarshal(input, &document); err != nil {
+		t.Fatalf("decode position fixture: %v", err)
+	}
+	if len(document.Content) == 0 {
+		t.Fatal("position fixture has no YAML document")
+	}
+	node := nodeAtPath(document.Content[0], path)
+	if node == nil {
+		t.Fatalf("no YAML node at %q", path)
+	}
+	assertConfigNodePosition(t, record, node.Line, node.Column)
+}
+
+func assertNoDiagnosticNodePosition(t *testing.T, record Diagnostic) {
+	t.Helper()
+	if record.Line != 0 || record.Column != 0 {
+		t.Fatalf("%s has source position %d:%d without a source node", record.Code, record.Line, record.Column)
+	}
+}
+
+func assertRelatedDiagnosticAtYAMLPath(t *testing.T, input []byte, record Diagnostic, path string) {
+	t.Helper()
+	var document yaml.Node
+	if err := yaml.Unmarshal(input, &document); err != nil {
+		t.Fatalf("decode related-position fixture: %v", err)
+	}
+	if len(document.Content) == 0 {
+		t.Fatal("related-position fixture has no YAML document")
+	}
+	node := nodeAtPath(document.Content[0], path)
+	if node == nil {
+		t.Fatalf("no related YAML node at %q", path)
+	}
+	if record.RelatedLine != node.Line || record.RelatedColumn != node.Column {
+		t.Fatalf("%s related position = %d:%d, want %d:%d", record.Code, record.RelatedLine, record.RelatedColumn, node.Line, node.Column)
+	}
+}
+
+func sourceTextPosition(t *testing.T, input, needle string, last bool) (int, int) {
+	t.Helper()
+	index := strings.Index(input, needle)
+	if last {
+		index = strings.LastIndex(input, needle)
+	}
+	if index < 0 {
+		t.Fatalf("position fixture does not contain %q", needle)
+	}
+	line := strings.Count(input[:index], "\n") + 1
+	lineStart := strings.LastIndex(input[:index], "\n") + 1
+	return line, index - lineStart + 1
 }

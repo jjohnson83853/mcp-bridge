@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -14,11 +15,55 @@ import (
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
 
-func TestRunFlagParseErrorWritesUsage(t *testing.T) {
+func TestRunFlagParseErrorsAreTypedRecords(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{name: "unknown flag", args: []string{"--not-a-flag"}},
+		{name: "missing argument", args: []string{"--config"}},
+		{name: "invalid invocation", args: []string{"unexpected"}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			code := runContext(context.Background(), test.args, &stdout, &stderr)
+			if code != 1 || stdout.Len() != 0 {
+				t.Fatalf("code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+			}
+			lines := strings.Split(strings.TrimSuffix(stderr.String(), "\n"), "\n")
+			if len(lines) != 1 {
+				t.Fatalf("stderr lines=%d, want one JSON record: %q", len(lines), stderr.String())
+			}
+			record := decodeEnvelopeLine(t, lines[0]+"\n")
+			errorInfo, ok := record["error"].(map[string]any)
+			if record["event"] != "cli_usage_failed" || record["operation"] != "cli" ||
+				record["level"] != "error" || record["outcome"] != "failure" ||
+				!ok || errorInfo["code"] != "cli_usage" || errorInfo["kind"] != "usage" ||
+				errorInfo["retryable"] != false || errorInfo["remediation"] == "" {
+				t.Fatalf("CLI error envelope=%#v", record)
+			}
+			if strings.Contains(stderr.String(), "Usage of mcp-bridge:") ||
+				strings.Contains(stderr.String(), "flag provided but not defined") ||
+				strings.Contains(stderr.String(), "flag needs an argument") {
+				t.Fatalf("stderr contains usage text or parser prose: %q", stderr.String())
+			}
+		})
+	}
+}
+
+func TestRunHelpPrintsDefaultUsage(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := runContext(context.Background(), []string{"--not-a-flag"}, &stdout, &stderr)
-	if code != 2 || stdout.Len() != 0 || !bytes.Contains(stderr.Bytes(), []byte("Usage of mcp-bridge:")) || !bytes.Contains(stderr.Bytes(), []byte("flag provided but not defined")) {
-		t.Fatalf("code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	if code := runContext(context.Background(), []string{"--help"}, &stdout, &stderr); code != 2 {
+		t.Fatalf("help exit=%d, want 2", code)
+	}
+	if stdout.Len() != 0 || !strings.HasPrefix(stderr.String(), "Usage of mcp-bridge:\n") ||
+		!strings.Contains(stderr.String(), "-check-config") ||
+		!strings.Contains(stderr.String(), "-config string") {
+		t.Fatalf("help stdout=%q stderr=%q", stdout.String(), stderr.String())
+	}
+	if strings.Contains(stderr.String(), `"schema_version"`) {
+		t.Fatalf("help unexpectedly emitted JSON: %q", stderr.String())
 	}
 }
 

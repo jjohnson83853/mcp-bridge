@@ -137,8 +137,11 @@ func assertToolAdmissionLogs(t *testing.T, captured string) {
 	if got := mcp["outcome"]; got != "error" {
 		t.Errorf("mcp_complete outcome = %v; want error", got)
 	}
-	if got := mcp["reason"]; got != "unknown_tool" {
-		t.Errorf("mcp_complete reason = %v; want unknown_tool", got)
+	if errorInfo, ok := mcp["error"].(map[string]any); !ok || errorInfo["code"] != "unknown_tool" || len(errorInfo) != 4 {
+		t.Errorf("mcp_complete error = %#v; want nested code unknown_tool", mcp["error"])
+	}
+	if mcp["operation"] != "call_tool" {
+		t.Errorf("mcp_complete operation = %v; want call_tool", mcp["operation"])
 	}
 	wantInternalHexID(t, mcp, "operation_id")
 	wantNonnegativeDuration(t, mcp, "mcp_complete")
@@ -164,8 +167,11 @@ func assertToolReportedErrorLogs(t *testing.T, captured string) {
 	if got := backend["outcome"]; got != "error" {
 		t.Errorf("backend_complete outcome = %v; want error", got)
 	}
-	if got := backend["reason"]; got != "tool_reported_error" {
-		t.Errorf("backend_complete reason = %v; want tool_reported_error", got)
+	if errorInfo, ok := backend["error"].(map[string]any); !ok || errorInfo["code"] != "tool_reported_error" || len(errorInfo) != 4 {
+		t.Errorf("backend_complete error = %#v; want nested code tool_reported_error", backend["error"])
+	}
+	if backend["operation"] != "call_tool" {
+		t.Errorf("backend_complete operation = %v; want call_tool", backend["operation"])
 	}
 	wantInternalHexID(t, backend, "backend_call_id")
 	wantNonnegativeDuration(t, backend, "backend_complete")
@@ -186,8 +192,11 @@ func assertToolReportedErrorLogs(t *testing.T, captured string) {
 	if got := mcp["outcome"]; got != "error" {
 		t.Errorf("mcp_complete outcome = %v; want error", got)
 	}
-	if got := mcp["reason"]; got != "tool_reported_error" {
-		t.Errorf("mcp_complete reason = %v; want tool_reported_error", got)
+	if errorInfo, ok := mcp["error"].(map[string]any); !ok || errorInfo["code"] != "tool_reported_error" || len(errorInfo) != 4 {
+		t.Errorf("mcp_complete error = %#v; want nested code tool_reported_error", mcp["error"])
+	}
+	if mcp["operation"] != "call_tool" {
+		t.Errorf("mcp_complete operation = %v; want call_tool", mcp["operation"])
 	}
 	wantInternalHexID(t, mcp, "operation_id")
 	wantNonnegativeDuration(t, mcp, "mcp_complete")
@@ -344,7 +353,7 @@ func startHTTPLoggingBridgeWithUpstream(t *testing.T, upstream *httptest.Server)
 	ctx, cancel := context.WithCancel(context.Background())
 	stderr := &syncWriter{}
 	done := make(chan int, 1)
-	go func() { done <- runContext(ctx, []string{"--config", configPath}, stdout, stderr) }()
+	go func() { done <- runContext(ctx, []string{"--config", configPath}, stdout, io.MultiWriter(stderr, stdout)) }()
 	stopped := false
 	stop := func() {
 		t.Helper()

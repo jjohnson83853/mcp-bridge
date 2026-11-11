@@ -7,24 +7,15 @@ import (
 	"testing"
 )
 
-func TestLogRedactsUnknownSecretKeysAndUsesFiniteVocabulary(t *testing.T) {
-	value := map[string]any{"safe": "visible", "customAuthorizationHeader": "authorization-value", "nested": []any{map[string]any{"client_secret": "nested-secret"}}}
-	redact(value)
-	if value["customAuthorizationHeader"] != "[REDACTED]" || value["nested"].([]any)[0].(map[string]any)["client_secret"] != "[REDACTED]" {
-		t.Fatalf("secret keys not recursively redacted: %#v", value)
-	}
+func TestLogRejectsInvalidEnvelopeFields(t *testing.T) {
+
 	var output bytes.Buffer
-	NewLogger(&output).Log(Entry{Level: "trace-secret", Event: "attacker-event", Operation: "private-op", Outcome: "arbitrary", Reason: "arbitrary-secret", Server: "Bad_Server", Fields: map[string]any{"mode": "attacker-mode", "count": 3, "slots": "not-a-number"}})
-	text := output.String()
-	for _, secret := range []string{"authorization-value", "nested-secret", "arbitrary-secret", "Bad_Server", "attacker-mode"} {
-		if strings.Contains(text, secret) {
-			t.Fatalf("log leaked %q: %s", secret, text)
-		}
-	}
-	for _, want := range []string{`"level":"info"`, `"event":"unknown"`, `"operation":"unknown"`, `"outcome":"unknown"`, `"reason":"unknown"`, `"mode":"unknown"`, `"count":3`} {
-		if !strings.Contains(text, want) {
-			t.Fatalf("missing %s in %s", want, text)
-		}
+	NewLogger(&output, &output).Log(Entry{
+		Level: "trace-secret", Event: "attacker-event", Operation: "private-op", Outcome: "arbitrary",
+		Server: "Bad_Server", Fields: map[string]any{"mode": "attacker-mode", "count": 3, "slots": "not-a-number"},
+	})
+	if output.Len() != 0 {
+		t.Fatalf("invalid envelope was emitted: %s", output.String())
 	}
 }
 func TestMetricsHelpersBoundLabelsAndExposeAcceptedUpdates(t *testing.T) {

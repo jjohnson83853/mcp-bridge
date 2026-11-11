@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -54,8 +53,7 @@ func stageSample(t *testing.T) string {
 
 // TestExampleConfigPassesCheck pins that the documented sample is a complete
 // document: once its {env:}/{file:} references resolve, the documented
-// --check-config command succeeds and reports only reference names, never a
-// secret value.
+// --check-config command emits a success envelope without configuration values.
 func TestExampleConfigPassesCheck(t *testing.T) {
 	configPath := stageSample(t)
 	var stdout, stderr bytes.Buffer
@@ -63,10 +61,18 @@ func TestExampleConfigPassesCheck(t *testing.T) {
 	if code := runContext(context.Background(), []string{"--check-config", "--config", configPath}, &stdout, &stderr); code != 0 {
 		t.Fatalf("check-config exit = %d, stderr = %q", code, stderr.String())
 	}
-	out := stdout.String()
-	report := "configuration valid: Config{schema_version:1 servers:2 secret_refs:[env:BRIDGE_CLIENT_TOKEN env:BRIDGE_EMBEDDING_KEY env:DEVELOPER_UPSTREAM_TOKEN env:PORTAINER_UPSTREAM_TOKEN file:secrets/developer-api-key]}"
-	if got := strings.TrimSpace(out); got != report {
-		t.Fatalf("check-config report = %q, want %q", got, report)
+	if stderr.Len() != 0 {
+		t.Fatalf("check-config stderr = %q, want empty", stderr.String())
+	}
+	record := assertConfigValidationSuccess(t, stdout.String())
+	configRecord := record["config"].(map[string]any)
+	if configRecord["path"] != configPath {
+		t.Fatalf("config.path = %#v, want %q", configRecord["path"], configPath)
+	}
+	for _, value := range []string{"BRIDGE_CLIENT_TOKEN", "BRIDGE_EMBEDDING_KEY", "DEVELOPER_UPSTREAM_TOKEN", "PORTAINER_UPSTREAM_TOKEN", "developer-api-key"} {
+		if strings.Contains(stdout.String(), value) {
+			t.Fatalf("check-config serialized configuration value %q", value)
+		}
 	}
 	for _, secret := range append([]string{sampleFileSecret}, mapValues(sampleEnv)...) {
 		if strings.Contains(stdout.String()+stderr.String(), secret) {
@@ -95,21 +101,19 @@ func TestShippedSampleFailsWithoutOneReference(t *testing.T) {
 	if len(lines) != 1 {
 		t.Fatalf("stderr lines = %d (%q), want 1", len(lines), stderr.String())
 	}
-	// Exact attribution: unset BRIDGE_CLIENT_TOKEN inside client_auth, whose
-	// empty value is exactly `code=secret_empty`, not relabelled as unset
-	// (or vice versa). The Go-quoted path and key must match the supplied
-	// temp config path and the dotted key path exactly.
-	want := fmt.Sprintf("invalid configuration: config=%q key=%q ref=%q code=%s property=%s shape=%s: %s; remaining_stages=not_checked",
-		configPath,
-		"client_auth.bearer_tokens[0]",
-		"env:BRIDGE_CLIENT_TOKEN",
-		"secret_empty",
-		"value",
-		"empty",
-		"secret must be nonempty; provide a nonempty value for the named reference",
-	)
-	if lines[0] != want {
-		t.Fatalf("stderr = %q, want %q", lines[0], want)
+	record := decodeEnvelopeLine(t, stderr.String())
+	errorRecord, ok := record["error"].(map[string]any)
+	if !ok || errorRecord["code"] != "secret_empty" {
+		t.Fatalf("error = %#v, want secret_empty", record["error"])
+	}
+	configRecord, ok := record["config"].(map[string]any)
+	if !ok {
+		t.Fatalf("config = %#v, want object", record["config"])
+	}
+	if configRecord["path"] != configPath || configRecord["property_path"] != "client_auth.bearer_tokens[0]" ||
+		configRecord["ref_kind"] != "env" || configRecord["ref_name"] != "BRIDGE_CLIENT_TOKEN" ||
+		configRecord["shape"] != "empty" {
+		t.Fatalf("config attribution = %#v", configRecord)
 	}
 }
 

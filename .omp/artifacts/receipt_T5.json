@@ -1,8 +1,51 @@
 {
   "task_id": "T5",
   "status": "COMPLETED",
-  "artifact_receipt": "cmd/mcp-bridge/serve_oauth_test.go; coverage.out",
+  "artifact_receipt": ".omp/artifacts/receipt_T5.json",
   "telemetry_ref": null,
-  "summary": "Added stateless ChatGPT wire headers and metadata; discovery/list/call and OAuth tests pass; coverage is 90.2%; go vet passes. Extra go test -race ./... fails at out-of-scope TestPromptPassThroughCT07 (search payload revision = <nil>).",
-  "error_code": null
+  "summary": "Migrated the three stale reload assertions to the config_reload_rejected AD8 envelope. The required cmd/mcp-bridge test suite passes.",
+  "error_code": null,
+  "auto_decisions": [
+    {
+      "decision": "Use snapshot remediation: verify the durable snapshot and storage permissions, then retry.",
+      "why": "AD13 pins a static remediation but does not specify its exact wording."
+    }
+  ],
+  "evidence": [
+    {
+      "command": "go test ./cmd/mcp-bridge -run 'Reload|Manifest|Operator|Snapshot|Prompt'",
+      "exitCode": 1,
+      "note": "Initial test edit had a missing comma; corrected before RED verification."
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge -run 'Reload|Manifest|Operator|Snapshot|Prompt'",
+      "exitCode": 1,
+      "note": "Valid RED: legacy reload envelope and untyped lifecycle classifications failed the new assertions."
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge -run '^(TestConfigDiagnosticFieldManifest|TestConfigReloadRejectionMatchesStartupAttribution|TestOperatorLogCoversVerifiedLifecycleCallSites|TestOperatorLogPublicationFailureClassification|TestRefreshPublicationFailureClassificationThroughLoop|TestRestartOnlyFieldsAndSmallWiringHelpers|TestServeStartupFailures)$'",
+      "exitCode": 0,
+      "note": "T5 in-scope regression tests passed."
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge -run 'Reload|Manifest|Operator|Snapshot|Prompt'",
+      "exitCode": 1,
+      "note": "The three reload tests still contained stale event/code assertions at that stage."
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge/...",
+      "exitCode": 1,
+      "note": "Earlier run failed on the three stale reload assertion files; subsequently migrated."
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge -run '^TestRestartOnlyFieldsAndSmallWiringHelpers$'",
+      "exitCode": 0,
+      "note": "Typed internal_warning fallback assertion passed."
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge/...",
+      "exitCode": 0,
+      "note": "Passed after migrating the three stale reload envelope assertions."
+    }
+  ]
 }

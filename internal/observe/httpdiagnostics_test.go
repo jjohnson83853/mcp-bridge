@@ -18,7 +18,7 @@ import (
 
 // newTestDiagnostics builds a diagnostics owner with fixed clock and entropy.
 func newTestDiagnostics(sink *bytes.Buffer, now func() time.Time, newID func() string) *HTTPDiagnostics {
-	logger := NewLogger(sink)
+	logger := NewLogger(sink, sink)
 	return NewHTTPDiagnostics(logger, HTTPDiagnosticsOptions{Now: now, NewID: newID})
 }
 
@@ -291,14 +291,12 @@ func TestPrivacyCollisionAndBudgets(t *testing.T) {
 
 	status := 401
 	entry := Entry{
-		Time:      fixedNow()(),
 		Level:     "warn",
 		Event:     "http_complete",
 		RequestID: testID,
 		Operation: "request",
 		Duration:  5 * time.Millisecond,
 		Outcome:   "failure",
-		Reason:    "none",
 		Fields:    fields,
 		HTTP: &HTTPDiagnostic{
 			LegacyStage:                  "client_auth",
@@ -350,7 +348,7 @@ func TestPrivacyCollisionAndBudgets(t *testing.T) {
 	}
 
 	sink := &bytes.Buffer{}
-	logger := NewLogger(sink)
+	logger := NewLogger(sink, sink)
 	logger.Log(entry)
 	output := sink.String()
 	if !strings.Contains(output, `"diag_schema":"oauth_diag_v1"`) {
@@ -389,14 +387,12 @@ func TestChargedBytesEqualEncodedRecord(t *testing.T) {
 	// with optional slots present is compared against the real encoded bytes.
 	status := 401
 	entry := Entry{
-		Time:      fixedNow()(),
 		Level:     "warn",
 		Event:     "http_complete",
 		RequestID: testID,
 		Operation: "request",
 		Duration:  5 * time.Millisecond,
 		Outcome:   "failure",
-		Reason:    "none",
 		HTTP: &HTTPDiagnostic{
 			LegacyStage:                  "client_auth",
 			Operation:                    "request",
@@ -457,10 +453,79 @@ func TestChargedBytesEqualEncodedRecord(t *testing.T) {
 		t.Fatalf("charged %d bytes; encoded record is %d bytes", got, want)
 	}
 }
+func TestHTTPDiagnosticEmitsExactClosedLaneShape(t *testing.T) {
+	status := 401
+	entry := Entry{
+		Level: "warn", Event: "http_complete", RequestID: testID, Operation: "request",
+		Duration: 5 * time.Millisecond, Outcome: "failure",
+		HTTP: &HTTPDiagnostic{
+			LegacyStage: "client_auth", Operation: "request", ClientFamily: "openai",
+			HTTPBytes: 0, HTTPStatus: &status, HTTPMethod: "POST", Route: "mcp",
+			HTTPOutcome: "failure", HTTPBytesBucket: "le_1k", StatusState: "observed",
+			CorrelationState: CorrelationAvailable, RequestID: testID, DiagSchema: "oauth_diag_v1",
+			BuildState: "unavailable", ProcessState: "available", ProcessID: testID, OperationRelation: "single",
+			OperationIDState: "available", OperationID: testID, PathClass: "mcp", RouteOutcome: "oauth_protected",
+			DiagDurationMS: 5, FailureStage: "outer_oauth", FailureReason: "credentials_missing",
+			AuthMode: "oauth", CredentialState: "missing", ScopeState: "not_evaluated",
+			SessionHeader: "absent", SessionState: "not_evaluated", BindingRelation: "not_evaluated",
+			SessionRefState: "available", SessionRef: testID, ChallengeKind: "none", ChallengeTarget: "none",
+			MetadataTargetRegistered: "not_applicable",
+			DiagnosticPolicyRevision: "oauth-diag-policy-v1",
+			EffectivePolicyRevisionState: "unavailable", PolicySource: "unavailable",
+			ResourcePathMode: "unavailable", SessionBinding: "unavailable",
+			UpstreamState: "not_attempted", ErrorDetailState: "included",
+			ErrorDetail: &HTTPDiagnosticErrorDetail{Class: "validation", Code: "credentials_missing", Retry: "not_attempted"},
+		},
+	}
+	var stdout, stderr bytes.Buffer
+	NewLogger(&stdout, &stderr).Log(entry)
+	if stdout.Len() != 0 || stderr.Len() == 0 || !bytes.HasSuffix(stderr.Bytes(), []byte("\n")) {
+		t.Fatalf("warn lane output stdout=%q stderr=%q", stdout.String(), stderr.String())
+	}
+	var record map[string]json.RawMessage
+	if err := json.Unmarshal(stderr.Bytes(), &record); err != nil {
+		t.Fatalf("decode HTTP lane record: %v: %q", err, stderr.String())
+	}
+	wantKeys := make(map[string]struct{}, numHTTPSlots-4)
+	for _, key := range slotKeys {
+		switch key {
+		case "error", "exposed_tools", "effective_policy_revision", "clock_skew_seconds":
+			continue
+		}
+		wantKeys[key] = struct{}{}
+	}
+	if len(record) != len(wantKeys) {
+		t.Fatalf("HTTP lane emitted %d fields; want %d: %s", len(record), len(wantKeys), stderr.String())
+	}
+	for key := range record {
+		if _, ok := wantKeys[key]; !ok {
+			t.Errorf("HTTP lane emitted out-of-shape field %q", key)
+		}
+	}
+	for key := range wantKeys {
+		if _, ok := record[key]; !ok {
+			t.Errorf("HTTP lane omitted required slot %q", key)
+		}
+	}
+	for key, want := range map[string]string{
+		"schema_version": "1", "level": `"warn"`, "service": `"mcp-bridge"`,
+		"event": `"http_complete"`, "operation": `"request"`, "outcome": `"failure"`,
+	} {
+		if string(record[key]) != want {
+			t.Errorf("%s = %s; want %s", key, record[key], want)
+		}
+	}
+	if string(record["message"]) == `""` {
+		t.Fatal("HTTP lane message is empty")
+	}
+	if _, present := record["error"]; present {
+		t.Fatal("K3 client-auth failure unexpectedly has an error object")
+	}
+}
 
 func TestShortSinkNonfatal(t *testing.T) {
 	sink := &shortWriter{}
-	logger := NewLogger(sink)
+	logger := NewLogger(sink, sink)
 	diag := NewHTTPDiagnostics(logger, HTTPDiagnosticsOptions{Now: fixedNow(), NewID: fixedID(testID)})
 	handler := diag.Wrap(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -719,4 +784,28 @@ func (*partialHTTPWriter) WriteHeader(int) {}
 
 func (*partialHTTPWriter) Write([]byte) (int, error) {
 	return 3, io.ErrShortWrite
+}
+func TestHTTPDiagnosticSlotKeysMatchAD2(t *testing.T) {
+	want := []string{
+		"schema_version", "level", "event", "message", "service", "generation", "duration_ms",
+		"http_outcome", "stage", "http_status", "http_method", "route", "http_bytes_bucket",
+		"timing_scope", "correlation_state", "request_id", "diag_schema", "build_state",
+		"process_state", "process_id", "operation_relation", "operation_id_state", "path_class",
+		"route_outcome", "status_state", "diag_duration_ms", "duration_capped", "failure_stage",
+		"failure_reason", "auth_mode", "credential_state", "scope_state", "session_header",
+		"session_state", "binding_relation", "session_ref_state", "challenge_kind", "challenge_target",
+		"metadata_target_registered", "diagnostic_policy_revision", "effective_policy_revision_state",
+		"effective_policy_revision", "policy_source", "oauth_enabled", "static_configured",
+		"scope_required", "resource_path_mode", "session_binding", "clock_skew_seconds",
+		"upstream_state", "error_detail_state", "error_detail", "operation_id", "session_ref",
+		"outcome", "error", "operation", "client_family", "http_bytes", "exposed_tools",
+	}
+	if numHTTPSlots != 60 || len(slotKeys) != len(want) {
+		t.Fatalf("HTTP slot count=%d, keys=%d; want 60", numHTTPSlots, len(slotKeys))
+	}
+	for i, key := range want {
+		if slotKeys[i] != key {
+			t.Errorf("HTTP slot %d = %q; want %q", i, slotKeys[i], key)
+		}
+	}
 }

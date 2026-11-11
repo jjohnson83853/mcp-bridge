@@ -46,6 +46,8 @@ func TestParseRejectsOutOfRangeFields(t *testing.T) {
 		{"embedding response bytes", "embedding:\n  max_response_bytes: 0\n", "embedding.max_response_bytes", "bound_range", "range", "below_minimum", "outside permitted bounds", ""},
 		{"upstream breaker open duration", "upstream_defaults:\n  breaker:\n    open_duration: 0s\n", "upstream_defaults.breaker.open_duration", "duration_positive", "duration", "nonpositive", "must be a positive duration", ""},
 		{"search invalid weight sum", "search:\n  keyword_weight: 0.4\n  embedding_weight: 0.5\n", "search.keyword_weight", "weights_invalid", "weights", "sum_not_one", "search weights must be nonnegative, sum to one, and keyword_weight positive", "search.embedding_weight"},
+		{"search nonpositive keyword weight", "search:\n  keyword_weight: 0\n  embedding_weight: 1\n", "search.keyword_weight", "weights_invalid", "weights", "keyword_nonpositive", "search weights must be nonnegative, sum to one, and keyword_weight positive", "search.embedding_weight"},
+		{"search negative embedding weight", "search:\n  keyword_weight: 1.2\n  embedding_weight: -0.2\n", "search.embedding_weight", "weights_invalid", "weights", "embedding_negative", "search weights must be nonnegative, sum to one, and keyword_weight positive", "search.keyword_weight"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -62,6 +64,10 @@ func TestParseRejectsOutOfRangeFields(t *testing.T) {
 				record.Reason != tc.reason || record.RelatedKey != tc.relatedKey {
 				t.Fatalf("record = %+v, want path=%q key=%q code=%s property=%s shape=%s reason=%q related=%q",
 					record, path, tc.key, tc.code, tc.property, tc.shape, tc.reason, tc.relatedKey)
+			}
+			assertDiagnosticAtYAMLPath(t, []byte(input), record, tc.key)
+			if tc.relatedKey != "" {
+				assertRelatedDiagnosticAtYAMLPath(t, []byte(input), record, tc.relatedKey)
 			}
 			requireRendered(t, err,
 				`config="`+path+`"`,
@@ -289,4 +295,15 @@ func TestEndpointNormalizationContributesCanonicalFingerprint(t *testing.T) {
 	if parse("https://alpha.invalid/mcp/").Fingerprint() == second.Fingerprint() {
 		t.Fatal("trailing slash unexpectedly ignored by fingerprint")
 	}
+}
+
+func TestMissingWeightKeyOmitsUnavailableSourcePosition(t *testing.T) {
+	input := strings.Replace(boundsEdgeBase, "pins: []", "search:\n  keyword_weight: 0.5\npins: []", 1)
+	_, err := Parse([]byte(input), filepath.Join(t.TempDir(), "config.yaml"))
+	diags := requireDiagnostics(t, err)
+	record := diags.Records[0]
+	if record.Code != "weight_invalid" || record.Key != "search.embedding_weight" || record.Shape != "missing" {
+		t.Fatalf("diagnostic = %+v, want missing embedding weight", record)
+	}
+	assertNoDiagnosticNodePosition(t, record)
 }

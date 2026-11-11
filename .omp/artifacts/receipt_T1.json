@@ -1,1 +1,48 @@
-{"task_id":"T1","status":"COMPLETED","artifact_receipt":".omp/artifacts/receipt_T1.json","telemetry_ref":null,"summary":"PASS: RED snapshot test failed on static descriptions. GREEN: guidance, metadata, `go test ./...`, race suite, build and 90.2% coverage gate passed. Fixed a post-change `invalid exposure request` retention-test failure by separating registry and owner servers.","error_code":null}
+{
+  "task_id": "T1",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_T1.json",
+  "telemetry_ref": null,
+  "summary": "T1 envelope and pin-ceiling implementation, required tests/vet, and changed-file formatting pass. Repository-wide formatting debt is out of T1 scope per the owner gate decision in decisions.md.",
+  "error_code": null,
+  "evidence": [
+    {
+      "command": "go test ./cmd/mcp-bridge -run 'TestPinCeiling'",
+      "exitCode": 1,
+      "result": "RED: CLI emitted plaintext invalid configuration output instead of a JSON envelope."
+    },
+    {
+      "command": "go test ./internal/config -run 'Pin|Ceiling'",
+      "exitCode": 1,
+      "result": "RED: new diagnostic count assertions failed to compile because AD3 fields were absent."
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge -run TestPinCeilingConfigEnvelope",
+      "exitCode": 1,
+      "result": "RED: config.diagnostics_incomplete was omitted; implementation now preserves false explicitly."
+    },
+    {
+      "command": "go test ./internal/config/... ./cmd/mcp-bridge/...",
+      "exitCode": 0,
+      "result": "GREEN: final config and CLI suites passed."
+    },
+    {
+      "command": "go vet ./...",
+      "exitCode": 0,
+      "result": "PASS."
+    },
+    {
+      "command": "gofmt -l .",
+      "exitCode": 0,
+      "result": "BLOCKED: non-empty output lists 28 Go files outside the T1 write set; no assigned file is listed."
+    },
+    {
+      "command": "gofmt -l internal/observe/envelope.go internal/observe/log.go internal/config/config.go internal/config/diagnostics.go internal/config/pins_bounds_test.go cmd/mcp-bridge/diagnostics_envelope.go cmd/mcp-bridge/main.go cmd/mcp-bridge/config_envelope_test.go cmd/mcp-bridge/example_config_test.go cmd/mcp-bridge/serve_edge_test.go cmd/mcp-bridge/main_test.go cmd/mcp-bridge/embedding_env_cli_test.go cmd/mcp-bridge/embedding_env_process_test.go",
+      "exitCode": 0,
+      "result": "empty for T1 changed files; 28 pre-existing unformatted files outside T1 write set, out of scope per decisions.md gate-scope decision"
+    }
+  ],
+  "decisions": [
+    "[AUTO-DECISION] YAML syntax errors retain only parser positions that exist; the tested malformed document has a line but no column, so config.column is omitted."
+  ]
+}

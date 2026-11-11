@@ -14,7 +14,7 @@ import (
 )
 
 func newOwnershipDiagnostics(sink *bytes.Buffer) *observe.HTTPDiagnostics {
-	logger := observe.NewLogger(sink)
+	logger := observe.NewLogger(sink, sink)
 	return observe.NewHTTPDiagnostics(logger, observe.HTTPDiagnosticsOptions{})
 }
 
@@ -51,7 +51,7 @@ func TestComposedOwnershipSingleTerminal(t *testing.T) {
 			diag := newOwnershipDiagnostics(sink)
 			hash := sha256.Sum256([]byte("token"))
 			h := NewInboundHandler(tc.next, [][32]byte{hash}, InboundOptions{
-				Logger:      observe.NewLogger(&bytes.Buffer{}),
+				Logger:      observe.NewLogger(&bytes.Buffer{}, &bytes.Buffer{}),
 				Diagnostics: diag,
 			})
 			// Pre-issue the session the request presents; an unissued
@@ -95,7 +95,7 @@ func TestStandaloneInnerClaimsFallback(t *testing.T) {
 	hash := sha256.Sum256([]byte("token"))
 	h := NewInboundHandler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	}), [][32]byte{hash}, InboundOptions{Logger: observe.NewLogger(sink)})
+	}), [][32]byte{hash}, InboundOptions{Logger: observe.NewLogger(sink, sink)})
 	r := httptest.NewRequest(http.MethodPost, "/mcp", nil)
 	r.Header.Set("Authorization", "Bearer token")
 	rec := httptest.NewRecorder()

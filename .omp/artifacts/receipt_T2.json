@@ -3,6 +3,24 @@
   "status": "COMPLETED",
   "artifact_receipt": ".omp/artifacts/receipt_T2.json",
   "telemetry_ref": null,
-  "summary": "PASS: HTTP JSON-RPC regression covers alpha-to-beta multi-pin and zero-pin reloads in one session. Focused test and go test -race ./... passed. Coverage gate: 90.2% (6338/7023). Regression was green on first run; no RED was observed.",
-  "error_code": null
+  "summary": "AD10 source-node attribution, the AD15 DiagnosticCodes() registry, and AC02-1..AC02-7 tests pass.",
+  "error_code": null,
+  "evidence": [
+    {
+      "command": "go test ./internal/config/...",
+      "exitCode": 0,
+      "result": "PASS; configuration diagnostics and position assertions."
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge -run DiagnosticsEnvelope",
+      "exitCode": 0,
+      "result": "PASS; total remediation and envelope attribution assertions."
+    },
+    {
+      "command": "go vet ./...",
+      "exitCode": 0,
+      "result": "PASS; repository vet checks."
+    }
+  ],
+  "decisions": []
 }

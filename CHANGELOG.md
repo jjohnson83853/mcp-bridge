@@ -6,6 +6,12 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Structured logging contract.** Application logs and CLI failures now use
+  schema-versioned JSON lines with typed configuration attribution, stable
+  error classifications, unified reload/startup events, and bounded HTTP
+  diagnostics. The README and [logging contract](docs/logging-contract.md)
+  document the application field union, collector boundary, and query examples.
+
 - **Dynamic direct-first guidance for gateway built-ins.** `search_tools`
   descriptions list the exact, sorted wire names of published configured pins
   (with clean baseline guidance when none are published), while `describe_tool`

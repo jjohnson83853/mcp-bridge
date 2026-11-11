@@ -39,17 +39,22 @@ func TestEmbeddingEnvCLI(t *testing.T) {
 			var out, stderr bytes.Buffer
 			exit := runContext(context.Background(), []string{"--check-config", "--config", path}, &out, &stderr)
 			if mode == "valid" {
-				if exit != 0 {
-					t.Errorf("native CLI admission exit=%d stderr=%s", exit, stderr.String())
+				assertConfigValidationSuccess(t, out.String())
+				if stderr.Len() != 0 {
+					t.Errorf("valid CLI stderr = %q, want empty", stderr.String())
 				}
 			} else {
 				if exit != 1 {
 					t.Errorf("invalid CLI exit=%d want=1", exit)
 				}
-				for _, fragment := range []string{`key="embedding.model"`, "code=reference_unresolved", "shape=" + mode} {
-					if !strings.Contains(stderr.String(), fragment) {
-						t.Errorf("CLI metadata missing %s: %s", fragment, stderr.String())
-					}
+				record := decodeEnvelopeLine(t, stderr.String())
+				errorRecord, ok := record["error"].(map[string]any)
+				if !ok || errorRecord["code"] != "reference_unresolved" {
+					t.Errorf("CLI error = %#v, want reference_unresolved", record["error"])
+				}
+				configRecord, ok := record["config"].(map[string]any)
+				if !ok || configRecord["property_path"] != "embedding.model" || configRecord["shape"] != mode {
+					t.Errorf("CLI config attribution = %#v, want embedding.model/%s", record["config"], mode)
 				}
 			}
 			for _, sentinel := range []string{"MODEL-SENTINEL-CLI", "url-sentinel-cli.invalid", "{env: EMBEDDING_CLI_MODEL}"} {

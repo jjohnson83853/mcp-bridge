@@ -92,7 +92,7 @@ func TestProvenanceFlowsIntoTerminalRecord(t *testing.T) {
 	scope := false
 	skew := 60
 	sink := &bytes.Buffer{}
-	diag := NewHTTPDiagnostics(NewLogger(sink), HTTPDiagnosticsOptions{
+	diag := NewHTTPDiagnostics(NewLogger(sink, sink), HTTPDiagnosticsOptions{
 		Now: now, NewID: fixedID(testID),
 		Process: HTTPProcessContext{State: "available", ID: testID},
 		Provenance: HTTPProvenance{
@@ -111,14 +111,13 @@ func TestProvenanceFlowsIntoTerminalRecord(t *testing.T) {
 	}))
 	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/mcp", nil))
 	record := decodeTerminal(t, sink)
-	if record["source_revision"] != validRevision {
-		t.Errorf("source_revision = %v; want %q", record["source_revision"], validRevision)
+	for _, key := range []string{"source_revision", "diag_environment"} {
+		if _, present := record[key]; present {
+			t.Errorf("%s = %v; collector-owned provenance must not be emitted", key, record[key])
+		}
 	}
 	if record["build_state"] != "verified" {
 		t.Errorf("build_state = %v; want verified", record["build_state"])
-	}
-	if record["diag_environment"] != "lab-1" {
-		t.Errorf("diag_environment = %v; want lab-1", record["diag_environment"])
 	}
 	if record["policy_source"] != "defaults" {
 		t.Errorf("policy_source = %v; want defaults", record["policy_source"])
@@ -148,7 +147,7 @@ func TestProcessIncarnationInjectionIsDistinctPerContext(t *testing.T) {
 	otherID := "fedcba9876543210fedcba9876543210"
 	emit := func(process HTTPProcessContext) map[string]any {
 		sink := &bytes.Buffer{}
-		diag := NewHTTPDiagnostics(NewLogger(sink), HTTPDiagnosticsOptions{
+		diag := NewHTTPDiagnostics(NewLogger(sink, sink), HTTPDiagnosticsOptions{
 			Now: now, NewID: fixedID(testID), Process: process,
 		})
 		diag.Wrap(http.NotFoundHandler()).ServeHTTP(
@@ -295,7 +294,7 @@ func TestChargedBudgetStaysExactWithProvenance(t *testing.T) {
 	skew := 60
 	now := fixedNow()
 	sink := &bytes.Buffer{}
-	diag := NewHTTPDiagnostics(NewLogger(sink), HTTPDiagnosticsOptions{
+	diag := NewHTTPDiagnostics(NewLogger(sink, sink), HTTPDiagnosticsOptions{
 		Now: now, NewID: fixedID(testID),
 		Process: HTTPProcessContext{State: "available", ID: testID},
 		Provenance: HTTPProvenance{

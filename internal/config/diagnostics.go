@@ -33,6 +33,75 @@ const (
 	stageNotChecked = "not_checked"
 )
 
+
+var diagnosticCodes = [...]string{
+	"bound_range",
+	"config_read",
+	"config_too_large",
+	"credential_overlap",
+	"duration_positive",
+	"duration_range",
+	"duration_type",
+	"header_duplicate",
+	"header_forbidden",
+	"header_mapping",
+	"header_name_invalid",
+	"pin_ceiling",
+	"pin_duplicate",
+	"pin_fields",
+	"pin_server_missing",
+	"pin_server_unknown",
+	"pin_tool_missing",
+	"pin_tool_name",
+	"reference_env_name",
+	"reference_invalid",
+	"reference_literal_required",
+	"reference_required",
+	"reference_shape",
+	"reference_unresolved",
+	"schema_version",
+	"secret_cr",
+	"secret_empty",
+	"secret_file_missing",
+	"secret_file_policy",
+	"secret_file_read",
+	"secret_file_stat",
+	"secret_lf",
+	"secret_nul",
+	"secret_too_large",
+	"secret_unset",
+	"server_count",
+	"server_id_duplicate",
+	"server_id_invalid",
+	"server_unknown",
+	"setting_duration",
+	"setting_internal",
+	"setting_missing",
+	"setting_type",
+	"tool_metadata_tool_name",
+	"tool_metadata_tool_unknown",
+	"tool_metadata_unknown_member",
+	"tool_metadata_value",
+	"url_invalid",
+	"url_secret_parameter",
+	"weight_invalid",
+	"weights_invalid",
+	"yaml_alias",
+	"yaml_documents",
+	"yaml_key_duplicate",
+	"yaml_key_invalid",
+	"yaml_key_unknown",
+	"yaml_number",
+	"yaml_root_type",
+	"yaml_syntax",
+	"yaml_type",
+}
+
+// DiagnosticCodes returns the closed, sorted set of every diagnostic code
+// produced by this package. Callers receive their own slice.
+func DiagnosticCodes() []string {
+	return append([]string(nil), diagnosticCodes[:]...)
+}
 // Diagnostic carries the metadata-only attribution of one configuration
 // rejection. Records are immutable value copies; nothing in the collection
 // aliases caller-visible memory.
@@ -42,8 +111,7 @@ type Diagnostic struct {
 	// e.g. `servers[3].credentials.bearer`. Header keys use the validated
 	// bracket form, e.g. `servers[0].credentials.headers["X-API-Key"]`.
 	Key string
-	// Line/Column are the document parser position; set only for syntax and
-	// invalid-key diagnostics, where the position is the only safe location.
+	// Line/Column locate the rejected source node when its position is available.
 	Line   int
 	Column int
 	// Server is the validated owning server id, when the rejection is inside
@@ -62,9 +130,14 @@ type Diagnostic struct {
 	RefName string
 	// RelatedKey/RelatedRefKind/RelatedRefName carry the first occurrence of
 	// a duplicate (or the other side of a disjointness violation).
-	RelatedKey     string
-	RelatedRefKind string
-	RelatedRefName string
+	RelatedKey       string
+	RelatedRefKind   string
+	RelatedRefName   string
+	RelatedLine      int
+	RelatedColumn    int
+	ActualCount      int
+	MaxCount         int
+	FirstExcessIndex int
 	// Code/Property/Shape are finite classes; Reason is a static explanation
 	// chosen by this package, never decoder or OS prose.
 	Code     string
@@ -185,6 +258,13 @@ func (w *secretWalk) record(record Diagnostic) bool {
 	return true
 }
 
+func (w *secretWalk) recordAt(node *yaml.Node, record Diagnostic) bool {
+	if node != nil {
+		record.Line, record.Column = node.Line, node.Column
+	}
+	return w.record(record)
+}
+
 // walk resolves every reachable secret reference below node, threading the
 // dotted location and the validated server owner. It returns false once the
 // diagnostics cap stops collection.
@@ -262,7 +342,7 @@ func (w *secretWalk) resolve(node *yaml.Node, keyPath, server string) bool {
 	if kind == "env" {
 		value, ok := os.LookupEnv(name)
 		if !ok {
-			return w.record(Diagnostic{
+			return w.recordAt(node, Diagnostic{
 				Path: w.configPath, Key: keyPath, Server: server,
 				RefKind: kind, RefName: name,
 				Code: "secret_unset", Property: "value", Shape: "unset",
@@ -270,7 +350,7 @@ func (w *secretWalk) resolve(node *yaml.Node, keyPath, server string) bool {
 			})
 		}
 		if diag := w.classifySecretValue(keyPath, server, kind, name, value, envLFReason); diag != nil {
-			return w.record(*diag)
+			return w.recordAt(node, *diag)
 		}
 		w.result[kind+":"+name] = value
 		return true
@@ -292,14 +372,14 @@ func (w *secretWalk) resolve(node *yaml.Node, keyPath, server string) bool {
 		case os.IsPermission(err):
 			code, property, shape, reason = "secret_file_stat", "metadata", "permission_denied", "cannot inspect secret file"
 		}
-		return w.record(Diagnostic{
+		return w.recordAt(node, Diagnostic{
 			Path: w.configPath, Key: keyPath, Server: server,
 			RefKind: kind, RefName: name,
 			Code: code, Property: property, Shape: shape, Reason: reason,
 		})
 	}
 	if shape := secretFilePolicy(info); shape != "" {
-		return w.record(Diagnostic{
+		return w.recordAt(node, Diagnostic{
 			Path: w.configPath, Key: keyPath, Server: server,
 			RefKind: kind, RefName: name,
 			Code: "secret_file_policy", Property: "policy", Shape: shape,
@@ -311,7 +391,7 @@ func (w *secretWalk) resolve(node *yaml.Node, keyPath, server string) bool {
 	// same file observes the identical value and triggers no second read and
 	// no second copy (spec §4.4).
 	if cached, ok := w.fileCache[path]; ok {
-		return w.storeFileValue(keyPath, server, kind, name, cached)
+		return w.storeFileValue(node, keyPath, server, kind, name, cached)
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -319,7 +399,7 @@ func (w *secretWalk) resolve(node *yaml.Node, keyPath, server string) bool {
 		if os.IsPermission(err) {
 			shape = "permission_denied"
 		}
-		return w.record(Diagnostic{
+		return w.recordAt(node, Diagnostic{
 			Path: w.configPath, Key: keyPath, Server: server,
 			RefKind: kind, RefName: name,
 			Code: "secret_file_read", Property: "readability", Shape: shape,
@@ -328,17 +408,17 @@ func (w *secretWalk) resolve(node *yaml.Node, keyPath, server string) bool {
 	}
 	value := strings.TrimSuffix(string(data), "\n")
 	w.fileCache[path] = value
-	return w.storeFileValue(keyPath, server, kind, name, value)
+	return w.storeFileValue(node, keyPath, server, kind, name, value)
 }
 
 // storeFileValue classifies one normalized file value (or the cached value of
 // the same path) and stores it on success; every failure is recorded with the
 // occurrence's own location and reference identity.
-func (w *secretWalk) storeFileValue(keyPath, server, kind, name, value string) bool {
+func (w *secretWalk) storeFileValue(node *yaml.Node, keyPath, server, kind, name, value string) bool {
 	// File and env values share one classification; the LF reason alone
 	// differs because files are newline-stripped once (spec §4.2).
 	if diag := w.classifySecretValue(keyPath, server, kind, name, value, fileLFReason); diag != nil {
-		return w.record(*diag)
+		return w.recordAt(node, *diag)
 	}
 	w.result[kind+":"+name] = value
 	return true

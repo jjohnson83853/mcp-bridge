@@ -96,10 +96,6 @@ var (
 	clientFamilyVocabulary       = []string{"openai", "claude", "cursor", "omp", "browser", "other", "absent"}
 )
 
-// HTTPDiagnosticError is the canonical nested core error object.
-type HTTPDiagnosticError struct {
-	Class string `json:"class"`
-}
 
 // HTTPDiagnosticErrorDetail is the optional closed error detail object.
 type HTTPDiagnosticErrorDetail struct {
@@ -110,7 +106,7 @@ type HTTPDiagnosticErrorDetail struct {
 
 // HTTPDiagnostic is the closed concrete terminal snapshot of one completed
 // HTTP request under schema oauth_diag_v1. Fields bind one-to-one to the
-// approved 62-key table; conditional values are empty/nil only for truthful
+// approved 60-key table; conditional values are empty/nil only for truthful
 // unavailable or omitted states.
 type HTTPDiagnostic struct {
 	// Legacy stage field (existing physical key "stage", preserved semantics).
@@ -134,8 +130,6 @@ type HTTPDiagnostic struct {
 
 	// Semantic schema and provenance.
 	DiagSchema      string `json:"diag_schema,omitempty"`
-	DiagEnvironment string `json:"diag_environment,omitempty"`
-	SourceRevision  string `json:"source_revision,omitempty"`
 	BuildState      string `json:"build_state,omitempty"`
 	ProcessState    string `json:"process_state,omitempty"`
 	ProcessID       string `json:"process_id,omitempty"`

@@ -9,14 +9,12 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
-	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
 )
 
@@ -39,8 +37,12 @@ func edgeConfig(t *testing.T, embeddingURL string) string {
 func TestRunCheckConfigAndMissingFile(t *testing.T) {
 	path := edgeConfig(t, "http://127.0.0.1:9/v1")
 	var out, errOut bytes.Buffer
-	if code := run([]string{"--check-config", "--config", path}, &out, &errOut); code != 0 || !strings.Contains(out.String(), "configuration valid:") {
-		t.Fatalf("valid check: %d %q", code, errOut.String())
+	if code := run([]string{"--check-config", "--config", path}, &out, &errOut); code != 0 {
+		t.Fatalf("valid check exit = %d, stderr=%q", code, errOut.String())
+	}
+	assertConfigValidationSuccess(t, out.String())
+	if errOut.Len() != 0 {
+		t.Fatalf("valid check stderr = %q, want empty", errOut.String())
 	}
 	bad := filepath.Join(t.TempDir(), "bad.yaml")
 	if err := os.WriteFile(bad, []byte("schema_version: [bad"), 0600); err != nil {
@@ -59,28 +61,27 @@ func TestRunCheckConfigAndMissingFile(t *testing.T) {
 	if len(lines) != 1 {
 		t.Fatalf("stderr lines = %d (%q), want 1", len(lines), errOut.String())
 	}
-	// Exact attribution for the syntax failure: document key, yaml_syntax code,
-	// safe available parser position, and the not_checked footer, without
-	// freezing yaml.v3 prose.
-	prefix := fmt.Sprintf("invalid configuration: config=%q key=%q line=", bad, "<document>")
-	suffix := " code=yaml_syntax property=document shape=invalid_yaml: cannot decode YAML configuration; remaining_stages=not_checked"
-	if !strings.HasPrefix(lines[0], prefix) {
-		t.Fatalf("stderr = %q, want prefix %q", lines[0], prefix)
+	record := decodeEnvelopeLine(t, errOut.String())
+	if record["event"] != "config_validation_failed" || record["operation"] != "load_config" {
+		t.Fatalf("event/operation = %v/%v, want config_validation_failed/load_config", record["event"], record["operation"])
 	}
-	if !strings.HasSuffix(lines[0], suffix) {
-		t.Fatalf("stderr = %q, want suffix %q", lines[0], suffix)
+	errorRecord, ok := record["error"].(map[string]any)
+	if !ok || errorRecord["code"] != "yaml_syntax" {
+		t.Fatalf("error = %#v, want yaml_syntax", record["error"])
 	}
-	// The remaining middle text is a safe parser position (two integers).
-	middle := strings.TrimSuffix(strings.TrimPrefix(lines[0], prefix), suffix)
-	parts := strings.Split(middle, " column=")
-	if len(parts) != 2 {
-		t.Fatalf("stderr = %q, want a single parser position", lines[0])
+	configRecord, ok := record["config"].(map[string]any)
+	if !ok || configRecord["path"] != bad || configRecord["property_path"] != "<document>" {
+		t.Fatalf("config = %#v, want the supplied path and document property", record["config"])
 	}
-	if _, err := strconv.Atoi(parts[0]); err != nil {
-		t.Fatalf("parser line %q is not an integer: %v", parts[0], err)
+	line, lineOK := configRecord["line"].(float64)
+	if !lineOK || line < 1 {
+		t.Fatalf("parser line = %v, want one-based integer", configRecord["line"])
 	}
-	if _, err := strconv.Atoi(parts[1]); err != nil {
-		t.Fatalf("parser column %q is not an integer: %v", parts[1], err)
+	if _, exists := configRecord["column"]; exists {
+		t.Errorf("column = %v, want omitted when parser provides no column", configRecord["column"])
+	}
+	if configRecord["remaining_stages"] != "not_checked" {
+		t.Fatalf("remaining_stages = %v, want not_checked", configRecord["remaining_stages"])
 	}
 	if code := runContext(context.Background(), []string{"--config", filepath.Join(t.TempDir(), "absent")}, &out, &errOut); code == 0 {
 		t.Fatal("missing config succeeded")
@@ -101,12 +102,9 @@ func TestServeStartupFailures(t *testing.T) {
 	if out.Len() != 0 {
 		t.Fatalf("stdout = %q, want empty", out.String())
 	}
-	// Exact schema-9 attribution: single record, schema_version key, expected1
-	// code/property/shape, static reason, later diagnostics deliberately
-	// suppressed via the remaining-stages footer.
-	want := fmt.Sprintf("configuration: config=%q key=%q code=schema_version property=schema_version shape=unsupported_integer: schema_version must equal 1; remaining_stages=not_checked", invalid, "schema_version")
-	if err.Error() != want {
-		t.Fatalf("invalid config error = %q, want %q", err.Error(), want)
+	var diagnostics *config.Diagnostics
+	if !errors.As(err, &diagnostics) || diagnostics == nil {
+		t.Fatalf("invalid config error type=%T, want *config.Diagnostics", err)
 	}
 	path := edgeConfig(t, "http://127.0.0.1:9/v1")
 	cfg, err := config.ParseFile(path)
@@ -129,9 +127,10 @@ func TestServeStartupFailures(t *testing.T) {
 	if err = os.WriteFile(path, data, 0600); err != nil {
 		t.Fatal(err)
 	}
-	if err = serve(context.Background(), path, &out, &errOut); err == nil || !strings.Contains(err.Error(), "state directory") {
-		t.Fatalf("state: %v", err)
+	if err = serve(context.Background(), path, &out, &errOut); err == nil {
+		t.Fatal("state directory failure was not returned")
 	}
+	assertStartupFailure(t, err, "startup_failed", "state_directory", "resource", false, map[string]string{"path": blocked})
 	provider := edgeConfig(t, "http://127.0.0.1:9/v1")
 	data, err = os.ReadFile(provider)
 	if err != nil {
@@ -141,9 +140,10 @@ func TestServeStartupFailures(t *testing.T) {
 	if err = os.WriteFile(provider, data, 0600); err != nil {
 		t.Fatal(err)
 	}
-	if err = serve(context.Background(), provider, &out, &errOut); err == nil || !strings.Contains(err.Error(), "embedding provider") {
-		t.Fatalf("provider: %v", err)
+	if err = serve(context.Background(), provider, &out, &errOut); err == nil {
+		t.Fatal("embedding provider failure was not returned")
 	}
+	assertStartupFailure(t, err, "startup_failed", "embedding_provider", "dependency", false, nil)
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -159,8 +159,46 @@ func TestServeStartupFailures(t *testing.T) {
 	if err = os.WriteFile(occupied, data, 0600); err != nil {
 		t.Fatal(err)
 	}
-	if err = serve(context.Background(), occupied, &out, &errOut); err == nil || !strings.Contains(err.Error(), "inbound listener") {
-		t.Fatalf("listener: %v", err)
+	if err = serve(context.Background(), occupied, &out, &errOut); err == nil {
+		t.Fatal("inbound listener failure was not returned")
+	}
+	assertStartupFailure(t, err, "startup_failed", "listener_bind", "resource", true, map[string]string{"listener": "inbound", "address": "127.0.0.1:" + port})
+	startupLogs := &bytes.Buffer{}
+	loop, err := service.NewLoop(service.NewRuntime(), service.LoopOptions{
+		Load: func() (*config.Config, error) { return &config.Config{}, nil },
+		Deps: service.RefreshDeps{ReloadDeps: service.ReloadDeps{
+			Discover:            func(config.Server) ([]core.ToolDefinition, error) { return nil, nil },
+			NewClient:           func(config.Server) (core.Upstream, error) { return nil, nil },
+			ModelIdentityDigest: strings.Repeat("a", 64),
+			Now:                 func() time.Time { return time.Unix(1, 0) },
+		}},
+		Published: func(*service.Assembly) error { return errors.New("startup publication secret") },
+		Logf:      operatorLog(startupLogs),
+	})
+	if err != nil {
+		t.Fatalf("new startup publication loop: %v", err)
+	}
+	startErr := loop.Start(context.Background())
+	if !errors.Is(startErr, service.ErrPublicationFailed) {
+		t.Fatalf("loop startup error=%v, want publication failure", startErr)
+	}
+	if startupLogs.Len() != 0 {
+		t.Fatalf("loop.Start emitted a second publication record: %q", startupLogs.String())
+	}
+	failure := startupFailureForError(startErr)
+	assertStartupFailure(t, failure, "startup_publication_failed", "publication_failed", "internal", true, nil)
+	writeStartupFailure(startupLogs, failure)
+	lines := strings.Split(strings.TrimSuffix(startupLogs.String(), "\n"), "\n")
+	if len(lines) != 1 {
+		t.Fatalf("startup publication records=%d, want exactly one: %q", len(lines), startupLogs.String())
+	}
+	record := decodeEnvelopeLine(t, lines[0]+"\n")
+	if record["event"] != "startup_publication_failed" {
+		t.Fatalf("startup publication event=%v, want startup_publication_failed", record["event"])
+	}
+	if strings.Contains(startupLogs.String(), "startup publication secret") ||
+		strings.Contains(startupLogs.String(), "reload_publication_failed") {
+		t.Fatalf("startup publication output leaked or used another event: %q", startupLogs.String())
 	}
 }
 func TestRestartOnlyFieldsAndSmallWiringHelpers(t *testing.T) {
@@ -169,7 +207,8 @@ func TestRestartOnlyFieldsAndSmallWiringHelpers(t *testing.T) {
 		name   string
 		mutate func(*config.Command)
 	}{
-		{"http.listen", func(c *config.Command) { c.HTTPListen = "x" }}, {"operations.listen", func(c *config.Command) { c.OperationsListen = "x" }}, {"storage.directory", func(c *config.Command) { c.StorageDirectory = "x" }}, {"storage.max_snapshot_bytes", func(c *config.Command) { c.MaxSnapshotBytes++ }}, {"catalog.refresh_interval", func(c *config.Command) { c.RefreshInterval++ }}, {"operations.requests_per_second", func(c *config.Command) { c.OpsRequestsPerSecond++ }}, {"operations.burst", func(c *config.Command) { c.OpsBurst++ }}, {"search", func(c *config.Command) { c.Search.DefaultTopK++ }}, {"embedding", func(c *config.Command) { c.Embedding.Dimensions++ }}}
+		{"http.listen", func(c *config.Command) { c.HTTPListen = "x" }}, {"operations.listen", func(c *config.Command) { c.OperationsListen = "x" }}, {"storage.directory", func(c *config.Command) { c.StorageDirectory = "x" }}, {"storage.max_snapshot_bytes", func(c *config.Command) { c.MaxSnapshotBytes++ }}, {"catalog.refresh_interval", func(c *config.Command) { c.RefreshInterval++ }}, {"operations.requests_per_second", func(c *config.Command) { c.OpsRequestsPerSecond++ }}, {"operations.burst", func(c *config.Command) { c.OpsBurst++ }}, {"search", func(c *config.Command) { c.Search.DefaultTopK++ }}, {"embedding", func(c *config.Command) { c.Embedding.Dimensions++ }},
+	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			c := base
@@ -196,32 +235,31 @@ func TestRestartOnlyFieldsAndSmallWiringHelpers(t *testing.T) {
 		t.Fatal("orNone")
 	}
 	var logs bytes.Buffer
-	operatorLog(observe.NewLogger(&logs))("event")
-	if !strings.Contains(logs.String(), "invalid_config") {
-		t.Fatal("operator log classification")
-	}
+	operatorLog(&logs)("event")
+	record := decodeEnvelopeLine(t, logs.String())
+	assertOperatorEnvelope(t, record, "warn", "internal_warning", "reload", "failure", "bridge encountered an internal warning", "internal_error", "internal", false, "inspect the bridge logs and configuration")
 }
 
 func TestOperatorLogPublicationFailureClassification(t *testing.T) {
 	const secret = "publication-error-secret"
-	var logs bytes.Buffer
-	logf := operatorLog(observe.NewLogger(&logs))
+	var stdout, logs bytes.Buffer
+	logf := operatorLog(&logs)
 	logf("configuration reload publication failed after runtime acceptance: %v", fmt.Errorf("%w: %s", service.ErrPublicationFailed, secret))
 	publicationLog := logs.String()
-	if !strings.Contains(publicationLog, `"reason":"internal_error"`) {
-		t.Fatalf("publication log = %q; want the redacted post-accept failure class", publicationLog)
+	if stdout.Len() != 0 {
+		t.Fatalf("warn publication record went to stdout: %q", stdout.String())
 	}
+	publication := decodeEnvelopeLine(t, publicationLog)
+	assertOperatorEnvelope(t, publication, "warn", "reload_publication_failed", "publish", "failure", "configuration reload publication failed", "internal_error", "internal", false, "inspect the bridge logs and configuration")
 	if strings.Contains(publicationLog, secret) {
 		t.Fatal("publication log leaked the underlying error")
 	}
 
 	logs.Reset()
-	logf("configuration reload rejected: %s", secret)
+	logf("configuration reload rejected: %v", errors.New(secret))
 	rejectionLog := logs.String()
-	if !strings.Contains(rejectionLog, `"reason":"invalid_config"`) ||
-		strings.Contains(rejectionLog, `"reason":"internal_error"`) {
-		t.Fatalf("candidate rejection log = %q; want invalid_config only", rejectionLog)
-	}
+	rejection := decodeEnvelopeLine(t, rejectionLog)
+	assertOperatorEnvelope(t, rejection, "warn", "reload_rejected", "reload", "failure", "configuration reload rejected", "internal_error", "internal", false, "inspect the bridge logs and configuration")
 	if strings.Contains(rejectionLog, secret) {
 		t.Fatal("candidate rejection log leaked its message")
 	}
@@ -229,11 +267,14 @@ func TestOperatorLogPublicationFailureClassification(t *testing.T) {
 func TestRefreshPublicationFailureClassificationThroughLoop(t *testing.T) {
 	const secret = "refresh-publication-error-secret"
 	var logs bytes.Buffer
-	operator := operatorLog(observe.NewLogger(&logs))
+	operator := operatorLog(&logs)
 	logged := make(chan struct{}, 1)
 	logf := func(format string, args ...any) {
 		operator(format, args...)
-		logged <- struct{}{}
+		select {
+		case logged <- struct{}{}:
+		default:
+		}
 	}
 
 	publicationCalls := 0
@@ -277,9 +318,11 @@ func TestRefreshPublicationFailureClassificationThroughLoop(t *testing.T) {
 	}
 
 	publicationLog := logs.String()
-	if !strings.Contains(publicationLog, `"reason":"internal_error"`) {
-		t.Fatalf("refresh publication log = %q; want internal_error", publicationLog)
+	if strings.Count(publicationLog, "\n") != 1 {
+		t.Fatalf("refresh publication records=%d, want exactly one: %q", strings.Count(publicationLog, "\n"), publicationLog)
 	}
+	publication := decodeEnvelopeLine(t, publicationLog)
+	assertOperatorEnvelope(t, publication, "warn", "reload_publication_failed", "publish", "failure", "configuration reload publication failed", "internal_error", "internal", false, "inspect the bridge logs and configuration")
 	if strings.Contains(publicationLog, secret) {
 		t.Fatalf("refresh publication log leaked its underlying callback error: %q", publicationLog)
 	}

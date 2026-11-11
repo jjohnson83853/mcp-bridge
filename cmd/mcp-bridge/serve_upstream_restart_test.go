@@ -49,7 +49,7 @@ func newPeerHandler(generation string) (*restartPeerState, http.Handler) {
 	})
 }
 
-func startUpstreamRestartBridge(t *testing.T, peerURL string, stateful bool) (context.Context, *mcp.ClientSession) {
+func startUpstreamRestartBridge(t *testing.T, peerURL string, stateful bool) (context.Context, *mcp.ClientSession, *syncWriter) {
 	t.Helper()
 	t.Setenv("SERVE_CLIENT_TOKEN", serveClientToken)
 	t.Setenv("SERVE_EMBEDDING_KEY", serveEmbeddingKey)
@@ -104,7 +104,7 @@ func startUpstreamRestartBridge(t *testing.T, peerURL string, stateful bool) (co
 		return ok && status == http.StatusOK && strings.Contains(body, `"status":"ready"`) && strings.Contains(body, "alpha")
 	})
 	session = connectBridge(t, ctx, "http://"+httpAddress+"/mcp", serveClientToken)
-	return ctx, session
+	return ctx, session, stdout
 }
 
 func findRestartTool(t *testing.T, ctx context.Context, session *mcp.ClientSession) (string, string) {
@@ -164,7 +164,7 @@ func TestUpstreamRestartSurvivesInDefaultStatelessMode(t *testing.T) {
 	}))
 	t.Cleanup(peer.Close)
 
-	ctx, session := startUpstreamRestartBridge(t, peer.URL, false)
+	ctx, session, _ := startUpstreamRestartBridge(t, peer.URL, false)
 	revision, toolName := findRestartTool(t, ctx, session)
 	first := callRestartRead(t, ctx, session, revision, toolName)
 	if first.IsError {
@@ -197,7 +197,7 @@ func TestUpstreamPreservesSessionInExplicitStatefulMode(t *testing.T) {
 	peer := httptest.NewServer(handler)
 	t.Cleanup(peer.Close)
 
-	ctx, session := startUpstreamRestartBridge(t, peer.URL, true)
+	ctx, session, _ := startUpstreamRestartBridge(t, peer.URL, true)
 	revision, toolName := findRestartTool(t, ctx, session)
 	for i := range 2 {
 		result := callRestartRead(t, ctx, session, revision, toolName)
@@ -216,54 +216,19 @@ func TestUpstreamPreservesSessionInExplicitStatefulMode(t *testing.T) {
 	}
 }
 
-func captureProcessStdout(t *testing.T) func() []byte {
-	t.Helper()
-	original := os.Stdout
-	reader, writer, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("create stdout pipe: %v", err)
-	}
-	os.Stdout = writer
-	restored := false
-	t.Cleanup(func() {
-		os.Stdout = original
-		if !restored {
-			_ = writer.Close()
-		}
-		_ = reader.Close()
-	})
-	return func() []byte {
-		if !restored {
-			os.Stdout = original
-			if err := writer.Close(); err != nil {
-				t.Errorf("close captured stdout writer: %v", err)
-			}
-			restored = true
-		}
-		output, err := io.ReadAll(reader)
-		if err != nil {
-			t.Errorf("read captured stdout: %v", err)
-		}
-		if err := reader.Close(); err != nil {
-			t.Errorf("close captured stdout reader: %v", err)
-		}
-		return output
-	}
-}
 
 func TestUpstreamEphemeralHandshakeLog(t *testing.T) {
-	readStdout := captureProcessStdout(t)
 	_, handler := newPeerHandler("legacy")
 	peer := httptest.NewServer(handler)
 	t.Cleanup(peer.Close)
 
-	ctx, session := startUpstreamRestartBridge(t, peer.URL, false)
+	ctx, session, stdout := startUpstreamRestartBridge(t, peer.URL, false)
 	revision, toolName := findRestartTool(t, ctx, session)
 	result := callRestartRead(t, ctx, session, revision, toolName)
 	if result.IsError {
 		t.Fatalf("legacy upstream tools/call returned isError=true: %v", structuredContent(t, result))
 	}
-	output := readStdout()
+	output := []byte(stdout.String())
 	found := false
 	for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
 		if line == "" {

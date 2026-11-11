@@ -25,6 +25,7 @@ import (
 
 	"github.com/jjohnson83853/mcp-bridge/internal/auth"
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/search"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
 	"github.com/lestrrat-go/jwx/v2/jwa"
@@ -341,7 +342,7 @@ func TestProtectedResourceMetadataWire(t *testing.T) {
 	if got := challenge.Header.Get("WWW-Authenticate"); got != wantChallenge {
 		t.Errorf("WWW-Authenticate = %q, want %q", got, wantChallenge)
 	}
-	if !strings.Contains(harness.stdout.String(), `"metadata_target_registered":"yes"`) {
+	if !strings.Contains(harness.stdout.String()+harness.stderr.String(), `"metadata_target_registered":"yes"`) {
 		t.Error("challenge diagnostics do not classify the metadata target as registered")
 	}
 }
@@ -1103,7 +1104,7 @@ func TestChatGPTOAuthAndActionDiscoveryWire(t *testing.T) {
 
 	negativeResponse := post(`{"jsonrpc":"2.0","id":3,"method":"tools/list","params":{}}`, "", "unknown-bogus-session")
 	defer negativeResponse.Body.Close()
-	captured := h.stdout.String()
+	captured := h.stdout.String() + h.stderr.String()
 	if negativeResponse.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("unknown-session request status = %d; want 401", negativeResponse.StatusCode)
 	}
@@ -1256,7 +1257,7 @@ func TestWiringEdgeCases(t *testing.T) {
 		t.Fatal("firstError logic failure")
 	}
 	holder := newConfigHolder()
-	reg := newUpstreamRegistry(holder)
+	reg := newUpstreamRegistry(holder, observe.NewLogger(nil, nil))
 	s := config.Server{ID: "test", Endpoint: "http://example.com"}
 	if _, err := reg.newClient(s); err == nil {
 		t.Fatal("expected error with no staged config")
@@ -1547,7 +1548,7 @@ func TestChatGPTSessionAdmissionDiscoveryBurstWire(t *testing.T) {
 		t.Fatalf("wire status counts omit required rejection: 403=%d 404=%d", statusCounts[http.StatusForbidden], statusCounts[http.StatusNotFound])
 	}
 
-	captured := h.stdout.String()
+	captured := h.stdout.String() + h.stderr.String()
 	type diagnosticRecord struct {
 		Event           string `json:"event"`
 		RequestID       string `json:"request_id"`

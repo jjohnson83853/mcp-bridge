@@ -203,18 +203,6 @@ func (t *ToolSurface) Published(assembly *Assembly) error {
 		return nil
 	}
 	if err := t.publishProjection(t.publisherOwner, assembly); err != nil {
-		if t.logger != nil {
-			t.logger.Log(observe.Entry{
-				Level:     "warn",
-				Event:     "reload",
-				RequestID: "",
-				Operation: "publish",
-				Duration:  0,
-				Outcome:   "error",
-				Reason:    "publication_failed",
-				Fields:    map[string]any{"reason": "publication_failed"},
-			})
-		}
 		return err
 	}
 	return nil
@@ -654,15 +642,10 @@ func (t *ToolSurface) describeTool(ctx context.Context, req *mcp.CallToolRequest
 			Operation: "describe_tool",
 			Duration:  duration,
 			Outcome:   "success",
-			Reason:    "none",
 			Fields: map[string]any{
-				"request_id":        requestID,
 				"operation_id":      operationID,
 				"mcp_method":        "tools_call",
-				"outcome":           "success",
-				"reason":            "none",
 				"correlation_state": corrState,
-				"duration_ms":       duration.Milliseconds(),
 			},
 		})
 	}
@@ -689,16 +672,12 @@ func (t *ToolSurface) logAdmissionFailure(ctx context.Context, requestID, operat
 		Operation: operation,
 		Duration:  duration,
 		Outcome:   "error",
-		Reason:    reason,
+		Error:     observe.RuntimeErrorInfo(reason),
 		Fields: map[string]any{
-			"request_id":        requestID,
 			"operation_id":      operationID,
 			"mcp_method":        "tools_call",
 			"stage":             "tool_admission",
-			"outcome":           "error",
-			"reason":            reason,
 			"correlation_state": corrState,
-			"duration_ms":       duration.Milliseconds(),
 		},
 	})
 }
@@ -813,15 +792,11 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 				Operation: "call_tool",
 				Duration:  time.Since(backendStart),
 				Outcome:   outcome,
-				Reason:    dispatchErr.Code,
+				Error:     observe.RuntimeErrorInfo(dispatchErr.Code),
 				Fields: map[string]any{
-					"request_id":      requestID,
 					"operation_id":    operationID,
 					"backend_call_id": backendCallID,
 					"tool":            core.PublicName(binding.ServerID, binding.RawName),
-					"outcome":         outcome,
-					"reason":          dispatchErr.Code,
-					"duration_ms":     time.Since(backendStart).Milliseconds(),
 				},
 			})
 			t.logger.Log(observe.Entry{
@@ -831,16 +806,12 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 				Operation: "call_tool",
 				Duration:  time.Since(start),
 				Outcome:   "error",
-				Reason:    dispatchErr.Code,
+				Error:     observe.RuntimeErrorInfo(dispatchErr.Code),
 				Fields: map[string]any{
-					"request_id":       requestID,
 					"operation_id":     operationID,
 					"mcp_method":       "tools_call",
 					"mcp_message_kind": "request",
 					"stage":            "backend_dispatch",
-					"outcome":          "error",
-					"reason":           dispatchErr.Code,
-					"duration_ms":      time.Since(start).Milliseconds(),
 				},
 			})
 		}
@@ -866,22 +837,18 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 			level, outcome = "warn", "error"
 		}
 		fields := map[string]any{
-			"request_id":                   requestID,
 			"operation_id":                 operationID,
 			"correlation_state":            corrState,
 			"backend_call_id":              backendCallID,
 			"tool":                         core.PublicName(binding.ServerID, binding.RawName),
-			"outcome":                      outcome,
 			"upstream_content_count":       uCount,
 			"upstream_text_presence":       uText,
 			"upstream_structured_presence": uStructured,
-			"duration_ms":                  time.Since(backendStart).Milliseconds(),
 		}
 		reason := "none"
 		if upstream.IsError {
 			reason = "tool_reported_error"
 		}
-		fields["reason"] = reason
 		t.logger.Log(observe.Entry{
 			Level:     level,
 			Event:     "backend_complete",
@@ -890,7 +857,7 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 			Operation: "call_tool",
 			Duration:  time.Since(backendStart),
 			Outcome:   outcome,
-			Reason:    reason,
+			Error:     observe.RuntimeErrorInfo(reason),
 			Fields:    fields,
 		})
 	}
@@ -911,23 +878,19 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 			level, outcome = "warn", "error"
 		}
 		fields := map[string]any{
-			"request_id":                requestID,
 			"operation_id":              operationID,
 			"correlation_state":         corrState,
 			"mcp_method":                "tools_call",
 			"mcp_message_kind":          "request",
-			"outcome":                   outcome,
 			"final_content_count":       fCount,
 			"final_text_presence":       fText,
 			"final_structured_presence": fStructured,
-			"duration_ms":               time.Since(start).Milliseconds(),
 		}
 		reason := "none"
 		if upstream.IsError {
 			reason = "tool_reported_error"
 			fields["stage"] = "backend_response"
 		}
-		fields["reason"] = reason
 		t.logger.Log(observe.Entry{
 			Level:     level,
 			Event:     "mcp_complete",
@@ -935,7 +898,7 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 			Operation: "call_tool",
 			Duration:  time.Since(start),
 			Outcome:   outcome,
-			Reason:    reason,
+			Error:     observe.RuntimeErrorInfo(reason),
 			Fields:    fields,
 		})
 	}

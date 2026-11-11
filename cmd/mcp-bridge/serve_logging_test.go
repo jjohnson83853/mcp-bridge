@@ -76,12 +76,15 @@ func TestServeLoggingHTTP(t *testing.T) {
 		}
 		record := completions[0]
 		for key, want := range map[string]any{
-			"http_status": float64(401), "http_method": "POST", "route": "mcp",
-			"reason": "client_auth_failed", "stage": "client_auth", "http_outcome": "failure",
+			"schema_version": float64(1), "service": "mcp-bridge", "http_status": float64(401),
+			"http_method": "POST", "route": "mcp", "stage": "client_auth", "http_outcome": "failure",
 		} {
 			if got := record[key]; got != want {
 				t.Errorf("http_complete %s = %v; want %v", key, got, want)
 			}
+		}
+		if _, present := record["error"]; present {
+			t.Errorf("K3 client-auth failure must not carry nested error: %#v", record["error"])
 		}
 		internalID, ok := record["request_id"].(string)
 		if !ok || !regexp.MustCompile(`^[0-9a-f]{32}$`).MatchString(internalID) || internalID == publicID {
@@ -245,8 +248,9 @@ func startHTTPLoggingBridgeWithWriter(t *testing.T, capacity string, stdout io.W
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	stderr := &syncWriter{}
+	stderrOutput := io.MultiWriter(stderr, stdout)
 	done := make(chan int, 1)
-	go func() { done <- runContext(ctx, []string{"--config", configPath}, stdout, stderr) }()
+	go func() { done <- runContext(ctx, []string{"--config", configPath}, stdout, stderrOutput) }()
 	stopped := false
 	stop := func() {
 		t.Helper()
@@ -283,18 +287,18 @@ func assertHTTPLoggingTerminal(t *testing.T, captured string, status int, method
 			break
 		}
 		if err != nil {
-			t.Fatalf("decode complete stdout: %v", err)
+			t.Fatalf("decode complete log: %v", err)
 		}
-		if rejected && record["reason"] == "backend_auth_failed" {
-			t.Error("client rejection falsely logged backend_auth_failed")
+		if rejected {
+			if errorInfo, ok := record["error"].(map[string]any); ok && errorInfo["code"] == "backend_auth_failed" {
+				t.Error("client rejection falsely logged backend_auth_failed")
+			}
 		}
 		if record["event"] == "request" {
 			t.Error("legacy generic HTTP request completion remains alongside terminal ownership")
 		}
-		if record["event"] == "catalog_refresh" {
-			if record["operation"] != "discover" || record["reason"] == "unknown" {
-				t.Error("legacy startup catalog diagnostic vocabulary was not preserved")
-			}
+		if record["event"] == "catalog_refresh" && record["operation"] != "discover" {
+			t.Error("catalog refresh operation must remain discover")
 		}
 		if record["event"] == "http_complete" {
 			completions = append(completions, record)
@@ -314,24 +318,42 @@ func assertHTTPLoggingTerminal(t *testing.T, captured string, status int, method
 		severity = "warn"
 	}
 	for key, want := range map[string]any{
-		"service": "mcp-bridge", "environment": "unspecified", "version": "unspecified", "level": severity,
-		"correlation_state": "available", "http_status": float64(status),
+		"schema_version": float64(1), "service": "mcp-bridge", "level": severity,
+		"event": "http_complete", "http_status": float64(status),
 		"http_method": method, "route": route, "http_outcome": outcome,
-		"http_bytes_bucket": bytesBucket, "timing_scope": "http", "stage": stage, "reason": reason,
+		"http_bytes_bucket": bytesBucket, "timing_scope": "http", "stage": stage,
 	} {
 		if got := record[key]; got != want {
 			t.Errorf("http_complete %s = %v; want %v", key, got, want)
 		}
 	}
-	timestamp, timestampOK := record["time"].(string)
-	if _, err := time.Parse(time.RFC3339Nano, timestamp); !timestampOK || err != nil || !strings.HasSuffix(timestamp, "Z") {
-		t.Error("http_complete time must be a UTC RFC3339Nano timestamp")
+	if operation, ok := record["operation"].(string); !ok || operation == "" {
+		t.Errorf("http_complete operation = %v; want non-empty pinned operation", record["operation"])
 	}
 	if message, ok := record["message"].(string); !ok || strings.TrimSpace(message) == "" {
 		t.Error("http_complete must include a nonempty event-specific message")
 	}
 	if duration, ok := record["duration_ms"].(float64); !ok || duration < 0 {
 		t.Error("http_complete duration_ms must be an observed nonnegative number")
+	}
+	for _, removed := range []string{"time", "timestamp", "environment", "version", "subsystem", "reason", "diag_environment", "source_revision"} {
+		if _, present := record[removed]; present {
+			t.Errorf("removed HTTP field %q appeared", removed)
+		}
+	}
+	errorInfo, hasError := record["error"].(map[string]any)
+	wantError := ""
+	if reason == "client_disconnected" || reason == "unknown" {
+		wantError = reason
+	} else if record["correlation_state"] == "unavailable" && outcome == "failure" {
+		wantError = "correlation_unavailable"
+	}
+	if wantError == "" {
+		if hasError {
+			t.Errorf("K3 HTTP failure unexpectedly carries error: %#v", errorInfo)
+		}
+	} else if !hasError || errorInfo["code"] != wantError || len(errorInfo) != 4 {
+		t.Errorf("HTTP error = %#v; want nested code %q", record["error"], wantError)
 	}
 	internalID, ok := record["request_id"].(string)
 	if !ok || !regexp.MustCompile(`^[0-9a-f]{32}$`).MatchString(internalID) || internalID == publicID {
@@ -446,7 +468,7 @@ func testHTTPLoggingSessionCapacity(t *testing.T) {
 		if record["event"] == "request" {
 			t.Error("legacy generic HTTP completion remains in session setup/target/cleanup")
 		}
-		if record["reason"] == "backend_auth_failed" {
+		if errorInfo, ok := record["error"].(map[string]any); ok && errorInfo["code"] == "backend_auth_failed" {
 			t.Error("session-capacity flow falsely logged backend_auth_failed")
 		}
 		if record["event"] == "http_complete" && record["http_status"] == float64(http.StatusServiceUnavailable) {

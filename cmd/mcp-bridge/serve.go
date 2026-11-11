@@ -47,7 +47,7 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	logger := observe.NewLogger(stdout)
+	logger := observe.NewLogger(stdout, stderr)
 	holder := newConfigHolder()
 	load := func() (*config.Config, error) {
 		candidate, err := config.ParseFile(path)
@@ -95,13 +95,13 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 
 	store, err := storage.Open(settings.StorageDirectory)
 	if err != nil {
-		return fmt.Errorf("state directory %q: %w", settings.StorageDirectory, err)
+		return stateDirectoryFailure(settings.StorageDirectory)
 	}
 	defer store.Close()
 
 	jwksCache, err := auth.NewJWKSCache(ctx, authCfg.PocketIDJWKSURL)
 	if err != nil {
-		return fmt.Errorf("jwks cache: %w", err)
+		return jwksCacheFailure()
 	}
 
 	runtime := service.NewRuntime()
@@ -110,7 +110,7 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 
 	model, provider, err := newEmbeddingProvider(candidate, settings.Embedding)
 	if err != nil {
-		return fmt.Errorf("embedding provider: %w", err)
+		return embeddingProviderFailure()
 	}
 	surface, err := service.NewToolSurface(runtime, service.ToolSurfaceConfig{
 		Search:   searchSettings(settings.Search),
@@ -120,17 +120,18 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 		Logger:   logger,
 	})
 	if err != nil {
-		return fmt.Errorf("tool surface: %w", err)
+		return toolSurfaceFailure()
 	}
 	server := service.NewMCPServer()
 	if err := surface.Register(server); err != nil {
-		return fmt.Errorf("tool surface: %w", err)
+		return toolSurfaceFailure()
 	}
-	promptSurface := service.NewPromptSurface(runtime, func(message string) { operatorLog(logger)("%s", message) })
+	operatorLogf := operatorLog(stderr)
+	promptSurface := service.NewPromptSurface(runtime, func(message string) { operatorLogf("prompt publication rejected: %s", message) })
 	promptSurface.SetMetrics(metrics)
 	promptSurface.Register(server)
 
-	registry := newUpstreamRegistry(holder)
+	registry := newUpstreamRegistry(holder, logger)
 	published := publishObserver(holder, checks, readiness, metrics)
 	persist := func(snapshot *storage.Snapshot) error {
 		if err := store.Save(snapshot); err != nil {
@@ -231,20 +232,20 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 		Published: func(assembly *service.Assembly) error {
 			return publishAcceptedAssembly(assembly, promptSurface.Published, surface.Published, published)
 		},
-		Logf: operatorLog(logger),
+		Logf: operatorLogf,
 	})
 	if err != nil {
-		return fmt.Errorf("catalog loop: %w", err)
+		return catalogLoopFailure()
 	}
 
 	inboundListener, err := net.Listen("tcp", settings.HTTPListen)
 	if err != nil {
-		return fmt.Errorf("inbound listener %q: %w", settings.HTTPListen, err)
+		return listenerBindFailure("inbound", settings.HTTPListen)
 	}
 	defer inboundListener.Close()
 	operationsListener, err := net.Listen("tcp", settings.OperationsListen)
 	if err != nil {
-		return fmt.Errorf("operations listener %q: %w", settings.OperationsListen, err)
+		return listenerBindFailure("operations", settings.OperationsListen)
 	}
 	defer operationsListener.Close()
 
@@ -322,7 +323,14 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 		}()
 	}
 	draining.Wait()
-	return failure
+	if failure == nil {
+		return nil
+	}
+	var configFailure *config.Diagnostics
+	if errors.As(failure, &configFailure) {
+		return failure
+	}
+	return startupFailureForError(failure)
 }
 
 // serveListener serves one listener and reports whether it stopped for a reason

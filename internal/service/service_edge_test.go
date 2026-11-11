@@ -104,7 +104,7 @@ func TestInboundTerminalObservesFirstStatusAndImplicitOK(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			captured := &bytes.Buffer{}
 			hash := sha256.Sum256([]byte("token"))
-			h := NewInboundHandler(tc.next, [][32]byte{hash}, InboundOptions{Logger: observe.NewLogger(captured)})
+			h := NewInboundHandler(tc.next, [][32]byte{hash}, InboundOptions{Logger: observe.NewLogger(captured, captured)})
 			r := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"x"}`))
 			r.Header.Set("Authorization", "Bearer token")
 			rec := httptest.NewRecorder()
@@ -715,14 +715,14 @@ func TestSearchToolsRejectsInvalidAndUnpublishedRequests(t *testing.T) {
 }
 func TestInboundUnauthorizedLogClassifiesAuthFailure(t *testing.T) {
 	var logs bytes.Buffer
-	handler := NewInboundHandler(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { t.Fatal("unauthorized request reached handler") }), [][32]byte{sha256.Sum256([]byte("token"))}, InboundOptions{Logger: observe.NewLogger(&logs)})
+	handler := NewInboundHandler(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { t.Fatal("unauthorized request reached handler") }), [][32]byte{sha256.Sum256([]byte("token"))}, InboundOptions{Logger: observe.NewLogger(&logs, &logs)})
 	recorder := httptest.NewRecorder()
 	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, "/mcp", nil))
 	if recorder.Code != http.StatusUnauthorized {
 		t.Fatalf("status = %d", recorder.Code)
 	}
-	if !strings.Contains(logs.String(), "client_auth_failed") {
-		t.Fatalf("unauthorized audit event = %s", logs.String())
+	if !strings.Contains(logs.String(), `"stage":"client_auth"`) {
+		t.Fatalf("unauthorized audit event missing client_auth stage: %s", logs.String())
 	}
 	if strings.Contains(logs.String(), "backend_auth_failed") {
 		t.Fatalf("unauthorized audit event falsely contained backend_auth_failed: %s", logs.String())

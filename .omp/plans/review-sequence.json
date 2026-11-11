@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "candidates": [
+    {
+      "id": "structured-logging-spec-r7",
+      "revision": "r7",
+      "authorIds": [
+        "planner"
+      ],
+      "inputs": [
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+          "sha256": "c8679f00f6e14981030318eb3472fcea171b9fdf1f26bd5f72ad383ee3c4c890"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+          "sha256": "4d101d0c8319a7b1c9cc15754e2b05116d35b0623df0112f9d84f5a344420ecc"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/01-json-error-envelope-and-pin-ceiling-attribution.md",
+          "sha256": "758d2d2d3bab34c3d2c634ae8ac01c336edabd7664e638f761b2b08e61be1f42"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/02-configuration-node-attribution.md",
+          "sha256": "089e758074020247dd87cc90a1f033a8541127f3710eaf6d3701a5a77c69066c"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/03-typed-startup-and-cli-failures.md",
+          "sha256": "04f81b6cff0a02ca3bc5ddcf9c0a0e21c9391c32da7cb1d16e9e283b4f51f640"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/04-unified-log-envelope-migration.md",
+          "sha256": "404e062f2a1e87ca6adfb71d8a5df1ab3b3f81a5b0a9cef285a58899bae9fe2c"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/05-reload-rejection-consistency.md",
+          "sha256": "7f258e7acc932229ebb7a1e03e6f0033e965c610e614d9731e6b98a992314a64"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/06-validation-success-record.md",
+          "sha256": "d2e08474f488b5ffb0f0d7dd9f554387e2baf5664e253879c0fa3d3cf1240335"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/07-contract-docs-and-verification.md",
+          "sha256": "c53c23807efbe80c7eee7ed39cdaa1d434b80bbcf7e69c2c8f4b5bf83b5ea738"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+          "sha256": "d862fe7e0aeb1b7e31af046d8e0f6a5e030e6c78ffef06ca19fbbddbe0b59fd1"
+        }
+      ],
+      "dispatches": [
+        {
+          "name": "ReviewStructuredLoggingSpec",
+          "agent": "code-reviewer",
+          "reviewerId": "code-reviewer",
+          "taskSha256": "aab2847256e4a28c9c78f85d57a27ae51de862c54a3c01147c5877309f2db082",
+          "instructionsSha256": "832a8b60f07aec3d0abf77cd965733f782c2b4f2b1d825bc209c398c041a2c10"
+        }
+      ],
+      "codeReview": null
+    },
+    {
+      "id": "structured-logging-r7-closure1",
+      "revision": "r7-closure1",
+      "authorIds": [
+        "planner"
+      ],
+      "inputs": [
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+          "sha256": "8c27e0c5cf0a00fd8864d1c80f1db83dd3fdebeb63c0ebc4ba28167c3761dee4"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/closure-patch.json",
+          "sha256": "29df682499e2d47d9a7b484f2ff8af71a6b98f57f9f6edc24c1c59d2646a6383"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-r7.md",
+          "sha256": "30cc18fb03499bbc10a9f32d27d7178dd3dd83487234f0ba1f5d6f5aaaa3cd45"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+          "sha256": "24026de7fd199182e4b03960a54f8d109b01b48f7eb13211602c3fe5fd8bc67d"
+        }
+      ],
+      "dispatches": [
+        {
+          "name": "CloseR7Blockers",
+          "agent": "code-reviewer",
+          "reviewerId": "code-reviewer-closure",
+          "taskSha256": "c98a3efd36ab855feaa82a705799d5744eeb4c5533b170a072b12a244f245473",
+          "instructionsSha256": "767d7e192f09b700ab1ad9ad47749b0d9ed49a93fc4689e59e51389e06f5eb6d"
+        },
+        {
+          "name": "CritiqueStructuredLoggingSpec",
+          "agent": "critic",
+          "reviewerId": "critic",
+          "taskSha256": "3611676457fe9702e15f975c56f042eaf7c4d50a32390f512533b1d354b3462b",
+          "instructionsSha256": "de373182eb6c45510b6df73a929633aa304d51aeedf54a6c5e7587d8cca9d78d"
+        }
+      ],
+      "codeReview": null
+    }
+  ]
+}

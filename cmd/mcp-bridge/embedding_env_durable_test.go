@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
@@ -46,7 +47,7 @@ func TestEmbeddingEnvDurableIdentity(t *testing.T) {
 				}
 				holder := newConfigHolder()
 				holder.stage(c, settings)
-				registry := newUpstreamRegistry(holder)
+				registry := newUpstreamRegistry(holder, observe.NewLogger(nil, nil))
 				return service.ReloadDeps{Discover: registry.discover, NewClient: registry.newClient, Close: registry.close, Now: time.Now, ModelIdentityDigest: model.Digest(), Embed: embedder(p, model, settings.Embedding), Persist: func(*storage.Snapshot) error { return nil }}
 			}
 			old := load(literal)

@@ -50,13 +50,33 @@ func TestPinCountBounds(t *testing.T) {
 			t.Fatalf("expected 64 parsed pins, got %d", len(cfg.Pins))
 		}
 	})
-	t.Run("65 pins fail closed with pin_ceiling", func(t *testing.T) {
+	t.Run("65 pins attribute the first excess entry", func(t *testing.T) {
 		_, err := parsePinsDocument(t, "pins:\n"+pinLines(65))
 		diags := requireDiagnostics(t, err)
-		requireRendered(t, err,
-			`key="pins"`, "code=pin_ceiling", "property=pins", "at most 64")
 		if len(diags.Records) != 1 {
 			t.Fatalf("expected exactly one pin_ceiling record, got %+v", diags)
+		}
+		record := diags.Records[0]
+		if record.Code != "pin_ceiling" || record.Key != "pins[64]" {
+			t.Fatalf("diagnostic identity = %s at %q, want pin_ceiling at pins[64]", record.Code, record.Key)
+		}
+		line := strings.Count(strings.SplitN(pinsValid, "pins:\n", 2)[0], "\n") + 66
+		if record.Line != line || record.Column != 5 {
+			t.Fatalf("position = %d:%d, want %d:5", record.Line, record.Column, line)
+		}
+		if record.ActualCount != 65 || record.MaxCount != 64 || record.FirstExcessIndex != 64 {
+			t.Fatalf("ceiling counts = %d/%d/%d, want 65/64/64", record.ActualCount, record.MaxCount, record.FirstExcessIndex)
+		}
+		if record.PinServer != "alpha" || record.PinTool != "t64" {
+			t.Fatalf("excess pin identity = %q/%q, want alpha/t64", record.PinServer, record.PinTool)
+		}
+	})
+	t.Run("earlier malformed pin wins over ceiling", func(t *testing.T) {
+		pins := strings.Replace(pinLines(65), "  - {server: alpha, tool: t00}\n", "  - {server: alpha}\n", 1)
+		_, err := parsePinsDocument(t, "pins:\n"+pins)
+		diags := requireDiagnostics(t, err)
+		if len(diags.Records) != 1 || diags.Records[0].Code != "pin_fields" || diags.Records[0].Key != "pins[0]" {
+			t.Fatalf("first error = %+v, want one pin_fields diagnostic at pins[0]", diags.Records)
 		}
 	})
 }

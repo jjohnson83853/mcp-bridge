@@ -82,17 +82,18 @@ func TestEmbeddingEnvReloadBaseline(t *testing.T) {
 				if err := os.WriteFile(path, []byte(document), 0600); err != nil {
 					t.Fatal(err)
 				}
-				offset := len(out.String())
+				offset := len(stderr.String())
 				sendReload(t)
-				waitFor(t, "rejected reload emission", func() bool { return strings.Contains(out.String()[offset:], "reload") })
-				code, shape, location := "reference_unresolved", mode, "embedding."+field
+				waitFor(t, "rejected reload emission", func() bool { return strings.Contains(stderr.String()[offset:], `"event":"config_reload_rejected"`) })
+				shape, propertyPath := mode, "embedding."+field
+				errorCode := "reference_unresolved"
 				if mode == "changed" {
-					code = "restart_required"
-					shape = "immutable"
-					location = "embedding"
+					shape, propertyPath = "immutable", "embedding"
+					errorCode = "restart_required"
 				}
 				found := false
-				for _, line := range strings.Split(strings.TrimSpace(out.String()[offset:]), "\n") {
+				rejectionCount := 0
+				for _, line := range strings.Split(strings.TrimSpace(stderr.String()[offset:]), "\n") {
 					if line == "" {
 						continue
 					}
@@ -100,15 +101,33 @@ func TestEmbeddingEnvReloadBaseline(t *testing.T) {
 					if err := json.Unmarshal([]byte(line), &event); err != nil {
 						t.Fatalf("invalid structured sink record: %v", err)
 					}
-					if event["event"] == "reload" && (event["level"] != "warn" || event["outcome"] != "failure") {
-						t.Error("reload failure envelope changed")
+					if event["event"] == "config_reload_rejected" {
+						rejectionCount++
+						if event["level"] != "warn" || event["operation"] != "reload" || event["outcome"] != "failure" ||
+							event["schema_version"] != float64(1) || event["service"] != "mcp-bridge" {
+							t.Errorf("reload envelope changed: %#v", event)
+						}
+						if message, ok := event["message"].(string); !ok || message == "" {
+							t.Errorf("reload message = %v; want non-empty", event["message"])
+						}
+						errorInfo, errorOK := event["error"].(map[string]any)
+						configInfo, configOK := event["config"].(map[string]any)
+						if !errorOK || len(errorInfo) != 4 {
+							t.Errorf("reload error shape = %#v; want AD8 error object", event["error"])
+						}
+						for _, field := range []string{"code", "kind", "retryable", "remediation"} {
+							if _, ok := errorInfo[field]; !ok {
+								t.Errorf("reload error missing %q: %#v", field, errorInfo)
+							}
+						}
+						if errorOK && configOK && errorInfo["code"] == errorCode && configInfo["shape"] == shape &&
+							configInfo["property_path"] == propertyPath && configInfo["path"] == path {
+							found = true
+						}
 					}
-					if event["code"] == code && event["shape"] == shape && event["location"] == location && event["config_path"] == path {
-						found = true
-					}
-					if stamp, ok := event["time"].(string); ok {
-						if _, err := time.Parse(time.RFC3339Nano, stamp); err != nil {
-							t.Error("invalid timestamp")
+					for _, removed := range []string{"time", "timestamp", "environment", "version", "reason", "config_path", "location", "code", "shape"} {
+						if _, present := event[removed]; present {
+							t.Errorf("flat legacy field %q appeared: %#v", removed, event)
 						}
 					}
 					for _, sentinel := range []string{"ROTATED-MODEL-SENTINEL", "rotated-sentinel.invalid", "{env: EMBEDDING_RELOAD_VALUE}"} {
@@ -117,8 +136,11 @@ func TestEmbeddingEnvReloadBaseline(t *testing.T) {
 						}
 					}
 				}
+				if rejectionCount != 1 {
+					t.Errorf("got %d config_reload_rejected records; want exactly one", rejectionCount)
+				}
 				if !found {
-					t.Errorf("want attributed code=%s shape=%s; sink=%s", code, shape, out.String()[offset:])
+					t.Errorf("want nested %s shape=%s property_path=%s; sink=%s", errorCode, shape, propertyPath, stderr.String()[offset:])
 				}
 				status, _, ok := probeBody(t, "http://"+ops+"/readyz")
 				if !ok || status != 200 {

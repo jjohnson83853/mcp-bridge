@@ -1,13 +1,17 @@
 package upstream
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 )
 
 func TestFailureOutcomeClassifiesExecutionErrors(t *testing.T) {
@@ -53,7 +57,9 @@ func TestDedicatedAccessorsAndDiscoveryProtocolFailures(t *testing.T) {
 				_, _ = w.Write([]byte(tc.body))
 			}))
 			defer peer.Close()
-			d, err := NewDedicated(DedicatedOptions{Server: ServerOptions{ID: "catalog", Endpoint: peer.URL}})
+			options := ServerOptions{ID: "catalog", Endpoint: peer.URL}
+			assertDedicatedRequiresLogger(t, options)
+			d, err := NewDedicated(DedicatedOptions{Logger: observe.NewLogger(nil, nil), Server: options})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -70,7 +76,9 @@ func TestDedicatedAccessorsAndDiscoveryProtocolFailures(t *testing.T) {
 }
 
 func TestDedicatedRejectsMismatchedIdentityBeforeConnect(t *testing.T) {
-	d, err := NewDedicated(DedicatedOptions{Server: ServerOptions{ID: "actual", Endpoint: "http://127.0.0.1:1"}})
+	options := ServerOptions{ID: "actual", Endpoint: "http://127.0.0.1:1"}
+	assertDedicatedRequiresLogger(t, options)
+	d, err := NewDedicated(DedicatedOptions{Logger: observe.NewLogger(nil, nil), Server: options})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,5 +86,56 @@ func TestDedicatedRejectsMismatchedIdentityBeforeConnect(t *testing.T) {
 	result, outcome := d.CallTool(context.Background(), "", "other", "tool", nil)
 	if result != nil || outcome == nil || outcome.Failure == nil || outcome.Failure.Code != "unknown_tool" || outcome.Failure.ExecutionState != core.ExecutionNotStarted {
 		t.Fatalf("CallTool() = (%s, %+v)", result, outcome)
+	}
+}
+func assertDedicatedRequiresLogger(t *testing.T, options ServerOptions) {
+	t.Helper()
+	dedicated, err := NewDedicated(DedicatedOptions{Server: options})
+	if err == nil || dedicated != nil {
+		t.Fatalf("NewDedicated without logger = (%v, %v); want nil and an error", dedicated, err)
+	}
+}
+func TestDedicatedHandshakeOmitsHostileProtocolVersion(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	dedicated, err := NewDedicated(DedicatedOptions{
+		Logger: observe.NewLogger(&stdout, &stderr),
+		Server: ServerOptions{ID: "alpha", Endpoint: "http://127.0.0.1:1"},
+	})
+	if err != nil {
+		t.Fatalf("NewDedicated: %v", err)
+	}
+	defer dedicated.Close()
+	dedicated.logEphemeralHandshake(time.Now().Add(-time.Second), "9.9.9-evil")
+
+	if stderr.Len() != 0 || bytes.Count(stdout.Bytes(), []byte{'\n'}) != 1 {
+		t.Fatalf("handshake streams stdout=%q stderr=%q", stdout.String(), stderr.String())
+	}
+	var record map[string]json.RawMessage
+	if err := json.Unmarshal(stdout.Bytes(), &record); err != nil {
+		t.Fatalf("decode handshake envelope: %v: %q", err, stdout.String())
+	}
+	wantKeys := map[string]struct{}{
+		"schema_version": {}, "level": {}, "service": {}, "event": {}, "message": {},
+		"operation": {}, "outcome": {}, "backend_id": {}, "duration_ms": {},
+	}
+	if len(record) != len(wantKeys) {
+		t.Fatalf("handshake keys=%v; want exactly %v", record, wantKeys)
+	}
+	for key := range record {
+		if _, ok := wantKeys[key]; !ok {
+			t.Errorf("unexpected handshake field %q", key)
+		}
+	}
+	for key, want := range map[string]string{
+		"schema_version": "1", "level": `"info"`, "service": `"mcp-bridge"`,
+		"event": `"upstream_ephemeral_handshake"`, "message": `"upstream protocol handshake observed"`,
+		"operation": `"handshake"`, "outcome": `"success"`, "backend_id": `"alpha"`,
+	} {
+		if string(record[key]) != want {
+			t.Errorf("handshake %s = %s; want %s", key, record[key], want)
+		}
+	}
+	if _, present := record["protocol_version"]; present || bytes.Contains(stdout.Bytes(), []byte("9.9.9-evil")) {
+		t.Errorf("hostile protocol_version was emitted: %s", stdout.String())
 	}
 }

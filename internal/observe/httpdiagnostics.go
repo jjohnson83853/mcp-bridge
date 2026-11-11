@@ -417,7 +417,6 @@ func ContributeLegacyEvidence(ctx context.Context, evidence HTTPLegacyEvidence) 
 // legacyEntry is the internal legacy core of a completion record before it
 // joins the typed snapshot.
 type legacyEntry struct {
-	Time      time.Time
 	Level     string
 	RequestID string
 	Operation string
@@ -426,17 +425,27 @@ type legacyEntry struct {
 	Reason    string
 }
 
-// observeEntry joins the legacy core and the typed snapshot into one record.
+// observeEntry joins the legacy classification input and typed snapshot into
+// the fixed HTTP lane's canonical envelope.
 func observeEntry(entry legacyEntry, diagnostic *HTTPDiagnostic) Entry {
+	var errorInfo *ErrorInfo
+	if diagnostic != nil {
+		if diagnostic.CorrelationState == CorrelationUnavailable {
+			if entry.Outcome == "failure" {
+				errorInfo = RuntimeErrorInfo("correlation_unavailable")
+			}
+		} else if class := deliveryErrorClass(entry.Reason); class != "" {
+			errorInfo = RuntimeErrorInfo(class)
+		}
+	}
 	return Entry{
-		Time:      entry.Time,
 		Level:     entry.Level,
 		Event:     "http_complete",
 		RequestID: entry.RequestID,
 		Operation: entry.Operation,
 		Duration:  entry.Duration,
 		Outcome:   entry.Outcome,
-		Reason:    entry.Reason,
+		Error:     errorInfo,
 		HTTP:      diagnostic,
 	}
 }
@@ -759,8 +768,7 @@ func (o *httpOwner) buildSnapshot() (legacyEntry, *HTTPDiagnostic) {
 		StatusState:                  statusState,
 		CorrelationState:             orDefault(o.correlationState, CorrelationUnavailable),
 		DiagSchema:                   "oauth_diag_v1",
-		DiagEnvironment:              o.diagnostics.provenance.Environment,
-		SourceRevision:               o.diagnostics.provenance.SourceRevision,
+
 		BuildState:                   o.diagnostics.provenance.BuildState,
 		ProcessState:                 o.diagnostics.process.State,
 		ProcessID:                    o.diagnostics.process.ID,
@@ -806,7 +814,6 @@ func (o *httpOwner) buildSnapshot() (legacyEntry, *HTTPDiagnostic) {
 	}
 
 	entry := legacyEntry{
-		Time:      now,
 		Level:     level,
 		RequestID: o.requestID,
 		Operation: operation,

@@ -1,0 +1,75 @@
+{
+  "task_id": "T7",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_T7.json",
+  "telemetry_ref": null,
+  "summary": "Added the structured logging contract, replaced stale README logging documentation, added the changelog entry and AC07 tests; full tests, vet, and changed-file formatting passed.",
+  "error_code": null,
+  "evidence": [
+    {
+      "command": "go test ./cmd/mcp-bridge -run TestLoggingContract",
+      "exitCode": 1,
+      "note": "Expected RED: the initial documentation assertions found the contract, README section, and changelog entry missing."
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge -run TestLoggingContract",
+      "exitCode": 0,
+      "note": "GREEN: documentation, JSON-lines, stream routing, field-union, classification, producer-operation, and 65-pin assertions passed."
+    },
+    {
+      "command": "go test ./...",
+      "exitCode": 0
+    },
+    {
+      "command": "go vet ./...",
+      "exitCode": 0
+    },
+    {
+      "command": "gofmt -l cmd/mcp-bridge/logging_contract_test.go",
+      "exitCode": 0,
+      "note": "No output; changed Go test file is formatted."
+    }
+  ],
+  "grep_checklist": [
+    {
+      "file": "README.md",
+      "patterns": [
+        "UTC RFC3339Nano",
+        "environment.*unspecified",
+        "version.*unspecified",
+        "typed manifest",
+        "18-field diagnostic logger manifest",
+        "mcp-bridge: configuration:",
+        "source_revision",
+        "diag_environment",
+        "error.class",
+        "configuration valid: <summary>",
+        "event: reload",
+        "diagnostic_index",
+        "related_location"
+      ],
+      "result": "No matches from the bounded stale-logging search."
+    },
+    {
+      "file": "docs/logging-contract.md",
+      "patterns": [
+        "\"time\"",
+        "error.class",
+        "config_path",
+        "related_location",
+        "diagnostic_index",
+        "diag_environment",
+        "source_revision",
+        "mcp-bridge: configuration:",
+        "configuration valid: <summary>",
+        "typed manifest",
+        "18-field diagnostic logger manifest"
+      ],
+      "result": "No matches; collector-owned timestamp, environment, and version are separately documented as not emitted application fields."
+    },
+    {
+      "scope": "T7 changes",
+      "result": "Documentation and tests only; no panic recovery, raw-cause diagnostic mode, or Compose workaround was added."
+    }
+  ]
+}

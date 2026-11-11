@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "structured-logging",
+  "revision": "r7-closure1",
+  "requests": [
+    {
+      "name": "ImplementT5",
+      "taskId": "T5",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/wiring.go",
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/manifest_test.go",
+          "cmd/mcp-bridge/serve_edge_test.go",
+          "cmd/mcp-bridge/reload_envelope_test.go",
+          ".omp/artifacts/receipt_T5.json"
+        ]
+      }
+    }
+  ]
+}

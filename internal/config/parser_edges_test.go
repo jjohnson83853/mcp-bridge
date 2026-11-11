@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -20,6 +21,13 @@ func requireDiagnostics(t *testing.T, err error) *Diagnostics {
 	}
 	if len(diags.Records) == 0 {
 		t.Fatalf("expected at least one record, got %+v", diags)
+	}
+	codes := DiagnosticCodes()
+	for _, record := range diags.Records {
+		index := sort.SearchStrings(codes, record.Code)
+		if index == len(codes) || codes[index] != record.Code {
+			t.Errorf("produced diagnostic code %q is absent from DiagnosticCodes()", record.Code)
+		}
 	}
 	return diags
 }
@@ -99,11 +107,43 @@ func TestParseRejectsMalformedDocuments(t *testing.T) {
 			fragments: []string{`config="config.yaml"`, `key="http.allowed_hosts[0]"`, "code=yaml_type", "property=type", "shape=integer", "entries must be strings"},
 			forbidden: []string{"42"},
 		},
+		{
+			name: "duplicate key", data: []byte(strings.Replace(boundsEdgeBase, "schema_version: 1", "schema_version: 1\nschema_version: 1", 1)),
+			fragments: []string{`config="config.yaml"`, `key="schema_version"`, `related_key="schema_version"`, "code=yaml_key_duplicate", "duplicate key"},
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := Parse(tc.data, "config.yaml")
 			diags := requireDiagnostics(t, err)
+			record := diags.Records[0]
+			switch tc.name {
+			case "oversized":
+				assertNoDiagnosticNodePosition(t, record)
+			case "scalar root", "sequence root":
+				assertConfigNodePosition(t, record, 1, 1)
+			case "second document":
+				if record.Line == 0 || record.Column == 0 {
+					t.Fatalf("second-document root position = %d:%d, want a source node", record.Line, record.Column)
+				}
+			case "nested unknown key":
+				source := string(tc.data)
+				index := strings.Index(source, "not_a_setting:")
+				line := strings.Count(source[:index], "\n") + 1
+				lineStart := strings.LastIndex(source[:index], "\n") + 1
+				assertConfigNodePosition(t, record, line, index-lineStart+1)
+			case "duplicate key":
+				assertConfigNodePosition(t, record, 2, 1)
+				if record.RelatedLine != 1 || record.RelatedColumn != 1 {
+					t.Fatalf("duplicate related position = %d:%d, want 1:1", record.RelatedLine, record.RelatedColumn)
+				}
+			case "malformed yaml":
+				if record.Line == 0 {
+					t.Fatal("parser position is available")
+				}
+			default:
+				assertDiagnosticAtYAMLPath(t, tc.data, record, record.Key)
+			}
 			requireRendered(t, err, tc.fragments...)
 			forbidRendered(t, err, tc.forbidden...)
 			if diags.RemainingStages != stageNotChecked {

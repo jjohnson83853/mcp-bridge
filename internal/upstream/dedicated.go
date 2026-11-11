@@ -6,21 +6,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"sort"
 	"sync"
 	"time"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
+	"github.com/jjohnson83853/mcp-bridge/internal/service"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// DedicatedOptions is the full identity of one dedicated per-server runtime.
 type DedicatedOptions struct {
 	Server    ServerOptions
 	Stateless bool
-	LogWriter io.Writer
+	Logger    *observe.Logger
 }
 
 // Dedicated owns exactly one upstream client and session for one configured
@@ -32,9 +31,9 @@ type DedicatedOptions struct {
 type Dedicated struct {
 	client    *ServerClient
 	stateless bool
+	logger    *observe.Logger
 
 	requiresHandshake bool
-	logWriter         io.Writer
 
 	mu      sync.Mutex
 	session *mcp.ClientSession
@@ -43,15 +42,41 @@ type Dedicated struct {
 
 // NewDedicated validates the server identity and builds the dedicated runtime.
 func NewDedicated(opts DedicatedOptions) (*Dedicated, error) {
+	if opts.Logger == nil {
+		return nil, errors.New("upstream: logger is required")
+	}
 	client, err := NewServerClient(opts.Server)
 	if err != nil {
 		return nil, err
 	}
-	writer := opts.LogWriter
-	if writer == nil {
-		writer = os.Stdout
+	return &Dedicated{client: client, stateless: opts.Stateless, logger: opts.Logger}, nil
+}
+
+func validProtocolVersion(version string) bool {
+	if version == "2026-07-28" {
+		return true
 	}
-	return &Dedicated{client: client, stateless: opts.Stateless, logWriter: writer}, nil
+	for _, advertised := range service.AdvertisedProtocolVersions() {
+		if version == advertised {
+			return true
+		}
+	}
+	return false
+}
+
+func (d *Dedicated) logEphemeralHandshake(start time.Time, protocolVersion string) {
+	fields := map[string]any{"backend_id": d.client.ID}
+	if validProtocolVersion(protocolVersion) {
+		fields["protocol_version"] = protocolVersion
+	}
+	d.logger.Log(observe.Entry{
+		Level:     "info",
+		Event:     "upstream_ephemeral_handshake",
+		Operation: "handshake",
+		Duration:  time.Since(start),
+		Outcome:   "success",
+		Fields:    fields,
+	})
 }
 
 // RequiresHandshake reports whether discovery identified an upstream that
@@ -240,18 +265,11 @@ func (d *Dedicated) CallTool(ctx context.Context, pub, serverID, rawName string,
 		d.mu.Unlock()
 
 		if reqHandshake {
-			protoVer := ""
-			if res := session.InitializeResult(); res != nil {
-				protoVer = res.ProtocolVersion
+			protocolVersion := ""
+			if result := session.InitializeResult(); result != nil {
+				protocolVersion = result.ProtocolVersion
 			}
-			logEntry := map[string]any{
-				"level":            "info",
-				"event":            "upstream_ephemeral_handshake",
-				"backend_id":       d.client.ID,
-				"duration_ms":      time.Since(start).Milliseconds(),
-				"protocol_version": protoVer,
-			}
-			_ = json.NewEncoder(d.logWriter).Encode(logEntry)
+			d.logEphemeralHandshake(start, protocolVersion)
 		}
 	} else {
 		session, err = d.sessionFor(ctx)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -129,13 +130,14 @@ func restartOnlyField(published, candidate config.Command) string {
 // generation, keyed by configured server identity (plan §4.3, §4.10).
 type upstreamRegistry struct {
 	holder *configHolder
+	logger *observe.Logger
 
 	mu      sync.Mutex
 	clients map[string]*upstream.Dedicated
 }
 
-func newUpstreamRegistry(holder *configHolder) *upstreamRegistry {
-	return &upstreamRegistry{holder: holder, clients: make(map[string]*upstream.Dedicated)}
+func newUpstreamRegistry(holder *configHolder, logger *observe.Logger) *upstreamRegistry {
+	return &upstreamRegistry{holder: holder, logger: logger, clients: make(map[string]*upstream.Dedicated)}
 }
 
 // newClient builds one dedicated runtime from the candidate's credentials and
@@ -172,7 +174,9 @@ func (r *upstreamRegistry) newClient(server config.Server) (core.Upstream, error
 	if limits.CallTimeout != nil {
 		options.CallTimeout = *limits.CallTimeout
 	}
-	client, err := upstream.NewDedicated(upstream.DedicatedOptions{Server: options, Stateless: server.ServerStateless()})
+	client, err := upstream.NewDedicated(upstream.DedicatedOptions{
+		Server: options, Stateless: server.ServerStateless(), Logger: r.logger,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -405,121 +409,83 @@ func publishObserver(holder *configHolder, checks *localChecks, state *service.R
 	}
 }
 
-// operatorLog renders one operator-facing loop line. The log surface is typed
-// and finite (plan §4.11), so a rejected candidate is reported by its class: a
-// configuration error can quote the document it rejected.
-func operatorLog(logger *observe.Logger) func(string, ...any) {
-	return func(_ string, args ...any) {
+// operatorLog renders one operator-facing lifecycle result as a single envelope.
+func operatorLog(output io.Writer) func(string, ...any) {
+	var mu sync.Mutex
+	return func(format string, args ...any) {
 		var diagnostics *config.Diagnostics
 		publicationFailed := false
 		for _, arg := range args {
-			if err, ok := arg.(error); ok {
-				if errors.As(err, &diagnostics) {
-					break
-				}
-				if errors.Is(err, service.ErrPublicationFailed) {
-					publicationFailed = true
-				}
+			err, ok := arg.(error)
+			if !ok {
+				continue
+			}
+			if errors.As(err, &diagnostics) {
+				break
+			}
+			if errors.Is(err, service.ErrPublicationFailed) {
+				publicationFailed = true
 			}
 		}
-		if diagnostics != nil {
-			for i, record := range diagnostics.Records {
-				logger.Log(observe.Entry{
-					Level:   "warn",
-					Event:   "reload",
-					Outcome: "failure",
-					Reason:  "invalid_config",
-					Server:  recordOwnerLabel(record.Server),
-					Fields:  diagnosticFields(record, i, diagnostics),
-				})
+
+		var envelope observe.Envelope
+		switch {
+		case diagnostics != nil:
+			envelope = configValidationFailureEnvelope(diagnostics)
+			envelope.Level = "warn"
+			envelope.Event = "config_reload_rejected"
+			envelope.Operation = "reload"
+			envelope.Outcome = "failure"
+		case publicationFailed:
+			envelope = internalOperatorEnvelope(
+				"reload_publication_failed",
+				"configuration reload publication failed",
+				"publish",
+				"failure",
+			)
+		case format == "startup_snapshot_rejected: %v":
+			envelope = observe.NewEnvelope("warn", "startup_snapshot_rejected", "startup snapshot unavailable", "startup", "degraded")
+			envelope.Error = &observe.ErrorInfo{
+				Code:        "snapshot_unavailable",
+				Kind:        "resource",
+				Retryable:   true,
+				Remediation: "verify the durable snapshot and storage permissions, then retry",
 			}
-			if diagnostics.Incomplete {
-				logger.Log(observe.Entry{
-					Level:   "warn",
-					Event:   "reload",
-					Outcome: "failure",
-					Reason:  "invalid_config",
-					Server:  bridgeServerLabel,
-					Fields: map[string]any{
-						"diagnostics_incomplete": true,
-					},
-				})
-			}
-			return
+		case format == "prompt publication rejected: %s":
+			envelope = internalOperatorEnvelope(
+				"prompt_publication_failed",
+				"prompt publication failed",
+				"publish",
+				"failure",
+			)
+		case format == "configuration reload rejected: %v":
+			envelope = internalOperatorEnvelope(
+				"reload_rejected",
+				"configuration reload rejected",
+				"reload",
+				"failure",
+			)
+		default:
+			envelope = internalOperatorEnvelope(
+				"internal_warning",
+				"bridge encountered an internal warning",
+				"reload",
+				"failure",
+			)
 		}
-		entry := observe.Entry{
-			Level:   "warn",
-			Event:   "reload",
-			Outcome: "failure",
-			Reason:  "invalid_config",
-			Server:  bridgeServerLabel,
-		}
-		if publicationFailed {
-			entry.Reason = "internal_error"
-		}
-		logger.Log(entry)
+
+		mu.Lock()
+		defer mu.Unlock()
+		observe.WriteJSONLine(output, envelope)
 	}
 }
 
-// diagnosticFields projects one typed diagnostics record onto the operator
-// logger's exact 18-field manifest (spec HMB-CD-v1 §4.5 item 4). It never
-// carries a secret value, a preview, a hash, a fingerprint, an exact length,
-// an offset, or any raw YAML/URL/OS text: every key mirrors the package's
-// metadata-only contract, and no unclassified error argument is ever logged.
-func diagnosticFields(record config.Diagnostic, index int, diagnostics *config.Diagnostics) map[string]any {
-	fields := make(map[string]any, 18)
-	fields["config_path"] = record.Path
-	fields["location"] = record.Key
-	if record.Line != 0 {
-		fields["line"] = record.Line
-		fields["column"] = record.Column
-	}
-	if record.PinServer != "" {
-		fields["pin_server"] = record.PinServer
-	}
-	if record.PinTool != "" {
-		fields["pin_tool"] = record.PinTool
-	}
-	if record.RefKind != "" {
-		fields["ref_kind"] = record.RefKind
-	}
-	if record.RefName != "" {
-		fields["ref_name"] = record.RefName
-	}
-	if record.RelatedKey != "" {
-		fields["related_location"] = record.RelatedKey
-	}
-	if record.RelatedRefKind != "" {
-		fields["related_ref_kind"] = record.RelatedRefKind
-	}
-	if record.RelatedRefName != "" {
-		fields["related_ref_name"] = record.RelatedRefName
-	}
-	fields["code"] = record.Code
-	fields["property"] = record.Property
-	fields["shape"] = record.Shape
-	fields["diagnostic_index"] = index
-	if diagnostics != nil && diagnostics.Incomplete {
-		fields["diagnostics_incomplete"] = true
-	}
-	fields["remaining_stages"] = diagnostics.RemainingStages
-	return fields
+func internalOperatorEnvelope(event, message, operation, outcome string) observe.Envelope {
+	envelope := observe.NewEnvelope("warn", event, message, operation, outcome)
+	envelope.Error = observe.RuntimeErrorInfo("internal_error")
+	return envelope
 }
 
-// bridgeServerLabel is the aggregate label of work the bridge does for itself
-// rather than for one configured server.
-const bridgeServerLabel = "_bridge"
-
-// recordOwnerLabel maps a diagnostic record's owning server id onto the
-// operator log's top-level `server` field (spec §4.5 item 4): the record's
-// validated owner when it passes the existing safe-server rules, and the
-// bridge's own aggregate label otherwise. Ownerless records keep _bridge.
-func recordOwnerLabel(server string) string {
-	if server == "" || !isSafeServerID(server) {
-		return bridgeServerLabel
-	}
-	return server
-}
 
 // isSafeServerID mirrors the observe logger's safe-server rule: the finite
 // vocabulary of configured server ids (lowercase lead, lowercase/digits/dashes).

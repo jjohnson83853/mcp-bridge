@@ -55,12 +55,12 @@ type sessionDiagFixture struct {
 func newSessionDiagFixture(t *testing.T, inner http.Handler, tokens []string, newRef func() (string, error), tune func(*InboundOptions)) *sessionDiagFixture {
 	t.Helper()
 	sink := &bytes.Buffer{}
-	diag := observe.NewHTTPDiagnostics(observe.NewLogger(sink), observe.HTTPDiagnosticsOptions{
+	diag := observe.NewHTTPDiagnostics(observe.NewLogger(sink, sink), observe.HTTPDiagnosticsOptions{
 		Now:   func() time.Time { return time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC) },
 		NewID: func() string { return "0123456789abcdef0123456789abcdef" },
 	})
 	options := InboundOptions{
-		Logger:        observe.NewLogger(sink),
+		Logger:        observe.NewLogger(sink, sink),
 		Diagnostics:   diag,
 		NewSessionRef: newRef,
 	}
@@ -637,12 +637,12 @@ func TestComposedOAuthSyntheticABSessionDiagnostics(t *testing.T) {
 
 	newRef, _ := seqSessionRefs()
 	sink := &bytes.Buffer{}
-	diag := observe.NewHTTPDiagnostics(observe.NewLogger(sink), observe.HTTPDiagnosticsOptions{
+	diag := observe.NewHTTPDiagnostics(observe.NewLogger(sink, sink), observe.HTTPDiagnosticsOptions{
 		Now:   func() time.Time { return base },
 		NewID: func() string { return "0123456789abcdef0123456789abcdef" },
 	})
 	inbound := NewInboundHandler(NewStreamableHandler(NewMCPServer()), nil, InboundOptions{
-		Logger:        observe.NewLogger(sink),
+		Logger:        observe.NewLogger(sink, sink),
 		Diagnostics:   diag,
 		NewSessionRef: newRef,
 	})

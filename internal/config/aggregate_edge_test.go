@@ -162,6 +162,9 @@ func TestDisjointnessViolationNamesBothReferences(t *testing.T) {
 				"client tokens and backend credentials must be disjoint",
 			)
 			forbidRendered(t, err, "shared-canary", "sha256")
+			record := diags.Records[0]
+			assertDiagnosticAtYAMLPath(t, []byte(input), record, record.Key)
+			assertRelatedDiagnosticAtYAMLPath(t, []byte(input), record, tc.relatedKey)
 			if diags.RemainingStages != "" {
 				t.Fatalf("overlap is the final stage; no later stage to name, got %q", diags.RemainingStages)
 			}

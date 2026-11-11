@@ -1,0 +1,17 @@
+{
+  "context": "Two independent read-only checks. Pith active: final ≤3072 UTF-8 bytes, follow-up ≤1024. No edits/tests/builds/nested dispatch. ≤8 targeted reads/searches, then verdict with exact evidence gaps. Do not restart full specification review or promote advisory severity merely because unresolved.",
+  "tasks": [
+    {
+      "name": "CloseR7Blockers",
+      "agent": "code-reviewer",
+      "task": "Bounded B1–B6 closure only: .scratch/structured-logging/review-code-reviewer-r7.md → repaired spec.md (revision r7-closure1), closure-patch.json, and .omp/plans/execution-state.json. B1 complete AD1–AD12; B2 exact dotted vocabulary incl object names/counts; B3 nested T4 mapping not NO shape change; B4 three CLI test paths; B5 AC04-8 owners T4/T5/T6/T7+each acceptanceIds; B6 weight/server URL node source. Check only affected sections and bindings; prior A1–A12 stay advisory unless concrete safety consequence. Reply one line per B, evidence anchors, then exactly one terminal heading ### Verdict followed by PASS or REVISE. ≤3072 bytes. No broad source re-derivation.",
+      "solutionSpace": "Six named blockers only; evaluate repairs without restarting full review."
+    },
+    {
+      "name": "ReviewPithPolicyDesign",
+      "agent": "typescript-reviewer",
+      "task": "Design review before owner-authorized workflow maintenance. Read /home/opencode/.omp/agent/workflow-policy/pith-implementation-plan.md and prompt-scope.ts:63-117,190-196; relevant omp://extensions.md hooks. Reject wrong message shape: native toolResult is role, toolCall is assistant block; context rewrite must preserve role/id/nontext/verdicts, async-result and targeted agent read paths. Assess raw fail-open overflow undermining boundedness, artifact source trust, child schema/handoff separation, fresh-process probe. Return smallest concrete fixes+PASS/REVISE, no scope growth. Final ≤3072 bytes. No writes.",
+      "solutionSpace": "Bounded policy-hook design; identify concrete runtime and safety defects."
+    }
+  ]
+}

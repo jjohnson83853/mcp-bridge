@@ -12,6 +12,7 @@ import (
 	mcp "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/upstream"
 )
 
@@ -53,12 +54,15 @@ func TestDiscoverToolMetadata(t *testing.T) {
 	))
 	t.Cleanup(httpServer.Close)
 
-	dedicated, err := upstream.NewDedicated(upstream.DedicatedOptions{Server: upstream.ServerOptions{
-		ID:             "alpha",
-		Endpoint:       httpServer.URL,
-		CallTimeout:    5 * time.Second,
-		ConnectTimeout: 5 * time.Second,
-	}})
+	dedicated, err := upstream.NewDedicated(upstream.DedicatedOptions{
+		Logger: observe.NewLogger(nil, nil),
+		Server: upstream.ServerOptions{
+			ID:             "alpha",
+			Endpoint:       httpServer.URL,
+			CallTimeout:    5 * time.Second,
+			ConnectTimeout: 5 * time.Second,
+		},
+	})
 	if err != nil {
 		t.Fatalf("NewDedicated: %v", err)
 	}
@@ -134,5 +138,13 @@ func TestDiscoverToolMetadata(t *testing.T) {
 	}
 	if !reflect.DeepEqual(plain.Metadata, core.ToolMetadata{}) {
 		t.Fatalf("metadata-absent tool discovered with metadata %+v; want zero value", plain.Metadata)
+	}
+}
+func TestDiscoverToolMetadataRequiresLogger(t *testing.T) {
+	dedicated, err := upstream.NewDedicated(upstream.DedicatedOptions{
+		Server: upstream.ServerOptions{ID: "alpha", Endpoint: "http://127.0.0.1:1"},
+	})
+	if err == nil || dedicated != nil {
+		t.Fatalf("NewDedicated without logger = (%v, %v); want nil and an error", dedicated, err)
 	}
 }

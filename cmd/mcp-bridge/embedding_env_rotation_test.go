@@ -62,15 +62,15 @@ func TestEmbeddingEnvReloadSameReferenceRotation(t *testing.T) {
 			if err := os.WriteFile(path, []byte(doc), 0600); err != nil {
 				t.Fatal(err)
 			}
-			offset := len(out.String())
+			offset := len(stderr.String())
 			sendReload(t)
 			waitFor(t, "native same-value candidate outcome", func() bool {
 				_, metrics := getBody(t, "http://"+ops+"/metrics")
-				return strings.Contains(metrics, `bridge_config_reload_total{outcome="success",reason="none"} 2`) || strings.Contains(out.String()[offset:], `"outcome":"failure"`)
+				return strings.Contains(metrics, `bridge_config_reload_total{outcome="success",reason="none"} 2`) || strings.Contains(stderr.String()[offset:], `"outcome":"failure"`)
 			})
 			// This is a feature assertion; baseline must not count later checks if it fails.
-			if strings.Contains(out.String()[offset:], `"outcome":"failure"`) {
-				t.Fatalf("same-effective native candidate admission: %s", out.String()[offset:])
+			if strings.Contains(stderr.String()[offset:], `"outcome":"failure"`) {
+				t.Fatalf("same-effective native candidate admission: %s", stderr.String()[offset:])
 			}
 			before, err := os.ReadFile(filepath.Join(state, "snapshot.json"))
 			if err != nil {
@@ -81,24 +81,45 @@ func TestEmbeddingEnvReloadSameReferenceRotation(t *testing.T) {
 				rotated = "https://rotated-same-ref.invalid/v1"
 			}
 			t.Setenv("EMBEDDING_ROTATION_VALUE", rotated)
-			offset = len(out.String())
+			offset = len(stderr.String())
 			sendReload(t)
-			waitFor(t, "rotation rejection", func() bool { return strings.Contains(out.String()[offset:], `"event":"reload"`) })
+			waitFor(t, "rotation rejection", func() bool { return strings.Contains(stderr.String()[offset:], `"event":"config_reload_rejected"`) })
 			found := false
-			for _, line := range strings.Split(strings.TrimSpace(out.String()[offset:]), "\n") {
+			rejectionCount := 0
+			for _, line := range strings.Split(strings.TrimSpace(stderr.String()[offset:]), "\n") {
 				var event map[string]any
 				if err := json.Unmarshal([]byte(line), &event); err != nil {
 					t.Fatal(err)
 				}
-				if event["code"] == "restart_required" && event["location"] == "embedding" {
+				if event["event"] != "config_reload_rejected" {
+					continue
+				}
+				rejectionCount++
+				if event["level"] != "warn" || event["operation"] != "reload" || event["outcome"] != "failure" {
+					t.Errorf("reload envelope changed: %#v", event)
+				}
+				errorInfo, errorOK := event["error"].(map[string]any)
+				configInfo, configOK := event["config"].(map[string]any)
+				if !errorOK || len(errorInfo) != 4 {
+					t.Errorf("reload error shape = %#v; want AD8 error object", event["error"])
+				}
+				for _, field := range []string{"code", "kind", "retryable", "remediation"} {
+					if _, ok := errorInfo[field]; !ok {
+						t.Errorf("reload error missing %q: %#v", field, errorInfo)
+					}
+				}
+				if errorOK && configOK && errorInfo["code"] == "restart_required" && configInfo["property_path"] == "embedding" {
 					found = true
 				}
 				if strings.Contains(line, rotated) {
 					t.Error("rotated value leaked")
 				}
 			}
+			if rejectionCount != 1 {
+				t.Errorf("got %d config_reload_rejected records; want exactly one", rejectionCount)
+			}
 			if !found {
-				t.Errorf("same-reference effective change not restart_required: %s", out.String()[offset:])
+				t.Errorf("same-reference effective change not rejected as restart_required: %s", stderr.String()[offset:])
 			}
 			after, err := os.ReadFile(filepath.Join(state, "snapshot.json"))
 			if err != nil {

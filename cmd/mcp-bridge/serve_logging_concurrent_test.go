@@ -263,11 +263,14 @@ func TestServeLoggingConcurrent(t *testing.T) {
 	for _, record := range []map[string]any{httpR1, httpR2} {
 		for key, want := range map[string]any{
 			"http_status": float64(200), "http_method": "POST", "route": "mcp",
-			"stage": "none", "reason": "none", "http_outcome": "success",
+			"stage": "none", "http_outcome": "success",
 		} {
 			if got := record[key]; got != want {
 				t.Errorf("concurrent tools/call http_complete %s = %v; want %v", key, got, want)
 			}
+		}
+		if _, present := record["error"]; present {
+			t.Errorf("successful HTTP record carries an error: %#v", record["error"])
 		}
 	}
 	httpRequestID1 := wantInternalHexID(t, httpR1, "request_id")

@@ -19,14 +19,12 @@ func sessionMaximalFixture() (Entry, string) {
 	status := 401
 	testID := "0123456789abcdef0123456789abcdef"
 	entry := Entry{
-		Time:      time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC),
 		Level:     "warn",
 		Event:     "http_complete",
 		RequestID: testID,
 		Operation: "request",
 		Duration:  5 * time.Millisecond,
 		Outcome:   "failure",
-		Reason:    "session_auth_failed",
 		HTTP: &HTTPDiagnostic{
 			LegacyStage:                  "session_admission",
 			Operation:                    "request",
@@ -103,23 +101,23 @@ func TestSessionReferenceOmissionOrderAndStateFlip(t *testing.T) {
 		t.Fatal("fixture failed validation")
 	}
 	encoder.dropForBudget()
-	if encoder.slots[56].present || encoder.slots[57].present || encoder.slots[58].present {
+	if encoder.slots[51].present || encoder.slots[52].present || encoder.slots[53].present {
 		t.Fatal("optional slots survived the budget drop")
 	}
-	if got := encoder.slots[55].str; got != "omitted_for_budget" {
+	if got := encoder.slots[50].str; got != "omitted_for_budget" {
 		t.Fatalf("error_detail_state=%q", got)
 	}
-	if got := encoder.slots[26].str; got != "omitted_for_budget" {
+	if got := encoder.slots[21].str; got != "omitted_for_budget" {
 		t.Fatalf("operation_id_state=%q", got)
 	}
-	if got := encoder.slots[40].str; got != "omitted_for_budget" {
+	if got := encoder.slots[35].str; got != "omitted_for_budget" {
 		t.Fatalf("session_ref_state=%q, want omitted_for_budget with relation preserved", got)
 	}
 	// Core session truth survives the optional omission.
-	if got := encoder.slots[38].str; got != "existing" {
+	if got := encoder.slots[33].str; got != "existing" {
 		t.Fatalf("session_state=%q lost for budget", got)
 	}
-	if got := encoder.slots[39].str; got != "mismatch" {
+	if got := encoder.slots[34].str; got != "mismatch" {
 		t.Fatalf("binding_relation=%q lost for budget", got)
 	}
 	// The dropped record still encodes within budget.
@@ -173,20 +171,17 @@ func TestSessionReferenceNotInheritedAcrossRecords(t *testing.T) {
 	// residue for the next record; each record builds fresh state.
 	first, _ := sessionMaximalFixture()
 	sink := &bytes.Buffer{}
-	logger := NewLogger(sink)
+	logger := NewLogger(sink, sink)
 	logger.Log(first)
 	logger.Log(Entry{
-		Time:      time.Date(2026, 1, 1, 12, 0, 1, 0, time.UTC),
 		Level:     "warn",
 		Event:     "http_complete",
 		RequestID: "fedcba9876543210fedcba9876543210",
 		Operation: "request",
 		Duration:  5 * time.Millisecond,
 		Outcome:   "failure",
-		Reason:    "session_auth_failed",
 		HTTP: func() *HTTPDiagnostic {
 			entry, _ := sessionMaximalFixture()
-			entry.Time = time.Date(2026, 1, 1, 12, 0, 1, 0, time.UTC)
 			entry.RequestID = "fedcba9876543210fedcba9876543210"
 			// Absent entry: no reference, truthful not_applicable state.
 			entry.HTTP.SessionRef = ""

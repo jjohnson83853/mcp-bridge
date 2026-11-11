@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -32,7 +33,9 @@ func TestDiscoverPromptsCapabilityPaginationAndFailure(t *testing.T) {
 			inner.ServeHTTP(w, r)
 		}))
 		defer httpServer.Close()
-		d, err := NewDedicated(DedicatedOptions{Server: ServerOptions{ID: "test", Endpoint: httpServer.URL, ConnectTimeout: time.Second}})
+		options := ServerOptions{ID: "test", Endpoint: httpServer.URL, ConnectTimeout: time.Second}
+		assertDedicatedRequiresLogger(t, options)
+		d, err := NewDedicated(DedicatedOptions{Logger: observe.NewLogger(nil, nil), Server: options})
 		if err != nil {
 			t.Fatal(err)
 		}

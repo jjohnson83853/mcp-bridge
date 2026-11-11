@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "structured-logging",
+  "revision": "r7-closure1",
+  "requests": [
+    {
+      "name": "ImplementT3",
+      "taskId": "T3",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/startup_failure.go",
+          "cmd/mcp-bridge/main.go",
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/startup_failure_test.go",
+          "cmd/mcp-bridge/runtime_edge_test.go",
+          "cmd/mcp-bridge/serve_edge_test.go",
+          ".omp/artifacts/receipt_T3.json"
+        ]
+      }
+    }
+  ]
+}

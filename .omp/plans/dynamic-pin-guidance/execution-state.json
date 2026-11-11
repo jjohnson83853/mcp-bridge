@@ -1,0 +1,489 @@
+{
+  "schemaVersion": 2,
+  "feature": "dynamic-pin-guidance",
+  "revision": "r6",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/dynamic-pin-guidance/spec.md",
+    "sha256": "1b8cc87a83adef5c77d38628bc94b20dbe248bf802bc43e8d10343fa1b7267d6",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r6",
+        "sha256": "d983f99b52f36b3ce925d463d5847cc5cd508a6d64dab85324ca13ffc01410d6"
+      },
+      "design": {
+        "revision": "r6",
+        "sha256": "ed6faf9b2fd31ce5b21bb04d42c315ccef347d4747e01df07dab17e62e9ebd14"
+      },
+      "tasks": {
+        "revision": "r6",
+        "sha256": "e92f6273123c7ec91830a2c4582a7fb0bd40c9eaf4a5aa80608f88b4c9c1c056"
+      },
+      "envelope": {
+        "revision": "r6",
+        "sha256": "fe812b467180557300e849dc291dc45cbbd46e5a4c8e441b73e45126131de010"
+      }
+    }
+  },
+  "packet": {
+    "digest": "a8e7d3d3ba7b58f378e8086c5b88681d2c9e835e04b84d4c570e15647c3ba6f8",
+    "branches": [
+      {
+        "id": "approved-dynamic-pin-guidance",
+        "answerIds": [],
+        "taskIds": [
+          "T1",
+          "T2"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r6",
+            "sha256": "d983f99b52f36b3ce925d463d5847cc5cd508a6d64dab85324ca13ffc01410d6"
+          },
+          "design": {
+            "revision": "r6",
+            "sha256": "ed6faf9b2fd31ce5b21bb04d42c315ccef347d4747e01df07dab17e62e9ebd14"
+          },
+          "tasks": {
+            "revision": "r6",
+            "sha256": "e92f6273123c7ec91830a2c4582a7fb0bd40c9eaf4a5aa80608f88b4c9c1c056"
+          },
+          "envelope": {
+            "revision": "r6",
+            "sha256": "fe812b467180557300e849dc291dc45cbbd46e5a4c8e441b73e45126131de010"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "approved-dynamic-pin-guidance"
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "search_tools dynamically lists exact sorted wire names of published pins"
+    },
+    {
+      "id": "R2",
+      "summary": "search_tools with zero pins omits inventory section and keeps baseline"
+    },
+    {
+      "id": "R3",
+      "summary": "Unpinned capabilities remain discoverable through search_tools"
+    },
+    {
+      "id": "R4",
+      "summary": "describe_tool advises against redundant schema discovery while permitting inspection"
+    },
+    {
+      "id": "R5",
+      "summary": "call_tool advises preferring direct tools while retaining generic dispatch fallback"
+    },
+    {
+      "id": "R6",
+      "summary": "Zero-pin baseline retains direct-first guidance"
+    },
+    {
+      "id": "R7",
+      "summary": "Configuration reload updates search_tools description immediately on the wire"
+    },
+    {
+      "id": "R8",
+      "summary": "Observable wire tests and in-package list-page tests prove coherence"
+    }
+  ],
+  "authorization": {
+    "mode": "milestone",
+    "id": "auth-dynamic-pin-guidance",
+    "packetDigest": "a8e7d3d3ba7b58f378e8086c5b88681d2c9e835e04b84d4c570e15647c3ba6f8",
+    "selectedBranchId": "approved-dynamic-pin-guidance",
+    "receipt": {
+      "sourceId": "src-user",
+      "recordedAt": "2026-11-07T19:30:15.873Z",
+      "response": {
+        "origin": "user",
+        "explicit": true,
+        "timedOut": false,
+        "automatic": false,
+        "packetDigest": "a8e7d3d3ba7b58f378e8086c5b88681d2c9e835e04b84d4c570e15647c3ba6f8",
+        "selectedBranchId": "approved-dynamic-pin-guidance",
+        "milestone": true
+      }
+    }
+  },
+  "reviews": {
+    "specification": {
+      "verdict": "pass",
+      "reviewerId": "code-reviewer",
+      "packetDigest": "a8e7d3d3ba7b58f378e8086c5b88681d2c9e835e04b84d4c570e15647c3ba6f8",
+      "receipt": {
+        "sourceId": "src-review-reviewer",
+        "recordedAt": "2026-11-07T19:30:15.873Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    },
+    "tasks": {
+      "verdict": "pass",
+      "reviewerId": "critic",
+      "packetDigest": "a8e7d3d3ba7b58f378e8086c5b88681d2c9e835e04b84d4c570e15647c3ba6f8",
+      "receipt": {
+        "sourceId": "src-review-critic",
+        "recordedAt": "2026-11-07T19:30:15.873Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    }
+  },
+  "sources": [
+    {
+      "id": "src-user",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/dynamic-pin-guidance/user-auth.txt",
+        "sha256": "09db800050a11879b438d37401e2abc47814a85b46762b3531515ac55df5c2c8"
+      },
+      "locator": "user conversation message kickoff dynamic-pin-guidance backlog under RULES.md S14",
+      "recordedAt": "2026-11-07T19:30:15.873Z"
+    },
+    {
+      "id": "src-review-critic",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/dynamic-pin-guidance/review-critic.md",
+        "sha256": "9108d9350bd1bf140034b0bb584a7c0f69c30c79db040c5af1b4e752a157f808"
+      },
+      "locator": "critic review receipt r6",
+      "recordedAt": "2026-11-07T19:30:15.873Z"
+    },
+    {
+      "id": "src-review-reviewer",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/dynamic-pin-guidance/review-code-reviewer.md",
+        "sha256": "f8747a4ec97148a9f24304947808d14e58b6253003059bd68fa98fc8af865d49"
+      },
+      "locator": "code-reviewer review receipt r5",
+      "recordedAt": "2026-11-07T19:30:15.873Z"
+    },
+    {
+      "id": "src-receipt-t1",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "376be8198aebee4bec7f6402959885883ec7638df1b981c74aac739064e64af0"
+      },
+      "locator": "engineer receipt T1",
+      "recordedAt": "2026-11-07T19:30:15.873Z"
+    },
+    {
+      "id": "src-receipt-t2",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
+        "sha256": "451883702be34c7d611e54c916ac872902a36a3e61dbc8e43c29cce9cb929f73"
+      },
+      "locator": "engineer receipt T2",
+      "recordedAt": "2026-11-07T19:30:15.873Z"
+    }
+  ],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "T1",
+      "T2"
+    ],
+    "readPaths": [
+      "spec.md",
+      "internal/service/",
+      "cmd/mcp-bridge/",
+      "README.md",
+      "CHANGELOG.md",
+      "coverage.out",
+      ".omp/artifacts/"
+    ],
+    "writePaths": [
+      "internal/service/tools.go",
+      "internal/service/projection.go",
+      "internal/service/builtin_guidance_test.go",
+      "cmd/mcp-bridge/serve_hybrid_metadata_test.go",
+      "cmd/mcp-bridge/serve_hybrid_metadata_exceptions_test.go",
+      "README.md",
+      "CHANGELOG.md",
+      "coverage.out",
+      ".omp/artifacts/receipt_T1.json",
+      ".omp/artifacts/receipt_T2.json"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/tools.go",
+          "internal/service/projection.go",
+          "internal/service/builtin_guidance_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_test.go",
+          "README.md",
+          "CHANGELOG.md",
+          ".omp/artifacts/receipt_T1.json"
+        ]
+      },
+      "acceptanceIds": [
+        "AC-1",
+        "AC-2",
+        "AC-3",
+        "AC-4",
+        "AC-5"
+      ],
+      "evidenceIds": [
+        "ev-t1-test"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T2",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [
+        "T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/serve_hybrid_metadata_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_exceptions_test.go",
+          "coverage.out",
+          ".omp/artifacts/receipt_T2.json"
+        ]
+      },
+      "acceptanceIds": [
+        "AC-6",
+        "AC-7",
+        "AC-8"
+      ],
+      "evidenceIds": [
+        "ev-t2-test"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC-1",
+      "requirementIds": [
+        "R1",
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-2",
+      "requirementIds": [
+        "R2",
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-3",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-4",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-5",
+      "requirementIds": [
+        "R1",
+        "R3",
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-6",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-7",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC-8",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-t1-test",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "376be8198aebee4bec7f6402959885883ec7638df1b981c74aac739064e64af0"
+      },
+      "feature": "dynamic-pin-guidance",
+      "packetDigest": "a8e7d3d3ba7b58f378e8086c5b88681d2c9e835e04b84d4c570e15647c3ba6f8",
+      "selectedBranchId": "approved-dynamic-pin-guidance",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC-1",
+        "AC-2",
+        "AC-3",
+        "AC-4",
+        "AC-5"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-07T19:30:15.873Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test -v ./internal/service -run TestBuiltinGuidanceSnapshotCoherence && go test -v ./cmd/mcp-bridge -run TestServeHybridMetadata",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-t2-test",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
+        "sha256": "451883702be34c7d611e54c916ac872902a36a3e61dbc8e43c29cce9cb929f73"
+      },
+      "feature": "dynamic-pin-guidance",
+      "packetDigest": "a8e7d3d3ba7b58f378e8086c5b88681d2c9e835e04b84d4c570e15647c3ba6f8",
+      "selectedBranchId": "approved-dynamic-pin-guidance",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC-6",
+        "AC-7",
+        "AC-8"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-07T19:30:15.873Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test -v ./cmd/mcp-bridge -run TestServeHybridMetadataReloadUpdatesGuidance && go test -race ./... && go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck/",
+        "exitCode": 0
+      }
+    }
+  ],
+  "blockers": [],
+  "gate": {
+    "markerPath": ".superpowers/sdd/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}

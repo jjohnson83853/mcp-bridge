@@ -62,11 +62,17 @@ func TestEmbeddingEnvCLIProcess(t *testing.T) {
 				t.Errorf("CLI subprocess exit=%d want=%d output=%s", exit, want, output)
 			}
 			if mode != "valid" {
-				for _, fragment := range []string{"code=reference_unresolved", "shape=" + mode} {
-					if !strings.Contains(string(output), fragment) {
-						t.Errorf("subprocess diagnostic missing %s: %s", fragment, output)
-					}
+				record := decodeEnvelopeLine(t, string(output))
+				errorRecord, ok := record["error"].(map[string]any)
+				if !ok || errorRecord["code"] != "reference_unresolved" {
+					t.Errorf("subprocess error = %#v, want reference_unresolved", record["error"])
 				}
+				configRecord, ok := record["config"].(map[string]any)
+				if !ok || configRecord["property_path"] != "embedding.model" || configRecord["shape"] != mode {
+					t.Errorf("subprocess config = %#v, want embedding.model/%s", record["config"], mode)
+				}
+			} else {
+				assertConfigValidationSuccess(t, string(output))
 			}
 			for _, sentinel := range []string{"PROCESS-MODEL-SENTINEL", "process-url-sentinel.invalid", "{env: EMBEDDING_PROCESS_MODEL}"} {
 				if strings.Contains(string(output), sentinel) {

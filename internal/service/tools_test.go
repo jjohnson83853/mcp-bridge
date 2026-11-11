@@ -311,23 +311,44 @@ func assertToolOperationLogs(t *testing.T, logs *syncBuffer, operation, outcome,
 		}
 		return false
 	})
-	var completions, httpCompletions []map[string]any
+	var completions, httpCompletions, backendCompletions []map[string]any
 	for _, record := range decodeToolLogRecords(t, rawLogs) {
 		switch record["event"] {
 		case "mcp_complete":
 			completions = append(completions, record)
 		case "http_complete":
 			httpCompletions = append(httpCompletions, record)
+		case "backend_complete":
+			backendCompletions = append(backendCompletions, record)
 		}
 	}
 	if len(completions) != 1 {
 		t.Fatalf("mcp_complete records = %d; want exactly one: %s", len(completions), rawLogs)
 	}
 	completion := completions[0]
-	for key, want := range map[string]any{"operation": operation, "outcome": outcome, "reason": reason} {
+	for key, want := range map[string]any{
+		"schema_version": float64(1), "service": "mcp-bridge",
+		"event": "mcp_complete", "operation": operation, "outcome": outcome,
+	} {
 		if completion[key] != want {
 			t.Errorf("mcp_complete %s = %v; want %v", key, completion[key], want)
 		}
+	}
+	if level, ok := completion["level"].(string); !ok || (level != "info" && level != "warn") {
+		t.Errorf("mcp_complete level = %v; want info or warn", completion["level"])
+	}
+	if message, ok := completion["message"].(string); !ok || message == "" {
+		t.Errorf("mcp_complete message = %v; want non-empty", completion["message"])
+	}
+	if reason == "none" {
+		if _, exists := completion["error"]; exists {
+			t.Errorf("successful completion carries an error: %v", completion["error"])
+		}
+	} else if err, ok := completion["error"].(map[string]any); !ok || err["code"] != reason || len(err) != 4 {
+		t.Errorf("mcp_complete error = %#v; want nested code %q and four-field shape", completion["error"], reason)
+	}
+	if _, exists := completion["reason"]; exists {
+		t.Error("flat reason must not be emitted")
 	}
 	if admission && completion["stage"] != "tool_admission" {
 		t.Errorf("mcp_complete stage = %v; want tool_admission", completion["stage"])
@@ -349,6 +370,28 @@ func assertToolOperationLogs(t *testing.T, logs *syncBuffer, operation, outcome,
 	if matchingHTTP != 1 {
 		t.Errorf("http_complete records joined to request %q = %d; want exactly one: %s", requestID, matchingHTTP, rawLogs)
 	}
+	wantBackend := operation == "call_tool" && upstreamState != "not_attempted"
+	matchingBackend := 0
+	for _, record := range backendCompletions {
+		if record["request_id"] != requestID {
+			continue
+		}
+		matchingBackend++
+		if record["operation"] != "call_tool" || record["schema_version"] != float64(1) ||
+			record["service"] != "mcp-bridge" || record["event"] != "backend_complete" {
+			t.Errorf("invalid backend completion envelope: %#v", record)
+		}
+		if message, ok := record["message"].(string); !ok || message == "" {
+			t.Errorf("backend_complete message = %v; want non-empty", record["message"])
+		}
+	}
+	wantBackendCount := 0
+	if wantBackend {
+		wantBackendCount = 1
+	}
+	if matchingBackend != wantBackendCount {
+		t.Errorf("backend_complete records joined to request %q = %d; want %d: %s", requestID, matchingBackend, wantBackendCount, rawLogs)
+	}
 }
 
 func TestToolSurfaceDescribeCatalogRevisionAdmission(t *testing.T) {
@@ -357,7 +400,7 @@ func TestToolSurfaceDescribeCatalogRevisionAdmission(t *testing.T) {
 	var logs syncBuffer
 	h := newToolHarness(t, parseReloadConfig(t, toolSurfaceConfig), service.ToolSurfaceConfig{
 		Model:  search.ModelIdentity{Provider: "openai", Model: "embed-1", Dimensions: 4, FormatVersion: "v1"},
-		Logger: observe.NewLogger(&logs),
+		Logger: observe.NewLogger(&logs, &logs),
 	})
 	currentRevision := h.assembly.CatalogRevision()
 	cases := []struct {
@@ -411,7 +454,7 @@ func TestToolSurfaceCallCatalogRevisionAdmission(t *testing.T) {
 	var logs syncBuffer
 	h := newToolHarness(t, parseReloadConfig(t, toolSurfaceConfig), service.ToolSurfaceConfig{
 		Model:  search.ModelIdentity{Provider: "openai", Model: "embed-1", Dimensions: 4, FormatVersion: "v1"},
-		Logger: observe.NewLogger(&logs),
+		Logger: observe.NewLogger(&logs, &logs),
 	})
 	currentRevision := h.assembly.CatalogRevision()
 	cases := []struct {

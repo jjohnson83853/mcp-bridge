@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "structured-logging",
+  "revision": "r7-closure1",
+  "requests": [
+    {
+      "name": "ImplementT7",
+      "taskId": "T7",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "docs/logging-contract.md",
+          "README.md",
+          "CHANGELOG.md",
+          "cmd/mcp-bridge/logging_contract_test.go",
+          ".omp/artifacts/receipt_T7.json"
+        ]
+      }
+    }
+  ]
+}

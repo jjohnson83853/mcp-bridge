@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "structured-logging",
+  "revision": "r7-closure1",
+  "requests": [
+    {
+      "name": "ImplementT1",
+      "taskId": "T1",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/observe/envelope.go",
+          "internal/observe/log.go",
+          "internal/config/config.go",
+          "internal/config/diagnostics.go",
+          "internal/config/pins_bounds_test.go",
+          "cmd/mcp-bridge/diagnostics_envelope.go",
+          "cmd/mcp-bridge/main.go",
+          "cmd/mcp-bridge/config_envelope_test.go",
+          "cmd/mcp-bridge/example_config_test.go",
+          "cmd/mcp-bridge/serve_edge_test.go",
+          "cmd/mcp-bridge/main_test.go",
+          "cmd/mcp-bridge/embedding_env_cli_test.go",
+          "cmd/mcp-bridge/embedding_env_process_test.go",
+          ".omp/artifacts/receipt_T1.json"
+        ]
+      }
+    }
+  ]
+}

@@ -362,7 +362,7 @@ func TestMiddlewareSessionAdmission(t *testing.T) {
 		return SessionAdmissionOutcome{Reason: AdmissionNotFound}
 	}))
 	var acceptedLog bytes.Buffer
-	diagnostics := observe.NewHTTPDiagnostics(observe.NewLogger(&acceptedLog), observe.HTTPDiagnosticsOptions{
+	diagnostics := observe.NewHTTPDiagnostics(observe.NewLogger(&acceptedLog, &acceptedLog), observe.HTTPDiagnosticsOptions{
 		NewID: func() string { return "0123456789abcdef0123456789abcdef" },
 	})
 	nextCalled := false
@@ -399,7 +399,7 @@ func TestMiddlewareSessionAdmission(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var logOutput bytes.Buffer
-			diagnostics := observe.NewHTTPDiagnostics(observe.NewLogger(&logOutput), observe.HTTPDiagnosticsOptions{
+			diagnostics := observe.NewHTTPDiagnostics(observe.NewLogger(&logOutput, &logOutput), observe.HTTPDiagnosticsOptions{
 				NewID: func() string { return "0123456789abcdef0123456789abcdef" },
 			})
 			middleware, _ := newAuthTest(t, WithSessionAdmission(tc.validator))
@@ -469,7 +469,7 @@ func TestMiddlewareSessionAdmissionRejectionDiagnostics(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			var logOutput bytes.Buffer
-			diagnostics := observe.NewHTTPDiagnostics(observe.NewLogger(&logOutput), observe.HTTPDiagnosticsOptions{
+			diagnostics := observe.NewHTTPDiagnostics(observe.NewLogger(&logOutput, &logOutput), observe.HTTPDiagnosticsOptions{
 				NewID: func() string { return "0123456789abcdef0123456789abcdef" },
 			})
 			middleware, _ := newAuthTest(t, WithSessionAdmission(func(string) SessionAdmissionOutcome {
@@ -519,7 +519,7 @@ func TestMiddlewareSessionAdmissionRejectsInsufficientScope(t *testing.T) {
 		return SessionAdmissionOutcome{Claims: claims, Reason: AdmissionAdmitted}
 	}))
 	var logOutput bytes.Buffer
-	diagnostics := observe.NewHTTPDiagnostics(observe.NewLogger(&logOutput), observe.HTTPDiagnosticsOptions{
+	diagnostics := observe.NewHTTPDiagnostics(observe.NewLogger(&logOutput, &logOutput), observe.HTTPDiagnosticsOptions{
 		NewID: func() string { return "0123456789abcdef0123456789abcdef" },
 	})
 	nextCalled := false

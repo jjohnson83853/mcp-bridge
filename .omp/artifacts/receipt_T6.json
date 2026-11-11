@@ -1,0 +1,43 @@
+{
+  "task_id": "T6",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_T6.json",
+  "telemetry_ref": null,
+  "summary": "Added the config_validation_succeeded JSON envelope and migrated CLI success assertions; AC06 tests and required package, vet, and changed-file formatting checks passed.",
+  "error_code": null,
+  "auto_decisions": [
+    {
+      "decision": "Follow the r7-closure1 operation pin check_config rather than the conflicting task prose value validate.",
+      "why": "AD7, AC06, and the T6 ledger all pin check_config; no specification amendment was authorized."
+    },
+    {
+      "decision": "Use the shared Envelope builder with a nil error object and config.path plus diagnostics_incomplete=false on success.",
+      "why": "The approved contract requires no error object or configuration contents and pins the success event's diagnostic completeness value."
+    }
+  ],
+  "evidence": [
+    {
+      "command": "go test ./cmd/mcp-bridge -run 'TestCheckConfigSuccessEnvelope|TestCheckConfigFailureEnvelopeHasNoSuccessRecord|TestConfigValidationDiagnosticAttributionAndCompleteness|TestExampleConfigPassesCheck|TestRunCheckConfigAndMissingFile|TestCheckConfigSuccessDoesNotPrintConfigurationValues|TestEmbeddingEnvCLI|TestEmbeddingEnvCLIProcess'",
+      "exitCode": 1,
+      "note": "Expected RED: success-path assertions rejected the legacy plaintext configuration valid output."
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge -run 'TestCheckConfigSuccessEnvelope|TestCheckConfigFailureEnvelopeHasNoSuccessRecord|TestConfigValidationDiagnosticAttributionAndCompleteness|TestExampleConfigPassesCheck|TestRunCheckConfigAndMissingFile|TestCheckConfigSuccessDoesNotPrintConfigurationValues|TestEmbeddingEnvCLI|TestEmbeddingEnvCLIProcess'",
+      "exitCode": 0,
+      "note": "GREEN: AC06 success/failure envelope assertions passed, including subprocess and secret-redaction checks."
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge/...",
+      "exitCode": 0
+    },
+    {
+      "command": "go vet ./...",
+      "exitCode": 0
+    },
+    {
+      "command": "gofmt -l cmd/mcp-bridge/main.go cmd/mcp-bridge/config_envelope_test.go cmd/mcp-bridge/example_config_test.go cmd/mcp-bridge/serve_edge_test.go cmd/mcp-bridge/main_test.go cmd/mcp-bridge/embedding_env_cli_test.go cmd/mcp-bridge/embedding_env_process_test.go",
+      "exitCode": 0,
+      "note": "No output; all changed Go files are formatted."
+    }
+  ]
+}

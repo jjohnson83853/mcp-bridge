@@ -86,19 +86,15 @@ func TestTerminalRecordRuntimeProvenance(t *testing.T) {
 	}
 	requireCompletionField(t, record, "policy_source", "environment")
 
-	// Source identity: consistent with the running binary's own VCS stamp.
+	// The source revision remains trusted input to build-state validation but
+	// is collector-owned and never emitted by the application.
 	revision, modified, stamped := vcsStampOfTestBinary()
+	if _, present := record["source_revision"]; present {
+		t.Errorf("collector-owned source_revision was emitted: %v", record["source_revision"])
+	}
 	if stamped && !modified && observeValidRevisionShape(revision) {
-		if record["source_revision"] != revision {
-			t.Errorf("source_revision = %v; want verified %q", record["source_revision"], revision)
-		}
 		requireCompletionField(t, record, "build_state", "verified")
 	} else {
-		// A dirty (unpushed local) or unstamped build must never claim to be
-		// the deployed source.
-		if _, present := record["source_revision"]; present {
-			t.Errorf("source_revision = %v present for a dirty build", record["source_revision"])
-		}
 		requireCompletionField(t, record, "build_state", "unavailable")
 	}
 

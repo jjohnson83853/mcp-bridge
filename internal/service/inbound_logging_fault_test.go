@@ -54,7 +54,6 @@ func TestInboundLoggingFaults(t *testing.T) {
 		assertInboundFaultFields(t, record, map[string]any{
 			"correlation_state": "unavailable", "http_status": float64(401),
 			"http_method": "POST", "http_outcome": "failure", "outcome": "failure",
-			"stage": "client_auth", "reason": "client_auth_failed",
 		})
 		if _, exists := record["request_id"]; exists {
 			t.Error("unavailable internal request_id must be omitted, never reminted")
@@ -92,8 +91,7 @@ func TestInboundLoggingFaults(t *testing.T) {
 			assertInboundFaultFields(t, record, map[string]any{
 				"request_id": inboundFaultOwnedID, "correlation_state": "available",
 				"http_status": float64(200), "http_outcome": "incomplete",
-				"stage": "response_delivery", "reason": tc.reason,
-				"http_bytes_bucket": "le_1k",
+				"stage": "response_delivery", "http_bytes_bucket": "le_1k",
 			})
 			assertInboundFaultClass(t, record, tc.reason)
 		})
@@ -115,7 +113,7 @@ func TestInboundLoggingFaults(t *testing.T) {
 		}
 		assertInboundFaultFields(t, fixture.terminal(t), map[string]any{
 			"http_status": float64(200), "http_outcome": "success",
-			"stage": "none", "reason": "none", "http_bytes_bucket": "empty",
+			"stage": "none", "http_bytes_bucket": "empty",
 		})
 	})
 
@@ -131,7 +129,7 @@ func TestInboundLoggingFaults(t *testing.T) {
 		}
 		assertInboundFaultFields(t, fixture.terminal(t), map[string]any{
 			"http_status": nil, "http_outcome": "unknown",
-			"stage": "none", "reason": "none", "http_bytes_bucket": "empty",
+			"stage": "none", "http_bytes_bucket": "empty",
 		})
 	})
 
@@ -158,7 +156,7 @@ func TestInboundLoggingFaults(t *testing.T) {
 		record := fixture.terminalForRoute(t, "not_found")
 		assertInboundFaultFields(t, record, map[string]any{
 			"http_status": float64(404), "http_outcome": "failure",
-			"stage": "http_route", "reason": "route_not_found",
+			"stage": "http_route",
 			"duration_ms": float64(generationInterval.Milliseconds()),
 		})
 	})
@@ -173,7 +171,7 @@ type inboundLoggingFaultFixture struct {
 func newInboundLoggingFaultFixture(next http.Handler) *inboundLoggingFaultFixture {
 	fixture := &inboundLoggingFaultFixture{}
 	fixture.handler = NewInboundHandler(next, [][32]byte{sha256.Sum256([]byte(inboundFaultToken))},
-		InboundOptions{Logger: observe.NewLogger(&fixture.logs)})
+		InboundOptions{Logger: observe.NewLogger(&fixture.logs, &fixture.logs)})
 	// Instance-only substitution is complete before ServeHTTP. No global random
 	// source, constructor option, public setter, or runtime mutation is involved.
 	fixture.handler.generator = func() string {
@@ -259,11 +257,21 @@ func assertInboundFaultPublicID(t *testing.T, header http.Header) {
 func assertInboundFaultClass(t *testing.T, record map[string]any, class string) {
 	t.Helper()
 	detail, ok := record["error"].(map[string]any)
-	if !ok || len(detail) != 1 || detail["class"] != class {
-		t.Errorf("HTTP terminal must carry only the canonical nested error.class=%s", class)
+	if !ok || len(detail) != 4 || detail["code"] != class {
+		t.Errorf("HTTP terminal error = %#v; want nested code=%s and the AD2 four-field shape", record["error"], class)
+		return
+	}
+	if _, ok := detail["kind"].(string); !ok {
+		t.Error("nested error.kind must be a string")
+	}
+	if _, ok := detail["retryable"].(bool); !ok {
+		t.Error("nested error.retryable must be a boolean")
+	}
+	if remediation, ok := detail["remediation"].(string); !ok || remediation == "" {
+		t.Error("nested error.remediation must be non-empty")
 	}
 	if _, exists := record["error_class"]; exists {
-		t.Error("noncanonical top-level error_class must not replace nested error.class")
+		t.Error("noncanonical top-level error_class must not replace nested error.code")
 	}
 }
 

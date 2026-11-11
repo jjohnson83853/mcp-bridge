@@ -7,6 +7,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 )
 
 func TestDedicatedDoesNotRetainSessionAfterConnectFailure(t *testing.T) {
@@ -16,7 +18,9 @@ func TestDedicatedDoesNotRetainSessionAfterConnectFailure(t *testing.T) {
 		http.Error(w, "unavailable", http.StatusBadGateway)
 	}))
 	defer peer.Close()
-	d, err := NewDedicated(DedicatedOptions{Server: ServerOptions{ID: "wire", Endpoint: peer.URL, ConnectTimeout: time.Second}})
+	options := ServerOptions{ID: "wire", Endpoint: peer.URL, ConnectTimeout: time.Second}
+	assertDedicatedRequiresLogger(t, options)
+	d, err := NewDedicated(DedicatedOptions{Logger: observe.NewLogger(nil, nil), Server: options})
 	if err != nil {
 		t.Fatal(err)
 	}

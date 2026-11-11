@@ -1,8 +1,26 @@
 {
   "task_id": "T3",
   "status": "COMPLETED",
-  "artifact_receipt": "cmd/mcp-bridge/serve_oauth_test.go, coverage.out, .omp/artifacts/receipt_T3.json",
+  "artifact_receipt": ".omp/artifacts/receipt_T3.json",
   "telemetry_ref": null,
-  "summary": "Added invalid-cursor omission and valid tools/list recovery wire assertions. Focused test and full race suite passed; coverage gate passed at 90.2%.",
-  "error_code": null
+  "summary": "T3 AC03 acceptance is green on the focused command. The broader package run failed on cross-task logging, OAuth, manifest, handshake, and rotation tests; those failures are recorded for T7 reconciliation.",
+  "error_code": null,
+  "evidence": [
+    {
+      "command": "go test ./cmd/mcp-bridge -run '^TestRunFlagParseErrorsAreTypedRecords$'",
+      "exitCode": 1,
+      "result": "RED: unknown/missing flags exited 2 with parser and usage text; positional input fell through to plaintext configuration failure."
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge -run 'Flag|Startup|Usage|Help|RunContext|ServeStartup'",
+      "exitCode": 0,
+      "result": "PASS: AC03 typed CLI errors, unchanged help, startup classifications, publication single-record behavior, and serve config attribution."
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge/...",
+      "exitCode": 1,
+      "result": "FAIL (252.478s). Tests: TestEmbeddingEnvReloadSameReferenceRotation (embedding_env_rotation_test.go; model, base_url); TestConfigDiagnosticFieldManifest (manifest_test.go); TestServeLoggingCompatibility (serve_logging_compatibility_test.go; ChunkedRequestLimit, Metrics, FailingStdout); TestServeLoggingFailures/ToolReportedError (serve_logging_failures_test.go); TestServeLoggingTimeouts/BackendTimeoutEmitsDeadlineExceeded (serve_logging_streaming_test.go); TestServeLoggingHTTP/ClientAuthentication (serve_logging_test.go); TestServeOAuthDiagnosticRejections (serve_oauth_diagnostics_test.go; MissingCredential, WrongScheme, InvalidJWT, WrongVerifiedAudience, InsufficientScope); TestProtectedResourceMetadataWire, TestServeOAuthMissingAuthorizationDiagnostic, TestServeOAuthActionDiscoveryEndToEnd, TestChatGPTOAuthAndActionDiscoveryWire, TestChatGPTSessionAdmissionDiscoveryBurstWire (serve_oauth_test.go); TestTerminalRecordRuntimeProvenance, TestPathBearingResourceChallengeClassification, TestRouteOutcomeByActualDispatch/Unmatched, TestToolErrorOperationLinkage (serve_provenance_test.go); TestUpstreamEphemeralHandshakeLog (serve_upstream_restart_test.go)."
+    }
+  ],
+  "decisions": []
 }

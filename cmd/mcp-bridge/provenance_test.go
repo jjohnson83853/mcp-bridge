@@ -128,7 +128,7 @@ func TestProvenanceRejectsArbitraryAliases(t *testing.T) {
 	// environment alias: it degrades to the absent state instead.
 	oauth := true
 	sink := &bytes.Buffer{}
-	diag := observe.NewHTTPDiagnostics(observe.NewLogger(sink), observe.HTTPDiagnosticsOptions{
+	diag := observe.NewHTTPDiagnostics(observe.NewLogger(sink, sink), observe.HTTPDiagnosticsOptions{
 		Provenance: observe.HTTPProvenance{
 			Environment: "../../etc", PolicySource: "file", OAuthEnabled: &oauth,
 			ResourcePathMode: "path_bearing",
@@ -147,8 +147,10 @@ func TestProvenanceRejectsArbitraryAliases(t *testing.T) {
 		if record["event"] != "http_complete" {
 			continue
 		}
-		if _, present := record["diag_environment"]; present {
-			t.Errorf("hostile environment alias emitted: %v", record["diag_environment"])
+		for _, key := range []string{"diag_environment", "source_revision"} {
+			if _, present := record[key]; present {
+				t.Errorf("collector-owned field %s emitted: %v", key, record[key])
+			}
 		}
 		if record["policy_source"] != "file" {
 			t.Errorf("policy_source = %v; want file", record["policy_source"])

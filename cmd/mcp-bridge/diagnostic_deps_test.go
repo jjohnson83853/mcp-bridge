@@ -27,7 +27,7 @@ func TestComposedClockControlsDuration(t *testing.T) {
 		return base.Add(-time.Duration(calls) * 500 * time.Millisecond)
 	}
 	sink := &bytes.Buffer{}
-	logger := observe.NewLogger(sink)
+	logger := observe.NewLogger(sink, sink)
 	diag := observe.NewHTTPDiagnostics(logger, observe.HTTPDiagnosticsOptions{
 		Now:   clock,
 		NewID: func() string { return "0123456789abcdef0123456789abcdef" },

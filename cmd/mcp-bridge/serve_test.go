@@ -403,8 +403,18 @@ func assertServeWireCompletion(t *testing.T, stdout *syncWriter, response serveW
 	if httpRecord["request_id"] != mcpRecord["request_id"] {
 		t.Fatalf("completion request IDs differ: http=%v mcp=%v", httpRecord["request_id"], mcpRecord["request_id"])
 	}
-	if mcpRecord["operation"] != operation || mcpRecord["reason"] != reason {
-		t.Errorf("mcp_complete = %v; want operation=%q reason=%q", mcpRecord, operation, reason)
+	for _, record := range append(append([]map[string]any(nil), httpRecords...), mcpRecords...) {
+		for _, key := range []string{"schema_version", "level", "service", "event", "message", "operation", "outcome"} {
+			if value, ok := record[key]; !ok || value == "" {
+				t.Errorf("%s record lacks %s: %#v", record["event"], key, record)
+			}
+		}
+		if record["schema_version"] != float64(1) || record["service"] != "mcp-bridge" {
+			t.Errorf("invalid envelope identity: %#v", record)
+		}
+	}
+	if mcpRecord["operation"] != operation {
+		t.Errorf("mcp_complete operation = %v; want %q", mcpRecord["operation"], operation)
 	}
 	wantOutcome := "success"
 	if reason != "none" {
@@ -412,12 +422,30 @@ func assertServeWireCompletion(t *testing.T, stdout *syncWriter, response serveW
 		if mcpRecord["stage"] != "tool_admission" {
 			t.Errorf("mcp_complete stage = %v; want tool_admission", mcpRecord["stage"])
 		}
+		errorInfo, ok := mcpRecord["error"].(map[string]any)
+		if !ok || errorInfo["code"] != reason || len(errorInfo) != 4 {
+			t.Errorf("mcp_complete error = %#v; want nested code %q", mcpRecord["error"], reason)
+		}
+	} else if _, present := mcpRecord["error"]; present {
+		t.Errorf("successful mcp_complete carries an error: %#v", mcpRecord["error"])
 	}
 	if mcpRecord["outcome"] != wantOutcome {
 		t.Errorf("mcp_complete outcome = %v; want %q", mcpRecord["outcome"], wantOutcome)
 	}
+	if _, present := mcpRecord["reason"]; present {
+		t.Error("mcp_complete emitted the removed flat reason field")
+	}
 	if upstreamState != "" && httpRecord["upstream_state"] != upstreamState {
 		t.Errorf("http_complete upstream_state = %v; want %q", httpRecord["upstream_state"], upstreamState)
+	}
+	if wantBackend {
+		record := backendRecords[0]
+		if record["operation"] != "call_tool" || record["event"] != "backend_complete" || record["service"] != "mcp-bridge" {
+			t.Errorf("invalid backend completion identity: %#v", record)
+		}
+		if message, ok := record["message"].(string); !ok || message == "" {
+			t.Errorf("backend_complete message = %v; want non-empty", record["message"])
+		}
 	}
 }
 
@@ -711,18 +739,47 @@ func TestServeCompositionRootServesCatalogAndSurvivesReload(t *testing.T) {
 	if err := os.WriteFile(configPath, []byte("schema_version: 1\nservers:\n  - id: broken\n    endpoint: \"://bad\"\n"), 0o600); err != nil {
 		t.Fatalf("write rejected candidate: %v", err)
 	}
+	offset := len(stderr.String())
 	sendReload(t)
 	waitFor(t, "a rejected reload to be logged", func() bool {
-		return strings.Contains(stdout.String(), "reload")
+		return strings.Contains(stderr.String()[offset:], `"event":"config_reload_rejected"`)
 	})
-	// The rejected candidate is reported as a typed diagnostic entry: the
-	// candidate's location and finite code survive the operator-log wrapper,
-	// with no opaque prose (spec §4.5 item 3).
-	waitFor(t, "the typed diagnostic reload entry", func() bool {
-		return strings.Contains(stdout.String(), `"code":"url_invalid"`)
-	})
-	if !strings.Contains(stdout.String(), `"location":"servers[0].endpoint"`) || !strings.Contains(stdout.String(), `"reason":"invalid_config"`) {
-		t.Fatalf("rejected reload lacked typed diagnostic context: %s", stdout.String())
+	rejectionCount := 0
+	rejectionFound := false
+	for _, line := range strings.Split(strings.TrimSpace(stderr.String()[offset:]), "\n") {
+		if line == "" {
+			continue
+		}
+		var event map[string]any
+		if err := json.Unmarshal([]byte(line), &event); err != nil {
+			t.Fatalf("invalid structured reload record: %v", err)
+		}
+		if event["event"] != "config_reload_rejected" {
+			continue
+		}
+		rejectionCount++
+		if event["level"] != "warn" || event["operation"] != "reload" || event["outcome"] != "failure" {
+			t.Errorf("reload envelope changed: %#v", event)
+		}
+		errorInfo, errorOK := event["error"].(map[string]any)
+		configInfo, configOK := event["config"].(map[string]any)
+		if !errorOK || len(errorInfo) != 4 {
+			t.Errorf("reload error shape = %#v; want AD8 error object", event["error"])
+		}
+		for _, field := range []string{"code", "kind", "retryable", "remediation"} {
+			if _, ok := errorInfo[field]; !ok {
+				t.Errorf("reload error missing %q: %#v", field, errorInfo)
+			}
+		}
+		if errorOK && configOK && errorInfo["code"] == "url_invalid" && configInfo["property_path"] == "servers[0].endpoint" {
+			rejectionFound = true
+		}
+	}
+	if rejectionCount != 1 {
+		t.Errorf("got %d config_reload_rejected records; want exactly one", rejectionCount)
+	}
+	if !rejectionFound {
+		t.Fatalf("rejected reload lacked nested url_invalid diagnostic context: %s", stderr.String()[offset:])
 	}
 	afterRejection := callTool(t, ctx, session, catalog.ToolCallTool, map[string]any{
 		"tool_name":        betaName,

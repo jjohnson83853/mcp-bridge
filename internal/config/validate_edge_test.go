@@ -52,6 +52,24 @@ func TestParseValidationEdges(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := Parse([]byte(tc.input), filepath.Join(t.TempDir(), "config.yaml"))
 			diags := requireDiagnostics(t, err)
+			record := diags.Records[0]
+			switch tc.name {
+			case "no schema":
+				assertNoDiagnosticNodePosition(t, record)
+			case "unknown root key":
+				index := strings.Index(tc.input, "unexpected:")
+				if index < 0 {
+					t.Fatal("unknown-key fixture has no offending key")
+				}
+				line := strings.Count(tc.input[:index], "\n") + 1
+				lineStart := strings.LastIndex(tc.input[:index], "\n") + 1
+				assertConfigNodePosition(t, record, line, index-lineStart+1)
+			default:
+				assertDiagnosticAtYAMLPath(t, []byte(tc.input), record, record.Key)
+			}
+			if record.RelatedKey != "" {
+				assertRelatedDiagnosticAtYAMLPath(t, []byte(tc.input), record, record.RelatedKey)
+			}
 			requireRendered(t, err, tc.fragments...)
 			forbidRendered(t, err, tc.forbidden...)
 			if diags.RemainingStages != stageNotChecked {

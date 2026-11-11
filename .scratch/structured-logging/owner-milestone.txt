@@ -1,0 +1,19 @@
+Owner authorization record, 2026-11-10.
+
+Kickoff prompt (owner, verbatim):
+
+"I'm struggling with the mcp-bridge because I logging information is nto good enough. Lets upgrade this so I am not guessing what the root cause of the error is. […] also we should be loggin in json format. I would expect to be able to see what entry in the configuration file mcp-bridge is rejecting."
+
+Grilling answers settled the contract (recorded in decisions.md). Owner confirmations, verbatim:
+
+- "Q8 yes Q9 yes Q10 take your recommendation Q11 Detailed Event , no summary Q12 Take your ecommendation Q13 No deployment metadata printed Q14 yes"
+- "Q15 One schema Q16 yes Q17 every configuration node Q18 nested Q19 yes Q20 preserve exit code 1 Q21 yes"
+- "Q22 through Q29 I will take your recommendation. For Q30 probably don't need to emit this as the logging system enriches json with a subsystem name which is the container name. I may have multiple mcp-bridge contaiers."
+- "Q31 maybe hard code to mcp-bridge Q32 the collector will put timestamps which is what I would query on. not the one provided by mcp-bridge Q33 you have no way of controlling this as the collectors comes after mcp-bridge output. Q34 maybe some future implementation Q35 is missing, what is this? Q36 yes Q37 your recommendation. Q38 no"
+- "Q35 your recommendation Q39 through Q43 I will take your recommendation"
+- "Q44 through Q48 I will take your recommendation"
+- "yes" (confirming the shared understanding captured in Q49)
+
+Ticket decomposition approval, verbatim: "7 seems right, edge cases correct, no merging"
+
+Purpose: this owner prompt and its confirmations are the milestone authorization for feature `structured-logging` under the project's S14 backlog authority. Implementation is authorized per ticket through the required spec, independent review, and verification stages. This record grants no approval of any spec revision that has not passed both independent reviews.

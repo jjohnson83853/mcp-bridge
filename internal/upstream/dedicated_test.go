@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/upstream"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -62,7 +63,7 @@ func newDedicated(t *testing.T, endpoint string) *upstream.Dedicated {
 
 func newDedicatedWithStateless(t *testing.T, endpoint string, stateless bool) *upstream.Dedicated {
 	t.Helper()
-	dedicated, err := upstream.NewDedicated(upstream.DedicatedOptions{Stateless: stateless, Server: upstream.ServerOptions{
+	dedicated, err := upstream.NewDedicated(upstream.DedicatedOptions{Stateless: stateless, Logger: observe.NewLogger(io.Discard, io.Discard), Server: upstream.ServerOptions{
 		ID:             "alpha",
 		Endpoint:       endpoint,
 		CallTimeout:    5 * time.Second,
@@ -352,7 +353,7 @@ func TestDedicatedAdaptiveEphemeralHandshake(t *testing.T) {
 	buf := &bytes.Buffer{}
 	dedicated, err := upstream.NewDedicated(upstream.DedicatedOptions{
 		Stateless: true,
-		LogWriter: buf,
+		Logger:    observe.NewLogger(buf, io.Discard),
 		Server: upstream.ServerOptions{
 			ID:       "alpha",
 			Endpoint: httpServer.URL,
@@ -372,9 +373,23 @@ func TestDedicatedAdaptiveEphemeralHandshake(t *testing.T) {
 	if _, outcome := dedicated.CallTool(context.Background(), "t_read", "alpha", "read", json.RawMessage(`{}`)); outcome != nil {
 		t.Fatalf("CallTool outcome=%+v, want success", outcome)
 	}
-	for _, want := range []string{`"event":"upstream_ephemeral_handshake"`, `"backend_id":"alpha"`, `"duration_ms"`} {
+	for _, want := range []string{
+		`"schema_version":1`, `"level":"info"`, `"service":"mcp-bridge"`,
+		`"event":"upstream_ephemeral_handshake"`, `"operation":"handshake"`, `"outcome":"success"`,
+		`"message":"upstream protocol handshake observed"`, `"backend_id":"alpha"`, `"duration_ms":`,
+	} {
 		if !bytes.Contains(buf.Bytes(), []byte(want)) {
 			t.Errorf("handshake log %q does not contain %q", buf.String(), want)
 		}
 	}
+	}
+
+func TestNewDedicatedRequiresLogger(t *testing.T) {
+	dedicated, err := upstream.NewDedicated(upstream.DedicatedOptions{
+		Server: upstream.ServerOptions{ID: "alpha", Endpoint: "http://127.0.0.1:1"},
+	})
+	if err == nil || dedicated != nil {
+		t.Fatalf("NewDedicated without logger = (%v, %v); want nil and an error", dedicated, err)
+	}
 }
+

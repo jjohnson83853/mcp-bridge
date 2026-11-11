@@ -68,10 +68,10 @@ func (m *ToolMetadataConfig) ValidatePins(_ string, _ []map[string]string) error
 // It rejects unsupported members and unsupported value shapes with the typed,
 // metadata-only diagnostics vocabulary — no YAML or value echo — so an
 // invalid patch rejects the entire candidate atomically.
-func (v *docValidator) validateDefaultsValue(path, key string, node *yaml.Node, server string) *Diagnostics {
+func (v *docValidator) validateDefaultsValue(path, key string, keyNode, node *yaml.Node, server string) *Diagnostics {
 	if !supportedMetadataPatchMembers[key] {
 		return v.fail(Diagnostic{
-			Key: path, Server: server, Line: node.Line, Column: node.Column,
+			Key: path, Server: server, Line: keyNode.Line, Column: keyNode.Column,
 			Code: "tool_metadata_unknown_member", Property: "tool_metadata", Shape: "unknown_key",
 			Reason: "metadata patches may only override description, title, icons, annotations and _meta",
 		})

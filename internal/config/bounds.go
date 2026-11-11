@@ -14,29 +14,30 @@ import (
 // weight_invalid/weights_invalid class, and a static reason — no observed
 // number.
 func validateWeights(root *yaml.Node, configPath string) *Diagnostics {
-	keyword, embedding := findScalar(root, "keyword_weight"), findScalar(root, "embedding_weight")
+	keyword, keywordNode := findScalarWithNode(root, "keyword_weight")
+	embedding, embeddingNode := findScalarWithNode(root, "embedding_weight")
 	if keyword == "" && embedding == "" {
 		return nil
 	}
-	invalid := func(key, shape string) *Diagnostics {
+	invalid := func(key, shape string, node *yaml.Node) *Diagnostics {
 		return single(Diagnostic{
-			Path: configPath, Key: key,
+			Path: configPath, Key: key, Line: nodeLine(node), Column: nodeColumn(node),
 			Code: "weight_invalid", Property: "value", Shape: shape,
 			Reason: "invalid " + strings.TrimPrefix(key, "search."),
 		})
 	}
 	var k, e float64
 	if keyword == "" {
-		return invalid("search.keyword_weight", "missing")
+		return invalid("search.keyword_weight", "missing", keywordNode)
 	}
 	if _, err := fmt.Sscan(keyword, &k); err != nil || math.IsNaN(k) || math.IsInf(k, 0) {
-		return invalid("search.keyword_weight", "invalid_numeric")
+		return invalid("search.keyword_weight", "invalid_numeric", keywordNode)
 	}
 	if embedding == "" {
-		return invalid("search.embedding_weight", "missing")
+		return invalid("search.embedding_weight", "missing", embeddingNode)
 	}
 	if _, err := fmt.Sscan(embedding, &e); err != nil || math.IsNaN(e) || math.IsInf(e, 0) {
-		return invalid("search.embedding_weight", "invalid_numeric")
+		return invalid("search.embedding_weight", "invalid_numeric", embeddingNode)
 	}
 	shape := ""
 	switch {
@@ -50,10 +51,17 @@ func validateWeights(root *yaml.Node, configPath string) *Diagnostics {
 	if shape == "" {
 		return nil
 	}
+	key, relatedKey := "search.keyword_weight", "search.embedding_weight"
+	ownNode, relatedNode := keywordNode, embeddingNode
+	if shape == "embedding_negative" {
+		key, relatedKey = relatedKey, key
+		ownNode, relatedNode = relatedNode, ownNode
+	}
 	return single(Diagnostic{
-		Path: configPath, Key: "search.keyword_weight",
-		RelatedKey: "search.embedding_weight",
-		Code:       "weights_invalid", Property: "weights", Shape: shape,
+		Path: configPath, Key: key,
+		Line: nodeLine(ownNode), Column: nodeColumn(ownNode),
+		RelatedKey: relatedKey, RelatedLine: nodeLine(relatedNode), RelatedColumn: nodeColumn(relatedNode),
+		Code: "weights_invalid", Property: "weights", Shape: shape,
 		Reason: "search weights must be nonnegative, sum to one, and keyword_weight positive",
 	})
 }
@@ -79,30 +87,30 @@ func validateBoundsAt(node *yaml.Node, path, server, configPath string) *Diagnos
 		"dimensions": {1, 4096}, "batch_size": {1, 128}, "max_concurrency": {1, 32}, "query_cache_entries": {0, 4096},
 		"rrf_constant": {1, 1e9}, "slots": {1, 128},
 	}
-	boundRange := func(keyPath, shape string) *Diagnostics {
+	boundRange := func(keyPath, shape string, value *yaml.Node) *Diagnostics {
 		return single(Diagnostic{
-			Path: configPath, Key: keyPath, Server: server,
+			Path: configPath, Key: keyPath, Server: server, Line: nodeLine(value), Column: nodeColumn(value),
 			Code: "bound_range", Property: "range", Shape: shape,
 			Reason: "outside permitted bounds",
 		})
 	}
 	durationType := func(keyPath string, value *yaml.Node) *Diagnostics {
 		return single(Diagnostic{
-			Path: configPath, Key: keyPath, Server: server,
+			Path: configPath, Key: keyPath, Server: server, Line: nodeLine(value), Column: nodeColumn(value),
 			Code: "duration_type", Property: "type", Shape: shapeOf(value),
 			Reason: "must be a duration",
 		})
 	}
-	durationRange := func(keyPath, shape string) *Diagnostics {
+	durationRange := func(keyPath, shape string, value *yaml.Node) *Diagnostics {
 		return single(Diagnostic{
-			Path: configPath, Key: keyPath, Server: server,
+			Path: configPath, Key: keyPath, Server: server, Line: nodeLine(value), Column: nodeColumn(value),
 			Code: "duration_range", Property: "range", Shape: shape,
 			Reason: "outside permitted duration bounds",
 		})
 	}
-	durationPositive := func(keyPath, shape string) *Diagnostics {
+	durationPositive := func(keyPath, shape string, value *yaml.Node) *Diagnostics {
 		return single(Diagnostic{
-			Path: configPath, Key: keyPath, Server: server,
+			Path: configPath, Key: keyPath, Server: server, Line: nodeLine(value), Column: nodeColumn(value),
 			Code: "duration_positive", Property: "duration", Shape: shape,
 			Reason: "must be a positive duration",
 		})
@@ -126,13 +134,13 @@ func validateBoundsAt(node *yaml.Node, path, server, configPath string) *Diagnos
 			if bound, ok := bounds[key.Value]; ok {
 				var number float64
 				if err := value.Decode(&number); err != nil {
-					return boundRange(keyPath, "invalid_number")
+					return boundRange(keyPath, "invalid_number", value)
 				}
 				switch {
 				case number < bound[0]:
-					return boundRange(keyPath, "below_minimum")
+					return boundRange(keyPath, "below_minimum", value)
 				case number > bound[1]:
-					return boundRange(keyPath, "above_maximum")
+					return boundRange(keyPath, "above_maximum", value)
 				}
 			}
 			// session_idle_timeout is a session lifetime, not a request timeout: the
@@ -150,11 +158,11 @@ func validateBoundsAt(node *yaml.Node, path, server, configPath string) *Diagnos
 				duration, err := time.ParseDuration(value.Value)
 				switch {
 				case err != nil:
-					return durationRange(keyPath, "invalid_duration")
+					return durationRange(keyPath, "invalid_duration", value)
 				case duration < sessionIdleMinDuration:
-					return durationRange(keyPath, "below_minimum")
+					return durationRange(keyPath, "below_minimum", value)
 				case duration > sessionIdleMaxDuration:
-					return durationRange(keyPath, "above_maximum")
+					return durationRange(keyPath, "above_maximum", value)
 				}
 			} else if key.Value == "timeout" || strings.HasSuffix(key.Value, "_timeout") {
 				if value.Kind != yaml.ScalarNode {
@@ -170,20 +178,20 @@ func validateBoundsAt(node *yaml.Node, path, server, configPath string) *Diagnos
 				}
 				switch {
 				case err != nil:
-					return durationRange(keyPath, "invalid_duration")
+					return durationRange(keyPath, "invalid_duration", value)
 				case duration <= 0:
-					return durationRange(keyPath, "nonpositive")
+					return durationRange(keyPath, "nonpositive", value)
 				case duration > limit:
-					return durationRange(keyPath, "above_maximum")
+					return durationRange(keyPath, "above_maximum", value)
 				}
 			}
 			if key.Value == "refresh_interval" || key.Value == "stale_after" || key.Value == "query_cache_ttl" || key.Value == "open_duration" {
 				duration, err := time.ParseDuration(value.Value)
 				switch {
 				case err != nil:
-					return durationPositive(keyPath, "invalid_duration")
+					return durationPositive(keyPath, "invalid_duration", value)
 				case duration <= 0:
-					return durationPositive(keyPath, "nonpositive")
+					return durationPositive(keyPath, "nonpositive", value)
 				}
 			}
 			if diags := validateBoundsAt(value, keyPath, server, configPath); diags != nil {

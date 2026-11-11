@@ -64,7 +64,7 @@ func diagCanaries(index int) (publicID, internalID, diagnosticID string) {
 func diagCompletionsFor(t *testing.T, harness *oauthTestHarness, diagnosticID string) []map[string]any {
 	t.Helper()
 	var matched []map[string]any
-	for _, record := range filterRecords(decodeCapturedRecords(t, harness.stdout.String()), "http_complete") {
+	for _, record := range filterRecords(decodeCapturedRecords(t, harness.stdout.String()+harness.stderr.String()), "http_complete") {
 		if record["request_id"] == diagnosticID {
 			matched = append(matched, record)
 		}

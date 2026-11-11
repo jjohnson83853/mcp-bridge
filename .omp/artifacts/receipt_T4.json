@@ -1,1 +1,15 @@
-{"task_id":"T4","status":"COMPLETED","artifact_receipt":".omp/artifacts/receipt_T4.json","telemetry_ref":null,"summary":"Composed session-admission wire test and zero-leak checks; ChatGPT runbook updated. Focused/full race tests pass; coverage 90.2% and covcheck gate passes.","error_code":null}
+{
+  "task_id": "T4",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_T4.json",
+  "telemetry_ref": null,
+  "summary": "T4 scope is complete: K3 and stream-capture migrations pass; build/vet and scoped internal suites pass. The cmd suite's only failure is the T5-owned manifest assertion at manifest_test.go:67, recorded for T5/T7; the suite is not reported as passing.",
+  "error_code": null,
+  "evidence": [
+    {"command": "go test ./cmd/mcp-bridge -run '^TestServeLoggingHTTP/ClientAuthentication$'", "exitCode": 1, "result": "Expected RED: ClientAuthentication observed the forbidden nested client_auth_failed error."},
+    {"command": "go test ./cmd/mcp-bridge -run '^TestServeLoggingHTTP/ClientAuthentication$'", "exitCode": 0, "result": "GREEN after removing the client-auth nested error."},
+    {"command": "go test ./cmd/mcp-bridge/...", "exitCode": 1, "result": "Only failure: TestConfigDiagnosticFieldManifest at manifest_test.go:67, server=alpha; want _bridge."},
+    {"command": "go test ./internal/observe/... ./internal/service/... ./internal/upstream/... ./internal/auth/...", "exitCode": 0},
+    {"command": "go build ./... && go vet ./...", "exitCode": 0}
+  ]
+}

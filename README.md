@@ -139,6 +139,14 @@ services:
 - **Dual-Mode Fallback**: Non-JWT opaque tokens continue to be verified against the static tokens configured in `client_auth.bearer_tokens` (YAML document), preserving compatibility for legacy scripts and integration tests.
 - **Bypassed Endpoints**: `/.well-known/oauth-protected-resource`, `/livez`, `/readyz`, and `/healthz` bypass authentication without credentials.
 
+## Logging
+
+The bridge writes application logs and CLI failures as versioned JSON lines,
+with typed configuration attribution, stable error classes, and explicit
+stdout/stderr routing. The full field union, event and error classifications,
+HTTP diagnostics, reload behavior, collector boundary, and query examples are
+documented in the [structured logging contract](docs/logging-contract.md).
+
 ## Configuration
 
 `configs/config.example.yaml` is a complete document. The shape is flattened —
@@ -246,65 +254,20 @@ changed variable value or a changed Compose environment, recreate the container
 with the new environment (e.g. `docker compose up -d --force-recreate
 mcp-bridge`); restarting the old container without it does not acquire the
 change, and a reload that sees different effective embedding settings is
-rejected as `restart_required` with the live runtime unchanged. Failure
-diagnostics surface through the existing local channels only — startup stderr,
-`--check-config` output, and reload JSON/metric records — with no promise of
-external log-shipping ingestion.
+rejected as `restart_required` with the live runtime unchanged.
+Failure diagnostics use the structured JSON contract in
+[Logging](#logging) for startup, `--check-config`, reload, and lifecycle events.
+The collector/shipping path is unchanged and is not guaranteed by this repository.
 
 ## Configuration diagnostics
 
-Every rejected document is attributed as one typed, single-line record: the
-supplied config path, the complete known location, the owner and reference
-identity, a finite code/property/shape class, and a static reason. Records
-never contain a secret value, a preview, a hash, a fingerprint, an exact
-length, an offset, or raw YAML/URL/OS text — a multi-failure collection is
-pipe-separated and bounded:
-
-```text
-invalid configuration: diagnostics=5: config="configs/config.example.yaml" key="embedding.api_key" ref="env:BRIDGE_EMBEDDING_KEY" code=secret_unset property=value shape=unset: secret environment variable is unset; set the named reference without printing its value | ... | config="configs/config.example.yaml" key="servers[1].credentials.bearer" server="portainer-api" ref="env:PORTAINER_UPSTREAM_TOKEN" code=secret_unset property=value shape=unset: secret environment variable is unset; set the named reference without printing its value; remaining_stages=not_checked
-```
-
-Safe repair path: edit the file named by `config=` at the `key=` location named
-by the record. The code is a closed vocabulary (`secret_unset`, `secret_empty`,
-`secret_too_large`, `secret_cr`/`secret_lf`/`secret_nul`, `secret_file_missing`,
-`secret_file_policy`, `bound_range`, `duration_*`, `url_invalid`, …) and the
-reason is a static instruction; neither ever echoes the value. `ref=` names the
-configured reference identity (`env:NAME` or `file:PATH` as written); the
-config-dir resolution of a relative file path stays internal and is never
-rendered.
-
-Channels:
-
-- `--check-config`: rejections print `invalid configuration: <records>` to
-  stderr with stdout empty and exit status 1; a valid document keeps the
-  existing `configuration valid: <summary>` line on stdout. This is the
-  intended validation step before `docker compose up`, and it can also run
-  inside the deployed image:
-  `docker compose run --rm mcp-bridge --check-config --config /app/configs/config.mcp-grafana-stack.yaml`.
-  In Compose the same record surfaces as a container log line prefixed
-  `mcp-bridge |`.
-- Serve startup: rejections keep the existing `mcp-bridge: configuration:`
-  stderr prefix followed by the same records; stdout shape is unchanged.
-- Reload: a rejected candidate is reported as an operator-log JSON entry
-  (`event: reload`, `outcome: failure`) carrying the typed manifest —
-  `config_path`, `location`, `line`, `column`, `code`, `property`, `shape`,
-  `ref_kind`, `ref_name`, `pin_server`, `pin_tool`, `related_location`,
-  `related_ref_kind`, `related_ref_name`, `diagnostic_index`,
-  `diagnostics_incomplete`, `remaining_stages`, `server`. Disallowed metadata
-  (`config_key`, `secret_ref`, header/URL/endpoint identities, freeform error
-  text) is dropped by the logger allowlist and never reflected; the unrelated
-  credential redaction stays intact.
-
-Line-ending policy: file secret values must be UTF-8 with no CR, LF, or NUL.
-Reads strip exactly one final LF, so a file with a single trailing newline is
-fine; a second trailing LF is a `secret_lf` rejection. Environment values are
-never newline-stripped.
-
-A collection reports at most 32 records. Beyond that the collection is marked
-incomplete (`diagnostics_incomplete: true` in the logger manifest, footer once
-on the rendered line), and a secret-stage failure skips the remaining stages
-(`remaining_stages: not_checked`) rather than guessing what they would have
-reported.
+Configuration validation emits one JSON envelope with the first deterministic
+diagnostic, safe source attribution, and a static remediation. Startup rejection
+and `--check-config` use the same `config_validation_failed` contract; a rejected
+reload uses the warning-level reload event and leaves the active configuration
+serving. The 64-pin ceiling identifies `pins[64]` without exposing unrelated pin
+values. See [the logging contract](docs/logging-contract.md) for the schema,
+attribution rules, failure codes, streams, and examples.
 
 ## Tool surface
 
@@ -548,302 +511,14 @@ name, query, URL, or token.
 
 ### HTTP request diagnostics
 
-Every HTTP request reaching the inbound listener produces one terminal
-structured JSON record (`event: http_complete`) on standard output. The
-completion is owned by one private outer observer composed around the entire
-public mux, so it also covers early OAuth rejections, metadata and health
-responses, and unmatched routes — not only the protected MCP path. It is
-attempted on normal handler return or panic unwind. One terminal write is
-attempted per request; abrupt process loss or a broken/short stdout write can
-lose the record, and broken sinks do not self-report:
-
-- **Base envelope:** `time` (UTC RFC3339Nano), `level` (`info` for successes,
-  `warn` for rejections/client errors, `error` for internal errors), `service`
-  (`mcp-bridge`), `environment` (`unspecified`), `version` (`unspecified`),
-  and fixed `message: "http request completed"`. Actual typed tool errors
-  under an observed 200 promote the HTTP completion to `warn`, and an
-  unavailable response promotes `info` to `warn`; existing `warn`/`error`
-  severities are never downgraded and no duplicate failure stream exists.
-- **Transport fields:** `http_method` (`GET`, `POST`, `DELETE`, `HEAD`,
-  `OPTIONS`, `PUT`, `PATCH`, `OTHER`), `route` (`mcp`, `not_found`),
-  `operation` (inbound method/transport classification: `initialize`,
-  `initialized`, `tools_list`, `tools_call`, `resources_list`, `resources_read`,
-  `ping`, `prompts_list`, `prompts_get`, `sse_stream`, or fallback `request`),
-  `client_family` (closed client classification derived by strict priority substring
-  match from `User-Agent`: `openai`, `claude`, `cursor`, `omp`, `browser`, `other`,
-  or `absent`; raw User-Agent headers are never logged),
-  `http_status` (observed integer `100`–`599`, or explicit JSON `null` when no
-  response evidence exists), `http_outcome` (`success`, `failure`, `incomplete`,
-  `unknown`), `http_bytes` (exact response-body byte count written, including
-  `0` for zero-byte writes and observed body bytes before an error on partial writes),
-  `http_bytes_bucket` (`empty`, `le_1k`, `le_16k`, `le_256k`, `le_1m`, `gt_1m`,
-  `unavailable`), `exposed_tools` (exact count of exposed tools returned on
-  successful `tools/list` response pages; omitted on write failures, list errors,
-  and non-`tools/list` operations), and `duration_ms` (signed elapsed
-  milliseconds from outer-owner entry — before routing, OAuth evaluation, and
-  correlation-ID generation — through handler return/unwind; this is wider
-  than the former inner-handler interval). A separate bounded
-  `diag_duration_ms` field (`0`–`86400000`, with `duration_capped: true` when
-  clamped, including negative clock deltas clamped to `0`) measures the same
-  interval within the semantic bounds. Inbound request counters
-  (`bridge_requests_total`) partition requests by this operation enum. Raw
-  paths, queries, and arbitrary verbs are never reflected.
-- **Internal correlation:** `request_id` is an internal lowercase 32-hex ID
-  minted independently of caller-supplied identifiers; `correlation_state`
-  reports `available` or `unavailable`. The same owned ID is returned to the
-  caller as a `Mcp-Diagnostic-Id` response header, installed before routing
-  and any write — including 401/403 responses and metadata/health when
-  available. Callers cannot choose this value; caller-supplied public,
-  internal, or diagnostic headers never supply identity. When request entropy
-  fails, `correlation_state` becomes `unavailable`, `request_id` is absent,
-  and the diagnostic header is omitted — no caller/time/counter/hash
-  fallback or retry. Public `X-Request-ID` response behavior remains unchanged
-  where the inner handler already echoes it, including on request-entropy
-  failure; it is never an internal logging identity or trusted diagnostic join.
-- **Finite admission stages and reasons:**
-  - `client_auth` / `client_auth_failed`: missing or invalid client Bearer token.
-  - `session_admission` / `session_auth_failed`: an absent session entry or
-    existing bearer-binding mismatch; returns 404 with no `Bearer` challenge
-    and no session ID, so clients treat the session as lost/unusable,
-    reinitialize, and retry. Omitting the session header alone is
-    not an owned rejection, and fresh initialization can be legal.
-  - `session_admission` / `session_capacity`: active sessions exceed `max_sessions`.
-  - `host_admission` / `host_rejected`: Host header not allowed by `allowed_hosts`.
-  - `origin_admission` / `origin_rejected`: Origin header not allowed by
-    `allowed_origins` (Host rejection decisive before Origin).
-  - `request_limits` / `request_too_large`: body exceeds `max_request_body_bytes`
-    (returns 413 with native transport close-on-limit).
-  - `http_route` / `route_not_found`: unmatched path or unusual verb.
-- **Outer OAuth rejection reasons (typed):** Early OAuth failures are mapped
-  to authoritative finite reasons — missing credentials to
-  `credentials_missing`, a wrong Bearer scheme to `bearer_malformed`,
-  explicitly unusable keyset to `jwt_key_unavailable`, explicit verified
-  audience denial to `jwt_audience_invalid`, and scope denial to
-  `scope_insufficient` (403 with its existing challenge). Parser failures,
-  including those without an authoritative specific typed classification, use
-  `jwt_invalid_other`; a generic JWT outcome proves neither expiry nor a
-  particular signature/key failure. Any
-  outer denial records the session as `not_evaluated` and the upstream as
-  `not_attempted`. The first actual decisive rejection is immutable — later
-  operation or delivery evidence cannot overwrite it.
-- **Outer rejection examples:** The rows below are synthetic, abbreviated
-  (core envelope fields such as `time`, `message`, `service`, `environment`,
-  `version`, and `generation` elided, along with conditional and
-  always-present typed slots not shown, e.g. `duration_capped`, `path_class`,
-  `route_outcome`, `status_state`, `challenge_*`, `process_*`) and
-  illustrative only; the accepted
-  severity policy is unchanged (`info` for accepted requests, `warn` for
-  expected 4xx rejections, `error` for actual dependency/internal 5xx, `warn`
-  when no response evidence is available). A rejected request has no
-  downstream side effect: `session_state` stays `not_evaluated` and
-  `upstream_state` stays `not_attempted`, and the existing status, challenge,
-  and response body are unchanged by the diagnostics.
-
-  Missing credentials (no Bearer token; 401 resource-metadata challenge):
-
-  ```json
-  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"unknown","stage":"unknown","failure_stage":"outer_oauth","failure_reason":"credentials_missing","http_status":401,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":3,"diag_duration_ms":1,"credential_state":"missing","scope_state":"not_evaluated","session_state":"not_evaluated","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"0123456789abcdef0123456789abcdef","correlation_state":"available","diag_schema":"oauth_diag_v1"}
-  ```
-
-  Malformed credentials (wrong Bearer scheme; 401 challenge unchanged):
-
-  ```json
-  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"unknown","stage":"unknown","failure_stage":"outer_oauth","failure_reason":"bearer_malformed","http_status":401,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":2,"diag_duration_ms":1,"credential_state":"rejected","scope_state":"not_evaluated","session_state":"not_evaluated","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"a1b2c3d4e5f60102030405060708090a","correlation_state":"available","diag_schema":"oauth_diag_v1"}
-  ```
-
-  Authoritative JWT failure classes (all 401; generic parser rejections stay
-  `jwt_invalid_other`, which proves neither expiry nor a specific signature
-  or key failure):
-
-  ```json
-  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"unknown","stage":"unknown","failure_stage":"outer_oauth","failure_reason":"jwt_key_unavailable","http_status":401,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":5,"diag_duration_ms":1,"credential_state":"rejected","scope_state":"not_evaluated","session_state":"not_evaluated","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"b7e0f11a2233445566778899aabbccdd","correlation_state":"available","diag_schema":"oauth_diag_v1"}
-  ```
-
-  ```json
-  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"unknown","stage":"unknown","failure_stage":"outer_oauth","failure_reason":"jwt_audience_invalid","http_status":401,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":4,"diag_duration_ms":1,"credential_state":"rejected","scope_state":"not_evaluated","session_state":"not_evaluated","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"c9d8e7f6050403020110aabbccddeeff","correlation_state":"available","diag_schema":"oauth_diag_v1"}
-  ```
-
-  Scope denial (credentials accepted, scope rejected; 403 with the existing
-  insufficient-scope challenge — no session or downstream evaluation):
-
-  ```json
-  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"unknown","stage":"unknown","failure_stage":"outer_oauth","failure_reason":"scope_insufficient","http_status":403,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":6,"diag_duration_ms":2,"credential_state":"accepted","scope_state":"rejected","session_state":"not_evaluated","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"ddeeff00112233445566778899aabb01","correlation_state":"available","diag_schema":"oauth_diag_v1"}
-  ```
-
-- **Session outcomes (`failure_stage: session`, both 404 with no challenge,
-  unchanged diagnostics).** The inner session admission distinguishes
-  an absent session entry from an existing-entry bearer-binding mismatch —
-  independently of the HTTP status:
-
-  Missing/reaped entry: valid credentials plus a session header that has no
-  stored entry (`session_absent`; the comparator never ran and the session
-  reference was deleted with the session):
-
-  ```json
-  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"session_auth_failed","stage":"session_admission","failure_stage":"session","failure_reason":"session_absent","http_status":404,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":4,"diag_duration_ms":2,"credential_state":"accepted","scope_state":"accepted","session_header":"present","session_state":"absent","binding_relation":"not_evaluated","session_ref_state":"not_applicable","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"11ff22ee33dd44cc55bb66aa7799cc00","correlation_state":"available","diag_schema":"oauth_diag_v1"}
-  ```
-
-  Existing entry, different bearer binding (comparator mismatch; the live
-  `session_ref` appears in the server record only, never in any response):
-
-  ```json
-  {"event":"http_complete","level":"warn","operation":"unknown","outcome":"failure","reason":"session_auth_failed","stage":"session_admission","failure_stage":"session","failure_reason":"session_fingerprint_mismatch","http_status":404,"http_method":"POST","route":"mcp","http_outcome":"failure","duration_ms":3,"diag_duration_ms":1,"credential_state":"accepted","scope_state":"accepted","session_header":"present","session_state":"existing","binding_relation":"mismatch","session_ref_state":"available","session_ref":"7f3a9c1e552b40d6a8c1e93b7742d015","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"aabb0011ccdd22ee33ff445566778899","correlation_state":"available","diag_schema":"oauth_diag_v1"}
-  ```
-
-  Successful session creation (initialize without a header; legal, never a
-  rejection) and ordinary sessionless traffic:
-
-  ```json
-  {"event":"http_complete","level":"info","operation":"unknown","outcome":"success","reason":"none","stage":"none","failure_stage":"none","failure_reason":"none","http_status":200,"http_method":"POST","route":"mcp","http_outcome":"success","duration_ms":12,"diag_duration_ms":11,"credential_state":"accepted","scope_state":"accepted","session_header":"absent","session_state":"created","binding_relation":"not_evaluated","session_ref_state":"available","session_ref":"0d47a2c9b1e6f83d55a04c2e91b7f660","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"5566778899aabbccddeeff0011223344","correlation_state":"available","diag_schema":"oauth_diag_v1"}
-  ```
-
-  A request that proceeds without any supplied or issued session records
-  `session_state: not_supplied` with `session_ref_state: not_applicable`. A
-  `session_capacity` rejection runs no session lookup or comparator, so its
-  record reports `session_state: not_evaluated` and
-  `binding_relation: not_evaluated`.
-
-  Successful use of a retained session (`binding_relation: match`; the same
-  reference the session was created with, in the server record only):
-
-  ```json
-  {"event":"http_complete","level":"info","operation":"unknown","outcome":"success","reason":"none","stage":"none","failure_stage":"none","failure_reason":"none","http_status":200,"http_method":"POST","route":"mcp","http_outcome":"success","duration_ms":9,"diag_duration_ms":8,"credential_state":"accepted","scope_state":"accepted","session_header":"present","session_state":"existing","binding_relation":"match","session_ref_state":"available","session_ref":"0d47a2c9b1e6f83d55a04c2e91b7f660","upstream_state":"not_attempted","auth_mode":"oauth","request_id":"8899aabbccddeeff0011223344556677","correlation_state":"available","diag_schema":"oauth_diag_v1"}
-  ```
-
-- **Session reference (`session_ref`) handling.** When an admitted live session
-  is created, the server draws one independent cryptographically random
-  128-bit reference (32 lowercase hex) and retains it only with that session;
-  it is deleted with the session (DELETE or idle reaping). If the upstream
-  issues a new session ID while an existing matched session is still live,
-  both sessions and their distinct references remain until each is deleted
-  or reaped; no replacement deletion occurs. Large records may omit it for
-  size, recording
-  `session_ref_state: omitted_for_budget`; records never drop the session
-  state or reason to fit the budget. Treat it
-  as a stable pseudonym for one server-side session incarnation:
-  - Include `session_ref` in operator examples or incident bundles only when
-    it is necessary to pair control requests with session observations;
-    otherwise omit it from shared material and mark the omission explicitly
-    `omitted_for_privacy` in operator notes (a shared-artifact annotation, not
-    a record value — not `unavailable`, which is the entropy-failure state the
-    record itself uses).
-  - A changed reference establishes changed server session state only.
-    Absence or change alone cannot distinguish token expiry, process loss,
-    eviction, or unknown client input. A reconnect may replace both the
-    credentials and the session.
-  - The reference is not a session credential, not a lookup key, and never
-    appears in a response. No raw session ID, credential/session digest,
-    tombstone, or per-request correlation map is retained.
-- **Missing session headers.** Header absence alone is not a rejection and
-  never produces `session_header_missing`: that reason is reserved for actual
-  session-required branches with an authoritative protocol cause. The pinned
-  SDK's pre-dispatch initialization rejection is not yet observable through a
-  supported typed path, so no missing-header reason is emitted on that path;
-  no status or error text is inferred to manufacture one.
-- **Not established by session observations:** Real OMP/Gemini smoke is NOT
-  RUN; all examples above are synthetic. These records separate observations
-  (a rejected binding, an absent entry, a created session) from refresh and
-  expiry hypotheses: no record proves why a client's credentials or session
-  changed, and nothing here labels identical real identities or proves actual
-  client renewal.
-- **Runtime provenance and safe route context.** Each record carries three
-  distinct identities that must never be conflated:
-  - `process_id` — the process incarnation: one independent cryptographically
-    random 128-bit value (32 lowercase hex) drawn once per process and stable
-    across configuration reloads. It changes on every restart. **A changed
-    process incarnation alone is not incident-cause proof and is not a
-    recommendation to restart**; it only lets you tell records from different
-    process lifetimes apart.
-  - `source_revision` / `build_state` — the verified immutable source revision
-    of the running binary (40–64 lowercase hex from its VCS stamp), separate
-    from the process identity and from mutable image tags. `build_state` is
-    `verified` only when a clean, stamped revision was read; a locally
-    modified (unpushed) build reports `unavailable` and emits no revision —
-    unpushed local diagnostics never claim to be deployed, and a mutable
-    tag or arbitrary hash-shaped value is never accepted as provenance.
-  - `effective_policy_revision` / `effective_policy_revision_state` — an
-    attested nonsecret policy-content artifact identifier, `verified` only
-    when such an attestation exists; otherwise explicitly `unavailable`. The
-    fixed `diagnostic_policy_revision` (`oauth-diag-policy-v1`) identifies the
-    diagnostic contract only and never proves that authorization policy
-    content is unchanged. No secret-bearing configuration is hashed, and no
-    hidden issuer, principal, client or audience equality is inferred.
-  The safe nonsecret policy tuple is `policy_source` (`defaults`,
-  `environment`, `file`, `mixed`, `unavailable`), `oauth_enabled`,
-  `static_configured`, `scope_required` (booleans or explicit `null`), and
-  `clock_skew_seconds` (`60` when the verified validation tolerance applies,
-  otherwise absent). `resource_path_mode` classifies the resource URL as
-  `origin_only` or `path_bearing` without emitting any URL. This tuple is a
-  startup snapshot built once from the then-current environment and
-  configuration: a `SIGHUP` reload that adds or removes client token hashes
-  or other policy inputs is not reflected in it until the next restart.
-  Safe route and challenge context is finite classification only — never raw
-  paths, queries, URLs, realms, scopes or headers: `path_class`
-  (`mcp`/`metadata_root`/`health`/`other`), `route_outcome` by actual
-  dispatch (`oauth_protected`, `inbound_direct`, `metadata`, `health`,
-  `not_found`, `other`, `unavailable`), `challenge_kind` and
-  `challenge_target` from what was actually selected and written
-  (`root_well_known` versus `path_appended_well_known`), and
-  `metadata_target_registered` (`yes`/`no`/`not_applicable`/`unavailable`)
-  from an exact registration comparison — which is **not** proof of public
-  reachability.
-  Operation linkage: `operation_relation` (`none`/`single`/`multiple`/
-  `unavailable`) counts only server-owned operation identities actually
-  observed; a single eligible `operation_id` (32 lowercase hex) is emitted
-  only for a single linked operation, several operations keep their own
-  per-operation records (no unbounded terminal ID list), caller-supplied or
-  JSON-RPC identifiers are never trusted, and unsafe IDs stay
-  `unavailable` rather than being rewritten into certainty.
-  `upstream_state` reports the actual downstream classes observed
-  (`not_attempted`, `succeeded`, `transport_failed`, `auth_failed`,
-  `tool_error`, `multiple`, `unavailable`) — a tool-error envelope under HTTP
-  200 records `tool_error` with the completion promoted to `warn`, staying
-  distinct from admission rejection; an HTTP 200 never invents downstream
-  success. A tool-error example (synthetic):
-
-  ```json
-  {"event":"http_complete","level":"warn","outcome":"success","reason":"none","stage":"none","failure_stage":"none","failure_reason":"none","http_status":200,"http_method":"POST","route":"mcp","http_outcome":"success","duration_ms":210,"diag_duration_ms":209,"credential_state":"accepted","scope_state":"accepted","session_header":"absent","session_state":"not_supplied","binding_relation":"not_evaluated","session_ref_state":"not_applicable","upstream_state":"tool_error","operation_relation":"single","operation_id_state":"available","operation_id":"4f1d2c9b55a04c2e91b7f6600d47a2c9","auth_mode":"oauth","process_state":"available","process_id":"8c2f4e6a1b3d5f7e9a0c2e4b6d8f0a2c","source_revision":"e621622397298bb4eb44a9b0f5ff1a00d6f16300aa11bb22cc33dd44ee55ff66","build_state":"verified","effective_policy_revision_state":"unavailable","policy_source":"environment","oauth_enabled":true,"static_configured":true,"scope_required":true,"clock_skew_seconds":60,"resource_path_mode":"origin_only","path_class":"mcp","route_outcome":"oauth_protected","request_id":"99aabbcdddeeff001122334455667700","correlation_state":"available","diag_schema":"oauth_diag_v1"}
-  ```
-
-- **Privacy and byte bounds:** Each record is a closed typed allowlist with no
-  arbitrary maps or extras: no credentials, JWTs, claims, identities, raw
-  session IDs, header/path/query/URL/payload values, or error prose appear.
-  Core output is bounded at 3584 bytes; the complete record including the
-  trailing newline is bounded at 4096 bytes. One sink write is attempted —
-  failed or short writes are not retried, and no recursive logging occurs.
-- **Collection and delivery boundary:** Records are emitted as single-line JSON
-  to stdout. Standard container/service stdout collection is the shipping boundary.
-  Stdout write failures are nonfatal and do not fail requests, retry, or recurse;
-  no durable buffer or delivery guarantee is provided. When routing to Loki or
-  similar systems, index only low-cardinality metadata (`level`, `event`,
-  `service`, `http_method`, `route`, `stage`, `reason`); keep high-cardinality
-  identifiers such as `request_id` out of label indexes; raw session IDs and
-  client addresses are not part of the typed record at all.
-- **Correlating responses with log records:** An exact join parses the
-  response `Mcp-Diagnostic-Id` (32 lowercase hex), finds the parsed
-  `http_complete` record with the same `request_id` from the same service and
-  `oauth_diag_v1` schema, and requires exact equality — arbitrary header text,
-  labels, or timestamps never substitute. A hidden header (origin absence,
-  transit stripping, CORS invisibility, wrapper hiding) cannot be joined by
-  time coincidence or wrapper traces; classify it as unobserved rather than
-  guessing. There are no CORS or proxy changes to make the header readable to
-  browsers or wrappers, and no guarantee it survives them.
-- **Not established by this diagnostics:** The cause of any past session
-  failure, real client renewal behavior, and actual deployed collector/query
-  behavior are not proven by this logging foundation; the provenance fields
-  report what the running process can verify about itself and never prove
-  what is actually deployed or why an incident happened. Absence of a
-  diagnostic field is absence of
-  evidence, never a positive diagnosis (e.g. a missing header is not proof of
-  expiry).
-- **Metrics repartitioning:** Inbound request counter
-  `bridge_requests_total{server="_bridge", operation="<operation>", outcome="<outcome>"}`
-  partitions incoming traffic into the finite operation enum (`initialize`,
-  `initialized`, `tools_list`, `tools_call`, `resources_list`, `resources_read`,
-  `ping`, `prompts_list`, `prompts_get`, `sse_stream`, `request`). Label names
-  and server scopes remain strictly bounded; total traffic aggregations over all
-  operations remain continuous while panels or alerts filtering strictly on
-  `operation="request"` reflect the partitioned operations.
+Each observed inbound HTTP request produces one terminal `http_complete`
+diagnostic in the same versioned JSON-line format. The fixed HTTP lane has its
+own closed 60-slot map, shares the level-to-stream routing and collector
+boundary, and records only finite route, transport, outcome, and correlation
+classes. It does not serialize raw paths, query strings, headers, payloads,
+credentials, or arbitrary error text. The complete slot map, nested error
+shape, provenance boundary, and Loki examples are in the
+[structured logging contract](docs/logging-contract.md).
 
 ## Behaviour worth knowing
 
@@ -887,12 +562,10 @@ gate on pushes to `main`, pull requests and manual dispatch. The instrumented ru
 also supplies ordinary full-suite verification; no image build or deployment runs
 in this workflow.
 
-`internal/config` carries the typed-diagnostic contract tests: every rejected
-document names its config path, document location, owner/reference identity,
-code, property, shape and static reason, file classification keeps its
-exact-case matrix (`bounds_edge_test.go`, `private_file_test.go`,
-`secret_validation_edge_test.go`), and `internal/observe` pins the exact
-18-field diagnostic logger manifest in `TestConfigDiagnosticFieldManifest`.
+`internal/config` and `internal/observe` exercise the structured diagnostic
+contract, including configuration attribution, typed error objects, HTTP
+records, and the closed field vocabulary. The full contract and its tests are
+linked above.
 
 `cmd/mcp-bridge/serve_test.go` is the process-level acceptance test: it starts
 the real composition root against `httptest` upstreams and a private temp store,

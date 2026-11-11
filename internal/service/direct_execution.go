@@ -77,15 +77,11 @@ func (e boundDirectExecution) logDispatchFailure(backendCallID string, backendSt
 			Operation: "call_tool",
 			Duration:  time.Since(backendStart),
 			Outcome:   outcome,
-			Reason:    dispatchErr.Code,
+			Error:     observe.RuntimeErrorInfo(dispatchErr.Code),
 			Fields: map[string]any{
-				"request_id":      e.requestID,
 				"operation_id":    e.operationID,
 				"backend_call_id": backendCallID,
 				"tool":            core.PublicName(e.target.serverID, e.target.rawName),
-				"outcome":         outcome,
-				"reason":          dispatchErr.Code,
-				"duration_ms":     time.Since(backendStart).Milliseconds(),
 			},
 		})
 		e.surface.logger.Log(observe.Entry{
@@ -95,16 +91,12 @@ func (e boundDirectExecution) logDispatchFailure(backendCallID string, backendSt
 			Operation: "call_tool",
 			Duration:  time.Since(e.requestStart),
 			Outcome:   "error",
-			Reason:    dispatchErr.Code,
+			Error:     observe.RuntimeErrorInfo(dispatchErr.Code),
 			Fields: map[string]any{
-				"request_id":       e.requestID,
 				"operation_id":     e.operationID,
 				"mcp_method":       "tools_call",
 				"mcp_message_kind": "request",
 				"stage":            "backend_dispatch",
-				"outcome":          "error",
-				"reason":           dispatchErr.Code,
-				"duration_ms":      time.Since(e.requestStart).Milliseconds(),
 			},
 		})
 	}
@@ -132,19 +124,15 @@ func (e boundDirectExecution) logDispatchSuccess(backendCallID string, backendSt
 		Operation: "call_tool",
 		Duration:  time.Since(backendStart),
 		Outcome:   outcome,
-		Reason:    reason,
+		Error:     observe.RuntimeErrorInfo(reason),
 		Fields: map[string]any{
-			"request_id":                   e.requestID,
 			"operation_id":                 e.operationID,
 			"correlation_state":            e.correlation,
 			"backend_call_id":              backendCallID,
 			"tool":                         core.PublicName(e.target.serverID, e.target.rawName),
-			"outcome":                      outcome,
-			"reason":                       reason,
 			"upstream_content_count":       contentCount,
 			"upstream_text_presence":       textPresence,
 			"upstream_structured_presence": structuredPresence,
-			"duration_ms":                  time.Since(backendStart).Milliseconds(),
 		},
 	})
 	e.surface.logger.Log(observe.Entry{
@@ -154,16 +142,12 @@ func (e boundDirectExecution) logDispatchSuccess(backendCallID string, backendSt
 		Operation: "call_tool",
 		Duration:  time.Since(e.requestStart),
 		Outcome:   outcome,
-		Reason:    reason,
+		Error:     observe.RuntimeErrorInfo(reason),
 		Fields: map[string]any{
-			"request_id":        e.requestID,
-			"operation_id":      e.operationID,
+			"operation_id":     e.operationID,
 			"correlation_state": e.correlation,
 			"mcp_method":        "tools_call",
 			"mcp_message_kind":  "request",
-			"outcome":           outcome,
-			"reason":            reason,
-			"duration_ms":       time.Since(e.requestStart).Milliseconds(),
 		},
 	})
 }

@@ -1,0 +1,1412 @@
+{
+  "schemaVersion": 2,
+  "feature": "structured-logging",
+  "revision": "r7-closure1",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+    "sha256": "24026de7fd199182e4b03960a54f8d109b01b48f7eb13211602c3fe5fd8bc67d",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r7-closure1",
+        "sha256": "094025ad7cf4010d5b583233386b94c43f8caabcb0dabb004b2f7cd367e6daff"
+      },
+      "design": {
+        "revision": "r7-closure1",
+        "sha256": "03eb36094174fcec5e688763ded8270fd99c67b386b0dc2966ce9c2ea112a22f"
+      },
+      "tasks": {
+        "revision": "r7-closure1",
+        "sha256": "d77eda4d472aafe494d3b0a739ca1691009d8e1aafd8f4023eb304ac02ab07d4"
+      },
+      "envelope": {
+        "revision": "r7-closure1",
+        "sha256": "7acd7aefa29d40b80acaa2ad0824bef9f0e481678e317191c54202f8e28a1e6d"
+      }
+    }
+  },
+  "packet": {
+    "digest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+    "branches": [
+      {
+        "id": "approved-structured-logging",
+        "answerIds": [],
+        "taskIds": [
+          "T1",
+          "T2",
+          "T3",
+          "T4",
+          "T5",
+          "T6",
+          "T7"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r7-closure1",
+            "sha256": "094025ad7cf4010d5b583233386b94c43f8caabcb0dabb004b2f7cd367e6daff"
+          },
+          "design": {
+            "revision": "r7-closure1",
+            "sha256": "03eb36094174fcec5e688763ded8270fd99c67b386b0dc2966ce9c2ea112a22f"
+          },
+          "tasks": {
+            "revision": "r7-closure1",
+            "sha256": "d77eda4d472aafe494d3b0a739ca1691009d8e1aafd8f4023eb304ac02ab07d4"
+          },
+          "envelope": {
+            "revision": "r7-closure1",
+            "sha256": "7acd7aefa29d40b80acaa2ad0824bef9f0e481678e317191c54202f8e28a1e6d"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "approved-structured-logging"
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Every application log record and CLI error is one newline-delimited JSON envelope, including service, upstream handshake, and HTTP lane records"
+    },
+    {
+      "id": "R2",
+      "summary": "Application-owned envelope fields are schema_version, level, service, event, message, operation, outcome, nested error, config/resource objects, typed entry fields, and the closed AD8 vocabulary"
+    },
+    {
+      "id": "R3",
+      "summary": "The application never emits timestamps, subsystem, container identity, host, environment, or version"
+    },
+    {
+      "id": "R4",
+      "summary": "debug/info to stdout, warn/error to stderr; one JSON object per line, one write, no retry, no plaintext fallback"
+    },
+    {
+      "id": "R5",
+      "summary": "Nested error carries code, kind, retryable, remediation; message is human-only; the HTTP lane uses the same nested shape"
+    },
+    {
+      "id": "R6",
+      "summary": "Configuration diagnostics carry path, property path, one-based line and column, safe identifiers, and related location, with documented position exceptions"
+    },
+    {
+      "id": "R7",
+      "summary": "Pin ceiling reports pins[64] at its document-order position with validated identity only, plus counts and first excess index"
+    },
+    {
+      "id": "R8",
+      "summary": "No record serializes secret values, URLs, query strings, headers, payloads, raw YAML, or arbitrary Go error text"
+    },
+    {
+      "id": "R9",
+      "summary": "Fail-fast: first error in deterministic document order, exactly one detailed event, no summary event"
+    },
+    {
+      "id": "R10",
+      "summary": "Startup rejection is error with exit 1; reload rejection is warn and retains the active configuration"
+    },
+    {
+      "id": "R11",
+      "summary": "Non-configuration failures use the same envelope with stable codes, kinds, retryability, remediation, and safe resources"
+    },
+    {
+      "id": "R12",
+      "summary": "--help stays human-readable and emits no JSON record"
+    },
+    {
+      "id": "R13",
+      "summary": "Validation success emits config_validation_succeeded with no error object and no configuration contents"
+    },
+    {
+      "id": "R14",
+      "summary": "Exit code for configuration failure stays 1"
+    },
+    {
+      "id": "R15",
+      "summary": "No panic recovery; Go crash report untouched (non-goal)"
+    },
+    {
+      "id": "R16",
+      "summary": "No raw-cause diagnostic mode (non-goal)"
+    },
+    {
+      "id": "R17",
+      "summary": "No legacy aliases: time, environment, version, flat reason, flat error.class are removed with consumers and docs migrated"
+    },
+    {
+      "id": "R18",
+      "summary": "schema_version starts at 1; breaking field changes increment it; optional additions do not"
+    },
+    {
+      "id": "R19",
+      "summary": "Docker Compose log prefix is orchestrator output; the application does not work around it (non-goal)"
+    }
+  ],
+  "authorization": {
+    "mode": "milestone",
+    "id": "auth-structured-logging",
+    "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+    "selectedBranchId": "approved-structured-logging",
+    "receipt": {
+      "sourceId": "src-owner-authorization",
+      "recordedAt": "2026-11-10T22:11:42.126Z",
+      "response": {
+        "origin": "user",
+        "explicit": true,
+        "timedOut": false,
+        "automatic": false,
+        "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+        "selectedBranchId": "approved-structured-logging",
+        "milestone": true
+      }
+    }
+  },
+  "reviews": {
+    "specification": {
+      "verdict": "pass",
+      "reviewerId": "code-reviewer",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "receipt": {
+        "sourceId": "src-review-signoff",
+        "recordedAt": "2026-11-10T22:11:42.126Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    },
+    "tasks": {
+      "verdict": "waived",
+      "reason": "Owner accepted the single independent code-reviewer PASS for r7-closure1. The critic gate is unreachable in this harness: execution-review-sequence.mjs positive() requires a succeeded reviewer run, and async completion never delivers the correlated terminal tool_result that execution-gate.ts finishReview needs, so every run stays pending. Recorded in decisions.md.",
+      "receipt": {
+        "sourceId": "src-owner-authorization",
+        "recordedAt": "2026-11-10T22:11:42.126Z",
+        "response": {
+          "origin": "user",
+          "explicit": true,
+          "timedOut": false,
+          "automatic": false,
+          "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+          "selectedBranchId": "approved-structured-logging",
+          "milestone": false
+        }
+      }
+    }
+  },
+  "sources": [
+    {
+      "id": "src-user",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/user-auth.txt",
+        "sha256": "85279a7b45a7187b6fbe8b498caa222dc3ebc15235270b9df9fcf2a924cfeda9"
+      },
+      "locator": "owner kickoff message and grilling answers, 2026-11-10",
+      "recordedAt": "2026-11-10T21:10:37.875Z"
+    },
+    {
+      "id": "src-decisions",
+      "kind": "policy",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+        "sha256": "11b6d60cb118215b34efc0746fc666a949f1c0b371c723fe9c2fb826722b9c82"
+      },
+      "locator": "owner-settled logging contract decisions D1-D20",
+      "recordedAt": "2026-11-10T21:10:37.875Z"
+    },
+    {
+      "id": "src-review-signoff",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-r7-closure1.md",
+        "sha256": "8727dab42d3d51b95d06064b2dbb6255a15760e0364d5942836bb4fd1d243231"
+      },
+      "locator": "code-reviewer independent review of specification r7-closure1 (blocking findings B1-B6 verified resolved)",
+      "recordedAt": "2026-11-10T22:11:42.126Z"
+    },
+    {
+      "id": "src-owner-authorization",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/owner-authorization.txt",
+        "sha256": "e20f8e7bd2d6fcbad1420378028e290c544b364eca30cf83af3c4706263555fb"
+      },
+      "locator": "owner decision: accept one independent review, waive the unreachable tasks review, proceed to implementation",
+      "recordedAt": "2026-11-10T22:11:42.126Z"
+    }
+  ],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "T1",
+      "T2",
+      "T3",
+      "T4",
+      "T5",
+      "T6",
+      "T7"
+    ],
+    "readPaths": [
+      "internal/observe/",
+      "internal/config/",
+      "internal/service/",
+      "internal/upstream/",
+      "internal/auth/",
+      "cmd/mcp-bridge/",
+      ".scratch/structured-logging/",
+      "docs/",
+      "README.md",
+      "go.mod",
+      ".omp/artifacts/"
+    ],
+    "writePaths": [
+      "internal/observe/envelope.go",
+      "internal/observe/log.go",
+      "internal/config/config.go",
+      "internal/config/diagnostics.go",
+      "internal/config/pins_bounds_test.go",
+      "cmd/mcp-bridge/diagnostics_envelope.go",
+      "cmd/mcp-bridge/main.go",
+      "cmd/mcp-bridge/config_envelope_test.go",
+      "cmd/mcp-bridge/example_config_test.go",
+      "cmd/mcp-bridge/serve_edge_test.go",
+      "cmd/mcp-bridge/main_test.go",
+      "cmd/mcp-bridge/embedding_env_cli_test.go",
+      "cmd/mcp-bridge/embedding_env_process_test.go",
+      "internal/config/bounds.go",
+      "internal/config/tool_metadata.go",
+      "cmd/mcp-bridge/diagnostics_envelope_test.go",
+      "internal/config/bounds_edge_test.go",
+      "internal/config/aggregate_edge_test.go",
+      "internal/config/parser_edges_test.go",
+      "internal/config/api_edges_test.go",
+      "internal/config/validate_edge_test.go",
+      "internal/config/secret_validation_edge_test.go",
+      "internal/config/config_test.go",
+      "internal/config/diagnostics_test.go",
+      "internal/config/command_test.go",
+      "internal/config/embedding_env_test.go",
+      "internal/config/secret_sequence_edge_test.go",
+      "cmd/mcp-bridge/startup_failure.go",
+      "cmd/mcp-bridge/serve.go",
+      "cmd/mcp-bridge/startup_failure_test.go",
+      "cmd/mcp-bridge/runtime_edge_test.go",
+      "internal/observe/httpdiagnostic_encode.go",
+      "internal/observe/httpdiagnostics.go",
+      "internal/observe/httpdiagnostic_types.go",
+      "internal/observe/httpwriter_test.go",
+      "internal/upstream/dedicated_test.go",
+      "internal/upstream/dedicated_edge_test.go",
+      "internal/upstream/dedicated_wire_edge_test.go",
+      "internal/upstream/prompts_edge_test.go",
+      "internal/upstream/tool_metadata_test.go",
+      "internal/service/tools.go",
+      "internal/service/direct_execution.go",
+      "internal/upstream/dedicated.go",
+      "internal/auth/middleware_test.go",
+      "cmd/mcp-bridge/wiring.go",
+      "cmd/mcp-bridge/manifest_test.go",
+      "internal/service/inbound_test.go",
+      "internal/service/inbound_ownership_test.go",
+      "internal/service/inbound_logging_fault_test.go",
+      "internal/service/session_diag_test.go",
+      "internal/service/tools_test.go",
+      "internal/service/service_edge_test.go",
+      "cmd/mcp-bridge/diagnostic_deps_test.go",
+      "cmd/mcp-bridge/embedding_env_durable_test.go",
+      "cmd/mcp-bridge/embedding_env_reload_test.go",
+      "cmd/mcp-bridge/embedding_env_rotation_test.go",
+      "cmd/mcp-bridge/prompts_acceptance_test.go",
+      "cmd/mcp-bridge/provenance_test.go",
+      "cmd/mcp-bridge/serve_endpoint_rebind_test.go",
+      "cmd/mcp-bridge/serve_hybrid_coexistence_test.go",
+      "cmd/mcp-bridge/serve_hybrid_dispatch_test.go",
+      "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+      "cmd/mcp-bridge/serve_hybrid_metadata_defaults_test.go",
+      "cmd/mcp-bridge/serve_hybrid_metadata_exceptions_test.go",
+      "cmd/mcp-bridge/serve_hybrid_metadata_source_test.go",
+      "cmd/mcp-bridge/serve_hybrid_metadata_test.go",
+      "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+      "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+      "cmd/mcp-bridge/serve_hybrid_progressive_session_test.go",
+      "cmd/mcp-bridge/serve_hybrid_reload_test.go",
+      "cmd/mcp-bridge/serve_logging_compatibility_test.go",
+      "cmd/mcp-bridge/serve_logging_concurrent_test.go",
+      "cmd/mcp-bridge/serve_logging_execution_test.go",
+      "cmd/mcp-bridge/serve_logging_failures_test.go",
+      "cmd/mcp-bridge/serve_logging_shapes_test.go",
+      "cmd/mcp-bridge/serve_logging_streaming_test.go",
+      "cmd/mcp-bridge/serve_logging_test.go",
+      "cmd/mcp-bridge/serve_oauth_diagnostics_test.go",
+      "cmd/mcp-bridge/serve_oauth_test.go",
+      "cmd/mcp-bridge/serve_provenance_test.go",
+      "cmd/mcp-bridge/serve_test.go",
+      "cmd/mcp-bridge/serve_upstream_restart_test.go",
+      "internal/observe/edge_test.go",
+      "internal/observe/httpdiagnostic_provenance_test.go",
+      "internal/observe/httpdiagnostics_test.go",
+      "internal/observe/log_http_fields_test.go",
+      "internal/observe/log_manifest_test.go",
+      "internal/observe/log_test.go",
+      "internal/observe/session_slot_diag_test.go",
+      "cmd/mcp-bridge/reload_envelope_test.go",
+      "docs/logging-contract.md",
+      "README.md",
+      "CHANGELOG.md",
+      "cmd/mcp-bridge/logging_contract_test.go",
+      ".omp/artifacts/receipt_T1.json",
+      ".omp/artifacts/receipt_T2.json",
+      ".omp/artifacts/receipt_T3.json",
+      ".omp/artifacts/receipt_T4.json",
+      ".omp/artifacts/receipt_T5.json",
+      ".omp/artifacts/receipt_T6.json",
+      ".omp/artifacts/receipt_T7.json"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/observe/envelope.go",
+          "internal/observe/log.go",
+          "internal/config/config.go",
+          "internal/config/diagnostics.go",
+          "internal/config/pins_bounds_test.go",
+          "cmd/mcp-bridge/diagnostics_envelope.go",
+          "cmd/mcp-bridge/main.go",
+          "cmd/mcp-bridge/config_envelope_test.go",
+          "cmd/mcp-bridge/example_config_test.go",
+          "cmd/mcp-bridge/serve_edge_test.go",
+          "cmd/mcp-bridge/main_test.go",
+          "cmd/mcp-bridge/embedding_env_cli_test.go",
+          "cmd/mcp-bridge/embedding_env_process_test.go",
+          ".omp/artifacts/receipt_T1.json"
+        ]
+      },
+      "acceptanceIds": [
+        "AC01-1",
+        "AC01-2",
+        "AC01-3",
+        "AC01-4",
+        "AC01-5",
+        "AC01-6",
+        "AC01-7",
+        "AC01-8"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T2",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/config/config.go",
+          "internal/config/diagnostics.go",
+          "internal/config/bounds.go",
+          "internal/config/tool_metadata.go",
+          "cmd/mcp-bridge/diagnostics_envelope.go",
+          "cmd/mcp-bridge/diagnostics_envelope_test.go",
+          "internal/config/pins_bounds_test.go",
+          "internal/config/bounds_edge_test.go",
+          "internal/config/aggregate_edge_test.go",
+          "internal/config/parser_edges_test.go",
+          "internal/config/api_edges_test.go",
+          "internal/config/validate_edge_test.go",
+          "internal/config/secret_validation_edge_test.go",
+          "internal/config/config_test.go",
+          "internal/config/diagnostics_test.go",
+          "internal/config/command_test.go",
+          "internal/config/embedding_env_test.go",
+          "internal/config/secret_sequence_edge_test.go",
+          ".omp/artifacts/receipt_T2.json"
+        ]
+      },
+      "acceptanceIds": [
+        "AC02-1",
+        "AC02-2",
+        "AC02-3",
+        "AC02-4",
+        "AC02-5",
+        "AC02-6",
+        "AC02-7"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T3",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/startup_failure.go",
+          "cmd/mcp-bridge/main.go",
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/startup_failure_test.go",
+          "cmd/mcp-bridge/runtime_edge_test.go",
+          "cmd/mcp-bridge/serve_edge_test.go",
+          ".omp/artifacts/receipt_T3.json"
+        ]
+      },
+      "acceptanceIds": [
+        "AC03-1",
+        "AC03-2",
+        "AC03-3",
+        "AC03-4",
+        "AC03-5",
+        "AC03-6",
+        "AC03-7"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T4",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/observe/log.go",
+          "internal/observe/envelope.go",
+          "internal/observe/httpdiagnostic_encode.go",
+          "internal/observe/httpdiagnostics.go",
+          "internal/observe/httpdiagnostic_types.go",
+          "internal/observe/httpwriter_test.go",
+          "internal/upstream/dedicated_test.go",
+          "internal/upstream/dedicated_edge_test.go",
+          "internal/upstream/dedicated_wire_edge_test.go",
+          "internal/upstream/prompts_edge_test.go",
+          "internal/upstream/tool_metadata_test.go",
+          "internal/service/tools.go",
+          "internal/service/direct_execution.go",
+          "internal/upstream/dedicated.go",
+          "internal/auth/middleware_test.go",
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/wiring.go",
+          "cmd/mcp-bridge/manifest_test.go",
+          "internal/service/inbound_test.go",
+          "internal/service/inbound_ownership_test.go",
+          "internal/service/inbound_logging_fault_test.go",
+          "internal/service/session_diag_test.go",
+          "internal/service/tools_test.go",
+          "internal/service/service_edge_test.go",
+          "cmd/mcp-bridge/diagnostic_deps_test.go",
+          "cmd/mcp-bridge/embedding_env_durable_test.go",
+          "cmd/mcp-bridge/embedding_env_reload_test.go",
+          "cmd/mcp-bridge/embedding_env_rotation_test.go",
+          "cmd/mcp-bridge/prompts_acceptance_test.go",
+          "cmd/mcp-bridge/provenance_test.go",
+          "cmd/mcp-bridge/runtime_edge_test.go",
+          "cmd/mcp-bridge/serve_edge_test.go",
+          "cmd/mcp-bridge/serve_endpoint_rebind_test.go",
+          "cmd/mcp-bridge/serve_hybrid_coexistence_test.go",
+          "cmd/mcp-bridge/serve_hybrid_dispatch_test.go",
+          "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_defaults_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_exceptions_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_source_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_test.go",
+          "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+          "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+          "cmd/mcp-bridge/serve_hybrid_progressive_session_test.go",
+          "cmd/mcp-bridge/serve_hybrid_reload_test.go",
+          "cmd/mcp-bridge/serve_logging_compatibility_test.go",
+          "cmd/mcp-bridge/serve_logging_concurrent_test.go",
+          "cmd/mcp-bridge/serve_logging_execution_test.go",
+          "cmd/mcp-bridge/serve_logging_failures_test.go",
+          "cmd/mcp-bridge/serve_logging_shapes_test.go",
+          "cmd/mcp-bridge/serve_logging_streaming_test.go",
+          "cmd/mcp-bridge/serve_logging_test.go",
+          "cmd/mcp-bridge/serve_oauth_diagnostics_test.go",
+          "cmd/mcp-bridge/serve_oauth_test.go",
+          "cmd/mcp-bridge/serve_provenance_test.go",
+          "cmd/mcp-bridge/serve_test.go",
+          "cmd/mcp-bridge/serve_upstream_restart_test.go",
+          "internal/observe/edge_test.go",
+          "internal/observe/httpdiagnostic_provenance_test.go",
+          "internal/observe/httpdiagnostics_test.go",
+          "internal/observe/log_http_fields_test.go",
+          "internal/observe/log_manifest_test.go",
+          "internal/observe/log_test.go",
+          "internal/observe/session_slot_diag_test.go",
+          ".omp/artifacts/receipt_T4.json"
+        ]
+      },
+      "acceptanceIds": [
+        "AC04-1",
+        "AC04-2",
+        "AC04-3",
+        "AC04-4",
+        "AC04-5",
+        "AC04-6",
+        "AC04-7",
+        "AC04-8"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T5",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T2",
+        "T4"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/wiring.go",
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/manifest_test.go",
+          "cmd/mcp-bridge/serve_edge_test.go",
+          "cmd/mcp-bridge/reload_envelope_test.go",
+          ".omp/artifacts/receipt_T5.json"
+        ]
+      },
+      "acceptanceIds": [
+        "AC05-1",
+        "AC05-2",
+        "AC05-3",
+        "AC05-4",
+        "AC05-5",
+        "AC05-6",
+        "AC05-7",
+        "AC04-8"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T6",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/main.go",
+          "cmd/mcp-bridge/config_envelope_test.go",
+          "cmd/mcp-bridge/example_config_test.go",
+          "cmd/mcp-bridge/serve_edge_test.go",
+          "cmd/mcp-bridge/main_test.go",
+          "cmd/mcp-bridge/embedding_env_cli_test.go",
+          "cmd/mcp-bridge/embedding_env_process_test.go",
+          ".omp/artifacts/receipt_T6.json"
+        ]
+      },
+      "acceptanceIds": [
+        "AC06-1",
+        "AC06-2",
+        "AC06-3",
+        "AC06-4",
+        "AC06-5",
+        "AC04-8"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T7",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T3",
+        "T4",
+        "T5",
+        "T6"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "docs/logging-contract.md",
+          "README.md",
+          "CHANGELOG.md",
+          "cmd/mcp-bridge/logging_contract_test.go",
+          ".omp/artifacts/receipt_T7.json"
+        ]
+      },
+      "acceptanceIds": [
+        "AC07-1",
+        "AC07-2",
+        "AC07-3",
+        "AC07-4",
+        "AC07-5",
+        "AC07-6",
+        "AC07-7",
+        "AC07-8",
+        "AC07-9",
+        "AC04-8"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC01-1",
+      "requirementIds": [
+        "R1",
+        "R9",
+        "R10",
+        "R14"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC01-2",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC01-3",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC01-4",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC01-5",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC01-6",
+      "requirementIds": [
+        "R1",
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC01-7",
+      "requirementIds": [
+        "R7",
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC01-8",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC02-1",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC02-2",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC02-3",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC02-4",
+      "requirementIds": [
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC02-5",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC02-6",
+      "requirementIds": [
+        "R6",
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC02-7",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC03-1",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC03-2",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC03-3",
+      "requirementIds": [
+        "R8",
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC03-4",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC03-5",
+      "requirementIds": [
+        "R12"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC03-6",
+      "requirementIds": [
+        "R8",
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC03-7",
+      "requirementIds": [
+        "R10",
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC04-1",
+      "requirementIds": [
+        "R1",
+        "R2",
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC04-2",
+      "requirementIds": [
+        "R3",
+        "R17"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC04-3",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC04-4",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC04-5",
+      "requirementIds": [
+        "R2",
+        "R17"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC04-6",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC04-7",
+      "requirementIds": [
+        "R17"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC04-8",
+      "requirementIds": [
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T4",
+        "T5",
+        "T6",
+        "T7"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC05-1",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC05-2",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC05-3",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC05-4",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC05-5",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC05-6",
+      "requirementIds": [
+        "R6",
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC05-7",
+      "requirementIds": [
+        "R1",
+        "R9",
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC06-1",
+      "requirementIds": [
+        "R13"
+      ],
+      "ownerTaskIds": [
+        "T6"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC06-2",
+      "requirementIds": [
+        "R13"
+      ],
+      "ownerTaskIds": [
+        "T6"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC06-3",
+      "requirementIds": [
+        "R13"
+      ],
+      "ownerTaskIds": [
+        "T6"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC06-4",
+      "requirementIds": [
+        "R14"
+      ],
+      "ownerTaskIds": [
+        "T6"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC06-5",
+      "requirementIds": [
+        "R13",
+        "R14"
+      ],
+      "ownerTaskIds": [
+        "T6"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC07-1",
+      "requirementIds": [
+        "R18"
+      ],
+      "ownerTaskIds": [
+        "T7"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC07-2",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T7"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC07-3",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T7"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC07-4",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T7"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC07-5",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T7"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC07-6",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T7"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC07-7",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T7"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC07-8",
+      "requirementIds": [
+        "R17"
+      ],
+      "ownerTaskIds": [
+        "T7"
+      ],
+      "method": "inspection",
+      "requiredEvidenceKinds": [
+        "inspection"
+      ]
+    },
+    {
+      "id": "AC07-9",
+      "requirementIds": [
+        "R15",
+        "R16",
+        "R19"
+      ],
+      "ownerTaskIds": [
+        "T7"
+      ],
+      "method": "inspection",
+      "requiredEvidenceKinds": [
+        "inspection"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": ".superpowers/sdd/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}

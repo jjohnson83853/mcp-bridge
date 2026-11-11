@@ -1,0 +1,11 @@
+{
+  "context": "# Goal\nIndependent critic review (2nd gate) for feature `structured-logging`, spec revision r7-closure1.\n\nRead in order:\n1. `.scratch/structured-logging/spec.md` (revision r7-closure1; header states advisories A1-A12 remain open on purpose).\n2. `.scratch/structured-logging/decisions.md` (owner decisions D1-D20).\n3. `.scratch/structured-logging/issues/01..07-*.md` (seven approved tickets).\n4. `.omp/plans/execution-state.json` (bound state: tasks, acceptance, envelope).\n5. `.scratch/structured-logging/review-code-reviewer-r7-closure1.md` (blocker-closure review, PASS on B1-B6).\n\n# Review scope\nJudge whether the specification AND the task ledger are executable as written:\n- Task ledger bounded, ordered, dependency-consistent, each task owning exact files/paths.\n- Acceptance criteria verifiable by the named method with concrete anchors.\n- Design contracts concrete enough that the engineer invents no architecture.\n- Observability satisfies skill://observability-contract or states a justified exception.\n- The r7-closure1 repairs are real, not cosmetic.\n\n# Evidence rules\n- Cite exact spec section/line, requirement/AC/task IDs, and repository path or symbol.\n- Verify claims the spec makes about current repository behavior.\n- Do not accept a claim because the spec asserts it.\n\n# Output\nFindings C1..Cn with severity, spec excerpt or source anchor, concrete failure consequence, confidence, and the minimal amendment. Do not edit any file. End with a final line containing exactly `### Verdict` followed by a line containing exactly `ACCEPT`, `REJECT`, or `BLOCKED`.",
+  "tasks": [
+    {
+      "name": "CritiqueStructuredLoggingSpec",
+      "agent": "critic",
+      "task": "# Target\nReview `.scratch/structured-logging/spec.md` (revision r7-closure1) and the task ledger in `.omp/plans/execution-state.json` for executability.\n\n# Change\nProduce an independent critic verdict with evidence-backed findings.\n\n# Acceptance\n- Verdict is ACCEPT, REJECT, or BLOCKED.\n- Every finding cites a spec location and repository evidence.\n- Blocking findings separated from advisory.\n- No files modified.",
+      "solutionSpace": "Critic judgement is open: the critic decides which defects block execution, but every finding must be evidence-backed."
+    }
+  ]
+}
