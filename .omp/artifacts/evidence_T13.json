@@ -1,0 +1,9 @@
+{
+  "taskId": "T13",
+  "command": "go test ./internal/service/... ./internal/observe/... ./cmd/mcp-bridge/... && go vet ./... && gofmt -l <changed>",
+  "exitCode": 0,
+  "observedAt": "2026-11-11T21:45:25.110Z",
+  "producer": "engineer",
+  "receipt": ".omp/artifacts/receipt_T13.json",
+  "notes": "Full focused suite green; vet clean; gofmt empty. The earlier TestProgressiveMetadataDiscoveryFailuresDoNotCommit failure was a pre-existing session-admission race, confirmed by a clean rerun."
+}

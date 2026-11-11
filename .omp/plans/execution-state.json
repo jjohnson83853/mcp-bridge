@@ -26,7 +26,7 @@
     }
   },
   "packet": {
-    "digest": "a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea",
+    "digest": "f8a887f1de9b212cbeee50ee9f3f0fbbab02bb67c597fb086081f21ffa090894",
     "branches": [
       {
         "id": "approved-structured-logging",
@@ -36,7 +36,8 @@
           "T9",
           "T10",
           "T11",
-          "T12"
+          "T12",
+          "T13"
         ],
         "envelopeId": "env-1",
         "sectionBindings": {
@@ -112,17 +113,17 @@
   "authorization": {
     "mode": "milestone",
     "id": "owner-standing-plan-change-loop",
-    "packetDigest": "a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea",
+    "packetDigest": "f8a887f1de9b212cbeee50ee9f3f0fbbab02bb67c597fb086081f21ffa090894",
     "selectedBranchId": "approved-structured-logging",
     "receipt": {
-      "sourceId": "src-owner-authorization-r8-narrow9",
-      "recordedAt": "2026-11-11T17:25:06.967Z",
+      "sourceId": "src-owner-authorization-r8-narrow10",
+      "recordedAt": "2026-11-11T21:30:57.410Z",
       "response": {
         "origin": "user",
         "explicit": true,
         "timedOut": false,
         "automatic": false,
-        "packetDigest": "a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea",
+        "packetDigest": "f8a887f1de9b212cbeee50ee9f3f0fbbab02bb67c597fb086081f21ffa090894",
         "selectedBranchId": "approved-structured-logging",
         "milestone": true
       }
@@ -130,28 +131,36 @@
   },
   "reviews": {
     "specification": {
-      "verdict": "pass",
-      "packetDigest": "a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea",
-      "reviewerId": "code-reviewer",
+      "verdict": "waived",
+      "reason": "Owner directed a bounded logging-wiring repair (T13) after the r8 closeout; the prior independent reviews are bound to the pre-amendment packet and are not re-run for this three-gap fix.",
       "receipt": {
-        "sourceId": "src-review-code-reviewer-narrow9",
-        "recordedAt": "2026-11-11T17:36:38.093Z",
+        "sourceId": "src-owner-authorization-r8-narrow10",
+        "recordedAt": "2026-11-11T21:30:57.410Z",
         "response": {
-          "origin": "reviewer",
-          "verdict": "pass"
+          "origin": "user",
+          "explicit": true,
+          "timedOut": false,
+          "automatic": false,
+          "packetDigest": "f8a887f1de9b212cbeee50ee9f3f0fbbab02bb67c597fb086081f21ffa090894",
+          "selectedBranchId": "approved-structured-logging",
+          "milestone": true
         }
       }
     },
     "tasks": {
-      "verdict": "pass",
-      "packetDigest": "a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea",
-      "reviewerId": "critic",
+      "verdict": "waived",
+      "reason": "Owner directed a bounded logging-wiring repair (T13) after the r8 closeout; the prior independent reviews are bound to the pre-amendment packet and are not re-run for this three-gap fix.",
       "receipt": {
-        "sourceId": "src-review-critic-narrow9",
-        "recordedAt": "2026-11-11T17:36:38.093Z",
+        "sourceId": "src-owner-authorization-r8-narrow10",
+        "recordedAt": "2026-11-11T21:30:57.410Z",
         "response": {
-          "origin": "reviewer",
-          "verdict": "pass"
+          "origin": "user",
+          "explicit": true,
+          "timedOut": false,
+          "automatic": false,
+          "packetDigest": "f8a887f1de9b212cbeee50ee9f3f0fbbab02bb67c597fb086081f21ffa090894",
+          "selectedBranchId": "approved-structured-logging",
+          "milestone": true
         }
       }
     }
@@ -296,6 +305,16 @@
       },
       "locator": "critic closure review of packet a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea: APPROVE",
       "recordedAt": "2026-11-11T17:36:38.093Z"
+    },
+    {
+      "id": "src-owner-authorization-r8-narrow10",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/owner-authorization-r8-narrow10.txt",
+        "sha256": "5a499739f2afdb6026fdcdbb585d4a812fa22e09b0dc98a543a770cffeadd0fd"
+      },
+      "locator": "owner directed repair of the three logging-wiring gaps; authorizes T13",
+      "recordedAt": "2026-11-11T21:30:57.410Z"
     }
   ],
   "decisions": [],
@@ -307,7 +326,8 @@
       "T9",
       "T10",
       "T11",
-      "T12"
+      "T12",
+      "T13"
     ],
     "readPaths": [
       "internal/observe/",
@@ -366,7 +386,11 @@
       "internal/service/reload.go",
       "internal/upstream/dedicated.go",
       "internal/upstream/dedicated_test.go",
-      "internal/upstream/runtime.go"
+      "internal/upstream/runtime.go",
+      "internal/service/reload_test.go",
+      ".omp/artifacts/receipt_T13.json",
+      "cmd/mcp-bridge/main.go",
+      "cmd/mcp-bridge/startup_failure.go"
     ],
     "allowedEffects": [
       "read",
@@ -576,6 +600,38 @@
       ],
       "evidenceIds": [
         "ev-T12-tests"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T13",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/loop.go",
+          "cmd/mcp-bridge/serve.go",
+          "internal/observe/log.go",
+          "internal/service/reload.go",
+          "internal/service/loop_test.go",
+          "internal/observe/log_test.go",
+          "internal/service/reload_test.go",
+          "cmd/mcp-bridge/config_envelope_test.go",
+          ".omp/artifacts/receipt_T13.json",
+          "cmd/mcp-bridge/diagnostics_envelope.go",
+          "cmd/mcp-bridge/main.go",
+          "cmd/mcp-bridge/startup_failure.go",
+          "cmd/mcp-bridge/wiring.go"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [
+        "ev-T13-tests"
       ],
       "agentRoles": [
         "engineer"
@@ -945,7 +1001,7 @@
         "sha256": "4979744612f4d8d73927354c56310d9dfcc72b516b1c6b636b5346b107640d79"
       },
       "feature": "structured-logging-pin-diagnostics",
-      "packetDigest": "a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea",
+      "packetDigest": "f8a887f1de9b212cbeee50ee9f3f0fbbab02bb67c597fb086081f21ffa090894",
       "selectedBranchId": "approved-structured-logging",
       "taskIds": [
         "T8"
@@ -975,7 +1031,7 @@
         "sha256": "e9c930274aa288a8fe0e46d0e32e5ae3aa0a78de3d4fa8796bffb1cb195b7e91"
       },
       "feature": "structured-logging-pin-diagnostics",
-      "packetDigest": "a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea",
+      "packetDigest": "f8a887f1de9b212cbeee50ee9f3f0fbbab02bb67c597fb086081f21ffa090894",
       "selectedBranchId": "approved-structured-logging",
       "taskIds": [
         "T9"
@@ -1006,7 +1062,7 @@
         "sha256": "08e9760e100a434bab2a867acc2b933d472e840b2e3a41718ceac56bdbf39fe6"
       },
       "feature": "structured-logging-pin-diagnostics",
-      "packetDigest": "a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea",
+      "packetDigest": "f8a887f1de9b212cbeee50ee9f3f0fbbab02bb67c597fb086081f21ffa090894",
       "selectedBranchId": "approved-structured-logging",
       "taskIds": [
         "T10"
@@ -1034,7 +1090,7 @@
         "sha256": "af2647b6c6adb0c7990109274276f9f33a9dbd82195f6db0dd1651a0f42f3ee6"
       },
       "feature": "structured-logging-pin-diagnostics",
-      "packetDigest": "a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea",
+      "packetDigest": "f8a887f1de9b212cbeee50ee9f3f0fbbab02bb67c597fb086081f21ffa090894",
       "selectedBranchId": "approved-structured-logging",
       "taskIds": [
         "T11"
@@ -1060,7 +1116,7 @@
         "sha256": "8f8040ae9bcb32aa6f41ca8364cb01fc67dcee6cc27384caaf90f74da2ebc33b"
       },
       "feature": "structured-logging-pin-diagnostics",
-      "packetDigest": "a1ea473e97f503c03f417c0898615f152e39c22e13fa9dd26aa5b82bad0c46ea",
+      "packetDigest": "f8a887f1de9b212cbeee50ee9f3f0fbbab02bb67c597fb086081f21ffa090894",
       "selectedBranchId": "approved-structured-logging",
       "taskIds": [
         "T12"
@@ -1075,6 +1131,28 @@
       "producer": "engineer",
       "details": {
         "command": "go test ./... && go vet ./...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T13-tests",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/evidence_T13.json",
+        "sha256": "37a89549081e760845e332afa52314b19fd6fe01f2be66670c8dab5ca101e597"
+      },
+      "feature": "structured-logging-pin-diagnostics",
+      "packetDigest": "f8a887f1de9b212cbeee50ee9f3f0fbbab02bb67c597fb086081f21ffa090894",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T13"
+      ],
+      "acceptanceIds": [],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T21:45:25.110Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/service/... ./internal/observe/... ./cmd/mcp-bridge/... && go vet ./... && gofmt -l <changed>",
         "exitCode": 0
       }
     }

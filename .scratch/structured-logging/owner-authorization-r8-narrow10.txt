@@ -1,0 +1,5 @@
+Owner message (2026-11-11): "fix these" — repair the three confirmed logging-wiring gaps:
+1. Refresher lifecycle logger omitted by NewLoop (catalog_refresh_started/completed/failed, pin_blocker_detail).
+2. WriteJSONLine silently discards encode/write failures and short writes.
+3. Prompt load/persist errors swallowed at internal/service/reload.go:535,716-717.
+Authorizes task T13 and the added write paths internal/service/reload_test.go and .omp/artifacts/receipt_T13.json.
