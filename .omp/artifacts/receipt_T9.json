@@ -1,0 +1,34 @@
+{
+  "task_id": "T9",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_T9.json",
+  "telemetry_ref": null,
+  "summary": "Pin refresh failures now carry every pin's safe identity, source path, classification and impact, plus bounded per-server discovered-tool chunks correlated to the failed refresh. AC09 tests, vet and changed-file formatting checks passed.",
+  "error_code": null,
+  "evidence": [
+    {
+      "command": "go test ./internal/service -run '^TestRefreshReportsEveryPinBlockerWithConfigPath$' -count=1 (RED before implementation)",
+      "exitCode": 1,
+      "result": "Expected failure: no pin_blocker_detail records were emitted for two unresolved pins."
+    },
+    {
+      "command": "go test ./internal/service -run 'Pin|Blocker|Refresh'",
+      "exitCode": 0
+    },
+    {
+      "command": "go test ./internal/observe -run '^TestEnvelopeFieldNamesMatchesIndependentR8Union$'",
+      "exitCode": 0
+    },
+    {
+      "command": "go vet ./...",
+      "exitCode": 0
+    },
+    {
+      "command": "gofmt -l internal/service/reload.go internal/service/refresh.go internal/observe/log.go internal/observe/envelope.go internal/service/pin_blocker_test.go internal/service/refresh_lifecycle_test.go internal/observe/log_test.go",
+      "exitCode": 0
+    }
+  ],
+  "notes": [
+    "[AUTO-DECISION] chunk_index is zero-based; tool names are sorted for stable chunks; an empty successful listing emits one empty chunk so the listing is explicit."
+  ]
+}

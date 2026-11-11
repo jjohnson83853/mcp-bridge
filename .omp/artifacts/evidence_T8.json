@@ -1,0 +1,36 @@
+{
+  "task": "T8",
+  "observedAt": "2026-11-11T18:01:17.625Z",
+  "commands": [
+    {
+      "command": "go test ./internal/service -run Refresh",
+      "exitCode": 0,
+      "result": "ok github.com/jjohnson83853/mcp-bridge/internal/service (cached)"
+    },
+    {
+      "command": "go test ./internal/observe -run TestEnvelopeFieldNamesMatchesIndependentR8Union",
+      "exitCode": 0,
+      "result": "ok github.com/jjohnson83853/mcp-bridge/internal/observe (cached)"
+    },
+    {
+      "command": "go vet ./...",
+      "exitCode": 0,
+      "result": "clean"
+    },
+    {
+      "command": "gofmt -l <T8 changed files>",
+      "exitCode": 0,
+      "result": "empty"
+    }
+  ],
+  "acceptance": [
+    "AC08-1",
+    "AC08-2",
+    "AC08-3",
+    "AC08-4",
+    "AC08-5",
+    "AC08-6",
+    "AC08-7"
+  ],
+  "receipt": ".omp/artifacts/receipt_T8.json"
+}

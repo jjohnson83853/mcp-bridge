@@ -1,0 +1,23 @@
+{
+  "task_id": "T12",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_T12.json",
+  "telemetry_ref": null,
+  "summary": "Completed r8 contract docs/tests, 128-pin corrections, tool-union restoration, and AD21 fallback assertions.",
+  "error_code": null,
+  "evidence": [
+    {"command":"go test ./cmd/mcp-bridge -run '^TestLoggingContractDocumentsR8EventsAndSchemaEvolution$'","exitCode":1,"result":"RED: r8 event documentation absent."},
+    {"command":"go test ./cmd/mcp-bridge -run '^TestLoggingContractDocumentsR8EventsAndSchemaEvolution$'","exitCode":0,"result":"GREEN: event rows/evolution documentation passed."},
+    {"command":"go test ./internal/config -run '^TestPinCountBounds$'","exitCode":1,"result":"RED: stale 64-entry diagnostic reason."},
+    {"command":"go test ./internal/config -run '^TestPinCountBounds$'","exitCode":0,"result":"GREEN: 128 accepted; 129 rejected at pins[128], counts 129/128/128, alpha/t128."},
+    {"command":"go test ./internal/observe -run '^TestEnvelopeFieldNamesMatchesIndependentR8Union$'","exitCode":1,"result":"RED: tool missing from union."},
+    {"command":"go test ./internal/observe -run '^TestEnvelopeFieldNamesMatchesIndependentR8Union$'","exitCode":0,"result":"GREEN: restored sorted tool field."},
+    {"command":"go test ./cmd/mcp-bridge -run '^(TestPinCeilingConfigEnvelope|TestPinCeilingOmitsMalformedExcessIdentity|TestPinCeilingPrecedesOnlyLaterPinErrors|TestPinCeilingBoundaryStillAccepts128Pins|TestEnvelopeFieldNamesAreSortedAndUnique)$'","exitCode":1,"result":"RED: remediation still named index 64."},
+    {"command":"go test ./cmd/mcp-bridge -run '^(TestPinCeilingConfigEnvelope|TestPinCeilingOmitsMalformedExcessIdentity|TestPinCeilingPrecedesOnlyLaterPinErrors|TestPinCeilingBoundaryStillAccepts128Pins|TestEnvelopeFieldNamesAreSortedAndUnique)$'","exitCode":0,"result":"GREEN: remediation, boundary, identity, ordering, and union passed."},
+    {"command":"go test ./cmd/mcp-bridge -run '^TestLoggingContract'","exitCode":0,"result":"Contract, 23 event messages, producer operation/schema, queries, and ceiling passed."},
+    {"command":"go test ./...","exitCode":1,"result":"Before AD21 assertion repairs, four observe tests rejected the required fallback."},
+    {"command":"go test ./...","exitCode":0,"result":"Full suite passed."},
+    {"command":"go vet ./...","exitCode":0,"result":"Passed."},
+    {"command":"gofmt -l cmd/mcp-bridge/logging_contract_test.go cmd/mcp-bridge/config_envelope_test.go cmd/mcp-bridge/diagnostics_envelope.go internal/config/config.go internal/config/pins_bounds_test.go internal/observe/envelope.go internal/observe/log_test.go internal/observe/edge_test.go internal/observe/httpdiagnostics_test.go internal/observe/log_http_fields_test.go internal/observe/log_manifest_test.go","exitCode":0,"result":"Empty output."}
+  ]
+}

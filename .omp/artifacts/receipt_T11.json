@@ -1,0 +1,50 @@
+{
+  "task_id": "T11",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_T11.json",
+  "telemetry_ref": null,
+  "summary": "Implemented reload-path parity and attribution, applied-reload records, and opposite-lane logger fallback. Focused regressions, required checks, vet, and formatting passed.",
+  "error_code": null,
+  "evidence": [
+    {
+      "command": "go test ./internal/observe -run 'Fallback'",
+      "exitCode": 1,
+      "result": "Expected RED: failed stdout/stderr writes produced no opposite-lane logging_write_failed record."
+    },
+    {
+      "command": "go test ./internal/service -run '^TestPinDiagnosticParityWithCheckConfig$'",
+      "exitCode": 1,
+      "result": "Expected RED: reload rejection lacked config_revision/trigger attribution."
+    },
+    {
+      "command": "go test ./internal/service ./internal/observe ./cmd/mcp-bridge -run 'Parity|Reload|Fallback'",
+      "exitCode": 1,
+      "result": "Initial RED run found test setup errors and the T10 publishObserver holder.commit regression; setup was corrected and holder.commit restored."
+    },
+    {
+      "command": "go test ./internal/observe -run '^TestLoggerFallbackOn(Write|Encode)Failure$|^TestLoggerFallbackWriteIsNotRetried$' && go test ./internal/service -run '^TestPinDiagnosticParityWithCheckConfig$|^TestLoopWatchLogsAcceptedReloadAttribution$'",
+      "exitCode": 0,
+      "result": "Focused fallback, parity, and accepted-reload attribution regressions passed."
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge -run '^TestEmbeddingEnvReload(Baseline|SameReferenceRotation)$'",
+      "exitCode": 0,
+      "result": "Embedding reload baseline and same-reference rotation regression tests passed after restoring holder.commit."
+    },
+    {
+      "command": "go test ./internal/service ./internal/observe ./cmd/mcp-bridge -run 'Parity|Reload|Fallback'",
+      "exitCode": 0,
+      "result": "All three packages passed."
+    },
+    {
+      "command": "go vet ./...",
+      "exitCode": 0,
+      "result": "Passed with no diagnostics."
+    },
+    {
+      "command": "gofmt -l internal/service/loop.go cmd/mcp-bridge/wiring.go internal/observe/log.go internal/observe/envelope.go internal/observe/fallback_test.go internal/service/parity_test.go internal/service/loop_test.go",
+      "exitCode": 0,
+      "result": "Empty output."
+    }
+  ]
+}

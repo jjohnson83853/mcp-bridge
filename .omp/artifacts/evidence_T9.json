@@ -1,0 +1,37 @@
+{
+  "task": "T9",
+  "observedAt": "2026-11-11T18:13:40.798Z",
+  "commands": [
+    {
+      "command": "go test ./internal/service -run 'Pin|Blocker|Refresh'",
+      "exitCode": 0,
+      "result": "ok (cached)"
+    },
+    {
+      "command": "go test ./internal/observe",
+      "exitCode": 0,
+      "result": "ok 0.175s"
+    },
+    {
+      "command": "go vet ./...",
+      "exitCode": 0,
+      "result": "clean"
+    },
+    {
+      "command": "gofmt -l <T9 changed files>",
+      "exitCode": 0,
+      "result": "empty"
+    }
+  ],
+  "acceptance": [
+    "AC09-1",
+    "AC09-2",
+    "AC09-3",
+    "AC09-4",
+    "AC09-5",
+    "AC09-6",
+    "AC09-7",
+    "AC09-8"
+  ],
+  "receipt": ".omp/artifacts/receipt_T9.json"
+}

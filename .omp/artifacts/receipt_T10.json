@@ -1,0 +1,43 @@
+{
+  "task_id": "T10",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_T10.json",
+  "telemetry_ref": null,
+  "summary": "Implemented discovery attribution, retry classification, and readiness reasons. The specified RED was observed; the focused regression suite, go vet, and changed-file formatting checks passed after repair.",
+  "error_code": null,
+  "evidence": [
+    {
+      "command": "go test ./internal/upstream -run '^TestDedicatedDiscoveryFailureReportsStageStatusAndSanitizedEndpoint$' -count=1",
+      "exitCode": 1,
+      "result": "Expected RED: unauthorized discovery emitted no attribution record."
+    },
+    {
+      "command": "go test ./internal/service ./internal/upstream ./cmd/mcp-bridge -run 'Discovery|Readiness|Refresh'",
+      "exitCode": 1,
+      "result": "Initial implementation attempt found a duplicate Dedicated.Discover declaration; removed the obsolete duplicate."
+    },
+    {
+      "command": "go test ./internal/service ./internal/upstream ./cmd/mcp-bridge -run 'Discovery|Readiness|Refresh'",
+      "exitCode": 1,
+      "result": "The readiness test passed a newline-stripped line to decodeEnvelopeLine; corrected the test input."
+    },
+    {
+      "command": "go test ./internal/service ./internal/upstream ./cmd/mcp-bridge -run 'Discovery|Readiness|Refresh'",
+      "exitCode": 0,
+      "result": "All three packages passed."
+    },
+    {
+      "command": "go vet ./...",
+      "exitCode": 0,
+      "result": "Passed with no diagnostics."
+    },
+    {
+      "command": "gofmt -l internal/upstream/dedicated.go internal/upstream/runtime.go internal/upstream/dedicated_test.go internal/service/refresh.go internal/service/ops.go cmd/mcp-bridge/serve.go cmd/mcp-bridge/wiring.go cmd/mcp-bridge/serve_edge_test.go internal/observe/envelope.go internal/observe/log.go internal/observe/log_test.go",
+      "exitCode": 0,
+      "result": "Empty output after formatting internal/upstream/dedicated.go."
+    }
+  ],
+  "notes": [
+    "gofmt -w internal/upstream/dedicated.go completed with exit code 0 before the final changed-file formatting check."
+  ]
+}

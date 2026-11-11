@@ -1,0 +1,40 @@
+{
+  "task_id": "T8",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_T8.json",
+  "telemetry_ref": null,
+  "summary": "Added refresh lifecycle records and AD20 envelope support; AC08 tests, vet, and changed-file formatting checks passed.",
+  "error_code": null,
+  "evidence": [
+    {
+      "command": "go test ./internal/service -run Refresh (RED before implementation)",
+      "exitCode": 1,
+      "result": "Expected compile failure: RefresherOptions.Logger was not implemented yet."
+    },
+    {
+      "command": "go test ./internal/service -run Refresh (initial GREEN attempt)",
+      "exitCode": 1,
+      "result": "Test fixtures had no prior runtime clients; corrected with startup admission."
+    },
+    {
+      "command": "go test ./internal/service -run Refresh",
+      "exitCode": 0
+    },
+    {
+      "command": "go test ./internal/observe -run TestEnvelopeFieldNamesMatchesIndependentR8Union",
+      "exitCode": 0
+    },
+    {
+      "command": "go vet ./...",
+      "exitCode": 0
+    },
+    {
+      "command": "gofmt -l internal/service/refresh.go internal/observe/log.go internal/observe/envelope.go internal/service/refresh_lifecycle_test.go internal/observe/log_test.go",
+      "exitCode": 0
+    }
+  ],
+  "notes": [
+    "[AUTO-DECISION] Classified pin-resolution failures as pin_rejected (configuration, retryable=false) and other pass failures as refresh_failed (dependency, retryable=true); Run sources the trigger as interval or trigger, and reports a zero start delay when polling is disabled.",
+    "gofmt -l over the T8 changed-file set was empty. internal/service/refresh_test.go appeared only when checking all named target paths and was not modified by T8; this is pre-existing formatting debt, the same class as the T1 gate decision."
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "task": "T10",
+  "observedAt": "2026-11-11T18:54:28.557Z",
+  "commands": [
+    {
+      "command": "go test ./internal/service ./internal/upstream ./cmd/mcp-bridge -run 'Discovery|Readiness|Refresh'",
+      "exitCode": 0,
+      "result": "ok service (cached), upstream 0.030s, cmd/mcp-bridge 0.519s"
+    },
+    {
+      "command": "go vet ./...",
+      "exitCode": 0,
+      "result": "clean"
+    },
+    {
+      "command": "gofmt -l <T10 changed files>",
+      "exitCode": 0,
+      "result": "empty"
+    }
+  ],
+  "acceptance": [
+    "AC10-1",
+    "AC10-2",
+    "AC10-3",
+    "AC10-4",
+    "AC10-5"
+  ],
+  "receipt": ".omp/artifacts/receipt_T10.json"
+}

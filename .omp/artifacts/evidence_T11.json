@@ -1,0 +1,33 @@
+{
+  "task": "T11",
+  "observedAt": "2026-11-11T19:18:16.239Z",
+  "commands": [
+    {
+      "command": "go test ./internal/service ./internal/observe ./cmd/mcp-bridge -run 'Parity|Reload|Fallback'",
+      "exitCode": 0,
+      "result": "ok all three packages (cached)"
+    },
+    {
+      "command": "go test ./cmd/mcp-bridge -run '^TestEmbeddingEnvReload(Baseline|SameReferenceRotation)$'",
+      "exitCode": 0,
+      "result": "ok (cached)"
+    },
+    {
+      "command": "go vet ./...",
+      "exitCode": 0,
+      "result": "clean"
+    },
+    {
+      "command": "gofmt -l <T11 changed files>",
+      "exitCode": 0,
+      "result": "empty"
+    }
+  ],
+  "acceptance": [
+    "AC11-1",
+    "AC11-2",
+    "AC11-3"
+  ],
+  "receipt": ".omp/artifacts/receipt_T11.json",
+  "note": "Includes the T10 regression repair: holder.commit() restored in publishObserver."
+}

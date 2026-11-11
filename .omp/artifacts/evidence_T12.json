@@ -1,0 +1,27 @@
+{
+  "task": "T12",
+  "observedAt": "2026-11-11T19:48:29.426Z",
+  "commands": [
+    {
+      "command": "go test ./...",
+      "exitCode": 0,
+      "result": "all packages ok"
+    },
+    {
+      "command": "go vet ./...",
+      "exitCode": 0,
+      "result": "clean"
+    },
+    {
+      "command": "gofmt -l <T12 changed files>",
+      "exitCode": 0,
+      "result": "empty"
+    }
+  ],
+  "acceptance": [
+    "AC12-1",
+    "AC12-2",
+    "AC12-3"
+  ],
+  "receipt": ".omp/artifacts/receipt_T12.json"
+}
