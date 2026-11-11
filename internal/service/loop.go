@@ -201,9 +201,11 @@ func (l *Loop) watch(ctx context.Context) {
 				if errors.Is(err, ErrPublicationFailed) {
 					l.logf("configuration reload publication failed after runtime acceptance: %v", err)
 				} else {
-					l.logf("configuration reload rejected: %v", err)
+					l.logf("configuration reload rejected: %v", err, l.reloadAttribution())
 				}
+				continue
 			}
+			l.logf("configuration reload applied", l.reloadAttribution())
 		}
 	}
 }
@@ -213,6 +215,17 @@ func (l *Loop) currentConfig() *config.Config {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return l.candidate
+}
+
+func (l *Loop) reloadAttribution() map[string]string {
+	candidate := l.currentConfig()
+	if candidate == nil {
+		return nil
+	}
+	return map[string]string{
+		"config_revision": candidate.Fingerprint(),
+		"trigger":         "trigger",
+	}
 }
 
 func (l *Loop) logf(format string, args ...any) {

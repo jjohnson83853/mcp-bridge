@@ -68,7 +68,7 @@ func configValidationFailureEnvelope(err error) observe.Envelope {
 const defaultConfigRemediation = "correct the configuration and rerun validation"
 
 var configSpecificRemediations = map[string]string{
-	"pin_ceiling": "remove pins at index 64 or later",
+	"pin_ceiling": "remove pins at index 128 or later",
 	"config_read": "check the configuration file path and permissions",
 }
 

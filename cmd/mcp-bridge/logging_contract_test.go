@@ -17,8 +17,10 @@ import (
 	"time"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
+	"github.com/jjohnson83853/mcp-bridge/internal/core"
 	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
+	"github.com/jjohnson83853/mcp-bridge/internal/upstream"
 )
 
 const (
@@ -209,8 +211,8 @@ func TestLoggingContractDocumentsClassificationsAndSpecialCases(t *testing.T) {
 		"`error.kind`",
 		"`error.retryable`",
 		"`error.remediation`",
-		"65-pin",
-		"`pins[64]`",
+		"129-pin",
+		"`pins[128]`",
 		"one-based line and column",
 		"nested `error` object",
 		"process_id",
@@ -303,7 +305,7 @@ func TestLoggingContractJSONLinesAndLevelStreams(t *testing.T) {
 }
 
 func TestLoggingContractPinCeilingEndToEnd(t *testing.T) {
-	document := pinConfig(65, "")
+	document := pinConfig(129, "")
 	code, stdout, stderr := runCheckConfigText(t, document)
 	if code != 1 || stdout != "" {
 		t.Fatalf("exit/stdout = %d/%q, want 1/empty; stderr=%q", code, stdout, stderr)
@@ -316,8 +318,19 @@ func TestLoggingContractPinCeilingEndToEnd(t *testing.T) {
 	if !ok {
 		t.Fatalf("config = %#v, want object", record["config"])
 	}
-	if configuration["property_path"] != "pins[64]" || configuration["line"] != float64(70) || configuration["column"] != float64(5) {
-		t.Fatalf("pin attribution = %#v, want pins[64] at line 70 column 5", configuration)
+	for key, want := range map[string]any{
+		"property_path":      "pins[128]",
+		"line":               float64(134),
+		"column":             float64(5),
+		"pin_server":         "alpha",
+		"pin_tool":           "tool-128",
+		"actual_count":       float64(129),
+		"max_count":          float64(128),
+		"first_excess_index": float64(128),
+	} {
+		if got := configuration[key]; got != want {
+			t.Errorf("config.%s = %#v, want %#v", key, got, want)
+		}
 	}
 	checkClosedFieldPaths(t, record)
 	checkNoRemovedFields(t, record)
@@ -338,8 +351,140 @@ func loggingContractRecords(t *testing.T, encoded string) []map[string]any {
 		}
 		checkClosedFieldPaths(t, record)
 		checkNoRemovedFields(t, record)
+		if got := record["schema_version"]; got != float64(1) {
+			t.Errorf("%v record schema_version = %v, want 1", record["event"], got)
+		}
 		records = append(records, record)
 	}
+}
+func loggingContractR8OperationRecords(t *testing.T) []map[string]any {
+	t.Helper()
+	records := loggingContractRefreshPassRecords(t, &config.Config{}, "catalog_refresh_completed")
+	pinCandidate := &config.Config{Pins: []map[string]string{{"server": "alpha", "tool": "read"}}}
+	records = append(records, loggingContractRefreshPassRecords(t, pinCandidate, "catalog_refresh_failed")...)
+	records = append(records, loggingContractDiscoveryRecords(t)...)
+	records = append(records, loggingContractReloadAppliedRecords(t)...)
+	records = append(records, loggingContractFallbackRecords(t)...)
+	return records
+}
+
+func loggingContractRefreshPassRecords(t *testing.T, candidate *config.Config, wantEvent string) []map[string]any {
+	t.Helper()
+	var output bytes.Buffer
+	reported := make(chan struct{}, 1)
+	refresher := service.NewRefresher(service.NewRuntime(), func() *config.Config {
+		return candidate
+	}, service.RefreshDeps{
+		ReloadDeps: service.ReloadDeps{
+			Discover: func(config.Server) ([]core.ToolDefinition, error) {
+				return nil, nil
+			},
+			NewClient: func(config.Server) (core.Upstream, error) {
+				return nil, nil
+			},
+			Now:                 func() time.Time { return time.Unix(1, 0) },
+			ModelIdentityDigest: strings.Repeat("a", 64),
+		},
+		OnRejected: func(error) { reported <- struct{}{} },
+	}, service.RefresherOptions{
+		Logger: observe.NewLogger(&output, &output),
+		Published: func(*service.Assembly) error {
+			reported <- struct{}{}
+			return nil
+		},
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		refresher.Run(ctx)
+		close(done)
+	}()
+	refresher.Trigger()
+	select {
+	case <-reported:
+	case <-time.After(time.Second):
+		cancel()
+		<-done
+		t.Fatalf("refresh pass did not report %s", wantEvent)
+	}
+	cancel()
+	<-done
+	records := loggingContractRecords(t, output.String())
+	for _, record := range records {
+		if record["event"] == wantEvent {
+			return records
+		}
+	}
+	t.Fatalf("refresh records do not contain %q: %#v", wantEvent, records)
+	return nil
+}
+
+func loggingContractDiscoveryRecords(t *testing.T) []map[string]any {
+	t.Helper()
+	peer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		writer.WriteHeader(http.StatusUnauthorized)
+	}))
+	t.Cleanup(peer.Close)
+
+	var output bytes.Buffer
+	dedicated, err := upstream.NewDedicated(upstream.DedicatedOptions{
+		Logger:        observe.NewLogger(&output, &output),
+		RetryInterval: time.Minute,
+		Server: upstream.ServerOptions{
+			ID:                  "alpha",
+			Endpoint:            peer.URL + "/mcp",
+			ConnectTimeout:      time.Second,
+			TransportMaxRetries: 1,
+		},
+	})
+	if err != nil {
+		t.Fatalf("create local discovery fixture: %v", err)
+	}
+	t.Cleanup(func() { _ = dedicated.Close() })
+	if _, err := dedicated.Discover(context.Background()); err == nil {
+		t.Fatal("discovery unexpectedly succeeded against an unauthorized fixture")
+	}
+	return loggingContractRecords(t, output.String())
+}
+
+func loggingContractReloadAppliedRecords(t *testing.T) []map[string]any {
+	t.Helper()
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("capture applied-reload output: %v", err)
+	}
+	originalStdout := os.Stdout
+	os.Stdout = writer
+	defer func() { os.Stdout = originalStdout }()
+	operatorLog(io.Discard)("configuration reload applied", map[string]string{
+		"config_revision": strings.Repeat("b", 64),
+		"trigger":         "signal",
+	})
+	os.Stdout = originalStdout
+	if err := writer.Close(); err != nil {
+		t.Fatalf("close applied-reload capture: %v", err)
+	}
+	encoded, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatalf("read applied-reload output: %v", err)
+	}
+	if err := reader.Close(); err != nil {
+		t.Fatalf("close applied-reload reader: %v", err)
+	}
+	return loggingContractRecords(t, string(encoded))
+}
+
+type loggingContractFailWriter struct{}
+
+func (loggingContractFailWriter) Write([]byte) (int, error) { return 0, io.ErrClosedPipe }
+
+func loggingContractFallbackRecords(t *testing.T) []map[string]any {
+	t.Helper()
+	var fallback bytes.Buffer
+	observe.NewLogger(loggingContractFailWriter{}, &fallback).Log(observe.Entry{
+		Level: "info", Event: "backend_complete", Operation: "call_tool", Outcome: "success",
+	})
+	return loggingContractRecords(t, fallback.String())
 }
 
 func loggingContractClassRow(document, event, code string) []string {
@@ -367,7 +512,7 @@ func TestLoggingContractProducerOperationPairs(t *testing.T) {
 		records = append(records, loggingContractRecords(t, encoded)...)
 	}
 
-	if code, stdout, stderr := runCheckConfigText(t, pinConfig(65, "")); code != 1 || stdout != "" {
+	if code, stdout, stderr := runCheckConfigText(t, pinConfig(129, "")); code != 1 || stdout != "" {
 		t.Fatalf("invalid config result = %d, stdout=%q, want exit 1 and empty stdout; stderr=%q", code, stdout, stderr)
 	} else {
 		appendRecords(stderr)
@@ -529,6 +674,202 @@ func TestLoggingContractProducerOperationPairs(t *testing.T) {
 		}
 		if got := loggingContractClassRow(document, event, code); !reflect.DeepEqual(got, expected) {
 			t.Errorf("%s/%s documentation row = %v, want %v", event, code, got, expected)
+		}
+	}
+}
+func TestLoggingContractDocumentsR8EventsAndSchemaEvolution(t *testing.T) {
+	document := readLoggingContract(t)
+	if !strings.Contains(document, "## R8 event-specific additions") {
+		t.Fatal("logging contract is missing the r8 event-specific additions")
+	}
+	for _, row := range []string{
+		"| `catalog_refresh_started` | `refresh` | `refresh_id`, `config_revision`, `trigger`, `next_attempt_ms` | optional event-specific addition; no schema-version change (`schema_version` remains 1) |",
+		"| `catalog_refresh_completed` | `refresh` | `refresh_id`, `config_revision`, `trigger`, `servers_discovered`, `tools_discovered`, `tools_published`, `pins_resolved`, `pins_total` | optional event-specific addition; no schema-version change (`schema_version` remains 1) |",
+		"| `catalog_refresh_failed` | `refresh` | `refresh_id`, `config_revision`, `trigger`, optional `next_attempt_ms`, `catalog_state`, `retained_generation`, `catalog_tools`, `retained_age_ms`, `candidate_servers`, `candidate_tools`, `publication_impact`, `pins_resolved`, `pins_total`, `error` | optional event-specific addition; no schema-version change (`schema_version` remains 1) |",
+		"| `upstream_discovery_failed` | `refresh` | `server`, `failure_stage`, `failure_reason`, applicable `http_status`, sanitized `endpoint`, `error`, scheduled `next_attempt_ms` | optional event-specific addition; no schema-version change (`schema_version` remains 1) |",
+		"| `pin_blocker_detail` | `refresh` | per-pin: `refresh_id`, `server`, `config.pin_tool`, `config.property_path`, `blocker_class`, applicable `failure_reason`, `publication_impact`; tool-list chunk: `refresh_id`, `server`, `blocker_class`, `discovered_tools`, `chunk_index`, `chunk_count`, `publication_impact` | optional event-specific addition; no schema-version change (`schema_version` remains 1) |",
+		"| `config_reload_applied` | `reload` | `config_revision`, `trigger` | optional event-specific addition; no schema-version change (`schema_version` remains 1) |",
+		"| `logging_write_failed` | `logging` | none beyond the common envelope | optional event-specific addition; no schema-version change (`schema_version` remains 1) |",
+	} {
+		if !strings.Contains(document, row) {
+			t.Errorf("logging contract is missing r8 event row %q", row)
+		}
+	}
+}
+
+func TestLoggingContractR8EventMessagesOperationsAndSchemaVersion(t *testing.T) {
+	eventMessages := map[string]string{
+		"http_complete":                "http request completed",
+		"mcp_complete":                 "MCP operation completed",
+		"backend_complete":             "upstream tool call completed",
+		"upstream_ephemeral_handshake": "upstream protocol handshake observed",
+		"startup_failed":               "bridge startup failed",
+		"cli_usage_failed":             "invalid command-line usage",
+		"config_validation_failed":     "configuration validation failed",
+		"config_validation_succeeded":  "configuration valid",
+		"startup_publication_failed":   "startup publication failed",
+		"startup_snapshot_rejected":    "startup snapshot unavailable",
+		"prompt_publication_failed":    "prompt publication failed",
+		"config_reload_applied":        "configuration reload applied",
+		"config_reload_rejected":       "configuration reload rejected",
+		"reload_rejected":              "configuration reload rejected",
+		"reload_publication_failed":    "configuration reload publication failed",
+		"catalog_refresh_started":      "catalog refresh started",
+		"catalog_refresh_completed":    "catalog refresh completed",
+		"catalog_refresh_failed":       "catalog refresh failed",
+		"upstream_discovery_failed":    "upstream discovery failed",
+		"pin_blocker_detail":           "mandatory pin blocks catalog refresh",
+		"logging_write_failed":         "logging write failed",
+		"internal_warning":             "bridge encountered an internal warning",
+		"reload":                       "configuration reload diagnostic",
+	}
+	eventOperations := map[string]string{
+		"http_complete":                "request",
+		"mcp_complete":                 "call_tool",
+		"backend_complete":             "call_tool",
+		"upstream_ephemeral_handshake": "handshake",
+		"startup_failed":               "startup",
+		"cli_usage_failed":             "cli",
+		"config_validation_failed":     "load_config",
+		"config_validation_succeeded":  "check_config",
+		"startup_publication_failed":   "startup",
+		"startup_snapshot_rejected":    "startup",
+		"prompt_publication_failed":    "publish",
+		"config_reload_applied":        "reload",
+		"config_reload_rejected":       "reload",
+		"reload_rejected":              "reload",
+		"reload_publication_failed":    "publish",
+		"catalog_refresh_started":      "refresh",
+		"catalog_refresh_completed":    "refresh",
+		"catalog_refresh_failed":       "refresh",
+		"upstream_discovery_failed":    "refresh",
+		"pin_blocker_detail":           "refresh",
+		"logging_write_failed":         "logging",
+		"internal_warning":             "reload",
+		"reload":                       "reload",
+	}
+	if len(eventMessages) != 23 || len(eventOperations) != len(eventMessages) {
+		t.Fatalf("event contract has %d messages and %d operation pins; want 23 each", len(eventMessages), len(eventOperations))
+	}
+	var output bytes.Buffer
+	logger := observe.NewLogger(&output, &output)
+	for event, message := range eventMessages {
+		logger.Log(observe.Entry{
+			Level: "info", Event: event, Operation: eventOperations[event], Outcome: "unknown",
+		})
+		if message == "" {
+			t.Errorf("%s has an empty expected static message", event)
+		}
+	}
+	records := loggingContractRecords(t, output.String())
+	if len(records) != len(eventMessages) {
+		t.Fatalf("emitted %d named event records; want %d", len(records), len(eventMessages))
+	}
+	seen := make(map[string]bool, len(records))
+	for _, record := range records {
+		event, ok := record["event"].(string)
+		if !ok {
+			t.Errorf("event = %#v, want string", record["event"])
+			continue
+		}
+		if seen[event] {
+			t.Errorf("event %q emitted more than once", event)
+		}
+		seen[event] = true
+		if got, want := record["message"], eventMessages[event]; got != want {
+			t.Errorf("%s message = %v, want %q", event, got, want)
+		}
+		if got, want := record["operation"], eventOperations[event]; got != want {
+			t.Errorf("%s operation = %v, want %q", event, got, want)
+		}
+	}
+	for event := range eventMessages {
+		if !seen[event] {
+			t.Errorf("no record emitted for named event %q", event)
+		}
+	}
+	actualR8 := loggingContractR8OperationRecords(t)
+	expectedR8 := []string{
+		"catalog_refresh_started",
+		"catalog_refresh_completed",
+		"catalog_refresh_failed",
+		"upstream_discovery_failed",
+		"pin_blocker_detail",
+		"config_reload_applied",
+		"logging_write_failed",
+	}
+	seenR8 := make(map[string]bool, len(expectedR8))
+	for _, record := range actualR8 {
+		event, ok := record["event"].(string)
+		if !ok {
+			t.Errorf("r8 producer event = %#v, want string", record["event"])
+			continue
+		}
+		want, ok := eventOperations[event]
+		if !ok {
+			t.Errorf("unexpected r8 producer event %q", event)
+			continue
+		}
+		if got := record["operation"]; got != want {
+			t.Errorf("%s producer operation = %v, want %q", event, got, want)
+		}
+		if got := record["schema_version"]; got != float64(1) {
+			t.Errorf("%s producer schema_version = %v, want 1", event, got)
+		}
+		seenR8[event] = true
+	}
+	for _, event := range expectedR8 {
+		if !seenR8[event] {
+			t.Errorf("no r8 producer record observed for %q", event)
+		}
+	}
+}
+
+func TestLoggingContractQueriesFindRefreshAndPinFailures(t *testing.T) {
+	document := readLoggingContract(t)
+	for _, scenario := range []struct {
+		marker string
+		fields []string
+	}{
+		{
+			marker: "<!-- query-refresh-rejections -->",
+			fields: []string{`event="catalog_refresh_failed"`, `error_code="error.code"`, `error_kind="error.kind"`},
+		},
+		{
+			marker: "<!-- query-unresolved-pins -->",
+			fields: []string{`event="pin_blocker_detail"`, `blocker_class="blocker_class"`},
+		},
+	} {
+		start := strings.Index(document, scenario.marker)
+		if start < 0 {
+			t.Errorf("logging contract is missing query marker %q", scenario.marker)
+			continue
+		}
+		block := document[start+len(scenario.marker):]
+		opening := strings.Index(block, "```")
+		if opening < 0 {
+			t.Errorf("query %q is missing its code fence", scenario.marker)
+			continue
+		}
+		languageEnd := strings.Index(block[opening:], "\n")
+		if languageEnd < 0 {
+			t.Errorf("query %q has an incomplete code fence", scenario.marker)
+			continue
+		}
+		queryStart := opening + languageEnd + 1
+		closing := strings.Index(block[queryStart:], "```")
+		if closing < 0 {
+			t.Errorf("query %q is missing its closing code fence", scenario.marker)
+			continue
+		}
+		query := block[queryStart : queryStart+closing]
+		if strings.Contains(query, "message") {
+			t.Errorf("query %q uses message text: %s", scenario.marker, query)
+		}
+		for _, field := range scenario.fields {
+			if !strings.Contains(query, field) {
+				t.Errorf("query %q is missing %q", scenario.marker, field)
+			}
 		}
 	}
 }

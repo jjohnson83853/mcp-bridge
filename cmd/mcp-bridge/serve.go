@@ -213,18 +213,23 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 	loop, err := service.NewLoop(runtime, service.LoopOptions{
 		Load:    load,
 		Durable: durableLoader(store),
-		Deps: service.RefreshDeps{ReloadDeps: service.ReloadDeps{
-			Discover:            registry.discover,
-			DiscoverPrompts:     registry.discoverPrompts,
-			NewClient:           registry.newClient,
-			Persist:             persist,
-			LoadPrompts:         promptLoader(store),
-			PersistPrompts:      persistPrompts,
-			Embed:               embedder(provider, model, settings.Embedding),
-			Close:               registry.close,
-			Now:                 time.Now,
-			ModelIdentityDigest: model.Digest(),
-		}},
+		Deps: service.RefreshDeps{
+			OnRejected: func(err error) {
+				checks.rejected(err)
+				published(nil)
+			},
+			ReloadDeps: service.ReloadDeps{
+				Discover:            registry.discover,
+				DiscoverPrompts:     registry.discoverPrompts,
+				NewClient:           registry.newClient,
+				Persist:             persist,
+				LoadPrompts:         promptLoader(store),
+				PersistPrompts:      persistPrompts,
+				Embed:               embedder(provider, model, settings.Embedding),
+				Close:               registry.close,
+				Now:                 time.Now,
+				ModelIdentityDigest: model.Digest(),
+			}},
 		Interval:      settings.RefreshInterval,
 		Signals:       reloads,
 		Metrics:       func(serverID, status, reason string) { metrics.RecordRefresh(serverID, status, reason) },

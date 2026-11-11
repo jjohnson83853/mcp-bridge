@@ -469,8 +469,8 @@ func TestHTTPDiagnosticEmitsExactClosedLaneShape(t *testing.T) {
 			AuthMode: "oauth", CredentialState: "missing", ScopeState: "not_evaluated",
 			SessionHeader: "absent", SessionState: "not_evaluated", BindingRelation: "not_evaluated",
 			SessionRefState: "available", SessionRef: testID, ChallengeKind: "none", ChallengeTarget: "none",
-			MetadataTargetRegistered: "not_applicable",
-			DiagnosticPolicyRevision: "oauth-diag-policy-v1",
+			MetadataTargetRegistered:     "not_applicable",
+			DiagnosticPolicyRevision:     "oauth-diag-policy-v1",
 			EffectivePolicyRevisionState: "unavailable", PolicySource: "unavailable",
 			ResourcePathMode: "unavailable", SessionBinding: "unavailable",
 			UpstreamState: "not_attempted", ErrorDetailState: "included",
@@ -533,9 +533,9 @@ func TestShortSinkNonfatal(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/livez", nil)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, r)
-	// One attempt, no panic, no retry.
-	if sink.writes != 1 {
-		t.Fatalf("sink write attempts = %d; want exactly 1", sink.writes)
+	// One primary plus one fallback; no retry.
+	if sink.writes != 2 {
+		t.Fatalf("sink write attempts = %d; want one primary plus one fallback", sink.writes)
 	}
 }
 
@@ -652,8 +652,6 @@ func TestClientFamilyAndExactBytes(t *testing.T) {
 		}
 	})
 
-
-
 	t.Run("priority and zero-byte success", func(t *testing.T) {
 		sink := &bytes.Buffer{}
 		diag := newTestDiagnostics(sink, fixedNow(), fixedID(testID))
@@ -767,7 +765,6 @@ func TestConcurrentExposedToolsContributionAndFinish(t *testing.T) {
 		}
 	}
 }
-
 
 type partialHTTPWriter struct {
 	header http.Header

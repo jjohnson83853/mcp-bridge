@@ -21,7 +21,7 @@ func pinConfig(count int, excessTool string) string {
 	document.WriteString("schema_version: 1\nservers:\n  - id: alpha\n    endpoint: http://127.0.0.1:9\npins:\n")
 	for index := range count {
 		tool := fmt.Sprintf("tool-%02d", index)
-		if index == 64 && excessTool != "" {
+		if index == 128 && excessTool != "" {
 			tool = excessTool
 		}
 		fmt.Fprintf(&document, "  - {server: alpha, tool: %q}\n", tool)
@@ -58,7 +58,7 @@ func decodeEnvelopeLine(t *testing.T, text string) map[string]any {
 }
 
 func TestPinCeilingConfigEnvelope(t *testing.T) {
-	document := pinConfig(65, "")
+	document := pinConfig(129, "")
 	code, stdout, stderr := runCheckConfigText(t, document)
 	if code != 1 {
 		t.Fatalf("exit = %d, want 1; stderr=%q", code, stderr)
@@ -73,19 +73,23 @@ func TestPinCeilingConfigEnvelope(t *testing.T) {
 	if record["schema_version"] != float64(1) || record["level"] != "error" || record["service"] != "mcp-bridge" {
 		t.Fatalf("unexpected envelope identity: %#v", record)
 	}
+	errorRecord, ok := record["error"].(map[string]any)
+	if !ok || errorRecord["remediation"] != "remove pins at index 128 or later" {
+		t.Errorf("error remediation = %#v, want the 128-pin ceiling", record["error"])
+	}
 	configRecord, ok := record["config"].(map[string]any)
 	if !ok {
 		t.Fatalf("config field = %#v, want object", record["config"])
 	}
 	for key, want := range map[string]any{
-		"property_path":          "pins[64]",
-		"line":                   float64(70),
+		"property_path":          "pins[128]",
+		"line":                   float64(134),
 		"column":                 float64(5),
 		"pin_server":             "alpha",
-		"pin_tool":               "tool-64",
-		"actual_count":           float64(65),
-		"max_count":              float64(64),
-		"first_excess_index":     float64(64),
+		"pin_tool":               "tool-128",
+		"actual_count":           float64(129),
+		"max_count":              float64(128),
+		"first_excess_index":     float64(128),
 		"diagnostics_incomplete": false,
 		"remaining_stages":       "not_checked",
 	} {
@@ -99,7 +103,7 @@ func TestPinCeilingConfigEnvelope(t *testing.T) {
 			t.Errorf("stderr contains forbidden value %q: %s", forbidden, encoded)
 		}
 	}
-	for _, earlier := range []string{"tool-00", "tool-01", "tool-62", "tool-63"} {
+	for _, earlier := range []string{"tool-00", "tool-01", "tool-126", "tool-127"} {
 		if strings.Contains(encoded, earlier) {
 			t.Errorf("stderr serialized non-excess pin identity %q: %s", earlier, encoded)
 		}
@@ -108,7 +112,7 @@ func TestPinCeilingConfigEnvelope(t *testing.T) {
 
 func TestPinCeilingOmitsMalformedExcessIdentity(t *testing.T) {
 	const hostile = "mcp-bridge: attacker-controlled"
-	code, stdout, stderr := runCheckConfigText(t, pinConfig(65, hostile))
+	code, stdout, stderr := runCheckConfigText(t, pinConfig(129, hostile))
 	if code != 1 || stdout != "" {
 		t.Fatalf("exit/stdout = %d/%q, want 1/empty; stderr=%q", code, stdout, stderr)
 	}
@@ -129,7 +133,7 @@ func TestPinCeilingOmitsMalformedExcessIdentity(t *testing.T) {
 }
 
 func TestPinCeilingPrecedesOnlyLaterPinErrors(t *testing.T) {
-	document := pinConfig(65, "")
+	document := pinConfig(129, "")
 	document = strings.Replace(document, "  - {server: alpha, tool: \"tool-00\"}\n", "  - {server: alpha}\n", 1)
 	code, stdout, stderr := runCheckConfigText(t, document)
 	if code != 1 || stdout != "" {
@@ -149,8 +153,8 @@ func TestPinCeilingPrecedesOnlyLaterPinErrors(t *testing.T) {
 	}
 }
 
-func TestPinCeilingBoundaryStillAccepts64Pins(t *testing.T) {
-	code, _, stderr := runCheckConfigText(t, pinConfig(64, ""))
+func TestPinCeilingBoundaryStillAccepts128Pins(t *testing.T) {
+	code, _, stderr := runCheckConfigText(t, pinConfig(128, ""))
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0; stderr=%q", code, stderr)
 	}
@@ -161,8 +165,8 @@ func TestPinCeilingBoundaryStillAccepts64Pins(t *testing.T) {
 
 func TestEnvelopeFieldNamesAreSortedAndUnique(t *testing.T) {
 	names := observe.EnvelopeFieldNames()
-	if len(names) != 109 {
-		t.Fatalf("field count = %d, want 109", len(names))
+	if len(names) != 129 {
+		t.Fatalf("field count = %d, want 129", len(names))
 	}
 	if !sort.StringsAreSorted(names) {
 		t.Fatal("field names are not sorted")

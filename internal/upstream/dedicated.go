@@ -3,10 +3,14 @@ package upstream
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
+	"net/http"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,21 +21,18 @@ import (
 )
 
 type DedicatedOptions struct {
-	Server    ServerOptions
-	Stateless bool
-	Logger    *observe.Logger
+	Server        ServerOptions
+	Stateless     bool
+	Logger        *observe.Logger
+	RetryInterval time.Duration
 }
 
-// Dedicated owns exactly one upstream client and session for one configured
-// server ID (r8 §4.3, T-04). It is the bridge's execution facade: it opens the
-// session lazily, discovers the complete paginated tools/list, forwards exactly
-// one tools/call per request with byte-exact args, and releases its session on
-// Close. It never retries, never fulfills interaction requests, and never
-// queues behind a saturated or breaker-open server.
+// Dedicated owns one upstream client and session for one configured server.
 type Dedicated struct {
-	client    *ServerClient
-	stateless bool
-	logger    *observe.Logger
+	client        *ServerClient
+	stateless     bool
+	logger        *observe.Logger
+	retryInterval time.Duration
 
 	requiresHandshake bool
 
@@ -39,6 +40,15 @@ type Dedicated struct {
 	session *mcp.ClientSession
 	closed  bool
 }
+
+type discoveryFailure struct {
+	cause       error
+	reasonClass string
+}
+
+func (e *discoveryFailure) Error() string         { return "upstream discovery failed" }
+func (e *discoveryFailure) Unwrap() error         { return e.cause }
+func (e *discoveryFailure) RefreshReason() string { return e.reasonClass }
 
 // NewDedicated validates the server identity and builds the dedicated runtime.
 func NewDedicated(opts DedicatedOptions) (*Dedicated, error) {
@@ -49,7 +59,189 @@ func NewDedicated(opts DedicatedOptions) (*Dedicated, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Dedicated{client: client, stateless: opts.Stateless, logger: opts.Logger}, nil
+	client.trackDiscoveryStatus()
+	return &Dedicated{
+		client: client, stateless: opts.Stateless, logger: opts.Logger, retryInterval: opts.RetryInterval,
+	}, nil
+}
+
+// Discover returns the complete, deterministically ordered tool catalog of the
+// server. Every page must succeed: a partial or malformed discovery is an error
+// so the caller keeps its last-known-good catalog instead of a truncated one.
+func (d *Dedicated) Discover(ctx context.Context) ([]core.ToolDefinition, error) {
+	status := &discoveryHTTPStatus{}
+	ctx = context.WithValue(ctx, discoveryHTTPStatusKey{}, status)
+	var session *mcp.ClientSession
+	var err error
+	if d.stateless {
+		d.mu.Lock()
+		if d.closed {
+			d.mu.Unlock()
+			return nil, d.reportDiscoveryFailure(ctx, status, "initialize", time.Now(), errUnavailable)
+		}
+		d.mu.Unlock()
+		status.reset()
+		started := time.Now()
+		session, err = d.client.Connect(ctx, nil)
+		if err != nil {
+			return nil, d.reportDiscoveryFailure(ctx, status, "initialize", started, err)
+		}
+		defer session.Close()
+	} else {
+		status.reset()
+		started := time.Now()
+		session, err = d.sessionFor(ctx)
+		if err != nil {
+			return nil, d.reportDiscoveryFailure(ctx, status, "initialize", started, err)
+		}
+	}
+	if res := session.InitializeResult(); res != nil && res.ProtocolVersion < "2026-07-28" {
+		d.mu.Lock()
+		d.requiresHandshake = true
+		d.mu.Unlock()
+	}
+	var defs []core.ToolDefinition
+	cursor := ""
+	for {
+		status.reset()
+		started := time.Now()
+		page, err := session.ListTools(ctx, &mcp.ListToolsParams{Cursor: cursor})
+		if err != nil {
+			return nil, d.reportDiscoveryFailure(ctx, status, "tools_list", started, err)
+		}
+		if page == nil {
+			return nil, d.reportDiscoveryFailure(ctx, status, "tools_list", started, errors.New("empty tools page"))
+		}
+		for _, tool := range page.Tools {
+			if tool == nil || tool.Name == "" {
+				return nil, d.reportDiscoveryFailure(ctx, status, "tools_list", started, errors.New("invalid tool definition"))
+			}
+			inputSchema, err := canonicalSchema(tool.InputSchema)
+			if err != nil {
+				return nil, d.reportDiscoveryFailure(ctx, status, "tools_list", started, err)
+			}
+			outputSchema, err := canonicalSchema(tool.OutputSchema)
+			if err != nil {
+				return nil, d.reportDiscoveryFailure(ctx, status, "tools_list", started, err)
+			}
+			metadata, err := metadataFromSDKTool(tool)
+			if err != nil {
+				return nil, d.reportDiscoveryFailure(ctx, status, "tools_list", started, err)
+			}
+			defs = append(defs, core.ToolDefinition{
+				RawName:      tool.Name,
+				Description:  tool.Description,
+				InputSchema:  inputSchema,
+				OutputSchema: outputSchema,
+				Metadata:     metadata,
+			})
+		}
+		if page.NextCursor == "" {
+			break
+		}
+		if page.NextCursor == cursor {
+			return nil, d.reportDiscoveryFailure(ctx, status, "tools_list", started, errors.New("tools cursor did not advance"))
+		}
+		cursor = page.NextCursor
+	}
+	sort.Slice(defs, func(i, j int) bool { return defs[i].RawName < defs[j].RawName })
+	return defs, nil
+}
+
+func (d *Dedicated) reportDiscoveryFailure(ctx context.Context, status *discoveryHTTPStatus, phase string, started time.Time, cause error) error {
+	httpStatus := status.get()
+	stage, reason, reasonClass := classifyDiscoveryFailure(ctx, phase, started, cause, httpStatus)
+	fields := map[string]any{
+		"endpoint":       observe.SanitizeEndpoint(d.client.Endpoint),
+		"failure_stage":  stage,
+		"failure_reason": reason,
+	}
+	if httpStatus > 0 {
+		fields["http_status"] = httpStatus
+	}
+	errorInfo := observe.RuntimeErrorInfo(reasonClass)
+	if errorInfo.Retryable && d.retryInterval > 0 {
+		fields["next_attempt_ms"] = d.retryInterval.Milliseconds()
+	}
+	d.logger.Log(observe.Entry{
+		Level: "warn", Event: "upstream_discovery_failed", Server: d.client.ID,
+		Operation: "refresh", Outcome: "failure", Error: errorInfo, Fields: fields,
+	})
+	return &discoveryFailure{cause: cause, reasonClass: reasonClass}
+}
+
+func classifyDiscoveryFailure(ctx context.Context, phase string, started time.Time, err error, status int) (string, string, string) {
+	if status == http.StatusUnauthorized || status == http.StatusForbidden {
+		return "auth", "authentication_rejected_during_" + phase, service.RefreshReasonClientMissing
+	}
+	if errors.Is(err, errUnavailable) {
+		return "initialize", "initialize_failed", service.RefreshReasonClientMissing
+	}
+	stage, reason := discoveryNetworkFailure(err)
+	if phase != "initialize" || stage == "" {
+		stage = phase
+	}
+	if timeoutClass, ok := discoveryTimeoutClass(err); ok {
+		timeoutMillis := time.Since(started).Milliseconds()
+		if deadline, hasDeadline := ctx.Deadline(); hasDeadline {
+			if budget := deadline.Sub(started).Milliseconds(); budget > 0 {
+				timeoutMillis = budget
+			}
+		}
+		if timeoutMillis < 1 {
+			timeoutMillis = 1
+		}
+		if timeoutMillis > 86_400_000 {
+			timeoutMillis = 86_400_000
+		}
+		return stage, fmt.Sprintf("timeout_%s_%dms", timeoutClass, timeoutMillis), service.RefreshReasonUnavailable
+	}
+	if status >= 500 {
+		return stage, "upstream_http_error", service.RefreshReasonUnavailable
+	}
+	if reason != "" {
+		return stage, reason, service.RefreshReasonUnavailable
+	}
+	if phase == "initialize" {
+		return "initialize", "initialize_failed", service.RefreshReasonDiscoveryFailed
+	}
+	return "tools_list", "tools_list_failed", service.RefreshReasonDiscoveryFailed
+}
+
+func discoveryNetworkFailure(err error) (string, string) {
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		return "dns", "dns_lookup_failed"
+	}
+	var certificateErr *tls.CertificateVerificationError
+	if errors.As(err, &certificateErr) {
+		return "tls", "tls_handshake_failed"
+	}
+	var recordErr tls.RecordHeaderError
+	if errors.As(err, &recordErr) {
+		return "tls", "tls_handshake_failed"
+	}
+	var opErr *net.OpError
+	if errors.As(err, &opErr) {
+		switch strings.ToLower(opErr.Op) {
+		case "dial", "connect":
+			return "connect", "connect_failed"
+		case "tls":
+			return "tls", "tls_handshake_failed"
+		}
+	}
+	return "", ""
+}
+
+func discoveryTimeoutClass(err error) (string, bool) {
+	if errors.Is(err, context.DeadlineExceeded) {
+		return "context_deadline_exceeded", true
+	}
+	var networkErr net.Error
+	if errors.As(err, &networkErr) && networkErr.Timeout() {
+		return "network_timeout", true
+	}
+	return "", false
 }
 
 func validProtocolVersion(version string) bool {
@@ -114,81 +306,6 @@ func (d *Dedicated) sessionFor(ctx context.Context) (*mcp.ClientSession, error) 
 	}
 	d.session = session
 	return session, nil
-}
-
-// Discover returns the complete, deterministically ordered tool catalog of the
-// server. Every page must succeed: a partial or malformed discovery is an error
-// so the caller keeps its last-known-good catalog instead of a truncated one.
-func (d *Dedicated) Discover(ctx context.Context) ([]core.ToolDefinition, error) {
-	var session *mcp.ClientSession
-	var err error
-	if d.stateless {
-		d.mu.Lock()
-		if d.closed {
-			d.mu.Unlock()
-			return nil, errUnavailable
-		}
-		d.mu.Unlock()
-		session, err = d.client.Connect(ctx, nil)
-		if err != nil {
-			return nil, fmt.Errorf("upstream: connect %s: %w", d.client.ID, err)
-		}
-		defer session.Close()
-	} else {
-		session, err = d.sessionFor(ctx)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if res := session.InitializeResult(); res != nil && res.ProtocolVersion < "2026-07-28" {
-		d.mu.Lock()
-		d.requiresHandshake = true
-		d.mu.Unlock()
-	}
-	var defs []core.ToolDefinition
-	cursor := ""
-	for {
-		page, err := session.ListTools(ctx, &mcp.ListToolsParams{Cursor: cursor})
-		if err != nil {
-			return nil, fmt.Errorf("upstream: discover %s: %w", d.client.ID, err)
-		}
-		if page == nil {
-			return nil, fmt.Errorf("upstream: discover %s: empty page", d.client.ID)
-		}
-		for _, tool := range page.Tools {
-			if tool == nil || tool.Name == "" {
-				return nil, fmt.Errorf("upstream: discover %s: tool without a name", d.client.ID)
-			}
-			inputSchema, err := canonicalSchema(tool.InputSchema)
-			if err != nil {
-				return nil, fmt.Errorf("upstream: discover %s tool %s: %w", d.client.ID, tool.Name, err)
-			}
-			outputSchema, err := canonicalSchema(tool.OutputSchema)
-			if err != nil {
-				return nil, fmt.Errorf("upstream: discover %s tool %s: %w", d.client.ID, tool.Name, err)
-			}
-			metadata, err := metadataFromSDKTool(tool)
-			if err != nil {
-				return nil, fmt.Errorf("upstream: discover %s tool %s: %w", d.client.ID, tool.Name, err)
-			}
-			defs = append(defs, core.ToolDefinition{
-				RawName:      tool.Name,
-				Description:  tool.Description,
-				InputSchema:  inputSchema,
-				OutputSchema: outputSchema,
-				Metadata:     metadata,
-			})
-		}
-		if page.NextCursor == "" {
-			break
-		}
-		if page.NextCursor == cursor {
-			return nil, fmt.Errorf("upstream: discover %s: pagination cursor did not advance", d.client.ID)
-		}
-		cursor = page.NextCursor
-	}
-	sort.Slice(defs, func(i, j int) bool { return defs[i].RawName < defs[j].RawName })
-	return defs, nil
 }
 
 // DiscoverPrompts returns the complete prompt list only when the initialized

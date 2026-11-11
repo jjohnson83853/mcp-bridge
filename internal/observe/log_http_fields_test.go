@@ -80,9 +80,10 @@ func TestHTTPObservationRejectsRemovedAndUnknownFields(t *testing.T) {
 			observe.NewLogger(&stdout, &stderr).Log(observe.Entry{
 				Level: "info", Event: "http_complete", Operation: "request", Outcome: "success", Fields: fields,
 			})
-			if stdout.Len() != 0 || stderr.Len() != 0 {
-				t.Fatalf("invalid field %q was emitted: stdout=%q stderr=%q", key, stdout.String(), stderr.String())
+			if stdout.Len() != 0 {
+				t.Fatalf("invalid field %q produced stdout: %s", key, stdout.String())
 			}
+			assertFallbackLine(t, &stderr)
 		})
 	}
 }

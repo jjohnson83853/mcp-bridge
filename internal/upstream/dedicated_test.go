@@ -9,6 +9,8 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -248,6 +250,7 @@ func TestDedicatedCloseIsIdempotentAndFailsClosed(t *testing.T) {
 		t.Fatalf("outcome=%+v, want backend_unavailable/not_started closed outcome", outcome)
 	}
 }
+
 // Stateless calls use a fresh MCP session after the peer handler is replaced.
 func TestDedicatedStatelessToolCallsSurvivesServerRestart(t *testing.T) {
 	newPeerHandler := func(generation string) (*peerState, http.Handler) {
@@ -382,7 +385,7 @@ func TestDedicatedAdaptiveEphemeralHandshake(t *testing.T) {
 			t.Errorf("handshake log %q does not contain %q", buf.String(), want)
 		}
 	}
-	}
+}
 
 func TestNewDedicatedRequiresLogger(t *testing.T) {
 	dedicated, err := upstream.NewDedicated(upstream.DedicatedOptions{
@@ -393,3 +396,150 @@ func TestNewDedicatedRequiresLogger(t *testing.T) {
 	}
 }
 
+func TestDedicatedDiscoveryFailureReportsStageStatusAndSanitizedEndpoint(t *testing.T) {
+	peer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		writer.Header().Set("X-Private", "header-secret")
+		writer.WriteHeader(http.StatusUnauthorized)
+		_, _ = writer.Write([]byte("body-secret"))
+	}))
+	t.Cleanup(peer.Close)
+
+	var logs bytes.Buffer
+	dedicated, err := upstream.NewDedicated(upstream.DedicatedOptions{
+		Logger:        observe.NewLogger(&logs, &logs),
+		RetryInterval: time.Minute,
+		Server: upstream.ServerOptions{
+			ID:                  "alpha",
+			Endpoint:            peer.URL + "/mcp?token=query-secret",
+			BearerToken:         "credential-secret",
+			Headers:             http.Header{"X-Private": {"header-secret"}},
+			ConnectTimeout:      time.Second,
+			TransportMaxRetries: 1,
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewDedicated: %v", err)
+	}
+	t.Cleanup(func() { _ = dedicated.Close() })
+
+	if _, err := dedicated.Discover(context.Background()); err == nil {
+		t.Fatal("Discover succeeded against an unauthorized peer")
+	}
+	if logs.Len() == 0 {
+		t.Fatal("unauthorized discovery emitted no attribution record")
+	}
+
+	var record map[string]any
+	if err := json.Unmarshal(bytes.TrimSpace(logs.Bytes()), &record); err != nil {
+		t.Fatalf("decode discovery attribution record: %v", err)
+	}
+	if record["event"] != "upstream_discovery_failed" || record["level"] != "warn" || record["server"] != "alpha" {
+		t.Fatalf("discovery record = %#v; want warn upstream_discovery_failed for alpha", record)
+	}
+	if record["failure_stage"] != "auth" || record["failure_reason"] != "authentication_rejected_during_initialize" {
+		t.Errorf("stage/reason = %v/%v; want auth/authentication_rejected_during_initialize", record["failure_stage"], record["failure_reason"])
+	}
+	if status, ok := record["http_status"].(float64); !ok || status != http.StatusUnauthorized {
+		t.Errorf("http_status = %v; want %d", record["http_status"], http.StatusUnauthorized)
+	}
+	if record["endpoint"] != peer.URL+"/mcp" {
+		t.Errorf("endpoint = %v; want sanitized scheme/host/port/path", record["endpoint"])
+	}
+	if _, exists := record["next_attempt_ms"]; exists {
+		t.Errorf("next_attempt_ms present for correction-required authentication failure")
+	}
+	errorInfo, ok := record["error"].(map[string]any)
+	if !ok || errorInfo["code"] != "client_missing" || errorInfo["kind"] != "configuration" || errorInfo["retryable"] != false {
+		t.Errorf("error = %#v; want client_missing configuration retryable=false", record["error"])
+	}
+	for _, secret := range []string{"credential-secret", "header-secret", "query-secret", "body-secret"} {
+		if strings.Contains(logs.String(), secret) {
+			t.Errorf("discovery record leaked %s", secret)
+		}
+	}
+}
+
+func TestDedicatedToolsListTimeoutReportsClassValueAndScheduledRetry(t *testing.T) {
+	server := mcp.NewServer(&mcp.Implementation{Name: "peer", Version: "1"}, nil)
+	handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return server }, nil)
+	listStarted := make(chan struct{}, 1)
+	peer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		body, err := io.ReadAll(request.Body)
+		if err != nil {
+			t.Errorf("read peer request: %v", err)
+		}
+		request.Body = io.NopCloser(bytes.NewReader(body))
+		if bytes.Contains(body, []byte(`"method":"tools/list"`)) {
+			select {
+			case listStarted <- struct{}{}:
+			default:
+			}
+			<-request.Context().Done()
+			return
+		}
+		handler.ServeHTTP(writer, request)
+	}))
+	t.Cleanup(peer.Close)
+
+	var logs bytes.Buffer
+	dedicated, err := upstream.NewDedicated(upstream.DedicatedOptions{
+		Logger:        observe.NewLogger(&logs, &logs),
+		RetryInterval: time.Minute,
+		Server: upstream.ServerOptions{
+			ID:                  "alpha",
+			Endpoint:            peer.URL + "/mcp",
+			ConnectTimeout:      time.Second,
+			TransportMaxRetries: 1,
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewDedicated: %v", err)
+	}
+	t.Cleanup(func() { _ = dedicated.Close() })
+
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+	discoveryDone := make(chan error, 1)
+	go func() {
+		_, err := dedicated.Discover(ctx)
+		discoveryDone <- err
+	}()
+	select {
+	case <-listStarted:
+	case err := <-discoveryDone:
+		t.Fatalf("discovery failed before tools/list: %v", err)
+	case <-time.After(time.Second):
+		t.Fatal("tools/list request did not start")
+	}
+	if err := <-discoveryDone; err == nil {
+		t.Fatal("Discover succeeded after tools/list timeout")
+	}
+
+	var record map[string]any
+	if err := json.Unmarshal(bytes.TrimSpace(logs.Bytes()), &record); err != nil {
+		t.Fatalf("decode discovery timeout record: %v", err)
+	}
+	if record["level"] != "warn" || record["event"] != "upstream_discovery_failed" ||
+		record["failure_stage"] != "tools_list" {
+		t.Fatalf("tools-list timeout attribution = %#v", record)
+	}
+	reason, ok := record["failure_reason"].(string)
+	const prefix = "timeout_context_deadline_exceeded_"
+	if !ok || !strings.HasPrefix(reason, prefix) || !strings.HasSuffix(reason, "ms") {
+		t.Fatalf("failure_reason = %v; want bounded timeout class and value", record["failure_reason"])
+	}
+	milliseconds, err := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(reason, prefix), "ms"))
+	if err != nil || milliseconds <= 0 || milliseconds > 500 {
+		t.Fatalf("timeout value in failure_reason = %q; want 1..500ms", reason)
+	}
+	if _, exists := record["http_status"]; exists {
+		t.Errorf("http_status present although tools/list timed out before a response")
+	}
+	errorInfo, ok := record["error"].(map[string]any)
+	if !ok || errorInfo["code"] != "upstream_unavailable" || errorInfo["retryable"] != true {
+		t.Errorf("error = %#v; want retryable upstream_unavailable", record["error"])
+	}
+	if retry, ok := record["next_attempt_ms"].(float64); !ok || retry != float64(time.Minute.Milliseconds()) {
+		t.Errorf("next_attempt_ms = %v; want scheduled one-minute retry", record["next_attempt_ms"])
+	}
+}

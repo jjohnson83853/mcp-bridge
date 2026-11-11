@@ -24,6 +24,23 @@ func decodeOneLogLine(t *testing.T, output *bytes.Buffer) map[string]any {
 	return decoded
 }
 
+func assertFallbackLine(t *testing.T, output *bytes.Buffer) {
+	t.Helper()
+	record := decodeOneLogLine(t, output)
+	want := map[string]any{
+		"schema_version": float64(1),
+		"level":          "warn",
+		"service":        "mcp-bridge",
+		"event":          "logging_write_failed",
+		"message":        "logging write failed",
+		"operation":      "logging",
+		"outcome":        "failure",
+	}
+	if !reflect.DeepEqual(record, want) {
+		t.Fatalf("fallback record = %#v; want exactly %#v", record, want)
+	}
+}
+
 func TestConfigDiagnosticFieldManifest(t *testing.T) {
 	t.Run("safe identity is re-keyed into the closed config object", func(t *testing.T) {
 		var stdout, stderr bytes.Buffer
@@ -31,21 +48,21 @@ func TestConfigDiagnosticFieldManifest(t *testing.T) {
 			Level: "warn", Event: "reload", Operation: "reload", Outcome: "failure",
 			Error: observe.RuntimeErrorInfo("invalid_config"), Server: "_bridge",
 			Fields: map[string]any{
-				"config.path":                    "/tmp/bridge/config.yaml",
-				"config.property_path":           "servers[0].credentials.bearer",
-				"config.line":                    12,
-				"config.column":                  5,
-				"config.server":                  "alpha",
-				"config.pin_server":              "beta",
-				"config.pin_tool":                "tool_name",
-				"config.ref_kind":                "env",
-				"config.ref_name":                "BRIDGE_CLIENT_TOKEN",
-				"config.shape":                   "empty",
-				"config.related.property_path":   "servers[1].credentials.bearer",
-				"config.related.ref_kind":        "file",
-				"config.related.ref_name":        "secrets/developer-api-key",
-				"config.diagnostics_incomplete":  true,
-				"config.remaining_stages":        "not_checked",
+				"config.path":                   "/tmp/bridge/config.yaml",
+				"config.property_path":          "servers[0].credentials.bearer",
+				"config.line":                   12,
+				"config.column":                 5,
+				"config.server":                 "alpha",
+				"config.pin_server":             "beta",
+				"config.pin_tool":               "tool_name",
+				"config.ref_kind":               "env",
+				"config.ref_name":               "BRIDGE_CLIENT_TOKEN",
+				"config.shape":                  "empty",
+				"config.related.property_path":  "servers[1].credentials.bearer",
+				"config.related.ref_kind":       "file",
+				"config.related.ref_name":       "secrets/developer-api-key",
+				"config.diagnostics_incomplete": true,
+				"config.remaining_stages":       "not_checked",
 			},
 		})
 		if stdout.Len() != 0 {
@@ -96,7 +113,7 @@ func TestConfigDiagnosticFieldManifest(t *testing.T) {
 		var stdout, stderr bytes.Buffer
 		observe.NewLogger(&stdout, &stderr).Log(observe.Entry{
 			Level: "warn", Event: "reload", Operation: "reload", Outcome: "failure",
-			Error: observe.RuntimeErrorInfo("invalid_config"),
+			Error:  observe.RuntimeErrorInfo("invalid_config"),
 			Fields: map[string]any{"config.path": "/tmp/bridge/config.yaml", "config.property_path": "schema_version"},
 		})
 		decoded := decodeOneLogLine(t, &stderr)
@@ -115,11 +132,12 @@ func TestConfigDiagnosticFieldManifest(t *testing.T) {
 		var stdout, stderr bytes.Buffer
 		observe.NewLogger(&stdout, &stderr).Log(observe.Entry{
 			Level: "warn", Event: "reload", Operation: "reload", Outcome: "failure",
-			Error: observe.RuntimeErrorInfo("invalid_config"),
+			Error:  observe.RuntimeErrorInfo("invalid_config"),
 			Fields: map[string]any{"config_path": "/tmp/config.yaml", "reason": "invalid_config", "api_key": "synthetic-secret"},
 		})
-		if stdout.Len() != 0 || stderr.Len() != 0 {
-			t.Fatalf("legacy or unknown metadata was emitted: stdout=%q stderr=%q", stdout.String(), stderr.String())
+		if stderr.Len() != 0 {
+			t.Fatalf("legacy metadata fallback went to stderr: %q", stderr.String())
 		}
+		assertFallbackLine(t, &stdout)
 	})
 }

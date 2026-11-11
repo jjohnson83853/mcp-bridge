@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
 	"sync"
@@ -49,6 +50,30 @@ func (s *ReadinessState) SetServer(id string, connected, completeCatalog bool, r
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.servers[id] = serverReadiness{ID: id, Connected: connected, CompleteCatalog: completeCatalog, Reason: reason}
+}
+
+// RecordRejectedRefresh annotates servers whose mandatory pins blocked a
+// candidate refresh without changing the currently published health state.
+func (s *ReadinessState) RecordRejectedRefresh(err error) {
+	var pinErr *pinResolutionError
+	if s == nil || !errors.As(err, &pinErr) {
+		return
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, blocker := range pinErr.blockers {
+		reason := blocker.failureReason
+		switch reason {
+		case RefreshReasonUnavailable, RefreshReasonDiscoveryFailed, RefreshReasonClientMissing:
+		default:
+			reason = "pin_rejected"
+		}
+		server := s.servers[blocker.server]
+		server.ID = blocker.server
+		server.Reason = reason
+		s.servers[blocker.server] = server
+	}
 }
 
 func (s *ReadinessState) snapshot() (int, []serverReadiness) {

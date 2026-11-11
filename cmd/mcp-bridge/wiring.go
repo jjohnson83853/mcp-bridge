@@ -176,6 +176,7 @@ func (r *upstreamRegistry) newClient(server config.Server) (core.Upstream, error
 	}
 	client, err := upstream.NewDedicated(upstream.DedicatedOptions{
 		Server: options, Stateless: server.ServerStateless(), Logger: r.logger,
+		RetryInterval: settings.RefreshInterval,
 	})
 	if err != nil {
 		return nil, err
@@ -351,6 +352,7 @@ type localChecks struct {
 	writerLock      bool
 	storageWritable bool
 	routerReady     bool
+	rejection       error
 }
 
 func newLocalChecks(state *service.ReadinessState, writerLock bool) *localChecks {
@@ -361,6 +363,20 @@ func (c *localChecks) storage(writable bool) { c.update(func() { c.storageWritab
 
 func (c *localChecks) router(ready bool) { c.update(func() { c.routerReady = ready }) }
 
+func (c *localChecks) rejected(err error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.rejection = err
+}
+
+func (c *localChecks) takeRejection() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	err := c.rejection
+	c.rejection = nil
+	return err
+}
+
 func (c *localChecks) update(change func()) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -368,11 +384,14 @@ func (c *localChecks) update(change func()) {
 	c.state.SetLocal(true, c.writerLock, c.storageWritable, c.routerReady)
 }
 
-// publishObserver reports one published generation to the readiness state and
-// the metric surface, and commits the configuration it was admitted from.
+// publishObserver reports one published generation or rejected refresh to the
+// readiness state and metric surface, and commits only admitted configurations.
 func publishObserver(holder *configHolder, checks *localChecks, state *service.ReadinessState, metrics *observe.Metrics) func(*service.Assembly) {
 	return func(assembly *service.Assembly) {
 		if assembly == nil {
+			if checks != nil && state != nil {
+				state.RecordRejectedRefresh(checks.takeRejection())
+			}
 			return
 		}
 		holder.commit()
@@ -414,14 +433,21 @@ func operatorLog(output io.Writer) func(string, ...any) {
 	var mu sync.Mutex
 	return func(format string, args ...any) {
 		var diagnostics *config.Diagnostics
+		var configRevision, trigger string
 		publicationFailed := false
 		for _, arg := range args {
+			if fields, ok := arg.(map[string]string); ok {
+				configRevision = fields["config_revision"]
+				trigger = fields["trigger"]
+				continue
+			}
 			err, ok := arg.(error)
 			if !ok {
 				continue
 			}
-			if errors.As(err, &diagnostics) {
-				break
+			var foundDiagnostics *config.Diagnostics
+			if errors.As(err, &foundDiagnostics) {
+				diagnostics = foundDiagnostics
 			}
 			if errors.Is(err, service.ErrPublicationFailed) {
 				publicationFailed = true
@@ -429,6 +455,7 @@ func operatorLog(output io.Writer) func(string, ...any) {
 		}
 
 		var envelope observe.Envelope
+		destination := output
 		switch {
 		case diagnostics != nil:
 			envelope = configValidationFailureEnvelope(diagnostics)
@@ -436,6 +463,8 @@ func operatorLog(output io.Writer) func(string, ...any) {
 			envelope.Event = "config_reload_rejected"
 			envelope.Operation = "reload"
 			envelope.Outcome = "failure"
+			envelope.ConfigRevision = configRevision
+			envelope.Trigger = trigger
 		case publicationFailed:
 			envelope = internalOperatorEnvelope(
 				"reload_publication_failed",
@@ -443,6 +472,17 @@ func operatorLog(output io.Writer) func(string, ...any) {
 				"publish",
 				"failure",
 			)
+		case format == "configuration reload applied":
+			envelope = observe.NewEnvelope(
+				"info",
+				"config_reload_applied",
+				"configuration reload applied",
+				"reload",
+				"success",
+			)
+			envelope.ConfigRevision = configRevision
+			envelope.Trigger = trigger
+			destination = os.Stdout
 		case format == "startup_snapshot_rejected: %v":
 			envelope = observe.NewEnvelope("warn", "startup_snapshot_rejected", "startup snapshot unavailable", "startup", "degraded")
 			envelope.Error = &observe.ErrorInfo{
@@ -476,7 +516,7 @@ func operatorLog(output io.Writer) func(string, ...any) {
 
 		mu.Lock()
 		defer mu.Unlock()
-		observe.WriteJSONLine(output, envelope)
+		observe.WriteJSONLine(destination, envelope)
 	}
 }
 
@@ -485,7 +525,6 @@ func internalOperatorEnvelope(event, message, operation, outcome string) observe
 	envelope.Error = observe.RuntimeErrorInfo("internal_error")
 	return envelope
 }
-
 
 // isSafeServerID mirrors the observe logger's safe-server rule: the finite
 // vocabulary of configured server ids (lowercase lead, lowercase/digits/dashes).

@@ -376,6 +376,98 @@ type serverOutcome struct {
 	restored  bool
 }
 
+type pinBlocker struct {
+	server        string
+	tool          string
+	propertyPath  string
+	blockerClass  string
+	failureReason string
+}
+
+type pinResolutionError struct {
+	blockers        []pinBlocker
+	discoveredTools map[string][]string
+}
+
+func (e *pinResolutionError) Error() string { return "unresolved mandatory pins" }
+
+func resolveCandidatePins(candidate *config.Config, catalog *core.Bridge, definitions map[string][]core.ToolDefinition, outcomes []serverOutcome) ([]core.ResolvedPin, *pinResolutionError) {
+	discoveryFailures := make(map[string]string, len(outcomes))
+	for _, outcome := range outcomes {
+		if outcome.failed {
+			discoveryFailures[outcome.id] = safePinDiscoveryCause(outcome.reason)
+		}
+	}
+
+	resolved := make([]core.ResolvedPin, 0, len(candidate.Pins))
+	blockers := make([]pinBlocker, 0)
+	serversWithMissingPins := make(map[string]struct{})
+	for index, configured := range candidate.Pins {
+		serverID, toolName := configured["server"], configured["tool"]
+		binding, ok := catalog.Binding(core.PublicName(serverID, toolName))
+		if !ok {
+			blocker := pinBlocker{
+				server:       serverID,
+				tool:         toolName,
+				propertyPath: fmt.Sprintf("pins[%d]", index),
+				blockerClass: "tool_absent",
+			}
+			if reason, failed := discoveryFailures[serverID]; failed {
+				blocker.blockerClass = "server_unverified"
+				blocker.failureReason = reason
+			} else {
+				serversWithMissingPins[serverID] = struct{}{}
+			}
+			blockers = append(blockers, blocker)
+			continue
+		}
+		bindingCopy := binding
+		resolved = append(resolved, core.ResolvedPin{
+			PinnedTool: core.PinnedTool{ServerID: serverID, RawName: toolName},
+			Binding:    &bindingCopy,
+		})
+	}
+	if len(blockers) == 0 {
+		return resolved, nil
+	}
+
+	discoveredTools := make(map[string][]string, len(serversWithMissingPins))
+	for serverID := range serversWithMissingPins {
+		names := make([]string, 0, len(definitions[serverID]))
+		for _, definition := range definitions[serverID] {
+			if validPinToolName(definition.RawName) {
+				names = append(names, definition.RawName)
+			}
+		}
+		sort.Strings(names)
+		discoveredTools[serverID] = names
+	}
+	return nil, &pinResolutionError{blockers: blockers, discoveredTools: discoveredTools}
+}
+
+func safePinDiscoveryCause(reason string) string {
+	switch reason {
+	case RefreshReasonUnavailable, RefreshReasonDiscoveryFailed, RefreshReasonClientMissing:
+		return reason
+	default:
+		return RefreshReasonDiscoveryFailed
+	}
+}
+
+func validPinToolName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for index := range len(name) {
+		char := name[index]
+		if !(char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z' ||
+			char >= '0' && char <= '9' || char == '_' || char == '-') {
+			return false
+		}
+	}
+	return true
+}
+
 // Reload validates one candidate membership and, on success, publishes exactly
 // one new generation (plan §4.10 steps 1-6). On any failure it returns an error
 // and leaves the published generation, its catalog, its inbound token
@@ -547,26 +639,22 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 	})
 	next.revision = next.catalog.Revision()
 
-	pins := make([]core.PinnedTool, 0, len(in.candidate.Pins))
-	for _, pin := range in.candidate.Pins {
-		pins = append(pins, core.PinnedTool{ServerID: pin["server"], RawName: pin["tool"]})
-	}
 	if in.mode == buildStartup {
 		// Startup contacts no upstream, so its catalog is only the durable
-		// snapshot; a fresh start has no bindings to satisfy pins. Defer pin
-		// resolution to the first post-startup discovery pass, which rebuilds
-		// the catalog from live discovery and then resolves pins exactly as
-		// below.
+		// snapshot; a fresh generation defers pin resolution until its first
+		// live refresh.
 		next.pins = nil
 	} else {
-		resolvedPins, err := core.AddPins(next.catalog, pins)
-		if err != nil {
-			return nil, fmt.Errorf("service: %s pins: %w", in.mode, err)
+		resolvedPins, pinErr := resolveCandidatePins(in.candidate, next.catalog, definitions, outcomes)
+		if pinErr != nil {
+			return nil, fmt.Errorf("service: %s pins: %w", in.mode, pinErr)
 		}
-		next.pins, next.pinMetadata, err = applyServerMetadataDefaults(in.candidate, resolvedPins, definitions, in.mode)
+		resolvedPins, pinMetadata, err := applyServerMetadataDefaults(in.candidate, resolvedPins, definitions, in.mode)
 		if err != nil {
 			return nil, err
 		}
+		next.pins = resolvedPins
+		next.pinMetadata = pinMetadata
 	}
 
 	snapshot, err := storage.Reconcile(in.reconcileBase(previous), storage.ReconcileInput{

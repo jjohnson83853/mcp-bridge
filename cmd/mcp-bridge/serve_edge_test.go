@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -15,6 +17,7 @@ import (
 
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
 )
 
@@ -392,5 +395,75 @@ func TestPublishedFailureKeepsAcceptedAdmissionBounds(t *testing.T) {
 	}
 	if got := holder.bounds(); !reflect.DeepEqual(got, wantBounds) {
 		t.Fatalf("admission bounds = %#v, want accepted assembly bounds %#v", got, wantBounds)
+	}
+}
+
+func TestRejectedRefreshUpdatesReadinessReasonAndFailureRecord(t *testing.T) {
+	candidate := &config.Config{Pins: []map[string]string{{"server": "alpha", "tool": "read"}}}
+	state := service.NewReadinessState(true, true, true, true)
+	state.SetServer("alpha", false, false, service.RefreshReasonNotProbed)
+	checks := newLocalChecks(state, true)
+	published := publishObserver(nil, checks, state, nil)
+
+	var logs bytes.Buffer
+	rejected := make(chan struct{}, 1)
+	refresher := service.NewRefresher(
+		service.NewRuntime(),
+		func() *config.Config { return candidate },
+		service.RefreshDeps{
+			ReloadDeps: service.ReloadDeps{
+				Discover:            func(config.Server) ([]core.ToolDefinition, error) { return nil, nil },
+				NewClient:           func(config.Server) (core.Upstream, error) { return nil, nil },
+				Now:                 func() time.Time { return time.Unix(1, 0) },
+				ModelIdentityDigest: strings.Repeat("a", 64),
+			},
+			OnRejected: func(err error) {
+				checks.rejected(err)
+				published(nil)
+				rejected <- struct{}{}
+			},
+		},
+		service.RefresherOptions{Interval: time.Minute, Logger: observe.NewLogger(&logs, &logs)},
+	)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		refresher.Run(ctx)
+		close(done)
+	}()
+	refresher.Trigger()
+	select {
+	case <-rejected:
+	case <-time.After(time.Second):
+		cancel()
+		<-done
+		t.Fatal("refresh rejection was not observed")
+	}
+	cancel()
+	<-done
+
+	ready := httptest.NewRecorder()
+	service.NewOperationsHandler(state, nil).ServeHTTP(ready, httptest.NewRequest(http.MethodGet, "/readyz", nil))
+	if !strings.Contains(ready.Body.String(), `"reason":"pin_rejected"`) ||
+		strings.Contains(ready.Body.String(), `"reason":"not_probed"`) {
+		t.Fatalf("readiness response did not replace not-probed with the rejection reason")
+	}
+
+	var failure map[string]any
+	for _, line := range strings.Split(strings.TrimSpace(logs.String()), "\n") {
+		record := decodeEnvelopeLine(t, line+"\n")
+		if record["event"] == "catalog_refresh_failed" {
+			failure = record
+		}
+	}
+	if failure == nil || failure["level"] != "error" || failure["catalog_state"] != "none_available" {
+		t.Fatalf("rejected refresh record = %#v; want error/none_available", failure)
+	}
+	errorInfo, ok := failure["error"].(map[string]any)
+	if !ok || errorInfo["retryable"] != false {
+		t.Errorf("rejected refresh error = %#v; want retryable=false", failure["error"])
+	}
+	if _, exists := failure["next_attempt_ms"]; exists {
+		t.Errorf("next_attempt_ms present although this rejected pass has no automatic retry")
 	}
 }

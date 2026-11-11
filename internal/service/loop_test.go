@@ -73,7 +73,6 @@ func (l *loopLog) outcomesSnapshot() [][2]string {
 	return append([][2]string(nil), l.outcomes...)
 }
 
-
 func (l *loopLog) count() int {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -560,7 +559,6 @@ func TestLoopLogsPostAcceptPublicationFailuresWithoutFalseSuccessMetrics(t *test
 	}
 }
 
-
 // TestLoopAdmitsASignalCandidateAndDrainsTheRemovedServer pins the atomic swap:
 // one signal publishes exactly one new generation, a server the candidate
 // dropped is drained, and a server it kept keeps its working client.
@@ -728,5 +726,73 @@ func TestLoopStartsWithoutTheCachedStateOfARejectedDurableSnapshot(t *testing.T)
 	cancel()
 	if err := <-done; err != nil {
 		t.Fatalf("Start returned %v; want nil on context cancellation", err)
+	}
+}
+
+type loopLogCall struct {
+	format string
+	args   []any
+}
+
+func TestLoopWatchLogsAcceptedReloadAttribution(t *testing.T) {
+	h := newReloadHarness(t)
+	reloadEnv(t)
+	candidate := parseReloadConfig(t, reloadAlphaOnly)
+	signals := make(chan struct{}, 1)
+	logCalls := make(chan loopLogCall, 1)
+	loop, err := service.NewLoop(h.runtime, service.LoopOptions{
+		Load:     func() (*config.Config, error) { return candidate, nil },
+		Deps:     refreshDeps(h),
+		Interval: time.Hour,
+		Signals:  signals,
+		Logf: func(format string, args ...any) {
+			logCalls <- loopLogCall{format: format, args: append([]any(nil), args...)}
+		},
+		Published: func(assembly *service.Assembly) error {
+			h.recordPublished(assembly)
+			return nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("new loop: %v", err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := startLoop(t, ctx, loop)
+	finished := false
+	t.Cleanup(func() {
+		cancel()
+		if !finished {
+			<-done
+		}
+	})
+	waitFor(t, "startup admission", func() bool { return h.runtime.Current() != nil })
+
+	signals <- struct{}{}
+	var call loopLogCall
+	select {
+	case call = <-logCalls:
+	case <-time.After(5 * time.Second):
+		t.Fatal("accepted signal reload did not emit its applied record")
+	}
+	if call.format != "configuration reload applied" || len(call.args) != 1 {
+		t.Fatalf("accepted reload log = %#v; want applied event and attribution", call)
+	}
+	metadata, ok := call.args[0].(map[string]string)
+	if !ok {
+		t.Fatalf("accepted reload attribution = %#v; want revision and trigger", call.args[0])
+	}
+	if metadata["config_revision"] != candidate.Fingerprint() || metadata["trigger"] != "trigger" {
+		t.Fatalf("accepted reload attribution = %#v; want revision %q and trigger", metadata, candidate.Fingerprint())
+	}
+
+	cancel()
+	select {
+	case err := <-done:
+		finished = true
+		if err != nil {
+			t.Fatalf("loop shutdown: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("loop did not stop after cancellation")
 	}
 }

@@ -2,26 +2,31 @@ package observe
 
 import (
 	"math"
+	"net/url"
+	"strconv"
 	"strings"
 )
+
 const SchemaVersion = 1
 
 // Envelope is the application-owned version-one JSON record shape.
 type Envelope struct {
-	SchemaVersion int           `json:"schema_version"`
-	Level         string        `json:"level"`
-	Service       string        `json:"service"`
-	Event         string        `json:"event"`
-	Message       string        `json:"message"`
-	Operation     string        `json:"operation"`
-	Outcome       string        `json:"outcome"`
-	Error         *ErrorInfo    `json:"error,omitempty"`
-	Config        *ConfigInfo   `json:"config,omitempty"`
-	Resource      *ResourceInfo `json:"resource,omitempty"`
-	RequestID     string        `json:"request_id,omitempty"`
-	Generation    uint64        `json:"generation,omitempty"`
-	DurationMS    int64         `json:"duration_ms,omitempty"`
-	Server        string        `json:"server,omitempty"`
+	SchemaVersion  int           `json:"schema_version"`
+	Level          string        `json:"level"`
+	Service        string        `json:"service"`
+	Event          string        `json:"event"`
+	Message        string        `json:"message"`
+	Operation      string        `json:"operation"`
+	Outcome        string        `json:"outcome"`
+	Error          *ErrorInfo    `json:"error,omitempty"`
+	Config         *ConfigInfo   `json:"config,omitempty"`
+	Resource       *ResourceInfo `json:"resource,omitempty"`
+	RequestID      string        `json:"request_id,omitempty"`
+	Generation     uint64        `json:"generation,omitempty"`
+	DurationMS     int64         `json:"duration_ms,omitempty"`
+	Server         string        `json:"server,omitempty"`
+	ConfigRevision string        `json:"config_revision,omitempty"`
+	Trigger        string        `json:"trigger,omitempty"`
 }
 
 // ErrorInfo contains the stable, queryable classification of a failed event.
@@ -110,11 +115,15 @@ func runtimeErrorInfo(reason string) (ErrorInfo, bool) {
 	case "session_capacity":
 		info.Kind, info.Retryable, info.Remediation = "resource", true, "retry when capacity is available"
 	case "backend_unavailable", "backend_auth_failed", "backend_busy", "deadline_exceeded",
-		"upstream_protocol_error", "catalog_changed":
+		"upstream_protocol_error", "catalog_changed", "upstream_unavailable", "discovery_failed":
 		info.Kind, info.Retryable, info.Remediation = "dependency", true, "verify the upstream service and retry"
+	case "refresh_failed":
+		info.Kind, info.Retryable, info.Remediation = "dependency", true, "verify the upstream dependencies and retry"
 	case "tool_reported_error":
 		info.Kind, info.Remediation = "dependency", "correct the upstream tool behavior"
-	case "invalid_config":
+	case "client_missing":
+		info.Kind, info.Remediation = "configuration", "correct the server configuration or credentials"
+	case "invalid_config", "pin_rejected":
 		info.Kind, info.Remediation = "configuration", "correct the configuration"
 	case "internal_error", "correlation_unavailable", "unknown":
 		info.Kind, info.Remediation = "internal", "inspect the bridge logs and configuration"
@@ -192,6 +201,45 @@ func validEnvelopeOutcome(outcome string) bool {
 	return false
 }
 
+// SanitizeEndpoint keeps only the configured scheme, authority, and path.
+func SanitizeEndpoint(endpoint string) string {
+	parsed, err := url.Parse(endpoint)
+	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+		return ""
+	}
+	parsed.User = nil
+	parsed.Opaque = ""
+	parsed.RawQuery = ""
+	parsed.ForceQuery = false
+	parsed.Fragment = ""
+	parsed.RawFragment = ""
+	parsed.RawPath = ""
+	return parsed.String()
+}
+
+func validFailureReason(reason string) bool {
+	switch reason {
+	case "upstream_unavailable", "discovery_failed", "client_missing",
+		"authentication_rejected_during_initialize", "authentication_rejected_during_tools_list",
+		"dns_lookup_failed", "connect_failed", "tls_handshake_failed",
+		"initialize_failed", "tools_list_failed", "upstream_http_error":
+		return true
+	}
+	for _, prefix := range []string{
+		"timeout_context_deadline_exceeded_", "timeout_network_timeout_",
+	} {
+		if !strings.HasPrefix(reason, prefix) || !strings.HasSuffix(reason, "ms") {
+			continue
+		}
+		milliseconds := strings.TrimSuffix(strings.TrimPrefix(reason, prefix), "ms")
+		if len(milliseconds) == 0 || len(milliseconds) > 8 {
+			return false
+		}
+		value, err := strconv.ParseUint(milliseconds, 10, 32)
+		return err == nil && value > 0 && value <= 86_400_000
+	}
+	return false
+}
 
 func addEnvelopeFields(record map[string]any, fields map[string]any) bool {
 	for key, value := range fields {
@@ -201,6 +249,38 @@ func addEnvelopeFields(record map[string]any, fields map[string]any) bool {
 				return false
 			}
 			record[key] = value
+		case "next_attempt_ms", "retained_age_ms", "retained_generation", "candidate_servers",
+			"candidate_tools", "servers_discovered", "tools_discovered", "tools_published",
+			"pins_resolved", "pins_total":
+			if !nonNegativeIntegerField(value) {
+				return false
+			}
+			record[key] = value
+		case "chunk_count":
+			count, ok := value.(int)
+			index, indexOK := fields["chunk_index"].(int)
+			if !ok || count <= 0 || !indexOK || index < 0 || index >= count {
+				return false
+			}
+			record[key] = count
+		case "chunk_index":
+			index, ok := value.(int)
+			count, countOK := fields["chunk_count"].(int)
+			if !ok || index < 0 || !countOK || count <= 0 || index >= count {
+				return false
+			}
+			record[key] = index
+		case "discovered_tools":
+			names, ok := value.([]string)
+			if !ok || len(names) > 64 {
+				return false
+			}
+			for _, name := range names {
+				if !validDiscoveredToolName(name) {
+					return false
+				}
+			}
+			record[key] = names
 		case "upstream_text_presence", "upstream_structured_presence", "final_text_presence", "final_structured_presence":
 			presence, ok := value.(string)
 			if !ok || (presence != "unknown" && presence != "present" && presence != "absent") {
@@ -225,6 +305,65 @@ func addEnvelopeFields(record map[string]any, fields map[string]any) bool {
 				return false
 			}
 			record[key] = text
+		case "refresh_id":
+			id, ok := value.(string)
+			if !ok || !validHexID(id) {
+				return false
+			}
+			record[key] = id
+		case "config_revision":
+			revision, ok := value.(string)
+			if !ok || !validHexDigest(revision) {
+				return false
+			}
+			record[key] = revision
+		case "trigger":
+			trigger, ok := value.(string)
+			if !ok || (trigger != "interval" && trigger != "trigger") {
+				return false
+			}
+			record[key] = trigger
+		case "catalog_state":
+			state, ok := value.(string)
+			if !ok || (state != "retained_published" && state != "none_available") {
+				return false
+			}
+			record[key] = state
+		case "publication_impact":
+			impact, ok := value.(string)
+			if !ok || (impact != "candidate_rejected" && impact != "degraded_published") {
+				return false
+			}
+			record[key] = impact
+		case "blocker_class":
+			class, ok := value.(string)
+			if !ok || (class != "tool_absent" && class != "server_unverified") {
+				return false
+			}
+			record[key] = class
+		case "endpoint":
+			text, ok := value.(string)
+			if !ok {
+				return false
+			}
+			sanitized := SanitizeEndpoint(text)
+			if sanitized == "" {
+				return false
+			}
+			record[key] = sanitized
+		case "failure_stage":
+			stage, ok := value.(string)
+			if !ok || (stage != "dns" && stage != "connect" && stage != "tls" &&
+				stage != "auth" && stage != "initialize" && stage != "tools_list") {
+				return false
+			}
+			record[key] = stage
+		case "failure_reason":
+			reason, ok := value.(string)
+			if !ok || !validFailureReason(reason) {
+				return false
+			}
+			record[key] = reason
 		case "mode":
 			mode, ok := value.(string)
 			if !ok || (mode != "hybrid" && mode != "hybrid_partial" && mode != "keyword") {
@@ -335,6 +474,19 @@ func addEnvelopeFields(record map[string]any, fields map[string]any) bool {
 	}
 	return true
 }
+func validDiscoveredToolName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for index := range len(name) {
+		char := name[index]
+		if !(char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z' ||
+			char >= '0' && char <= '9' || char == '_' || char == '-') {
+			return false
+		}
+	}
+	return true
+}
 
 func setDottedField(record map[string]any, dotted string, value any) {
 	object, field, _ := strings.Cut(dotted, ".")
@@ -367,6 +519,30 @@ func numericField(value any) bool {
 	default:
 		return false
 	}
+}
+func nonNegativeIntegerField(value any) bool {
+	switch number := value.(type) {
+	case int:
+		return number >= 0
+	case int64:
+		return number >= 0
+	case uint64:
+		return true
+	default:
+		return false
+	}
+}
+
+func validHexDigest(value string) bool {
+	if len(value) != 64 {
+		return false
+	}
+	for _, digit := range value {
+		if !(digit >= '0' && digit <= '9' || digit >= 'a' && digit <= 'f') {
+			return false
+		}
+	}
+	return true
 }
 
 func cloneShape(shape map[string]any) map[string]any {
@@ -401,10 +577,16 @@ var envelopeFieldNames = [...]string{
 	"backend_call_id",
 	"backend_id",
 	"binding_relation",
+	"blocker_class",
 	"build_state",
+	"candidate_servers",
+	"candidate_tools",
+	"catalog_state",
 	"catalog_tools",
 	"challenge_kind",
 	"challenge_target",
+	"chunk_count",
+	"chunk_index",
 	"client_family",
 	"clock_skew_seconds",
 	"config",
@@ -429,16 +611,19 @@ var envelopeFieldNames = [...]string{
 	"config.remaining_stages",
 	"config.server",
 	"config.shape",
+	"config_revision",
 	"correlation_state",
 	"count",
 	"credential_state",
 	"diag_duration_ms",
 	"diag_schema",
 	"diagnostic_policy_revision",
+	"discovered_tools",
 	"duration_capped",
 	"duration_ms",
 	"effective_policy_revision",
 	"effective_policy_revision_state",
+	"endpoint",
 	"error",
 	"error.code",
 	"error.kind",
@@ -466,6 +651,7 @@ var envelopeFieldNames = [...]string{
 	"message",
 	"metadata_target_registered",
 	"mode",
+	"next_attempt_ms",
 	"oauth_enabled",
 	"operation",
 	"operation_id",
@@ -473,22 +659,29 @@ var envelopeFieldNames = [...]string{
 	"operation_relation",
 	"outcome",
 	"path_class",
+	"pins_resolved",
+	"pins_total",
 	"policy_source",
 	"process_id",
 	"process_state",
 	"protocol_version",
+	"publication_impact",
+	"refresh_id",
 	"request_id",
 	"resource",
 	"resource.address",
 	"resource.listener",
 	"resource.path",
 	"resource_path_mode",
+	"retained_age_ms",
+	"retained_generation",
 	"route",
 	"route_outcome",
 	"schema_version",
 	"scope_required",
 	"scope_state",
 	"server",
+	"servers_discovered",
 	"service",
 	"session_binding",
 	"session_header",
@@ -501,6 +694,9 @@ var envelopeFieldNames = [...]string{
 	"status_state",
 	"timing_scope",
 	"tool",
+	"tools_discovered",
+	"tools_published",
+	"trigger",
 	"upstream_content_count",
 	"upstream_shape",
 	"upstream_state",
@@ -508,7 +704,7 @@ var envelopeFieldNames = [...]string{
 	"upstream_text_presence",
 }
 
-// EnvelopeFieldNames returns the complete sorted, deduplicated r7 vocabulary.
+// EnvelopeFieldNames returns the complete sorted, deduplicated r8 vocabulary.
 func EnvelopeFieldNames() []string {
 	return append([]string(nil), envelopeFieldNames[:]...)
 }

@@ -30,6 +30,8 @@ type Logger struct {
 	stderr io.Writer
 }
 
+var loggingWriteFailedLine = []byte(`{"schema_version":1,"level":"warn","service":"mcp-bridge","event":"logging_write_failed","message":"logging write failed","operation":"logging","outcome":"failure"}` + "\n")
+
 func NewLogger(stdout, stderr io.Writer) *Logger {
 	return &Logger{stdout: stdout, stderr: stderr}
 }
@@ -69,10 +71,12 @@ func (l *Logger) Log(entry Entry) {
 	}
 	record, ok := buildEnvelope(entry)
 	if !ok {
+		l.logFailure(entry.Level)
 		return
 	}
 	encoded, err := json.Marshal(record)
 	if err != nil {
+		l.logFailure(entry.Level)
 		return
 	}
 	encoded = append(encoded, '\n')
@@ -80,32 +84,51 @@ func (l *Logger) Log(entry Entry) {
 }
 
 // logHTTP encodes the fixed-slot record once and attempts exactly one write.
-// Validation failures and sink failures are nonfatal: unsafe output is
-// suppressed, never retried and never partially written.
+// Encode and sink failures are surfaced once on the opposite severity lane.
 func (l *Logger) logHTTP(entry Entry) {
 	if entry.Event != "http_complete" {
 		return
 	}
 	encoder := &httpEncoder{}
 	if !encoder.build(entry) {
+		l.logFailure(entry.Level)
 		return
 	}
 	l.write(entry.Level, encoder.buf.Bytes())
 }
 
 func (l *Logger) write(level string, encoded []byte) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	output := l.stdout
 	if level == "warn" || level == "error" {
 		output = l.stderr
 	}
 	if output == nil {
+		l.writeFailureFallback(level)
 		return
 	}
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	_, _ = output.Write(encoded)
+	written, err := output.Write(encoded)
+	if err != nil || written != len(encoded) {
+		l.writeFailureFallback(level)
+	}
 }
 
+func (l *Logger) logFailure(level string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.writeFailureFallback(level)
+}
+
+func (l *Logger) writeFailureFallback(level string) {
+	output := l.stderr
+	if level == "warn" || level == "error" {
+		output = l.stdout
+	}
+	if output != nil {
+		_, _ = output.Write(loggingWriteFailedLine)
+	}
+}
 
 // outcomeVocabulary is the closed set of terminal outcomes a record may
 // carry; anything else collapses to the leading fallback.
@@ -157,7 +180,6 @@ func safeServer(value string) bool {
 	return true
 }
 
-
 func sensitive(key string) bool {
 	key = strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(key, "-", ""), "_", ""))
 	for _, marker := range []string{"token", "key", "secret", "password", "authorization", "cookie", "session", "argument", "result", "query", "schema", "description", "payload", "url", "endpoint", "header", "stack"} {
@@ -206,10 +228,24 @@ func eventMessage(event string) string {
 		return "startup snapshot unavailable"
 	case "prompt_publication_failed":
 		return "prompt publication failed"
+	case "config_reload_applied":
+		return "configuration reload applied"
 	case "reload_rejected", "config_reload_rejected":
 		return "configuration reload rejected"
 	case "reload_publication_failed":
 		return "configuration reload publication failed"
+	case "catalog_refresh_started":
+		return "catalog refresh started"
+	case "catalog_refresh_completed":
+		return "catalog refresh completed"
+	case "catalog_refresh_failed":
+		return "catalog refresh failed"
+	case "upstream_discovery_failed":
+		return "upstream discovery failed"
+	case "pin_blocker_detail":
+		return "mandatory pin blocks catalog refresh"
+	case "logging_write_failed":
+		return "logging write failed"
 	case "internal_warning":
 		return "bridge encountered an internal warning"
 	case "reload":

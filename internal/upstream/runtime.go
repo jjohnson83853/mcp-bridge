@@ -48,6 +48,53 @@ type ServerClient struct {
 	now                 func() time.Time
 }
 
+type discoveryHTTPStatusKey struct{}
+
+type discoveryHTTPStatus struct {
+	mu     sync.Mutex
+	status int
+}
+
+func (s *discoveryHTTPStatus) reset() {
+	s.mu.Lock()
+	s.status = 0
+	s.mu.Unlock()
+}
+
+func (s *discoveryHTTPStatus) set(status int) {
+	s.mu.Lock()
+	s.status = status
+	s.mu.Unlock()
+}
+
+func (s *discoveryHTTPStatus) get() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.status
+}
+
+type discoveryStatusTransport struct {
+	next http.RoundTripper
+}
+
+func (t discoveryStatusTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	response, err := t.next.RoundTrip(request)
+	if response != nil {
+		if status, ok := request.Context().Value(discoveryHTTPStatusKey{}).(*discoveryHTTPStatus); ok {
+			status.set(response.StatusCode)
+		}
+	}
+	return response, err
+}
+
+func (c *ServerClient) trackDiscoveryStatus() {
+	next := c.HTTPClient.Transport
+	if next == nil {
+		next = http.DefaultTransport
+	}
+	c.HTTPClient.Transport = discoveryStatusTransport{next: next}
+}
+
 type runtimeError string
 
 func (e runtimeError) Error() string { return string(e) }

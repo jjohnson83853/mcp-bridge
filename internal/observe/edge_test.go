@@ -9,14 +9,15 @@ import (
 
 func TestLogRejectsInvalidEnvelopeFields(t *testing.T) {
 
-	var output bytes.Buffer
-	NewLogger(&output, &output).Log(Entry{
+	var stdout, stderr bytes.Buffer
+	NewLogger(&stdout, &stderr).Log(Entry{
 		Level: "trace-secret", Event: "attacker-event", Operation: "private-op", Outcome: "arbitrary",
 		Server: "Bad_Server", Fields: map[string]any{"mode": "attacker-mode", "count": 3, "slots": "not-a-number"},
 	})
-	if output.Len() != 0 {
-		t.Fatalf("invalid envelope was emitted: %s", output.String())
+	if stdout.Len() != 0 {
+		t.Fatalf("invalid envelope fallback went to stdout: %s", stdout.String())
 	}
+	assertFallbackLine(t, stderr.String())
 }
 func TestMetricsHelpersBoundLabelsAndExposeAcceptedUpdates(t *testing.T) {
 	m := NewMetrics([]string{"alpha"})

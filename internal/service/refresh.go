@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
+	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
 
@@ -35,6 +38,8 @@ type RefreshDeps struct {
 	// Reason classifies one server's discovery failure into the finite reason
 	// vocabulary. It defaults to RefreshReasonDiscoveryFailed.
 	Reason func(server config.Server, err error) string
+	// OnRejected reports a refresh candidate rejected before publication.
+	OnRejected func(err error)
 }
 
 // Refresh admits one candidate configuration as a periodic refresh rather than a
@@ -71,8 +76,10 @@ type RefresherOptions struct {
 	// can report per-server catalog state without reading internals. It returns
 	// reconciliation failures after the runtime has accepted that generation.
 	Published func(assembly *Assembly) error
-	// Logf reports a post-accept publication callback failure.
-	Logf func(format string, args ...any)
+	// Logger receives structured lifecycle records. Logf remains the legacy
+	// callback for post-accept publication failures.
+	Logger *observe.Logger
+	Logf   func(format string, args ...any)
 }
 
 // Refresher drives periodic and notification triggered refresh passes for one
@@ -86,6 +93,8 @@ type Refresher struct {
 	interval  time.Duration
 	metrics   func(serverID, status, reason string)
 	published func(assembly *Assembly) error
+	rejected  func(err error)
+	logger    *observe.Logger
 	logf      func(format string, args ...any)
 
 	pending chan struct{}
@@ -108,6 +117,8 @@ func NewRefresher(runtime *Runtime, current func() *config.Config, deps RefreshD
 		interval:  options.Interval,
 		metrics:   options.Metrics,
 		published: options.Published,
+		rejected:  deps.OnRejected,
+		logger:    options.Logger,
 		logf:      options.Logf,
 		pending:   make(chan struct{}, 1),
 	}
@@ -116,15 +127,22 @@ func NewRefresher(runtime *Runtime, current func() *config.Config, deps RefreshD
 // normalizedReason guarantees the recorded reason stays inside the finite
 // vocabulary even when a caller supplies no classifier.
 func normalizedReason(classify func(server config.Server, err error) string) func(config.Server, error) string {
-	if classify == nil {
-		return func(config.Server, error) string { return RefreshReasonDiscoveryFailed }
-	}
 	return func(server config.Server, err error) string {
-		reason := classify(server, err)
-		if reason == "" {
+		reason := ""
+		if classify != nil {
+			reason = classify(server, err)
+		} else {
+			var reasoned interface{ RefreshReason() string }
+			if errors.As(err, &reasoned) {
+				reason = reasoned.RefreshReason()
+			}
+		}
+		switch reason {
+		case RefreshReasonUnavailable, RefreshReasonDiscoveryFailed, RefreshReasonClientMissing:
+			return reason
+		default:
 			return RefreshReasonDiscoveryFailed
 		}
-		return reason
 	}
 }
 
@@ -172,12 +190,12 @@ func (r *Refresher) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticks:
-			r.runPass()
+			r.runPassFor("interval")
 		case <-r.pending:
 			r.mu.Lock()
 			r.queued--
 			r.mu.Unlock()
-			r.runPass()
+			r.runPassFor("trigger")
 		}
 	}
 }
@@ -189,25 +207,250 @@ func (r *Refresher) ticks() <-chan time.Time {
 	return time.NewTicker(r.interval).C
 }
 
-// runPass executes exactly one refresh pass and retires its pending slot after
-// the pass completes, so requests raised during it stay pending until the loop
-// consumes them.
+// runPass executes one notification-triggered refresh pass for callers that do
+// not have a loop source available.
 func (r *Refresher) runPass() {
+	r.runPassFor("trigger")
+}
+
+type refreshPassCounts struct {
+	servers      int
+	tools        int
+	pinsResolved int
+}
+
+func (r *Refresher) runPassFor(trigger string) {
 	r.running.Store(true)
 	defer r.running.Store(false)
 	cfg := r.current()
 	if cfg == nil {
 		return
 	}
-	assembly, err := r.runtime.Refresh(cfg, r.deps)
+
+	refreshID := observe.CorrelationID("")
+	revision := cfg.Fingerprint()
+	r.logLifecycle(observe.Entry{
+		Level:     "info",
+		Event:     "catalog_refresh_started",
+		Operation: "refresh",
+		Outcome:   "unknown",
+		Fields:    refreshLifecycleFields(refreshID, revision, trigger, r.nextAttemptMillis()),
+	})
+
+	counts := refreshPassCounts{}
+	deps := r.deps
+	var discoveryFailure error
+	if discover := deps.Discover; discover != nil {
+		deps.Discover = func(server config.Server) ([]core.ToolDefinition, error) {
+			definitions, err := discover(server)
+			if err == nil {
+				counts.servers++
+				counts.tools += len(definitions)
+				for _, pin := range cfg.Pins {
+					if pin["server"] != server.ID {
+						continue
+					}
+					for _, definition := range definitions {
+						if definition.RawName == pin["tool"] {
+							counts.pinsResolved++
+							break
+						}
+					}
+				}
+			} else if discoveryFailure == nil {
+				discoveryFailure = err
+			}
+			return definitions, err
+		}
+	}
+	assembly, err := r.runtime.Refresh(cfg, deps)
 	r.report(assembly, err)
+	switch {
+	case err != nil:
+		r.logRefreshFailure(cfg, refreshID, revision, trigger, counts, err, "candidate_rejected")
+	case discoveryFailure != nil:
+		r.logRefreshFailure(cfg, refreshID, revision, trigger, counts, discoveryFailure, "degraded_published")
+	default:
+		r.logRefreshCompletion(cfg, refreshID, revision, trigger, counts, assembly)
+	}
 	r.passes.Add(1)
+}
+
+func (r *Refresher) nextAttemptMillis() int64 {
+	if r.interval <= 0 {
+		return 0
+	}
+	return r.interval.Milliseconds()
+}
+
+func refreshLifecycleFields(refreshID, revision, trigger string, nextAttempt int64) map[string]any {
+	return map[string]any{
+		"refresh_id":      refreshID,
+		"config_revision": revision,
+		"trigger":         trigger,
+		"next_attempt_ms": nextAttempt,
+	}
+}
+
+func (r *Refresher) logRefreshCompletion(cfg *config.Config, refreshID, revision, trigger string, counts refreshPassCounts, assembly *Assembly) {
+	fields := refreshLifecycleFields(refreshID, revision, trigger, 0)
+	delete(fields, "next_attempt_ms")
+	fields["servers_discovered"] = counts.servers
+	fields["tools_discovered"] = counts.tools
+	fields["tools_published"] = len(assembly.Catalog().Bindings())
+	fields["pins_resolved"] = len(assembly.Pins())
+	fields["pins_total"] = len(cfg.Pins)
+	r.logLifecycle(observe.Entry{
+		Level:     "info",
+		Event:     "catalog_refresh_completed",
+		Operation: "refresh",
+		Outcome:   "success",
+		Fields:    fields,
+	})
+}
+
+func (r *Refresher) logRefreshFailure(cfg *config.Config, refreshID, revision, trigger string, counts refreshPassCounts, err error, impact string) {
+	errorInfo := refreshPassError(err)
+	fields := refreshLifecycleFields(refreshID, revision, trigger, 0)
+	delete(fields, "next_attempt_ms")
+	fields["catalog_state"] = "none_available"
+	fields["candidate_servers"] = counts.servers
+	fields["candidate_tools"] = counts.tools
+	fields["publication_impact"] = impact
+	fields["pins_resolved"] = counts.pinsResolved
+	fields["pins_total"] = len(cfg.Pins)
+	level := "error"
+
+	if r.runtime != nil {
+		if retained := r.runtime.Current(); retained != nil && retained.Catalog() != nil {
+			toolCount := len(retained.Catalog().Bindings())
+			if toolCount > 0 {
+				fields["catalog_state"] = "retained_published"
+				fields["retained_generation"] = retained.Generation()
+				fields["catalog_tools"] = toolCount
+				fields["retained_age_ms"] = retainedAgeMillis(retained, time.Now())
+				level = "warn"
+			}
+		}
+	}
+	if errorInfo.Retryable && r.interval > 0 {
+		fields["next_attempt_ms"] = r.nextAttemptMillis()
+	}
+	r.logLifecycle(observe.Entry{
+		Level:     level,
+		Event:     "catalog_refresh_failed",
+		Operation: "refresh",
+		Outcome:   "failure",
+		Error:     errorInfo,
+		Fields:    fields,
+	})
+	r.logPinBlockerDetails(refreshID, err)
+}
+
+func (r *Refresher) logPinBlockerDetails(refreshID string, err error) {
+	var pinErr *pinResolutionError
+	if !errors.As(err, &pinErr) {
+		return
+	}
+	for _, blocker := range pinErr.blockers {
+		fields := map[string]any{
+			"refresh_id":           refreshID,
+			"config.pin_tool":      blocker.tool,
+			"config.property_path": blocker.propertyPath,
+			"blocker_class":        blocker.blockerClass,
+			"publication_impact":   "candidate_rejected",
+		}
+		if blocker.failureReason != "" {
+			fields["failure_reason"] = blocker.failureReason
+		}
+		r.logLifecycle(observe.Entry{
+			Level:     "warn",
+			Event:     "pin_blocker_detail",
+			Server:    blocker.server,
+			Operation: "refresh",
+			Outcome:   "failure",
+			Fields:    fields,
+		})
+	}
+	r.logPinToolChunks(refreshID, pinErr)
+}
+
+func (r *Refresher) logPinToolChunks(refreshID string, pinErr *pinResolutionError) {
+	servers := make([]string, 0, len(pinErr.discoveredTools))
+	for serverID := range pinErr.discoveredTools {
+		servers = append(servers, serverID)
+	}
+	sort.Strings(servers)
+	for _, serverID := range servers {
+		names := pinErr.discoveredTools[serverID]
+		chunkCount := (len(names) + 63) / 64
+		if chunkCount == 0 {
+			chunkCount = 1
+		}
+		for chunkIndex := range chunkCount {
+			start := chunkIndex * 64
+			end := start + 64
+			if end > len(names) {
+				end = len(names)
+			}
+			r.logLifecycle(observe.Entry{
+				Level:     "warn",
+				Event:     "pin_blocker_detail",
+				Server:    serverID,
+				Operation: "refresh",
+				Outcome:   "failure",
+				Fields: map[string]any{
+					"refresh_id":         refreshID,
+					"blocker_class":      "tool_absent",
+					"discovered_tools":   names[start:end],
+					"chunk_index":        chunkIndex,
+					"chunk_count":        chunkCount,
+					"publication_impact": "candidate_rejected",
+				},
+			})
+		}
+	}
+}
+
+func refreshPassError(err error) *observe.ErrorInfo {
+	var pinErr *pinResolutionError
+	if errors.As(err, &pinErr) {
+		return observe.RuntimeErrorInfo("pin_rejected")
+	}
+	var reasoned interface{ RefreshReason() string }
+	if errors.As(err, &reasoned) {
+		return observe.RuntimeErrorInfo(reasoned.RefreshReason())
+	}
+	return observe.RuntimeErrorInfo("refresh_failed")
+}
+
+func retainedAgeMillis(assembly *Assembly, now time.Time) int64 {
+	var oldest time.Time
+	for _, serverID := range assembly.ServerIDs() {
+		health, ok := assembly.Health(serverID)
+		if ok && !health.LastSuccessAt.IsZero() && (oldest.IsZero() || health.LastSuccessAt.Before(oldest)) {
+			oldest = health.LastSuccessAt
+		}
+	}
+	if oldest.IsZero() || now.Before(oldest) {
+		return 0
+	}
+	return now.Sub(oldest).Milliseconds()
+}
+
+func (r *Refresher) logLifecycle(entry observe.Entry) {
+	if r.logger != nil {
+		r.logger.Log(entry)
+	}
 }
 
 // report publishes one pass's per-server outcome to the metrics hook. A failed
 // publication callback suppresses per-server metrics because the projection
 // was not committed.
 func (r *Refresher) report(assembly *Assembly, err error) {
+	if err != nil && r.rejected != nil {
+		r.rejected(err)
+	}
 	if err == nil && assembly != nil && r.published != nil {
 		if publicationErr := r.published(assembly); publicationErr != nil {
 			if r.logf != nil {

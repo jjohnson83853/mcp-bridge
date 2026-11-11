@@ -244,7 +244,7 @@ func Parse(data []byte, configPath string) (*Config, error) {
 				Path: configPath, Key: fmt.Sprintf("pins[%d]", index),
 				Line: pinNode.Line, Column: pinNode.Column,
 				Code: "pin_ceiling", Property: "pins", Shape: "out_of_bounds",
-				Reason:      "pins list may contain at most 64 entries",
+				Reason:      "pins list may contain at most 128 entries",
 				ActualCount: len(cfg.Pins), MaxCount: maxPins, FirstExcessIndex: index,
 			}
 			server, tool := pin["server"], pin["tool"]
@@ -317,10 +317,10 @@ func Parse(data []byte, configPath string) (*Config, error) {
 				Path: configPath, Key: fmt.Sprintf("pins[%d]", index),
 				Line: pinNode.Line, Column: pinNode.Column,
 				Code: "pin_duplicate", Property: "identity", Shape: "duplicate",
-				Reason:     "duplicate pin",
-				PinServer:  pin["server"],
-				PinTool:    pin["tool"],
-				RelatedKey: fmt.Sprintf("pins[%d]", first.index),
+				Reason:      "duplicate pin",
+				PinServer:   pin["server"],
+				PinTool:     pin["tool"],
+				RelatedKey:  fmt.Sprintf("pins[%d]", first.index),
 				RelatedLine: first.node.Line, RelatedColumn: first.node.Column,
 			})
 		}
@@ -437,13 +437,13 @@ func Parse(data []byte, configPath string) (*Config, error) {
 		kind, name := refParts(occurrence.reference)
 		relatedKind, relatedName := refParts(other.reference)
 		return nil, &Diagnostics{Records: []Diagnostic{{
-			Path:       configPath,
-			Key:        occurrence.location,
-			Line:       occurrence.line,
-			Column:     occurrence.column,
-			RefKind:    kind,
-			RefName:    name,
-			RelatedKey: other.location,
+			Path:        configPath,
+			Key:         occurrence.location,
+			Line:        occurrence.line,
+			Column:      occurrence.column,
+			RefKind:     kind,
+			RefName:     name,
+			RelatedKey:  other.location,
 			RelatedLine: other.line, RelatedColumn: other.column,
 			RelatedRefKind: relatedKind,
 			RelatedRefName: relatedName,
@@ -1057,7 +1057,7 @@ func (v *docValidator) validateHeaders(node *yaml.Node, path, server string) *Di
 				Line: header.Line, Column: header.Column,
 				RelatedLine: first.line, RelatedColumn: first.column,
 				Server: server,
-				Code: "header_duplicate", Property: "name", Shape: "casefold",
+				Code:   "header_duplicate", Property: "name", Shape: "casefold",
 				Reason: "duplicate credential header",
 			})
 		}
@@ -1102,10 +1102,10 @@ func validHeaderFieldName(value string) bool {
 // location it appears at (header names in the validated bracket form). The
 // overlap stage reports the first document-order pair (spec §4.2).
 type refOccurrence struct {
-	reference     string
-	location      string
-	line          int
-	column        int
+	reference string
+	location  string
+	line      int
+	column    int
 }
 
 func collectRefOccurrences(node *yaml.Node, path string, occurrences []refOccurrence) []refOccurrence {
@@ -1122,7 +1122,7 @@ func collectRefOccurrences(node *yaml.Node, path string, occurrences []refOccurr
 			}
 			return append(occurrences, refOccurrence{
 				reference: node.Content[0].Value + ":" + node.Content[1].Value,
-				location: path, line: node.Line, column: node.Column,
+				location:  path, line: node.Line, column: node.Column,
 			})
 		}
 		for i := 0; i < len(node.Content); i += 2 {
