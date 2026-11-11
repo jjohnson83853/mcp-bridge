@@ -19,7 +19,7 @@ import (
 )
 
 const maxConfigBytes = 1 << 20
-const maxPins = 64
+const maxPins = 128
 
 // sessionIdleMinDuration and sessionIdleMaxDuration bound the SERVER SESSION
 // LIFETIME key `session_idle_timeout`. It is not a request timeout: the value
