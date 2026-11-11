@@ -23,18 +23,18 @@ The common envelope is:
     "code": "pin_ceiling",
     "kind": "configuration",
     "retryable": false,
-    "remediation": "remove pins at index 64 or later"
+    "remediation": "remove pins at index 128 or later"
   },
   "config": {
     "path": "/app/configs/config.yaml",
-    "property_path": "pins[64]",
-    "line": 83,
+    "property_path": "pins[128]",
+    "line": 134,
     "column": 5,
     "pin_server": "alpha",
-    "pin_tool": "tool-65",
-    "actual_count": 65,
-    "max_count": 64,
-    "first_excess_index": 64
+    "pin_tool": "tool-128",
+    "actual_count": 129,
+    "max_count": 128,
+    "first_excess_index": 128
   }
 }
 ```
@@ -42,9 +42,10 @@ The common envelope is:
 `message` is for people; alert and query on `event`, `error.code`, or
 `error.kind`, not prose. Messages, codes, kinds, outcomes, and remediation text
 are package-owned finite values. Arbitrary Go error text is never a log field.
-A record is encoded and written once with one trailing newline. A short or failed
-sink write is not retried; encoding or sink failure is suppressed without a
-plaintext fallback or recursive logging.
+A record is encoded and its severity-lane write is attempted once, with one
+trailing newline; a short or failed write is not retried. On encode or write
+failure, the logger emits one fixed, credential-free JSON fallback record to
+the opposite severity lane. The fallback is not recursively logged or retried.
 
 ### Severity, outcome, and stream
 
@@ -73,6 +74,13 @@ object.
 | `reload_rejected` | `reload` | `warn` / `failure` |
 | `internal_warning` | `reload` | `warn` / `failure` |
 | `upstream_ephemeral_handshake` | `handshake` | `info` / `success` |
+| `config_reload_applied` | `reload` | `info` / `success` |
+| `catalog_refresh_started` | `refresh` | `info` / `unknown` |
+| `catalog_refresh_completed` | `refresh` | `info` / `success` |
+| `catalog_refresh_failed` | `refresh` | `warn` or `error` / `failure` |
+| `upstream_discovery_failed` | `refresh` | `warn` / `failure` |
+| `pin_blocker_detail` | `refresh` | `warn` / `failure` |
+| `logging_write_failed` | `logging` | `warn` / `failure` |
 | `http_complete` | finite inbound-method/transport classification | level/outcome reflect the observed request |
 | `mcp_complete` | decoded MCP operation | level/outcome reflect that operation |
 | `backend_complete` | `call_tool` | level/outcome reflect the upstream call |
@@ -97,10 +105,16 @@ auth_mode
  backend_call_id
  backend_id
  binding_relation
+ blocker_class
  build_state
+ candidate_servers
+ candidate_tools
+ catalog_state
  catalog_tools
  challenge_kind
  challenge_target
+ chunk_count
+ chunk_index
  client_family
  clock_skew_seconds
  config
@@ -125,16 +139,19 @@ auth_mode
  config.remaining_stages
  config.server
  config.shape
+ config_revision
  correlation_state
  count
  credential_state
  diag_duration_ms
  diag_schema
  diagnostic_policy_revision
+ discovered_tools
  duration_capped
  duration_ms
  effective_policy_revision
  effective_policy_revision_state
+ endpoint
  error
  error.code
  error.kind
@@ -162,6 +179,7 @@ auth_mode
  message
  metadata_target_registered
  mode
+ next_attempt_ms
  oauth_enabled
  operation
  operation_id
@@ -169,22 +187,29 @@ auth_mode
  operation_relation
  outcome
  path_class
+ pins_resolved
+ pins_total
  policy_source
  process_id
  process_state
  protocol_version
+ publication_impact
+ refresh_id
  request_id
  resource
  resource.address
  resource.listener
  resource.path
  resource_path_mode
+ retained_age_ms
+ retained_generation
  route
  route_outcome
  schema_version
  scope_required
  scope_state
  server
+ servers_discovered
  service
  session_binding
  session_header
@@ -197,6 +222,9 @@ auth_mode
  status_state
  timing_scope
  tool
+ tools_discovered
+ tools_published
+ trigger
  upstream_content_count
  upstream_shape
  upstream_state
@@ -393,7 +421,7 @@ yaml_type
 Each configuration code has kind `configuration` and retryable `false`. Unless
 a specific action applies, remediation is `correct the configuration and rerun
 validation`; `config_read` instead advises checking the file path and
-permissions. `pin_ceiling` specifically advises removing pins at index 64 or
+permissions. `pin_ceiling` specifically advises removing pins at index 128 or
 later. Message text is the diagnostic's static reason, not raw YAML, a URL, a
 secret, or a decoder/OS error. `config.shape` is an optional diagnostic
 sub-class; it is not a new top-level field.
@@ -420,13 +448,14 @@ known `config.property_path` remain available.
 
 #### Pin ceiling (AD9)
 
-The 65-pin case fails at index 64 after entries 0–63 have been checked, so an
-invalid earlier pin wins over the ceiling. It names the `pins[64]` property path
+The 129-pin case fails at index 128 after entries 0–127 have been checked, so an
+invalid earlier pin wins over the ceiling. It names the `pins[128]` property path
 as `config.property_path`, gives the excess entry's one-based line and column,
-and reports `actual_count`, `max_count: 64`, and `first_excess_index: 64`. It
-includes `pin_server` and `pin_tool` only if the excess entry passes the same
-identity validation as ordinary entries. Only the first excess identity is
-considered; no other pin identities or values are logged.
+and reports `actual_count: 129`, `max_count: 128`, and
+`first_excess_index: 128`. It includes `pin_server` and `pin_tool` only if the
+excess entry passes the same identity validation as ordinary entries. Only the
+first excess identity is considered; no other pin identities or values are
+logged.
 
 `config.diagnostics_incomplete` and `config.remaining_stages` preserve whether
 the first diagnostic stopped later validation stages inside the same envelope.
@@ -463,6 +492,70 @@ Configuration validation success is a distinct `config_validation_succeeded`
 record: level `info`, operation `check_config`, outcome `success`, message
 `configuration validated`, no `error` object and no configuration contents. It
 is written to stdout and exits 0. Configuration failure exits 1.
+
+## R8 event-specific additions: refresh and logger events (AD16–AD21)
+
+Every r8 addition below is an optional event-specific addition under the
+existing evolution rule: none removes, renames, retypes, or changes the meaning
+of an existing field, so there is no schema-version change and
+`schema_version` remains 1.
+
+| Event | Operation | Event-specific fields | Schema evolution |
+|---|---|---|---|
+| `catalog_refresh_started` | `refresh` | `refresh_id`, `config_revision`, `trigger`, `next_attempt_ms` | optional event-specific addition; no schema-version change (`schema_version` remains 1) |
+| `catalog_refresh_completed` | `refresh` | `refresh_id`, `config_revision`, `trigger`, `servers_discovered`, `tools_discovered`, `tools_published`, `pins_resolved`, `pins_total` | optional event-specific addition; no schema-version change (`schema_version` remains 1) |
+| `catalog_refresh_failed` | `refresh` | `refresh_id`, `config_revision`, `trigger`, optional `next_attempt_ms`, `catalog_state`, `retained_generation`, `catalog_tools`, `retained_age_ms`, `candidate_servers`, `candidate_tools`, `publication_impact`, `pins_resolved`, `pins_total`, `error` | optional event-specific addition; no schema-version change (`schema_version` remains 1) |
+| `upstream_discovery_failed` | `refresh` | `server`, `failure_stage`, `failure_reason`, applicable `http_status`, sanitized `endpoint`, `error`, scheduled `next_attempt_ms` | optional event-specific addition; no schema-version change (`schema_version` remains 1) |
+| `pin_blocker_detail` | `refresh` | per-pin: `refresh_id`, `server`, `config.pin_tool`, `config.property_path`, `blocker_class`, applicable `failure_reason`, `publication_impact`; tool-list chunk: `refresh_id`, `server`, `blocker_class`, `discovered_tools`, `chunk_index`, `chunk_count`, `publication_impact` | optional event-specific addition; no schema-version change (`schema_version` remains 1) |
+| `config_reload_applied` | `reload` | `config_revision`, `trigger` | optional event-specific addition; no schema-version change (`schema_version` remains 1) |
+| `logging_write_failed` | `logging` | none beyond the common envelope | optional event-specific addition; no schema-version change (`schema_version` remains 1) |
+
+The three `catalog_refresh_*` events describe one pass: `started` includes the
+correlation ID, configuration revision, trigger, and next-attempt interval;
+`completed` reports only aggregate discovery/publication and pin counts, never
+per-server or per-tool names. The single `catalog_refresh_failed` pass record
+uses `warn` while a retained catalog with tools remains available and `error`
+when no upstream tools are available. Its `catalog_state` is
+`retained_published` or `none_available`; retained-generation, tool-count, and
+age fields are present only for a retained catalog. Candidate and pin counts,
+publication impact, and the finite nested error classification identify the
+rejected or degraded pass. `next_attempt_ms` appears only when an automatic
+retry is scheduled.
+
+`upstream_discovery_failed` attributes a failed server probe with a finite
+`failure_stage` and `failure_reason`, a sanitized endpoint, and a nested finite
+error classification. `http_status` appears when applicable and
+`next_attempt_ms` only when an automatic retry is scheduled. `pin_blocker_detail`
+emits one record per blocking pin; when tool-list details are present, it emits
+bounded per-server chunks with at most 64 validated tool names per record and
+zero-based `chunk_index`/`chunk_count`. A discovery-failed server is classified
+as `server_unverified`, not `tool_absent`.
+
+`config_reload_applied` records the successful reload's `config_revision` and
+`trigger`. `logging_write_failed` is the fixed, credential-free fallback
+record: it carries no fields beyond the common envelope and is written as one
+JSON line to the severity lane opposite the failed record's lane.
+
+### Loki query examples for refresh diagnostics
+
+The rejected-pass query uses `event` and the nested error classification; the
+pin query finds blocker records by event and blocker class. Neither uses message
+text.
+
+<!-- query-refresh-rejections -->
+```logql
+sum by (error_code, error_kind) (count_over_time({service="mcp-bridge"} | json event="event", error_code="error.code", error_kind="error.kind" | event="catalog_refresh_failed" [5m]))
+```
+
+<!-- query-unresolved-pins -->
+```logql
+sum by (blocker_class) (count_over_time({service="mcp-bridge"} | json event="event", blocker_class="blocker_class" | event="pin_blocker_detail" [5m]))
+```
+
+All added names extend the field union below. Reused fields such as
+`failure_stage`, `failure_reason`, `http_status`, `server`, `catalog_tools`,
+and `config.*` retain their existing meanings.
+
 
 ## Embedding environment references
 

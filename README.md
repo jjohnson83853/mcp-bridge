@@ -147,6 +147,10 @@ stdout/stderr routing. The full field union, event and error classifications,
 HTTP diagnostics, reload behavior, collector boundary, and query examples are
 documented in the [structured logging contract](docs/logging-contract.md).
 
+R8 adds refresh lifecycle and discovery records, per-pin blocker details,
+successful reload attribution, and a minimal logger-write fallback. These are
+optional event-specific additions; `schema_version` remains 1.
+
 ## Configuration
 
 `configs/config.example.yaml` is a complete document. The shape is flattened —
@@ -265,9 +269,10 @@ Configuration validation emits one JSON envelope with the first deterministic
 diagnostic, safe source attribution, and a static remediation. Startup rejection
 and `--check-config` use the same `config_validation_failed` contract; a rejected
 reload uses the warning-level reload event and leaves the active configuration
-serving. The 64-pin ceiling identifies `pins[64]` without exposing unrelated pin
-values. See [the logging contract](docs/logging-contract.md) for the schema,
-attribution rules, failure codes, streams, and examples.
+serving. The 128-pin ceiling identifies the first excess entry as `pins[128]`
+without exposing unrelated pin values. See
+[the logging contract](docs/logging-contract.md) for the schema, attribution
+rules, failure codes, streams, and examples.
 
 ## Tool surface
 

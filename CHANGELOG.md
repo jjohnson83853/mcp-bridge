@@ -12,6 +12,14 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   diagnostics. The README and [logging contract](docs/logging-contract.md)
   document the application field union, collector boundary, and query examples.
 
+- **Structured logging r8 refresh diagnostics.** Refresh lifecycle and discovery
+  records, per-pin blocker details, successful reload attribution, and a
+  minimal opposite-lane logger-write fallback were added as optional
+  event-specific additions; `schema_version` remains 1. The pin ceiling is 128,
+  with the first excess at `pins[128]`; tool-list chunks remain capped at 64
+  names. See the [logging contract](docs/logging-contract.md) for event fields
+  and queries.
+
 - **Dynamic direct-first guidance for gateway built-ins.** `search_tools`
   descriptions list the exact, sorted wire names of published configured pins
   (with clean baseline guidance when none are published), while `describe_tool`
