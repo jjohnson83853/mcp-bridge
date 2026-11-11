@@ -101,6 +101,1117 @@
         }
       ],
       "codeReview": null
+    },
+    {
+      "id": "structured-logging-r8-pin-diagnostics",
+      "revision": "r8-pin-diagnostics",
+      "authorIds": [
+        "planner"
+      ],
+      "inputs": [
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+          "sha256": "a76abbb7a63c6f0f7158c6355a2cacd8346deb3dfd67ba8af338498e437b2f41"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+          "sha256": "426b23b7c946d8322f2bc457e296bcf25bfb9d24b2046f828fed1561946172e1"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+          "sha256": "a5b2294442adfaf0f7313568fa24f9ed335044d28e478bcf199a441b13178459"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+          "sha256": "2bf2d3539796c26727c07de90438f87377a4eafc682d9e6b2073ee08aeadb70d"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+          "sha256": "6a5b3c9c87783febcff3b63da0ec1ced1da1b75a1812091fab214f3a093f1b5b"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+          "sha256": "65a385305b2eb8ffdcfde040d9fbad49caa678977be5c76a5494ffe442956595"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+          "sha256": "9f476f56746e4331e90368326af3473b29b2b41b05a35253d18132ce3b3c31d4"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+          "sha256": "37057404a3d61fb6d67ae5efd99a13f216e5dec534dc4fc84a432df78831ff38"
+        }
+      ],
+      "dispatches": [
+        {
+          "name": "ReviewR8PinDiagnosticsSpec",
+          "agent": "code-reviewer",
+          "reviewerId": "code-reviewer",
+          "taskSha256": "3fdb7d07fb790902f27a7bdd7ecf696988353e73d2924c9d99edc356309a75d2",
+          "instructionsSha256": "e36d8da0d25d458b60c2c5139a75d9223eb91cc4f95945a4481e055e2b04714b"
+        },
+        {
+          "name": "CritiqueR8PinDiagnosticsSpec",
+          "agent": "critic",
+          "reviewerId": "critic",
+          "taskSha256": "9a7bb32318dae6a9d62fa5964493c21c3aa6476dba5144ef8e44e700b5fb6b10",
+          "instructionsSha256": "e36d8da0d25d458b60c2c5139a75d9223eb91cc4f95945a4481e055e2b04714b"
+        }
+      ],
+      "codeReview": null
+    },
+    {
+      "id": "structured-logging-r8-pin-diagnostics-narrow1",
+      "revision": "r8-pin-diagnostics-narrow1",
+      "authorIds": [
+        "planner"
+      ],
+      "inputs": [
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+          "sha256": "04786e403d2eac981e306fdd01b7fb9a6c17b1b0f16a429920e84a5ed85222d6"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+          "sha256": "426b23b7c946d8322f2bc457e296bcf25bfb9d24b2046f828fed1561946172e1"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+          "sha256": "a5b2294442adfaf0f7313568fa24f9ed335044d28e478bcf199a441b13178459"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+          "sha256": "2bf2d3539796c26727c07de90438f87377a4eafc682d9e6b2073ee08aeadb70d"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+          "sha256": "6a5b3c9c87783febcff3b63da0ec1ced1da1b75a1812091fab214f3a093f1b5b"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+          "sha256": "65a385305b2eb8ffdcfde040d9fbad49caa678977be5c76a5494ffe442956595"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+          "sha256": "9f476f56746e4331e90368326af3473b29b2b41b05a35253d18132ce3b3c31d4"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+          "sha256": "2f11ee4ec830a5a018a0da71f203012f77bcebc5342db1d1e6635605892ca2d8"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing-delta.md",
+          "sha256": "c30a52e0bfeaefcb2f8357d823ca90330ed3e4c75a4e8dd19c4f674f282d4e9a"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-r8-revise.md",
+          "sha256": "45e63c731d33272970a2375e4601140e6c1cf7053f0030d6459f90743bf4311f"
+        }
+      ],
+      "dispatches": [
+        {
+          "name": "ReviewR8Narrow1Spec",
+          "agent": "code-reviewer",
+          "reviewerId": "code-reviewer",
+          "taskSha256": "0ceb375eb405193b2ac4365fc2d4fd1e06297bb75a32861b8f971cb7b4e814b6",
+          "instructionsSha256": "aaa6749d57443e075451120b0cb187567207ef6b1ac5e0c2249ba50b68045124"
+        },
+        {
+          "name": "CritiqueR8Narrow1Spec",
+          "agent": "critic",
+          "reviewerId": "critic",
+          "taskSha256": "7fdeb1c5f694b59cce91566bcd224fd180d37550b5e1e7064736337570a3bc77",
+          "instructionsSha256": "aaa6749d57443e075451120b0cb187567207ef6b1ac5e0c2249ba50b68045124"
+        }
+      ],
+      "codeReview": null
+    },
+    {
+      "id": "structured-logging-r8-pin-diagnostics-narrow2",
+      "revision": "r8-pin-diagnostics-narrow2",
+      "authorIds": [
+        "planner"
+      ],
+      "inputs": [
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+          "sha256": "925246d9ce4231051c8ce63169b118e12b3da89451b8bfd514603f262a1d03a9"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+          "sha256": "c5d9b2d8b39f9f534f1fad2362cb78562f253f59e591886cba0ce2121333fe99"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+          "sha256": "48886d3010f44a1909aa9f13ca8af447cf321b292417909b24b43a0bac867fe4"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+          "sha256": "08b98659dbdc68194522122eba51430c19b4f4e299d6561a8bda80d5b5ae5209"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+          "sha256": "6a5b3c9c87783febcff3b63da0ec1ced1da1b75a1812091fab214f3a093f1b5b"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+          "sha256": "f982da9b65ccef3025b0fa89bc7c60b415f7a43565719cc51857696f023b6fca"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+          "sha256": "9f476f56746e4331e90368326af3473b29b2b41b05a35253d18132ce3b3c31d4"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+          "sha256": "18d359bc07b7b2519598f7d5fa1cb83728491e4a60dd8824475433e9338e86c8"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing2-delta.md",
+          "sha256": "15d44a6c34906fd2b5536876eb4868cf2b33f30b3c09138f0e0a23e74ce94675"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow1-final.md",
+          "sha256": "2b6c36f4a602b03f95e781d3dd2a9e4a07e4f7b7f4e2c43ecace799c35154744"
+        }
+      ],
+      "dispatches": [
+        {
+          "name": "ReviewR8Narrow2Spec",
+          "agent": "code-reviewer",
+          "reviewerId": "code-reviewer",
+          "taskSha256": "27c6fc41ae9cb55f08952f9cddb06b4f41f19757c585f24678adc9ce0d4af257",
+          "instructionsSha256": "d82daaeee9957c1c81ec9c7aeaa163f3c3ed8de9a4a9ecf3fb32ec5b4b56df05"
+        },
+        {
+          "name": "CritiqueR8Narrow2Spec",
+          "agent": "critic",
+          "reviewerId": "critic",
+          "taskSha256": "0392300e331cf03d0ca7146b0add0905271dc11f31b75d77e101e26e890c76fd",
+          "instructionsSha256": "d82daaeee9957c1c81ec9c7aeaa163f3c3ed8de9a4a9ecf3fb32ec5b4b56df05"
+        }
+      ],
+      "codeReview": null
+    },
+    {
+      "id": "structured-logging-r8-pin-diagnostics-narrow3",
+      "revision": "r8-pin-diagnostics-narrow3",
+      "authorIds": [
+        "planner"
+      ],
+      "inputs": [
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+          "sha256": "7e8f8e654ab7306a73999e1af87f8ef034e480d089c9aec6eab4feb9e5c94071"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+          "sha256": "06fc0daaab2da906b8852a499c6fc6f43b6482e43c6a182e5ddbfa18063e2885"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+          "sha256": "48886d3010f44a1909aa9f13ca8af447cf321b292417909b24b43a0bac867fe4"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+          "sha256": "aa4f6523d9dfc692025a317475e131a2dfe013d4da8e960d5013017f007dd618"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+          "sha256": "92086d6c28c912248f59d85f6a7604e61712b161312a5e1be8ef12a456923c06"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+          "sha256": "966bdf4dfb4e21369a9a05e7bcfa09281ac43ee2720c9fbcaad67d01c708aa16"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+          "sha256": "9f476f56746e4331e90368326af3473b29b2b41b05a35253d18132ce3b3c31d4"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+          "sha256": "2c1b517e9a70c9264c803baa6ead888128d73c12338c194fe8b8ba3002f57d84"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing3-delta.md",
+          "sha256": "2f69f5d01b1c1909b3e6ddd53ff05bb24f55b35c687d2a7a60845327383e5fa0"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow2-final.md",
+          "sha256": "53039a1f3e711fa18530463afbc185b5e7b9fc59574792d0c9c9220e5feb51af"
+        }
+      ],
+      "dispatches": [
+        {
+          "name": "ReviewR8Narrow3Spec",
+          "agent": "code-reviewer",
+          "reviewerId": "code-reviewer",
+          "taskSha256": "8990c12b066cf2cc36d0e5e2b713dd9807a135007c51ee6d4a9b195f220811c0",
+          "instructionsSha256": "91ec4ef5dad5860adf5444ea858073f6852d163c9fd50f5c528580527838da84"
+        },
+        {
+          "name": "CritiqueR8Narrow3Spec",
+          "agent": "critic",
+          "reviewerId": "critic",
+          "taskSha256": "deb4373bebf7f27f9174adbcd0a06b940c7fdf5077992fcf28b908480618e000",
+          "instructionsSha256": "91ec4ef5dad5860adf5444ea858073f6852d163c9fd50f5c528580527838da84"
+        }
+      ],
+      "codeReview": null
+    },
+    {
+      "id": "structured-logging-r8-pin-diagnostics-narrow4",
+      "revision": "r8-pin-diagnostics-narrow4",
+      "authorIds": [
+        "planner"
+      ],
+      "inputs": [
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+          "sha256": "a927292cd4618510d082661c932b784ef74e8b7047b93b0f71940dabb5a1ec21"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+          "sha256": "33fe6deda50900a44f803518db2d8df528b52dda1e9d247287998c2a58d3444e"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+          "sha256": "208ba1098b98b3c80f33501ab39767d3e8538e14c5e323c66bc298b41c56d9f4"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+          "sha256": "c6cb89ea2e020beddc820a41397e703b48b0ce02c474de1052a9e41bbf656818"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+          "sha256": "07e4d8018a6fe776291501de190b9a90716a65f1816fdcf4d2a83f02d6d7eed3"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+          "sha256": "10188767a7462aaae3c73bc693600a9bbd5bc820613fa12383a0a53c73eb69ca"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+          "sha256": "405d2547fceb38cb7bc4c0c3f1d59949860800fc6379d709005be54f80645a65"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+          "sha256": "7da21c98749834f8c845194afb5e6987445df97dedee5e18f47addf797581f77"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing4-delta.md",
+          "sha256": "4a65661a89975df3b9c2a8f00db53605c59d04d98023f927823eb44d074c2644"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow3-final.md",
+          "sha256": "f9cd666b2992013a86006ced030c0ce779611ce530ad571a4825c9245be0d4f2"
+        }
+      ],
+      "dispatches": [
+        {
+          "name": "ReviewR8Narrow4Spec",
+          "agent": "code-reviewer",
+          "reviewerId": "code-reviewer",
+          "taskSha256": "e7260c25ea4f5ea4452cbfab0806d888cfdb84224f7346fd5ecc2057f3ea0068",
+          "instructionsSha256": "def47ea7347baf28b59a96c63c8dbc2861ab98fa8e2993eec873e44330ab9025"
+        },
+        {
+          "name": "CritiqueR8Narrow4Spec",
+          "agent": "critic",
+          "reviewerId": "critic",
+          "taskSha256": "09ec7bfa24999fda222b2d426fcbf8c4b4e5f1a72781a1817c69c44fb080cd0a",
+          "instructionsSha256": "def47ea7347baf28b59a96c63c8dbc2861ab98fa8e2993eec873e44330ab9025"
+        }
+      ],
+      "codeReview": null
+    },
+    {
+      "id": "structured-logging-r8-pin-diagnostics-narrow4b",
+      "revision": "r8-pin-diagnostics-narrow4b",
+      "authorIds": [
+        "planner"
+      ],
+      "inputs": [
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+          "sha256": "ee5b9d44281ae057d796c1ccad10389eb0b1b62e0e4d2bd9d138413c310d967e"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+          "sha256": "b2d7cf2f5d438d747a6af32790523ac46523a42287b1edf3419c8274d9f72a69"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+          "sha256": "aedf7837ae22c5a851ea7ee44aca0b31e245fefc6287270ae4d6ed385a33e127"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+          "sha256": "c6cb89ea2e020beddc820a41397e703b48b0ce02c474de1052a9e41bbf656818"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+          "sha256": "10a6174d5e5916b7461c56da104ff57300d2f7a1f6463b231e5136f1c6868bd8"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+          "sha256": "10188767a7462aaae3c73bc693600a9bbd5bc820613fa12383a0a53c73eb69ca"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+          "sha256": "405d2547fceb38cb7bc4c0c3f1d59949860800fc6379d709005be54f80645a65"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+          "sha256": "a5f40ab466d6dd5327d8816dc56cd62f6a4dad19d562b2a59615a37b3dab7a1e"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing4b-delta.md",
+          "sha256": "c735e21843716b3e130730cb8b82667e9fae537ffe0502c16d4d941bac1f0a58"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow4-final.md",
+          "sha256": "f496f56d088c5f900d883e2be764a23ae3f0d6b2f28786432af6cd10c6989f53"
+        }
+      ],
+      "dispatches": [
+        {
+          "name": "ReviewR8Narrow4bSpec",
+          "agent": "code-reviewer",
+          "reviewerId": "code-reviewer",
+          "taskSha256": "cb67feb41fdb0b7dc03d60942521f9d172961dfaf7616bca03e9a3ed3692a937",
+          "instructionsSha256": "c365e281e7f17adcdd76ffab78dccdd4cdbb4fda12ce128def8b96bd6b522016"
+        },
+        {
+          "name": "CritiqueR8Narrow4bSpec",
+          "agent": "critic",
+          "reviewerId": "critic",
+          "taskSha256": "cc198afc47712f0e756a90d21ac61505c1d57ba34f27f42817fdd0e75198229e",
+          "instructionsSha256": "c365e281e7f17adcdd76ffab78dccdd4cdbb4fda12ce128def8b96bd6b522016"
+        }
+      ],
+      "codeReview": {
+        "role": "code-reviewer",
+        "reviewerId": "code-reviewer",
+        "candidateId": "structured-logging-r8-pin-diagnostics-narrow4b",
+        "revision": "r8-pin-diagnostics-narrow4b",
+        "authorIds": [
+          "planner"
+        ],
+        "inputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+            "sha256": "ee5b9d44281ae057d796c1ccad10389eb0b1b62e0e4d2bd9d138413c310d967e"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+            "sha256": "b2d7cf2f5d438d747a6af32790523ac46523a42287b1edf3419c8274d9f72a69"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+            "sha256": "aedf7837ae22c5a851ea7ee44aca0b31e245fefc6287270ae4d6ed385a33e127"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+            "sha256": "c6cb89ea2e020beddc820a41397e703b48b0ce02c474de1052a9e41bbf656818"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+            "sha256": "10a6174d5e5916b7461c56da104ff57300d2f7a1f6463b231e5136f1c6868bd8"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+            "sha256": "10188767a7462aaae3c73bc693600a9bbd5bc820613fa12383a0a53c73eb69ca"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+            "sha256": "405d2547fceb38cb7bc4c0c3f1d59949860800fc6379d709005be54f80645a65"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+            "sha256": "a5f40ab466d6dd5327d8816dc56cd62f6a4dad19d562b2a59615a37b3dab7a1e"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing4b-delta.md",
+            "sha256": "c735e21843716b3e130730cb8b82667e9fae537ffe0502c16d4d941bac1f0a58"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow4-final.md",
+            "sha256": "f496f56d088c5f900d883e2be764a23ae3f0d6b2f28786432af6cd10c6989f53"
+          }
+        ],
+        "verdict": "REQUEST CHANGES",
+        "format": "installed",
+        "source": {
+          "path": ".scratch/structured-logging/review-observation-code-reviewer-narrow4b.json",
+          "sha256": "ae7c887d97f6c8c32e82b72fc4fcb7524db8d06beee664a08aef56a362e569d1"
+        }
+      }
+    },
+    {
+      "id": "structured-logging-r8-pin-diagnostics-narrow5",
+      "revision": "r8-pin-diagnostics-narrow5",
+      "authorIds": [
+        "planner"
+      ],
+      "inputs": [
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+          "sha256": "83cd82340d352d4a1d64c9941c7d9894ce7c3af2862e30e3aa2858e23c907aba"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+          "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+          "sha256": "aedf7837ae22c5a851ea7ee44aca0b31e245fefc6287270ae4d6ed385a33e127"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+          "sha256": "c6cb89ea2e020beddc820a41397e703b48b0ce02c474de1052a9e41bbf656818"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+          "sha256": "10a6174d5e5916b7461c56da104ff57300d2f7a1f6463b231e5136f1c6868bd8"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+          "sha256": "10188767a7462aaae3c73bc693600a9bbd5bc820613fa12383a0a53c73eb69ca"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+          "sha256": "405d2547fceb38cb7bc4c0c3f1d59949860800fc6379d709005be54f80645a65"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+          "sha256": "c11dbf33512a7efaf624e4fa7e5ec51e0c9b07a248cec0e0655901625cc28f55"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing5-delta.md",
+          "sha256": "e47a3ea82717033d5d6bfd0c7901143d62a859c742536b29c834cf193f598581"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow4b-final.md",
+          "sha256": "831c1ba4d07cbd3343074517c4bb31f028c1e76ffd974aa27b259d11204addac"
+        }
+      ],
+      "dispatches": [
+        {
+          "name": "ReviewR8Narrow5Spec",
+          "agent": "code-reviewer",
+          "reviewerId": "code-reviewer",
+          "taskSha256": "e47e518928a516035f25f58d35b608c93e07e86a8215cb8131e269c3e85f9223",
+          "instructionsSha256": "c35ecac56ce4fa7e31d925f62acf55a9d4a097ddbf9100ed2475e9d341f2972f"
+        },
+        {
+          "name": "CritiqueR8Narrow5Spec",
+          "agent": "critic",
+          "reviewerId": "critic",
+          "taskSha256": "2e2208368b94d3ee600b72de9bf7d0e6d7688c51176f040124d752abdb3508c9",
+          "instructionsSha256": "c35ecac56ce4fa7e31d925f62acf55a9d4a097ddbf9100ed2475e9d341f2972f"
+        }
+      ],
+      "codeReview": {
+        "role": "code-reviewer",
+        "reviewerId": "code-reviewer",
+        "candidateId": "structured-logging-r8-pin-diagnostics-narrow5",
+        "revision": "r8-pin-diagnostics-narrow5",
+        "authorIds": [
+          "planner"
+        ],
+        "inputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+            "sha256": "83cd82340d352d4a1d64c9941c7d9894ce7c3af2862e30e3aa2858e23c907aba"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+            "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+            "sha256": "aedf7837ae22c5a851ea7ee44aca0b31e245fefc6287270ae4d6ed385a33e127"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+            "sha256": "c6cb89ea2e020beddc820a41397e703b48b0ce02c474de1052a9e41bbf656818"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+            "sha256": "10a6174d5e5916b7461c56da104ff57300d2f7a1f6463b231e5136f1c6868bd8"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+            "sha256": "10188767a7462aaae3c73bc693600a9bbd5bc820613fa12383a0a53c73eb69ca"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+            "sha256": "405d2547fceb38cb7bc4c0c3f1d59949860800fc6379d709005be54f80645a65"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+            "sha256": "c11dbf33512a7efaf624e4fa7e5ec51e0c9b07a248cec0e0655901625cc28f55"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing5-delta.md",
+            "sha256": "e47a3ea82717033d5d6bfd0c7901143d62a859c742536b29c834cf193f598581"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow4b-final.md",
+            "sha256": "831c1ba4d07cbd3343074517c4bb31f028c1e76ffd974aa27b259d11204addac"
+          }
+        ],
+        "verdict": "REQUEST CHANGES",
+        "format": "installed",
+        "source": {
+          "path": ".scratch/structured-logging/review-observation-code-reviewer-narrow5.json",
+          "sha256": "543a9bf809521126597db71db8d98ffc567aec80aa733d45176a113ae6612581"
+        }
+      }
+    },
+    {
+      "id": "structured-logging-r8-pin-diagnostics-narrow6",
+      "revision": "r8-pin-diagnostics-narrow6",
+      "authorIds": [
+        "planner"
+      ],
+      "inputs": [
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+          "sha256": "05a4a8e90bbcce4643a043323b5dff1315523bc39a3c46e7f3c81789b90bbbb7"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+          "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+          "sha256": "aedf7837ae22c5a851ea7ee44aca0b31e245fefc6287270ae4d6ed385a33e127"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+          "sha256": "a6d4850f232121854225d66101e6d63086617e3cc0036df358ab1d6ada963674"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+          "sha256": "dda148336de008bce769ed5c69e4d0bc472b4385f720b239cdea3bbd98acbfd6"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+          "sha256": "10188767a7462aaae3c73bc693600a9bbd5bc820613fa12383a0a53c73eb69ca"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+          "sha256": "c00eb56b9315f1ae383d33e3865fce4c5dfa415fefa2d60fd0fc013d887cab34"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+          "sha256": "f165649f4c7291bba38e6bd02c3361842e8a27ec015e793e41b14ebcbf0b8741"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing6-delta.md",
+          "sha256": "989442370d5d9a0e8a4738c0da1c6a9f0c984ceb8c1e85b710693d300acbfd88"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow5-final.md",
+          "sha256": "79f7b7ee262436ce7d6553788786f3b24792501eb97387a811b8aeb176ca0a08"
+        }
+      ],
+      "dispatches": [
+        {
+          "name": "ReviewR8Narrow6Spec",
+          "agent": "code-reviewer",
+          "reviewerId": "code-reviewer",
+          "taskSha256": "12962fa1c0537f959fefc6cfbc00551a5e9068b97c9a340ca4e449432ed0d9c3",
+          "instructionsSha256": "b26e572fe52829cd8b2fed9c12acd4a2255704a52292f1e1bba873f423cf31eb"
+        },
+        {
+          "name": "CritiqueR8Narrow6Spec",
+          "agent": "critic",
+          "reviewerId": "critic",
+          "taskSha256": "912bb071350d175510bc1aa3b44c2fb5826a04648776c8ccb1caee0e6d50b012",
+          "instructionsSha256": "b26e572fe52829cd8b2fed9c12acd4a2255704a52292f1e1bba873f423cf31eb"
+        }
+      ],
+      "codeReview": {
+        "role": "code-reviewer",
+        "reviewerId": "code-reviewer",
+        "candidateId": "structured-logging-r8-pin-diagnostics-narrow6",
+        "revision": "r8-pin-diagnostics-narrow6",
+        "authorIds": [
+          "planner"
+        ],
+        "inputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+            "sha256": "05a4a8e90bbcce4643a043323b5dff1315523bc39a3c46e7f3c81789b90bbbb7"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+            "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+            "sha256": "aedf7837ae22c5a851ea7ee44aca0b31e245fefc6287270ae4d6ed385a33e127"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+            "sha256": "a6d4850f232121854225d66101e6d63086617e3cc0036df358ab1d6ada963674"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+            "sha256": "dda148336de008bce769ed5c69e4d0bc472b4385f720b239cdea3bbd98acbfd6"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+            "sha256": "10188767a7462aaae3c73bc693600a9bbd5bc820613fa12383a0a53c73eb69ca"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+            "sha256": "c00eb56b9315f1ae383d33e3865fce4c5dfa415fefa2d60fd0fc013d887cab34"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+            "sha256": "f165649f4c7291bba38e6bd02c3361842e8a27ec015e793e41b14ebcbf0b8741"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing6-delta.md",
+            "sha256": "989442370d5d9a0e8a4738c0da1c6a9f0c984ceb8c1e85b710693d300acbfd88"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow5-final.md",
+            "sha256": "79f7b7ee262436ce7d6553788786f3b24792501eb97387a811b8aeb176ca0a08"
+          }
+        ],
+        "verdict": "REQUEST CHANGES",
+        "format": "installed",
+        "source": {
+          "path": ".scratch/structured-logging/review-observation-code-reviewer-narrow6.json",
+          "sha256": "9332cfa93912ac51368b70637c7ee706f059a8da0a2218af6b31fb11a0415dc6"
+        }
+      }
+    },
+    {
+      "id": "structured-logging-r8-pin-diagnostics-narrow7",
+      "revision": "r8-pin-diagnostics-narrow7",
+      "authorIds": [
+        "planner"
+      ],
+      "inputs": [
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+          "sha256": "2265463019eb7229bef44dda895e3de33a6c1e9e73bdc2396a514837bdbd0165"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+          "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+          "sha256": "672019e8d0ecc1e8a511fa6a9d3bb53c5fc3ea59570fdd00f7c681ff82fd2570"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+          "sha256": "a6d4850f232121854225d66101e6d63086617e3cc0036df358ab1d6ada963674"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+          "sha256": "dda148336de008bce769ed5c69e4d0bc472b4385f720b239cdea3bbd98acbfd6"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+          "sha256": "10188767a7462aaae3c73bc693600a9bbd5bc820613fa12383a0a53c73eb69ca"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+          "sha256": "c00eb56b9315f1ae383d33e3865fce4c5dfa415fefa2d60fd0fc013d887cab34"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+          "sha256": "456f16085a8271726a583fbf8a6e846edb431daa78ad355685870299cc2c6462"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing7-delta.md",
+          "sha256": "7513259f2763e477e661a182b2cde2abe85c77f18c6e2c1bf20776f9377171a5"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow6-final.md",
+          "sha256": "cd0ac1fff9120968026b224048417ecdf9482eb1a7dbf847b3b13d4567a79915"
+        }
+      ],
+      "dispatches": [
+        {
+          "name": "ReviewR8Narrow7Spec",
+          "agent": "code-reviewer",
+          "reviewerId": "code-reviewer",
+          "taskSha256": "72624a651ab37929803a0ebcb1cd09eef2b4ed537771535afad669c265304940",
+          "instructionsSha256": "98cf0ef12cca956b5e599667b4ef552d15b0a2485fb3f6ce6f2618bb83857464"
+        },
+        {
+          "name": "CritiqueR8Narrow7Spec",
+          "agent": "critic",
+          "reviewerId": "critic",
+          "taskSha256": "b574998786af51f67b96849634bb748b78a782e83f221a5daa06824725cf0c75",
+          "instructionsSha256": "98cf0ef12cca956b5e599667b4ef552d15b0a2485fb3f6ce6f2618bb83857464"
+        }
+      ],
+      "codeReview": {
+        "role": "code-reviewer",
+        "reviewerId": "code-reviewer",
+        "candidateId": "structured-logging-r8-pin-diagnostics-narrow7",
+        "revision": "r8-pin-diagnostics-narrow7",
+        "authorIds": [
+          "planner"
+        ],
+        "inputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+            "sha256": "2265463019eb7229bef44dda895e3de33a6c1e9e73bdc2396a514837bdbd0165"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+            "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+            "sha256": "672019e8d0ecc1e8a511fa6a9d3bb53c5fc3ea59570fdd00f7c681ff82fd2570"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+            "sha256": "a6d4850f232121854225d66101e6d63086617e3cc0036df358ab1d6ada963674"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+            "sha256": "dda148336de008bce769ed5c69e4d0bc472b4385f720b239cdea3bbd98acbfd6"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+            "sha256": "10188767a7462aaae3c73bc693600a9bbd5bc820613fa12383a0a53c73eb69ca"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+            "sha256": "c00eb56b9315f1ae383d33e3865fce4c5dfa415fefa2d60fd0fc013d887cab34"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+            "sha256": "456f16085a8271726a583fbf8a6e846edb431daa78ad355685870299cc2c6462"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing7-delta.md",
+            "sha256": "7513259f2763e477e661a182b2cde2abe85c77f18c6e2c1bf20776f9377171a5"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow6-final.md",
+            "sha256": "cd0ac1fff9120968026b224048417ecdf9482eb1a7dbf847b3b13d4567a79915"
+          }
+        ],
+        "verdict": "REQUEST CHANGES",
+        "format": "installed",
+        "source": {
+          "path": ".scratch/structured-logging/review-observation-code-reviewer-narrow7.json",
+          "sha256": "e0d6df00d9a73fafe8f4a7f73317a596f7d227db0bbfc4dc89b01cc308b9af4c"
+        }
+      }
+    },
+    {
+      "id": "structured-logging-r8-pin-diagnostics-narrow8",
+      "revision": "r8-pin-diagnostics-narrow8",
+      "authorIds": [
+        "planner"
+      ],
+      "inputs": [
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+          "sha256": "a0b5fc9e1d52616bc7e6153a1c235b0c1fe3e0f2b8fd0f0805e36263855483d1"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+          "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+          "sha256": "672019e8d0ecc1e8a511fa6a9d3bb53c5fc3ea59570fdd00f7c681ff82fd2570"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+          "sha256": "8fc71322fa70379e83c849fb0e330f5413f00a66bd40edb5ae62b0b6778c5409"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+          "sha256": "31779458bab42e8ed5880de660c68b9156493f7f1f4ec769a23e6742097315b9"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+          "sha256": "d7bf99c1d8bedd73c89ada117304d0c3313b15c154a9cc2b6c35868a237dbae7"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+          "sha256": "9f332df6e5d91af2a6dba6b8fc6eed03a7bb9e782f309d0de3b795a1a1fafd06"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+          "sha256": "7e3e5ebfc8b7d0ff93672135f764c8ebdea501033e27343b223d950325ef329b"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing8-delta.md",
+          "sha256": "fdb98493d32f16d55c9e0a9b47d973620ee98a0333f292bbdb8823e04a250c92"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow7-final.md",
+          "sha256": "580f193835693c43c802ea18ad09e3d61bd13d8a38cffd3fc7aac80c99492c1b"
+        }
+      ],
+      "dispatches": [
+        {
+          "name": "ReviewR8Narrow8Spec",
+          "agent": "code-reviewer",
+          "reviewerId": "code-reviewer",
+          "taskSha256": "b9a4595bafd5a9909ec1484ca4a3f3d6ba39c120c492dd83b7d92cba2682186e",
+          "instructionsSha256": "3494459d48a716a51473df680bd7df7144630b5c15c54975d641e1811cf3ee0a"
+        },
+        {
+          "name": "CritiqueR8Narrow8Spec",
+          "agent": "critic",
+          "reviewerId": "critic",
+          "taskSha256": "1233f6f8327de79240c71eafb20585330e2f5166c46afc1fc5b74714e3985666",
+          "instructionsSha256": "3494459d48a716a51473df680bd7df7144630b5c15c54975d641e1811cf3ee0a"
+        }
+      ],
+      "codeReview": {
+        "role": "code-reviewer",
+        "reviewerId": "code-reviewer",
+        "candidateId": "structured-logging-r8-pin-diagnostics-narrow8",
+        "revision": "r8-pin-diagnostics-narrow8",
+        "authorIds": [
+          "planner"
+        ],
+        "inputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+            "sha256": "a0b5fc9e1d52616bc7e6153a1c235b0c1fe3e0f2b8fd0f0805e36263855483d1"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+            "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+            "sha256": "672019e8d0ecc1e8a511fa6a9d3bb53c5fc3ea59570fdd00f7c681ff82fd2570"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+            "sha256": "8fc71322fa70379e83c849fb0e330f5413f00a66bd40edb5ae62b0b6778c5409"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+            "sha256": "31779458bab42e8ed5880de660c68b9156493f7f1f4ec769a23e6742097315b9"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+            "sha256": "d7bf99c1d8bedd73c89ada117304d0c3313b15c154a9cc2b6c35868a237dbae7"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+            "sha256": "9f332df6e5d91af2a6dba6b8fc6eed03a7bb9e782f309d0de3b795a1a1fafd06"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+            "sha256": "7e3e5ebfc8b7d0ff93672135f764c8ebdea501033e27343b223d950325ef329b"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing8-delta.md",
+            "sha256": "fdb98493d32f16d55c9e0a9b47d973620ee98a0333f292bbdb8823e04a250c92"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow7-final.md",
+            "sha256": "580f193835693c43c802ea18ad09e3d61bd13d8a38cffd3fc7aac80c99492c1b"
+          }
+        ],
+        "verdict": "REQUEST CHANGES",
+        "format": "installed",
+        "source": {
+          "path": ".scratch/structured-logging/review-observation-code-reviewer-narrow8.json",
+          "sha256": "83ec20fff7b4f7720f351e36ee830e53815f904a37135c8475097b1ec049a698"
+        }
+      }
+    },
+    {
+      "id": "structured-logging-r8-pin-diagnostics-narrow9",
+      "revision": "r8-pin-diagnostics-narrow9",
+      "authorIds": [
+        "planner"
+      ],
+      "inputs": [
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+          "sha256": "0643286d56a36dec7ce844b669e28d8810f6ffdff4af91ad266adeef6a1eeaed"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+          "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+          "sha256": "672019e8d0ecc1e8a511fa6a9d3bb53c5fc3ea59570fdd00f7c681ff82fd2570"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+          "sha256": "8fc71322fa70379e83c849fb0e330f5413f00a66bd40edb5ae62b0b6778c5409"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+          "sha256": "31779458bab42e8ed5880de660c68b9156493f7f1f4ec769a23e6742097315b9"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+          "sha256": "d7bf99c1d8bedd73c89ada117304d0c3313b15c154a9cc2b6c35868a237dbae7"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+          "sha256": "9f332df6e5d91af2a6dba6b8fc6eed03a7bb9e782f309d0de3b795a1a1fafd06"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+          "sha256": "d9f670e9188d520d611afd9e9a2de81543b0f11af456622a67eb487f29eefb39"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing9-delta.md",
+          "sha256": "a7ebfc852b9aeae00e9cc99eae28d8b3ff21b89fabb79b7862c2fcd279c52a95"
+        },
+        {
+          "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow8-final.md",
+          "sha256": "e393c337d0e65b2d29bf982e2b58d08adce84a46219bb1c2dfc86c648537d24c"
+        }
+      ],
+      "dispatches": [
+        {
+          "name": "ReviewR8Narrow9Spec",
+          "agent": "code-reviewer",
+          "reviewerId": "code-reviewer",
+          "taskSha256": "dcf82212e3e9c9a40c3ab4d0b917f725102840b39e727f0f22e489d3acd48639",
+          "instructionsSha256": "66d3d4dc00205fd095cf46552c5777b0a000f9da50fbe563611784767b5bcc17"
+        },
+        {
+          "name": "CritiqueR8Narrow9Spec",
+          "agent": "critic",
+          "reviewerId": "critic",
+          "taskSha256": "3ea84c788e2e055abae58dd740766ee2a719ce0c64cef7df1ffbd3d2f2bd4e86",
+          "instructionsSha256": "66d3d4dc00205fd095cf46552c5777b0a000f9da50fbe563611784767b5bcc17"
+        }
+      ],
+      "codeReview": {
+        "role": "code-reviewer",
+        "reviewerId": "code-reviewer",
+        "candidateId": "structured-logging-r8-pin-diagnostics-narrow9",
+        "revision": "r8-pin-diagnostics-narrow9",
+        "authorIds": [
+          "planner"
+        ],
+        "inputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+            "sha256": "0643286d56a36dec7ce844b669e28d8810f6ffdff4af91ad266adeef6a1eeaed"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+            "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+            "sha256": "672019e8d0ecc1e8a511fa6a9d3bb53c5fc3ea59570fdd00f7c681ff82fd2570"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+            "sha256": "8fc71322fa70379e83c849fb0e330f5413f00a66bd40edb5ae62b0b6778c5409"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+            "sha256": "31779458bab42e8ed5880de660c68b9156493f7f1f4ec769a23e6742097315b9"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+            "sha256": "d7bf99c1d8bedd73c89ada117304d0c3313b15c154a9cc2b6c35868a237dbae7"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+            "sha256": "9f332df6e5d91af2a6dba6b8fc6eed03a7bb9e782f309d0de3b795a1a1fafd06"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+            "sha256": "d9f670e9188d520d611afd9e9a2de81543b0f11af456622a67eb487f29eefb39"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing9-delta.md",
+            "sha256": "a7ebfc852b9aeae00e9cc99eae28d8b3ff21b89fabb79b7862c2fcd279c52a95"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow8-final.md",
+            "sha256": "e393c337d0e65b2d29bf982e2b58d08adce84a46219bb1c2dfc86c648537d24c"
+          }
+        ],
+        "verdict": "APPROVE",
+        "format": "installed",
+        "source": {
+          "path": ".scratch/structured-logging/review-observation-code-reviewer-narrow9.json",
+          "sha256": "e1d412c7b20759e4cd09e2a7857c26e23219131b300e3504b351945f9f105c15"
+        }
+      },
+      "criticReview": {
+        "role": "critic",
+        "reviewerId": "critic",
+        "candidateId": "structured-logging-r8-pin-diagnostics-narrow9",
+        "revision": "r8-pin-diagnostics-narrow9",
+        "authorIds": [
+          "planner"
+        ],
+        "inputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/spec.md",
+            "sha256": "0643286d56a36dec7ce844b669e28d8810f6ffdff4af91ad266adeef6a1eeaed"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
+            "sha256": "3993d1b648ced6a9275db192ef27ce2e559a523f0544db6366e21f458768b72b"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/08-refresh-pass-lifecycle-records.md",
+            "sha256": "672019e8d0ecc1e8a511fa6a9d3bb53c5fc3ea59570fdd00f7c681ff82fd2570"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/09-pin-blocker-detail.md",
+            "sha256": "8fc71322fa70379e83c849fb0e330f5413f00a66bd40edb5ae62b0b6778c5409"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/10-discovery-attribution-and-readiness-reason.md",
+            "sha256": "31779458bab42e8ed5880de660c68b9156493f7f1f4ec769a23e6742097315b9"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/11-path-parity-and-logger-fallback.md",
+            "sha256": "d7bf99c1d8bedd73c89ada117304d0c3313b15c154a9cc2b6c35868a237dbae7"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/issues/12-contract-docs-and-verification-closeout.md",
+            "sha256": "9f332df6e5d91af2a6dba6b8fc6eed03a7bb9e782f309d0de3b795a1a1fafd06"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+            "sha256": "d9f670e9188d520d611afd9e9a2de81543b0f11af456622a67eb487f29eefb39"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/r8-narrowing9-delta.md",
+            "sha256": "a7ebfc852b9aeae00e9cc99eae28d8b3ff21b89fabb79b7862c2fcd279c52a95"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/review-code-reviewer-narrow8-final.md",
+            "sha256": "e393c337d0e65b2d29bf982e2b58d08adce84a46219bb1c2dfc86c648537d24c"
+          }
+        ],
+        "verdict": "APPROVE",
+        "format": "installed",
+        "source": {
+          "path": ".scratch/structured-logging/review-observation-critic-narrow9.json",
+          "sha256": "06a478759a73c46eabe308566e4917db857de8542cba5154ff3b789926042878"
+        }
+      }
     }
   ]
 }

@@ -214,7 +214,7 @@
       "kind": "policy",
       "artifact": {
         "path": "/home/opencode/projects/default/mcp-bridge/.scratch/structured-logging/decisions.md",
-        "sha256": "11b6d60cb118215b34efc0746fc666a949f1c0b371c723fe9c2fb826722b9c82"
+        "sha256": "426b23b7c946d8322f2bc457e296bcf25bfb9d24b2046f828fed1561946172e1"
       },
       "locator": "owner-settled logging contract decisions D1-D20",
       "recordedAt": "2026-11-10T21:10:37.875Z"
@@ -398,7 +398,7 @@
     {
       "id": "T1",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [],
       "requires": [],
       "effects": {
@@ -430,7 +430,16 @@
         "AC01-7",
         "AC01-8"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-T1-AC01-1",
+        "ev-T1-AC01-2",
+        "ev-T1-AC01-3",
+        "ev-T1-AC01-4",
+        "ev-T1-AC01-5",
+        "ev-T1-AC01-6",
+        "ev-T1-AC01-7",
+        "ev-T1-AC01-8"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -438,7 +447,7 @@
     {
       "id": "T2",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [
         "T1"
       ],
@@ -476,7 +485,15 @@
         "AC02-6",
         "AC02-7"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-T2-AC02-1",
+        "ev-T2-AC02-2",
+        "ev-T2-AC02-3",
+        "ev-T2-AC02-4",
+        "ev-T2-AC02-5",
+        "ev-T2-AC02-6",
+        "ev-T2-AC02-7"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -484,7 +501,7 @@
     {
       "id": "T3",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [
         "T1"
       ],
@@ -510,7 +527,15 @@
         "AC03-6",
         "AC03-7"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-T3-AC03-1",
+        "ev-T3-AC03-2",
+        "ev-T3-AC03-3",
+        "ev-T3-AC03-4",
+        "ev-T3-AC03-5",
+        "ev-T3-AC03-6",
+        "ev-T3-AC03-7"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -518,7 +543,7 @@
     {
       "id": "T4",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [
         "T1"
       ],
@@ -602,7 +627,16 @@
         "AC04-7",
         "AC04-8"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-T4-AC04-1",
+        "ev-T4-AC04-2",
+        "ev-T4-AC04-3",
+        "ev-T4-AC04-4",
+        "ev-T4-AC04-5",
+        "ev-T4-AC04-6",
+        "ev-T4-AC04-7",
+        "ev-T4-AC04-8"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -610,7 +644,7 @@
     {
       "id": "T5",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [
         "T2",
         "T4"
@@ -624,7 +658,10 @@
           "cmd/mcp-bridge/manifest_test.go",
           "cmd/mcp-bridge/serve_edge_test.go",
           "cmd/mcp-bridge/reload_envelope_test.go",
-          ".omp/artifacts/receipt_T5.json"
+          ".omp/artifacts/receipt_T5.json",
+          "cmd/mcp-bridge/embedding_env_reload_test.go",
+          "cmd/mcp-bridge/embedding_env_rotation_test.go",
+          "cmd/mcp-bridge/serve_test.go"
         ]
       },
       "acceptanceIds": [
@@ -637,7 +674,16 @@
         "AC05-7",
         "AC04-8"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-T5-AC05-1",
+        "ev-T5-AC05-2",
+        "ev-T5-AC05-3",
+        "ev-T5-AC05-4",
+        "ev-T5-AC05-5",
+        "ev-T5-AC05-6",
+        "ev-T5-AC05-7",
+        "ev-T5-AC04-8"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -645,7 +691,7 @@
     {
       "id": "T6",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [
         "T1"
       ],
@@ -671,7 +717,14 @@
         "AC06-5",
         "AC04-8"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-T6-AC06-1",
+        "ev-T6-AC06-2",
+        "ev-T6-AC06-3",
+        "ev-T6-AC06-4",
+        "ev-T6-AC06-5",
+        "ev-T6-AC04-8"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -679,7 +732,7 @@
     {
       "id": "T7",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [
         "T3",
         "T4",
@@ -709,7 +762,18 @@
         "AC07-9",
         "AC04-8"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-T7-AC07-1",
+        "ev-T7-AC07-2",
+        "ev-T7-AC07-3",
+        "ev-T7-AC07-4",
+        "ev-T7-AC07-5",
+        "ev-T7-AC07-6",
+        "ev-T7-AC07-7",
+        "ev-T7-AC07-8",
+        "ev-T7-AC07-9",
+        "ev-T7-AC04-8"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -1403,7 +1467,1304 @@
       ]
     }
   ],
-  "evidence": [],
+  "evidence": [
+    {
+      "id": "ev-T1-AC01-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "c78433247465dec72936d74f83c4436f8af444997cddc55c54bc2eee480143fb"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC01-1"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T22:50:33.259Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/... ./cmd/mcp-bridge/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T1-AC01-2",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "c78433247465dec72936d74f83c4436f8af444997cddc55c54bc2eee480143fb"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC01-2"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T22:50:33.259Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/... ./cmd/mcp-bridge/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T1-AC01-3",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "c78433247465dec72936d74f83c4436f8af444997cddc55c54bc2eee480143fb"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC01-3"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T22:50:33.259Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/... ./cmd/mcp-bridge/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T1-AC01-4",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "c78433247465dec72936d74f83c4436f8af444997cddc55c54bc2eee480143fb"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC01-4"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T22:50:33.259Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/... ./cmd/mcp-bridge/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T1-AC01-5",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "c78433247465dec72936d74f83c4436f8af444997cddc55c54bc2eee480143fb"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC01-5"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T22:50:33.259Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/... ./cmd/mcp-bridge/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T1-AC01-6",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "c78433247465dec72936d74f83c4436f8af444997cddc55c54bc2eee480143fb"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC01-6"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T22:50:33.259Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/... ./cmd/mcp-bridge/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T1-AC01-7",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "c78433247465dec72936d74f83c4436f8af444997cddc55c54bc2eee480143fb"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC01-7"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T22:50:33.259Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/... ./cmd/mcp-bridge/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T1-AC01-8",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T1.json",
+        "sha256": "c78433247465dec72936d74f83c4436f8af444997cddc55c54bc2eee480143fb"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC01-8"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T22:50:33.259Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/... ./cmd/mcp-bridge/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T2-AC02-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
+        "sha256": "3a4d7d5339c4634dd74992e59a518a88eb14b0a432230ac9d0c2e69a3bebe0f4"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC02-1"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T23:43:06.297Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T2-AC02-2",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
+        "sha256": "3a4d7d5339c4634dd74992e59a518a88eb14b0a432230ac9d0c2e69a3bebe0f4"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC02-2"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T23:43:06.297Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T2-AC02-3",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
+        "sha256": "3a4d7d5339c4634dd74992e59a518a88eb14b0a432230ac9d0c2e69a3bebe0f4"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC02-3"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T23:43:06.297Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T2-AC02-4",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
+        "sha256": "3a4d7d5339c4634dd74992e59a518a88eb14b0a432230ac9d0c2e69a3bebe0f4"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC02-4"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T23:43:06.297Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T2-AC02-5",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
+        "sha256": "3a4d7d5339c4634dd74992e59a518a88eb14b0a432230ac9d0c2e69a3bebe0f4"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC02-5"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T23:43:06.297Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T2-AC02-6",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
+        "sha256": "3a4d7d5339c4634dd74992e59a518a88eb14b0a432230ac9d0c2e69a3bebe0f4"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC02-6"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T23:43:06.297Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T2-AC02-7",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T2.json",
+        "sha256": "3a4d7d5339c4634dd74992e59a518a88eb14b0a432230ac9d0c2e69a3bebe0f4"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC02-7"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-10T23:43:06.297Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/config/...",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T3-AC03-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T3.json",
+        "sha256": "e3b0af84305e80779d656e0edad2da0a4baf04c6020f811839ed0e4883a7afca"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T3"
+      ],
+      "acceptanceIds": [
+        "AC03-1"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:03:31.223Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run 'Flag|Startup|Usage|Help|RunContext|ServeStartup'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T3-AC03-2",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T3.json",
+        "sha256": "e3b0af84305e80779d656e0edad2da0a4baf04c6020f811839ed0e4883a7afca"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T3"
+      ],
+      "acceptanceIds": [
+        "AC03-2"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:03:31.223Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run 'Flag|Startup|Usage|Help|RunContext|ServeStartup'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T3-AC03-3",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T3.json",
+        "sha256": "e3b0af84305e80779d656e0edad2da0a4baf04c6020f811839ed0e4883a7afca"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T3"
+      ],
+      "acceptanceIds": [
+        "AC03-3"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:03:31.223Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run 'Flag|Startup|Usage|Help|RunContext|ServeStartup'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T3-AC03-4",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T3.json",
+        "sha256": "e3b0af84305e80779d656e0edad2da0a4baf04c6020f811839ed0e4883a7afca"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T3"
+      ],
+      "acceptanceIds": [
+        "AC03-4"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:03:31.223Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run 'Flag|Startup|Usage|Help|RunContext|ServeStartup'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T3-AC03-5",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T3.json",
+        "sha256": "e3b0af84305e80779d656e0edad2da0a4baf04c6020f811839ed0e4883a7afca"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T3"
+      ],
+      "acceptanceIds": [
+        "AC03-5"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:03:31.223Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run 'Flag|Startup|Usage|Help|RunContext|ServeStartup'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T3-AC03-6",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T3.json",
+        "sha256": "e3b0af84305e80779d656e0edad2da0a4baf04c6020f811839ed0e4883a7afca"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T3"
+      ],
+      "acceptanceIds": [
+        "AC03-6"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:03:31.223Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run 'Flag|Startup|Usage|Help|RunContext|ServeStartup'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T3-AC03-7",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T3.json",
+        "sha256": "e3b0af84305e80779d656e0edad2da0a4baf04c6020f811839ed0e4883a7afca"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T3"
+      ],
+      "acceptanceIds": [
+        "AC03-7"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:03:31.223Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run 'Flag|Startup|Usage|Help|RunContext|ServeStartup'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T4-AC04-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T4.json",
+        "sha256": "7716d66903c0ee428f26c5a2a5a58ae49390ac38eec25b11a2ea7d1847c0bb3a"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC04-1"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:26:38.238Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^TestServeLoggingHTTP/ClientAuthentication$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T4-AC04-2",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T4.json",
+        "sha256": "7716d66903c0ee428f26c5a2a5a58ae49390ac38eec25b11a2ea7d1847c0bb3a"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC04-2"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:26:38.238Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^TestServeLoggingHTTP/ClientAuthentication$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T4-AC04-3",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T4.json",
+        "sha256": "7716d66903c0ee428f26c5a2a5a58ae49390ac38eec25b11a2ea7d1847c0bb3a"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC04-3"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:26:38.238Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^TestServeLoggingHTTP/ClientAuthentication$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T4-AC04-4",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T4.json",
+        "sha256": "7716d66903c0ee428f26c5a2a5a58ae49390ac38eec25b11a2ea7d1847c0bb3a"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC04-4"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:26:38.238Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^TestServeLoggingHTTP/ClientAuthentication$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T4-AC04-5",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T4.json",
+        "sha256": "7716d66903c0ee428f26c5a2a5a58ae49390ac38eec25b11a2ea7d1847c0bb3a"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC04-5"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:26:38.238Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^TestServeLoggingHTTP/ClientAuthentication$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T4-AC04-6",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T4.json",
+        "sha256": "7716d66903c0ee428f26c5a2a5a58ae49390ac38eec25b11a2ea7d1847c0bb3a"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC04-6"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:26:38.238Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^TestServeLoggingHTTP/ClientAuthentication$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T4-AC04-7",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T4.json",
+        "sha256": "7716d66903c0ee428f26c5a2a5a58ae49390ac38eec25b11a2ea7d1847c0bb3a"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC04-7"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:26:38.238Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^TestServeLoggingHTTP/ClientAuthentication$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T4-AC04-8",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T4.json",
+        "sha256": "7716d66903c0ee428f26c5a2a5a58ae49390ac38eec25b11a2ea7d1847c0bb3a"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC04-8"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:26:38.238Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^TestServeLoggingHTTP/ClientAuthentication$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T5-AC05-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T5.json",
+        "sha256": "d3d76582810b91bec141624b841151a998d19dfdefef1927d5bb5a5193ff7339"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T5"
+      ],
+      "acceptanceIds": [
+        "AC05-1"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:49:24.650Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^(TestConfigDiagnosticFieldManifest|TestConfigReloadRejectionMatchesStartupAttribution|TestOperatorLogCoversVerifiedLifecycleCallSites|TestOperatorLogPublicationFailureClassification|TestRefreshPublicationFailureClassificationThroughLoop|TestRestartOnlyFieldsAndSmallWiringHelpers|TestServeStartupFailures)$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T5-AC05-2",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T5.json",
+        "sha256": "d3d76582810b91bec141624b841151a998d19dfdefef1927d5bb5a5193ff7339"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T5"
+      ],
+      "acceptanceIds": [
+        "AC05-2"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:49:24.650Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^(TestConfigDiagnosticFieldManifest|TestConfigReloadRejectionMatchesStartupAttribution|TestOperatorLogCoversVerifiedLifecycleCallSites|TestOperatorLogPublicationFailureClassification|TestRefreshPublicationFailureClassificationThroughLoop|TestRestartOnlyFieldsAndSmallWiringHelpers|TestServeStartupFailures)$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T5-AC05-3",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T5.json",
+        "sha256": "d3d76582810b91bec141624b841151a998d19dfdefef1927d5bb5a5193ff7339"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T5"
+      ],
+      "acceptanceIds": [
+        "AC05-3"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:49:24.650Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^(TestConfigDiagnosticFieldManifest|TestConfigReloadRejectionMatchesStartupAttribution|TestOperatorLogCoversVerifiedLifecycleCallSites|TestOperatorLogPublicationFailureClassification|TestRefreshPublicationFailureClassificationThroughLoop|TestRestartOnlyFieldsAndSmallWiringHelpers|TestServeStartupFailures)$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T5-AC05-4",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T5.json",
+        "sha256": "d3d76582810b91bec141624b841151a998d19dfdefef1927d5bb5a5193ff7339"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T5"
+      ],
+      "acceptanceIds": [
+        "AC05-4"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:49:24.650Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^(TestConfigDiagnosticFieldManifest|TestConfigReloadRejectionMatchesStartupAttribution|TestOperatorLogCoversVerifiedLifecycleCallSites|TestOperatorLogPublicationFailureClassification|TestRefreshPublicationFailureClassificationThroughLoop|TestRestartOnlyFieldsAndSmallWiringHelpers|TestServeStartupFailures)$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T5-AC05-5",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T5.json",
+        "sha256": "d3d76582810b91bec141624b841151a998d19dfdefef1927d5bb5a5193ff7339"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T5"
+      ],
+      "acceptanceIds": [
+        "AC05-5"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:49:24.650Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^(TestConfigDiagnosticFieldManifest|TestConfigReloadRejectionMatchesStartupAttribution|TestOperatorLogCoversVerifiedLifecycleCallSites|TestOperatorLogPublicationFailureClassification|TestRefreshPublicationFailureClassificationThroughLoop|TestRestartOnlyFieldsAndSmallWiringHelpers|TestServeStartupFailures)$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T5-AC05-6",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T5.json",
+        "sha256": "d3d76582810b91bec141624b841151a998d19dfdefef1927d5bb5a5193ff7339"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T5"
+      ],
+      "acceptanceIds": [
+        "AC05-6"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:49:24.650Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^(TestConfigDiagnosticFieldManifest|TestConfigReloadRejectionMatchesStartupAttribution|TestOperatorLogCoversVerifiedLifecycleCallSites|TestOperatorLogPublicationFailureClassification|TestRefreshPublicationFailureClassificationThroughLoop|TestRestartOnlyFieldsAndSmallWiringHelpers|TestServeStartupFailures)$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T5-AC05-7",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T5.json",
+        "sha256": "d3d76582810b91bec141624b841151a998d19dfdefef1927d5bb5a5193ff7339"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T5"
+      ],
+      "acceptanceIds": [
+        "AC05-7"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:49:24.650Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^(TestConfigDiagnosticFieldManifest|TestConfigReloadRejectionMatchesStartupAttribution|TestOperatorLogCoversVerifiedLifecycleCallSites|TestOperatorLogPublicationFailureClassification|TestRefreshPublicationFailureClassificationThroughLoop|TestRestartOnlyFieldsAndSmallWiringHelpers|TestServeStartupFailures)$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T5-AC04-8",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T5.json",
+        "sha256": "d3d76582810b91bec141624b841151a998d19dfdefef1927d5bb5a5193ff7339"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T5"
+      ],
+      "acceptanceIds": [
+        "AC04-8"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:49:24.650Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^(TestConfigDiagnosticFieldManifest|TestConfigReloadRejectionMatchesStartupAttribution|TestOperatorLogCoversVerifiedLifecycleCallSites|TestOperatorLogPublicationFailureClassification|TestRefreshPublicationFailureClassificationThroughLoop|TestRestartOnlyFieldsAndSmallWiringHelpers|TestServeStartupFailures)$'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T6-AC06-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T6.json",
+        "sha256": "d383c9664082e5b0e2964009d75914e6e01e0d0bb1e580e19eb771dca85c0cba"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T6"
+      ],
+      "acceptanceIds": [
+        "AC06-1"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:55:44.595Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run 'TestCheckConfigSuccessEnvelope|TestCheckConfigFailureEnvelopeHasNoSuccessRecord|TestConfigValidationDiagnosticAttributionAndCompleteness|TestExampleConfigPassesCheck|TestRunCheckConfigAndMissingFile|TestCheckConfigSuccessDoesNotPrintConfigurationValues|TestEmbeddingEnvCLI|TestEmbeddingEnvCLIProcess'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T6-AC06-2",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T6.json",
+        "sha256": "d383c9664082e5b0e2964009d75914e6e01e0d0bb1e580e19eb771dca85c0cba"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T6"
+      ],
+      "acceptanceIds": [
+        "AC06-2"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:55:44.595Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run 'TestCheckConfigSuccessEnvelope|TestCheckConfigFailureEnvelopeHasNoSuccessRecord|TestConfigValidationDiagnosticAttributionAndCompleteness|TestExampleConfigPassesCheck|TestRunCheckConfigAndMissingFile|TestCheckConfigSuccessDoesNotPrintConfigurationValues|TestEmbeddingEnvCLI|TestEmbeddingEnvCLIProcess'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T6-AC06-3",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T6.json",
+        "sha256": "d383c9664082e5b0e2964009d75914e6e01e0d0bb1e580e19eb771dca85c0cba"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T6"
+      ],
+      "acceptanceIds": [
+        "AC06-3"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:55:44.595Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run 'TestCheckConfigSuccessEnvelope|TestCheckConfigFailureEnvelopeHasNoSuccessRecord|TestConfigValidationDiagnosticAttributionAndCompleteness|TestExampleConfigPassesCheck|TestRunCheckConfigAndMissingFile|TestCheckConfigSuccessDoesNotPrintConfigurationValues|TestEmbeddingEnvCLI|TestEmbeddingEnvCLIProcess'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T6-AC06-4",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T6.json",
+        "sha256": "d383c9664082e5b0e2964009d75914e6e01e0d0bb1e580e19eb771dca85c0cba"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T6"
+      ],
+      "acceptanceIds": [
+        "AC06-4"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:55:44.595Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run 'TestCheckConfigSuccessEnvelope|TestCheckConfigFailureEnvelopeHasNoSuccessRecord|TestConfigValidationDiagnosticAttributionAndCompleteness|TestExampleConfigPassesCheck|TestRunCheckConfigAndMissingFile|TestCheckConfigSuccessDoesNotPrintConfigurationValues|TestEmbeddingEnvCLI|TestEmbeddingEnvCLIProcess'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T6-AC06-5",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T6.json",
+        "sha256": "d383c9664082e5b0e2964009d75914e6e01e0d0bb1e580e19eb771dca85c0cba"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T6"
+      ],
+      "acceptanceIds": [
+        "AC06-5"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:55:44.595Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run 'TestCheckConfigSuccessEnvelope|TestCheckConfigFailureEnvelopeHasNoSuccessRecord|TestConfigValidationDiagnosticAttributionAndCompleteness|TestExampleConfigPassesCheck|TestRunCheckConfigAndMissingFile|TestCheckConfigSuccessDoesNotPrintConfigurationValues|TestEmbeddingEnvCLI|TestEmbeddingEnvCLIProcess'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T6-AC04-8",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T6.json",
+        "sha256": "d383c9664082e5b0e2964009d75914e6e01e0d0bb1e580e19eb771dca85c0cba"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T6"
+      ],
+      "acceptanceIds": [
+        "AC04-8"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T00:55:44.595Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run 'TestCheckConfigSuccessEnvelope|TestCheckConfigFailureEnvelopeHasNoSuccessRecord|TestConfigValidationDiagnosticAttributionAndCompleteness|TestExampleConfigPassesCheck|TestRunCheckConfigAndMissingFile|TestCheckConfigSuccessDoesNotPrintConfigurationValues|TestEmbeddingEnvCLI|TestEmbeddingEnvCLIProcess'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T7-AC07-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T7.json",
+        "sha256": "3a677fe00a5b016dd64ba8c93fbcd63a89847162650b6f5fc41bcb8507ae7b8f"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T7"
+      ],
+      "acceptanceIds": [
+        "AC07-1"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T01:16:43.100Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run TestLoggingContract",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T7-AC07-2",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T7.json",
+        "sha256": "3a677fe00a5b016dd64ba8c93fbcd63a89847162650b6f5fc41bcb8507ae7b8f"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T7"
+      ],
+      "acceptanceIds": [
+        "AC07-2"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T01:16:43.100Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run TestLoggingContract",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T7-AC07-3",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T7.json",
+        "sha256": "3a677fe00a5b016dd64ba8c93fbcd63a89847162650b6f5fc41bcb8507ae7b8f"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T7"
+      ],
+      "acceptanceIds": [
+        "AC07-3"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T01:16:43.100Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run TestLoggingContract",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T7-AC07-4",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T7.json",
+        "sha256": "3a677fe00a5b016dd64ba8c93fbcd63a89847162650b6f5fc41bcb8507ae7b8f"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T7"
+      ],
+      "acceptanceIds": [
+        "AC07-4"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T01:16:43.100Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run TestLoggingContract",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T7-AC07-5",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T7.json",
+        "sha256": "3a677fe00a5b016dd64ba8c93fbcd63a89847162650b6f5fc41bcb8507ae7b8f"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T7"
+      ],
+      "acceptanceIds": [
+        "AC07-5"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T01:16:43.100Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run TestLoggingContract",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T7-AC07-6",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T7.json",
+        "sha256": "3a677fe00a5b016dd64ba8c93fbcd63a89847162650b6f5fc41bcb8507ae7b8f"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T7"
+      ],
+      "acceptanceIds": [
+        "AC07-6"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T01:16:43.100Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run TestLoggingContract",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T7-AC07-7",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T7.json",
+        "sha256": "3a677fe00a5b016dd64ba8c93fbcd63a89847162650b6f5fc41bcb8507ae7b8f"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T7"
+      ],
+      "acceptanceIds": [
+        "AC07-7"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T01:16:43.100Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run TestLoggingContract",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-T7-AC07-8",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T7.json",
+        "sha256": "3a677fe00a5b016dd64ba8c93fbcd63a89847162650b6f5fc41bcb8507ae7b8f"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T7"
+      ],
+      "acceptanceIds": [
+        "AC07-8"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T01:16:43.100Z",
+      "producer": "engineer",
+      "details": {
+        "rubric": "spec §5",
+        "observedOutcome": "pass"
+      }
+    },
+    {
+      "id": "ev-T7-AC07-9",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T7.json",
+        "sha256": "3a677fe00a5b016dd64ba8c93fbcd63a89847162650b6f5fc41bcb8507ae7b8f"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T7"
+      ],
+      "acceptanceIds": [
+        "AC07-9"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T01:16:43.100Z",
+      "producer": "engineer",
+      "details": {
+        "rubric": "spec §5",
+        "observedOutcome": "pass"
+      }
+    },
+    {
+      "id": "ev-T7-AC04-8",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_T7.json",
+        "sha256": "3a677fe00a5b016dd64ba8c93fbcd63a89847162650b6f5fc41bcb8507ae7b8f"
+      },
+      "feature": "structured-logging",
+      "packetDigest": "3dff388d925026629937d63c94dbcdd0293d2487d2a2ce9634656c9911626637",
+      "selectedBranchId": "approved-structured-logging",
+      "taskIds": [
+        "T7"
+      ],
+      "acceptanceIds": [
+        "AC04-8"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-11T01:16:43.100Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run TestLoggingContract",
+        "exitCode": 0
+      }
+    }
+  ],
   "blockers": [],
   "gate": {
     "markerPath": ".superpowers/sdd/GATE_OPEN",
