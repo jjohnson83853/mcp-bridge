@@ -78,6 +78,11 @@ Current mechanism this would replace or extend:
 - Read-only status exists only as the upstream's own claim: `annotations.readOnlyHint`, stored
   verbatim in `ToolDefinition.Metadata`, validated for shape only, and documented as
   "hints are advisory claims, never authorization" (`internal/core/tool_metadata.go:77-108`).
+- A read-only **predicate** is already specified for search but not implemented in code:
+  `search_tools` `read_only_only` (`.scratch/discovery-enrichment/issues/03-search-filters-and-kind.md`,
+  `Status: ready-for-agent`) defines eligibility as "effective annotation `readOnlyHint` is true;
+  entries with missing or unknown metadata are excluded". Pin expansion must reuse that definition
+  rather than invent a second one.
 - Scale today: bridge A holds 67 pins, 19 servers, 841 tools. A global expansion would blow the
   128 ceiling by an order of magnitude, and every pinned name is also repeated in the
   `search_tools` description (`internal/service/tools.go:99-104`).
