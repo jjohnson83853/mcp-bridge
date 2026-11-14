@@ -54,10 +54,60 @@ question — writing them here would pre-empt that.
 | 1 | Breaker must regain a reachable close path | None | Is the half-open attempt driven by the refresh/reload discovery leg (a successful non-executing probe resets the counter, already scheduled every ~300 s), by a lazy admission check once `open_duration` elapses, or both? Both must never replay the failed execution (`ExecutionUnknown`). |
 | 2 | Evict the cached upstream session on transport failure | None | Only reachable in `stateless: false` mode today. Does the fix belong in `Dedicated` (drop `session` on a transport-coded failure) or in `ServerClient` (report the failure kind to its owner), and must discovery evict too? |
 | 3 | Attribute refresh failures to the server and reason | None | `catalog_refresh_failed` currently records one `error.code` for the whole pass, so a single `google-health-mcp` DNS failure read as an HA outage for 40 minutes. Which fields (`server`, `failure_stage`, `failure_reason`, `http_status`) and does the pin blocker's `tool_absent` classification get corrected in the same record? |
+| 4 | Setting that pins every read-only tool | None | Owner story below. One switch expands the pin set from the explicit `pins` list to every catalog tool advertising `readOnlyHint: true`. Which scope does the switch carry (global / per-server opt-in), and does the 128-pin ceiling fail the candidate, degrade, or get replaced by the flag? |
 
 Pick order follows the tracker convention: first open, unblocked, unclaimed by number. These do not
 block each other; ticket 1 carries the incident, ticket 2 is the same failure class under a
 non-default configuration, ticket 3 is what made the incident look like something else.
+
+## Owner story (2026-11-14): pin every read-only tool
+
+> As the bridge operator, I want one setting that, when enabled, declares every read-only
+> upstream tool as a pinned tool, so clients see my fleet's inspection tools directly in their
+> tool list instead of me enumerating dozens of `pins` entries by hand and re-editing them every
+> time a server adds a tool. Off by default; enabling it is an explicit operator action, and
+> the expandable pin set must never turn on implicitly.
+
+Current mechanism this would replace or extend:
+
+- `pins` is an explicit operator list `[{server, tool}]`, resolved to an exact
+  `[server_id, raw_name]` binding at assembly build (`core.AddPins`, `internal/core/core.go`).
+  A pin whose definition is missing fails the whole call with zero resolved pins; a config with
+  more than 128 entries is rejected at parse (`pin_ceiling`,
+  `internal/config/config.go:22,242-256`).
+- Read-only status exists only as the upstream's own claim: `annotations.readOnlyHint`, stored
+  verbatim in `ToolDefinition.Metadata`, validated for shape only, and documented as
+  "hints are advisory claims, never authorization" (`internal/core/tool_metadata.go:77-108`).
+- Scale today: bridge A holds 67 pins, 19 servers, 841 tools. A global expansion would blow the
+  128 ceiling by an order of magnitude, and every pinned name is also repeated in the
+  `search_tools` description (`internal/service/tools.go:99-104`).
+- Pinned tools are per-generation and per-session projections; a refresh that adds or removes a
+  tool changes what the next client generation sees.
+
+Blocking questions (owner ruling required before a planner writes R/AC/design):
+
+1. **Scope shape.** Global `pins.read_only: true`, per-server `servers[].pin_read_only: true`, or
+   an allowlist of servers? Global is one switch but makes every noisy server's tool list part of
+   every client's prompt.
+2. **Trust.** Pinning on an upstream-supplied advisory hint means a server can make its tools
+   direct tools by claiming they are read-only. Accept the hint, require a per-server opt-in, or
+   require both (server opts in AND hint is true)?
+3. **Ceiling.** Does the flag bypass, raise, or collide with `maxPins = 128`? If expansion exceeds
+   it, must the candidate be rejected (kills reload), degrade with a recorded reason, or must the
+   flag require an explicit ceiling of its own?
+4. **Absent hint.** MCP does not default an absent `readOnlyHint` to true; the story assumes
+   "absent = not read-only". Confirm, or include unannotated tools under a separate switch.
+5. **Churn.** A refresh that discovers a new read-only tool would auto-pin it. Does the client get
+   `notifications/tools/list_changed`, and is the expansion ordered deterministically so
+   descriptor keys and catalog revisions stay stable across passes?
+6. **Explicit pins.** Union with dedupe, and which wins when an operator explicitly pins a tool a
+   server later annotates as read-only?
+7. **Guidance surface.** With hundreds of pinned names, does the search description still enumerate
+   them, or does it switch to a count plus `pins` in metadata?
+
+Alternative worth ruling on rather than silently excluding: keep pins explicit and rely on
+`search_tools`/`call_tool` for everything unpinned — that path kept working through the incident
+above, at the cost of two round trips per call and no direct-declared tool.
 
 ## Operational mitigation until ticket 1 ships
 
