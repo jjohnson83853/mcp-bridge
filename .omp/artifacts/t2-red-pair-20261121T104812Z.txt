@@ -1,0 +1,33 @@
+== pre-change baseline (HEAD checkout + current test files): upstream oracle, exit=1 ==
+--- FAIL: TestDedicatedParamHeadersReachPeerInStatelessMode (0.01s)
+    --- FAIL: TestDedicatedParamHeadersReachPeerInStatelessMode/single-page (0.00s)
+        header_params_test.go:198: CallTool outcome = &{InputRequired:false Failure:0xc000280880}; want success
+    --- FAIL: TestDedicatedParamHeadersReachPeerInStatelessMode/PageSize:1 (0.00s)
+        header_params_test.go:198: CallTool outcome = &{InputRequired:false Failure:0xc000112840}; want success
+--- FAIL: TestStatefulParamHeadersReuseDiscoveryCache (0.00s)
+    --- FAIL: TestStatefulParamHeadersReuseDiscoveryCache/zero-ttl (0.00s)
+        header_params_test.go:358: zero-ttl tools/list delta = 0; want refetch
+--- FAIL: TestParamHeaderFailurePathsUseSafeCodes (0.00s)
+    --- FAIL: TestParamHeaderFailurePathsUseSafeCodes/list_failure (0.00s)
+        header_params_test.go:404: failure = &{Code:upstream_protocol_error ExecutionState:unknown}; want backend_unavailable/not_started
+        header_params_test.go:408: tools/call delta after list failure = 1; want 0
+        header_params_test.go:411: tools/list delta after list failure = 0; want exactly 1
+    --- FAIL: TestParamHeaderFailurePathsUseSafeCodes/unsupported_version_observability (0.00s)
+        header_params_test.go:433: RuntimeErrorInfo = &{Code:unknown Kind:internal Retryable:false Remediation:inspect the bridge logs and configuration}; want configuration, nonretryable, and fixed remediation
+FAIL
+FAIL	github.com/jjohnson83853/mcp-bridge/internal/upstream	0.029s
+FAIL
+== pre-change baseline (HEAD checkout + current test files): bridge oracle, exit=1 ==
+--- FAIL: TestParameterHeaderTransitWireFacts (0.03s)
+    serve_header_params_test.go:185: mode=default-stateless method="tools/call" protocol="2026-07-28" owner="" repo="" body={"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"_meta":{"io.modelcontextprotocol/clientCapabilities":{"roots":{"listChanged":true}},"io.modelcontextprotocol/clientInfo":{"name":"mcp-bridge-alpha","version":"1"},"io.modelcontextprotocol/protocolVersion":"2026-07-28"},"name":"parameter_headers","arguments":{"owner":"ticket-owner-42","repo":"header-transit-repo"}}} control_is_error=false
+    serve_header_params_test.go:192: parameter-header call returned isError=true; missing parameter headers: owner="" repo="" body={"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"_meta":{"io.modelcontextprotocol/clientCapabilities":{"roots":{"listChanged":true}},"io.modelcontextprotocol/clientInfo":{"name":"mcp-bridge-alpha","version":"1"},"io.modelcontextprotocol/protocolVersion":"2026-07-28"},"name":"parameter_headers","arguments":{"owner":"ticket-owner-42","repo":"header-transit-repo"}}}
+    serve_header_params_test.go:195: Mcp-Param-owner = ""; want "ticket-owner-42"
+    serve_header_params_test.go:198: Mcp-Param-repo = ""; want "header-transit-repo"
+--- FAIL: TestParameterHeaderRestartSurvivesInStatelessMode (0.03s)
+    serve_header_params_test.go:299: post-restart tools/call result = map[code:upstream_protocol_error execution_state:unknown message:the upstream call did not complete retryable:false]; want a successful new-generation echo
+--- FAIL: TestLegacyParamHeaderCallFailsWithNamedCode (0.03s)
+    serve_header_params_test.go:379: legacy parameter-header call returned isError=false; want named protocol rejection: map[request_id:08b215df945c2703d5f089cbad2b45c5 server:alpha tool_name:alpha__parameter_headers upstream_result:map[content:[map[text:{"owner":"ticket-owner-42","repo":"header-transit-repo"} type:text]]]]
+FAIL
+FAIL	github.com/jjohnson83853/mcp-bridge/cmd/mcp-bridge	0.135s
+FAIL
+# observed exit codes: -e upstream=1 bridge=1

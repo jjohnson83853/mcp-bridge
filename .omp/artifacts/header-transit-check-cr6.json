@@ -1,0 +1,1 @@
+{"allowed":false,"reasons":[{"code":"E_INVALID_SOLUTION_SPACE","detail":"solutionSpace must be a non-empty description of at most 1,000 characters."}]}

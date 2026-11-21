@@ -36,9 +36,10 @@ type Dedicated struct {
 
 	requiresHandshake bool
 
-	mu      sync.Mutex
-	session *mcp.ClientSession
-	closed  bool
+	mu                sync.Mutex
+	session           *mcp.ClientSession
+	headerAnnotations map[string]struct{}
+	closed            bool
 }
 
 type discoveryFailure struct {
@@ -100,6 +101,7 @@ func (d *Dedicated) Discover(ctx context.Context) ([]core.ToolDefinition, error)
 		d.requiresHandshake = true
 		d.mu.Unlock()
 	}
+	headerAnnotationNames := make(map[string]struct{})
 	var defs []core.ToolDefinition
 	cursor := ""
 	for {
@@ -119,6 +121,9 @@ func (d *Dedicated) Discover(ctx context.Context) ([]core.ToolDefinition, error)
 			inputSchema, err := canonicalSchema(tool.InputSchema)
 			if err != nil {
 				return nil, d.reportDiscoveryFailure(ctx, status, "tools_list", started, err)
+			}
+			if hasHeaderAnnotation(inputSchema) {
+				headerAnnotationNames[tool.Name] = struct{}{}
 			}
 			outputSchema, err := canonicalSchema(tool.OutputSchema)
 			if err != nil {
@@ -145,7 +150,80 @@ func (d *Dedicated) Discover(ctx context.Context) ([]core.ToolDefinition, error)
 		cursor = page.NextCursor
 	}
 	sort.Slice(defs, func(i, j int) bool { return defs[i].RawName < defs[j].RawName })
+	if len(headerAnnotationNames) > 0 {
+		d.mu.Lock()
+		if d.headerAnnotations == nil {
+			d.headerAnnotations = make(map[string]struct{}, len(headerAnnotationNames))
+		}
+		for rawName := range headerAnnotationNames {
+			d.headerAnnotations[rawName] = struct{}{}
+		}
+		d.mu.Unlock()
+	}
 	return defs, nil
+}
+
+func hasHeaderAnnotation(schema json.RawMessage) bool {
+	var root any
+	if err := json.Unmarshal(schema, &root); err != nil {
+		return false
+	}
+	var walk func(any, bool) bool
+	walk = func(value any, underProperties bool) bool {
+		switch value := value.(type) {
+		case map[string]any:
+			if underProperties {
+				if header, ok := value["x-mcp-header"].(string); ok && header != "" {
+					return true
+				}
+			}
+			for key, child := range value {
+				if key == "properties" {
+					if walk(child, true) {
+						return true
+					}
+				} else if walk(child, underProperties) {
+					return true
+				}
+			}
+		case []any:
+			for _, child := range value {
+				if walk(child, underProperties) {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	return walk(root, false)
+}
+
+func warmDefinitionCache(ctx context.Context, session *mcp.ClientSession, rawName string) error {
+	cursor := ""
+	seenCursors := map[string]struct{}{cursor: {}}
+	for {
+		page, err := session.ListTools(ctx, &mcp.ListToolsParams{Cursor: cursor})
+		if err != nil {
+			return err
+		}
+		if page == nil {
+			return errors.New("empty tools page")
+		}
+		for _, tool := range page.Tools {
+			if tool != nil && tool.Name == rawName {
+				return nil
+			}
+		}
+		nextCursor := page.NextCursor
+		if nextCursor == "" {
+			return nil
+		}
+		if _, ok := seenCursors[nextCursor]; ok {
+			return nil
+		}
+		seenCursors[nextCursor] = struct{}{}
+		cursor = nextCursor
+	}
 }
 
 func (d *Dedicated) reportDiscoveryFailure(ctx context.Context, status *discoveryHTTPStatus, phase string, started time.Time, cause error) error {
@@ -398,7 +476,22 @@ func (d *Dedicated) CallTool(ctx context.Context, pub, serverID, rawName string,
 	if err != nil {
 		return nil, &core.UpstreamOutcome{Failure: &core.UpstreamFailure{Code: "invalid_arguments", ExecutionState: core.ExecutionNotStarted}}
 	}
-	result, err := d.client.CallTool(ctx, session, &mcp.CallToolParams{Name: rawName, Arguments: arguments})
+	d.mu.Lock()
+	_, headerBound := d.headerAnnotations[rawName]
+	d.mu.Unlock()
+	var prepare func(context.Context) error
+	if headerBound {
+		initialized := session.InitializeResult()
+		if initialized == nil || initialized.ProtocolVersion == "" || initialized.ProtocolVersion < "2026-07-28" {
+			return nil, &core.UpstreamOutcome{Failure: &core.UpstreamFailure{
+				Code: "parameter_header_unsupported", ExecutionState: core.ExecutionNotStarted,
+			}}
+		}
+		prepare = func(callCtx context.Context) error {
+			return warmDefinitionCache(callCtx, session, rawName)
+		}
+	}
+	result, err := d.client.callToolPrepared(ctx, session, &mcp.CallToolParams{Name: rawName, Arguments: arguments}, prepare)
 	if err != nil {
 		return nil, &core.UpstreamOutcome{Failure: failureOutcome(err)}
 	}

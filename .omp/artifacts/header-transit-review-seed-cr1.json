@@ -1,0 +1,38 @@
+{
+  "intent": "Dispatch ReviewHeaderSpecR1 (code-reviewer)",
+  "instructions": "Specification-mode staged review for feature `header-parameter-transit`, revision r1. Root /home/opencode/projects/default/mcp-bridge. Treat .scratch/header-parameter-transit/spec.md as a planner DRAFT, not approved authority or implementation. Bind exactly the registered reviewed inputs. Every finding needs severity, confidence, an exact file:line anchor and a surgical repair direction; HIGH and MEDIUM block, LOW is advisory. Do not edit files or author ACs. Run the installed spec-lint checks only if a shell surface is available; report the ticket-mirror heuristic as known noise, not a blocker. End with exactly one verdict heading and its verdict as the final block: CodeReviewer uses `### Recommendation` then APPROVE or REQUEST CHANGES; Critic uses `### Verdict` then PASS or REVISE.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "header-parameter-transit",
+    "revision": "r1",
+    "requests": [
+      {
+        "name": "ReviewHeaderSpecR1",
+        "taskId": "CR1",
+        "agent": "code-reviewer",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/header-parameter-transit/spec.md",
+            ".scratch/header-parameter-transit/issues/01-header-parameter-wire-reproduction.md",
+            ".scratch/header-parameter-transit/issues/02-header-parameters-traverse-stateless-calls.md",
+            ".scratch/header-parameter-transit/issues/03-stateful-and-legacy-protocol-boundary.md",
+            ".scratch/header-parameter-transit/issues/04-deployed-github-verification.md"
+          ]
+        },
+        "targetCandidateId": "header-parameter-transit-spec-r1",
+        "targetRevision": "r1"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ReviewHeaderSpecR1",
+      "agent": "code-reviewer",
+      "solutionSpace": "Independent specification feasibility and correctness review; inspect named seams and planned oracles; do not design or implement repairs.",
+      "task": "Review the exact candidate header-parameter-transit-spec-r1 revision r1 for source fidelity, correctness and implementability. Verify every path:line anchor against the working tree and go-sdk v1.8.0; audit the warm-tools/list mechanism and the SDK tool-definition cache conditions (usesNewProtocol, pagination, same-session emission); audit CallToolPrepared ordering, admission, timeout and breaker accounting for a nil prepare; audit the annotation index for false negatives under refresh failure and concurrent refresh/call; check each AC oracle for determinism and RED/GREEN discrimination; check T1-T4 write sets against the envelope and name any needed-but-excluded file; verify the header/body agreement and legacy-gate claims. Verdict: ### Recommendation with APPROVE or REQUEST CHANGES."
+    }
+  ]
+}

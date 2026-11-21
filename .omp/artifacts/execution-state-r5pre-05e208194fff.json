@@ -1,0 +1,606 @@
+{
+  "schemaVersion": 2,
+  "feature": "header-parameter-transit",
+  "revision": "r5",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/spec.md",
+    "sha256": "b854432d6ee50b9ef34e5b3efad66729210fc291ed82050ccb126b3c6791c30c",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r5",
+        "sha256": "e10e12b2491d7b2c2785be8588ddf1de0cb5dbe138d1148b280b5b37b651c26b"
+      },
+      "design": {
+        "revision": "r5",
+        "sha256": "a343d840acc08b3cd616ac55de24dc67c2dd6862feddd4854551bf186ecf06d4"
+      },
+      "tasks": {
+        "revision": "r5",
+        "sha256": "e58aa100be420a25f4d71f3175a098b1416f1c2eb37c1772a80f68053579509b"
+      },
+      "envelope": {
+        "revision": "r5",
+        "sha256": "793dc3c5951de85a2056febd23249e9002d631b0b8a347d41f0e8902ceac5de8"
+      }
+    }
+  },
+  "packet": {
+    "digest": "330efd22b4cc8d70342867423a69a90adec29522e5618130ec51963aa7547a89",
+    "selectedBranchId": null,
+    "branches": [
+      {
+        "id": "header-parameter-transit-r5",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r5",
+            "sha256": "e10e12b2491d7b2c2785be8588ddf1de0cb5dbe138d1148b280b5b37b651c26b"
+          },
+          "design": {
+            "revision": "r5",
+            "sha256": "a343d840acc08b3cd616ac55de24dc67c2dd6862feddd4854551bf186ecf06d4"
+          },
+          "tasks": {
+            "revision": "r5",
+            "sha256": "e58aa100be420a25f4d71f3175a098b1416f1c2eb37c1772a80f68053579509b"
+          },
+          "envelope": {
+            "revision": "r5",
+            "sha256": "793dc3c5951de85a2056febd23249e9002d631b0b8a347d41f0e8902ceac5de8"
+          }
+        }
+      }
+    ]
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Header-bound calls transit in default stateless mode without a retained session"
+    },
+    {
+      "id": "R2",
+      "summary": "The SDK is the only emitter; the bridge ensures the execution session holds the tool definition"
+    },
+    {
+      "id": "R3",
+      "summary": "Body-only tools keep today's behavior, with no extra upstream RPC or header"
+    },
+    {
+      "id": "R4",
+      "summary": "Header-bound values stay in the arguments body; parameter headers are additive"
+    },
+    {
+      "id": "R5",
+      "summary": "Explicit stateful mode succeeds using cached definitions, refetching only when the TTL requires it"
+    },
+    {
+      "id": "R6",
+      "summary": "A legacy negotiated protocol yields parameter_header_unsupported with not_started and zero executions"
+    },
+    {
+      "id": "R7",
+      "summary": "The protocol boundary, operator handling and definition-pass cost are documented"
+    },
+    {
+      "id": "R8",
+      "summary": "Failure paths stay payload-free in the closed vocabulary plus one additive reason token"
+    },
+    {
+      "id": "R9",
+      "summary": "A deterministic peer-based reproduction records wire facts in both modes"
+    },
+    {
+      "id": "R10",
+      "summary": "The deployed github upstream is verified end to end under operator gate"
+    },
+    {
+      "id": "R11",
+      "summary": "Stateless restart resilience is preserved"
+    }
+  ],
+  "authorization": null,
+  "reviews": null,
+  "sources": [
+    {
+      "id": "src-spec-r1",
+      "kind": "repository",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/execution-state-r1-spec-8054d28f24cd.md",
+        "sha256": "8054d28f24cdf82475a27df8c0ad3e73ed5bf36da91db299be709e2e147b8347"
+      },
+      "locator": "planner specification r1 for header-parameter-transit (superseded by r2, r3 and r4; retained as historical evidence)",
+      "recordedAt": "2026-11-20T00:00:00.000Z"
+    }
+  ],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "CR1",
+      "CT1",
+      "T1",
+      "T2",
+      "T3",
+      "T4"
+    ],
+    "readPaths": [
+      ".scratch/header-parameter-transit/spec.md",
+      ".scratch/header-parameter-transit/issues/01-header-parameter-wire-reproduction.md",
+      ".scratch/header-parameter-transit/issues/02-header-parameters-traverse-stateless-calls.md",
+      ".scratch/header-parameter-transit/issues/03-stateful-and-legacy-protocol-boundary.md",
+      ".scratch/header-parameter-transit/issues/04-deployed-github-verification.md",
+      ".scratch/mcp-bridge-defects/backlog.md",
+      "docs/agents/domain.md",
+      "docs/agents/issue-tracker.md",
+      "docs/logging-contract.md",
+      "go.mod",
+      "internal/config/config.go",
+      "internal/core/core.go",
+      "internal/observe/envelope.go",
+      "internal/observe/log.go",
+      "internal/observe/metrics.go",
+      "internal/service/direct_execution.go",
+      "internal/service/tools.go",
+      "internal/upstream/client.go",
+      "internal/upstream/dedicated.go",
+      "internal/upstream/dedicated_test.go",
+      "internal/upstream/runtime.go",
+      "internal/upstream/upstream_test.go",
+      "cmd/mcp-bridge/logging_contract_test.go",
+      "cmd/mcp-bridge/serve_test.go",
+      "cmd/mcp-bridge/serve_upstream_restart_test.go",
+      "cmd/mcp-bridge/wiring.go"
+    ],
+    "writePaths": [
+      "internal/upstream/dedicated.go",
+      "internal/upstream/runtime.go",
+      "internal/upstream/header_params_test.go",
+      "cmd/mcp-bridge/serve_header_params_test.go",
+      "internal/observe/log.go",
+      "internal/observe/envelope.go",
+      "internal/service/tools.go",
+      "docs/logging-contract.md",
+      "docs/runbooks/header-parameters.md"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "CR1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/header-parameter-transit/spec.md",
+          ".scratch/header-parameter-transit/issues/01-header-parameter-wire-reproduction.md",
+          ".scratch/header-parameter-transit/issues/02-header-parameters-traverse-stateless-calls.md",
+          ".scratch/header-parameter-transit/issues/03-stateful-and-legacy-protocol-boundary.md",
+          ".scratch/header-parameter-transit/issues/04-deployed-github-verification.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "CT1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/header-parameter-transit/spec.md",
+          ".scratch/header-parameter-transit/issues/01-header-parameter-wire-reproduction.md",
+          ".scratch/header-parameter-transit/issues/02-header-parameters-traverse-stateless-calls.md",
+          ".scratch/header-parameter-transit/issues/03-stateful-and-legacy-protocol-boundary.md",
+          ".scratch/header-parameter-transit/issues/04-deployed-github-verification.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "critic"
+      ]
+    },
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/upstream/header_params_test.go",
+          "cmd/mcp-bridge/serve_header_params_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC01-1",
+        "AC01-2",
+        "AC01-3",
+        "AC01-4",
+        "AC01-5"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T2",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/upstream/dedicated.go",
+          "internal/upstream/runtime.go",
+          "internal/upstream/header_params_test.go",
+          "internal/observe/log.go",
+          "internal/observe/envelope.go",
+          "internal/service/tools.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC02-1",
+        "AC02-2",
+        "AC02-3",
+        "AC02-4",
+        "AC02-5",
+        "AC03-1",
+        "AC03-2",
+        "AC03-4"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T3",
+      "stage": "verification",
+      "status": "pending",
+      "blockedBy": [
+        "T2"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "docs/logging-contract.md",
+          "docs/runbooks/header-parameters.md"
+        ]
+      },
+      "acceptanceIds": [
+        "AC03-3"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T4",
+      "stage": "external",
+      "status": "pending",
+      "blockedBy": [
+        "T3"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          "docs/runbooks/header-parameters.md"
+        ]
+      },
+      "acceptanceIds": [
+        "AC04-1",
+        "AC04-2",
+        "AC04-3",
+        "AC04-4"
+      ],
+      "evidenceIds": [],
+      "agentRoles": []
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC01-1",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC01-2",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC01-3",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC01-4",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC01-5",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "inspection",
+      "requiredEvidenceKinds": [
+        "inspection"
+      ]
+    },
+    {
+      "id": "AC02-1",
+      "requirementIds": [
+        "R1",
+        "R2",
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC02-2",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC02-3",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC02-4",
+      "requirementIds": [
+        "R1",
+        "R3",
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC02-5",
+      "requirementIds": [
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC03-1",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC03-2",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC03-3",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "inspection",
+      "requiredEvidenceKinds": [
+        "inspection"
+      ]
+    },
+    {
+      "id": "AC03-4",
+      "requirementIds": [
+        "R5",
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC04-1",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "external",
+      "requiredEvidenceKinds": [
+        "external"
+      ]
+    },
+    {
+      "id": "AC04-2",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "external",
+      "requiredEvidenceKinds": [
+        "external"
+      ]
+    },
+    {
+      "id": "AC04-3",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "external",
+      "requiredEvidenceKinds": [
+        "external"
+      ]
+    },
+    {
+      "id": "AC04-4",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "external",
+      "requiredEvidenceKinds": [
+        "external"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.superpowers/sdd/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}

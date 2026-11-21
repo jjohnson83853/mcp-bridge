@@ -182,6 +182,10 @@ func (c *ServerClient) CallContext(parent context.Context) (context.Context, con
 // CallTool applies the per-server timeout and immediate admission rules before
 // making one SDK call. It never retries or fulfills interaction requests.
 func (c *ServerClient) CallTool(parent context.Context, session *mcp.ClientSession, params *mcp.CallToolParams) (*mcp.CallToolResult, error) {
+	return c.callToolPrepared(parent, session, params, nil)
+}
+
+func (c *ServerClient) callToolPrepared(parent context.Context, session *mcp.ClientSession, params *mcp.CallToolParams, prepare func(context.Context) error) (*mcp.CallToolResult, error) {
 	if session == nil {
 		return nil, &CallError{Code: "backend_unavailable", ExecutionState: "not_started"}
 	}
@@ -201,6 +205,12 @@ func (c *ServerClient) CallTool(parent context.Context, session *mcp.ClientSessi
 		return nil, err
 	}
 	defer release()
+
+	if prepare != nil {
+		if err := prepare(ctx); err != nil {
+			return nil, err
+		}
+	}
 	result, err := session.CallTool(ctx, params)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {

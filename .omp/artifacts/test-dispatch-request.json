@@ -1,0 +1,22 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "upstream-breaker-recovery",
+  "revision": "r1",
+  "requests": [
+    {
+      "name": "ReviewBreakerSpecR2",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/upstream-breaker-recovery/spec.md"
+        ]
+      },
+      "targetCandidateId": "upstream-breaker-recovery-spec-r2",
+      "targetRevision": "r2"
+    }
+  ]
+}

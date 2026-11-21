@@ -1,0 +1,302 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { createToolCallGate, extractDispatchMetadata } from './execution-gate.ts';
+import { runtimeFixture, dispatchEvent, reviewSequenceFixture } from './execution-gate-fixtures.mjs';
+import { evaluateDispatch } from './execution-contract.mjs';
+import { fileURLToPath } from 'node:url';
+
+const entry = { name: 'Work', taskId: 'T1', agent: 'engineer', effects: { kind: 'write', paths: ['src/x'] } };
+const request = root => ({ schemaVersion: 1, projectRoot: root, feature: 'demo', revision: 'r1', requests: [entry] });
+const event = root => ({ toolName: 'task', input: { context: JSON.stringify({ instructions: 'Implement the reviewed change.', workflowDispatch: { statePath: path.join(root, 'state.json'), ...request(root) } }), tasks: [{ name: 'Work', agent: 'engineer', task: 'Implement.', solutionSpace: 'Given fix' }] } });
+const CLI_PATH = fileURLToPath(new URL('./execution-gate.mjs', import.meta.url));
+const coordinatorContext = root => ({ cwd: root, agent: { kind: 'main' } });
+const toolEvent = (toolName, target) => ({ toolName, input: target === undefined ? {} : { path: target } });
+const coordinatorGuidance = 'Coordinator direct edit and write tool calls targeting production repository paths are prohibited. Delegate changes to engineer.';
+const assertCoordinatorDenied = result => {
+  assert.equal(result?.block, true);
+  assert.equal(result.reason, `workflow dispatch gate: E_COORDINATOR_EDIT_FORBIDDEN: ${coordinatorGuidance}`);
+};
+const assertInterruptDenied = result => {
+  assert.equal(result?.block, true);
+  assert.equal(result.reason, 'workflow dispatch gate: E_USER_INTERRUPT_ACTIVE: Dispatch rejected: user interrupt lockfile is active in .omp/state/interrupt.lock. Clear the lock to resume.');
+};
+
+test('R-01 coordinator edit and write denials retain the dedicated code and exact guidance', async t => {
+  const fixture = runtimeFixture(t);
+  const gate = createToolCallGate({ evaluateDispatch: () => ({ allowed: true }), log: () => {} });
+  const context = coordinatorContext(fixture.root);
+  const productionPath = '/home/opencode/projects/default/taxprep/src/production.py';
+  assertCoordinatorDenied(await gate.handleToolCall(toolEvent('edit', productionPath), context));
+  assertCoordinatorDenied(await gate.handleToolCall(toolEvent('write', productionPath), context));
+});
+
+test('R-02 coordinator edits allow only listed filesystem roots, with strict state denials first', async t => {
+  const fixture = runtimeFixture(t);
+  const gate = createToolCallGate({ evaluateDispatch: () => ({ allowed: true }), log: () => {} });
+  const context = coordinatorContext(fixture.root);
+  const allowedPaths = [
+    '/home/opencode/.omp/agent/workflow-policy/noninteractive-decisions.md',
+    path.join(fixture.root, '.scratch/note.txt'),
+    '/tmp/gate-allowed-note.txt',
+    path.join(fixture.root, '.omp/artifacts/receipt.json'),
+    path.join(fixture.root, '.omp/state/notes.json'),
+  ];
+  for (const target of allowedPaths) {
+    assert.equal(await gate.handleToolCall(toolEvent('edit', target), context), undefined, target);
+  }
+  for (const target of [
+    path.join(fixture.root, '.omp/plans/execution-state.json'),
+    path.join(fixture.root, '.omp/state/interrupt.lock'),
+    path.join(fixture.root, '.omp/state.json'),
+  ]) {
+    assertCoordinatorDenied(await gate.handleToolCall(toolEvent('edit', target), context));
+    assertCoordinatorDenied(await gate.handleToolCall(toolEvent('write', target), context));
+  }
+  assertCoordinatorDenied(await gate.handleToolCall(
+    toolEvent('edit', path.relative(fixture.root, '/home/opencode/projects/default/taxprep/escaped.py')),
+    context,
+  ));
+  assertCoordinatorDenied(await gate.handleToolCall(
+    toolEvent('edit', '/tmp/../home/opencode/projects/default/taxprep/escaped.py'),
+    context,
+  ));
+});
+
+test('R-02 non-filesystem and missing paths bypass path checks; non-coordinator edits remain allowed', async t => {
+  const fixture = runtimeFixture(t);
+  const gate = createToolCallGate({ evaluateDispatch: () => ({ allowed: true }), log: () => {} });
+  const context = coordinatorContext(fixture.root);
+  for (const target of ['xd://report_issue', 'agent://Main?progress', 'omp://local/notes']) {
+    assert.equal(await gate.handleToolCall(toolEvent('edit', target), context), undefined, target);
+  }
+  assert.equal(await gate.handleToolCall({ toolName: 'edit', input: {} }, context), undefined);
+  assert.equal(await gate.handleToolCall(toolEvent('write', 'xd://report_issue'), context), undefined);
+  const routed = await gate.handleToolCall(toolEvent('write', 'xd://subagent'), context);
+  assert.equal(routed?.block, true);
+  assert.match(routed.reason, /E_ALTERNATE_ROUTE/);
+  assert.equal(await gate.handleToolCall(
+    toolEvent('edit', '/home/opencode/projects/default/taxprep/src/production.py'),
+    { cwd: fixture.root, agent: { kind: 'engineer' } },
+  ), undefined);
+
+  const unmanaged = mkdtempSync(path.join(tmpdir(), 'gate-unmanaged-'));
+  t.after(() => rmSync(unmanaged, { recursive: true, force: true }));
+  assert.equal(await gate.handleToolCall(
+    toolEvent('edit', '/home/opencode/projects/default/taxprep/src/production.py'),
+    coordinatorContext(unmanaged),
+  ), undefined);
+});
+
+test('R-03 interrupt lock precedes dispatch validation and does not burn retry attempts', async t => {
+  const fixture = runtimeFixture(t);
+  const lockPath = path.join(fixture.root, '.omp/state/interrupt.lock');
+  mkdirSync(path.dirname(lockPath), { recursive: true });
+  writeFileSync(lockPath, '');
+  let evaluations = 0;
+  const gate = createToolCallGate({
+    evaluateDispatch: () => { evaluations++; return { allowed: true }; },
+    log: () => {},
+  });
+  const malformed = { toolName: 'task', input: { ...dispatchEvent(fixture).input, context: JSON.stringify({ workflowDispatch: {} }) } };
+  const context = { cwd: fixture.root };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    assertInterruptDenied(await gate.handleToolCall(malformed, context));
+  }
+  assertInterruptDenied(await gate.handleToolCall(toolEvent('write', 'xd://subagent'), context));
+  assert.equal(evaluations, 0);
+
+  rmSync(lockPath);
+  assert.match((await gate.handleToolCall(malformed, context)).reason, /E_DISPATCH_METADATA/);
+  assert.match((await gate.handleToolCall(malformed, context)).reason, /E_RETRY_NOT_AUTHORIZED/);
+  assert.equal(evaluations, 0);
+});
+
+test('R-04 interrupt CLI set and clear are idempotent and validate roots', t => {
+  const root = mkdtempSync(path.join(tmpdir(), 'gate-interrupt-cli-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const run = (...args) => spawnSync(process.execPath, [CLI_PATH, ...args], { encoding: 'utf8' });
+  const lockPath = path.join(root, '.omp/state/interrupt.lock');
+
+  const firstSet = run('interrupt-set', root);
+  assert.equal(firstSet.status, 0, firstSet.stderr);
+  assert.equal(firstSet.stdout, '{"status":"locked"}\n');
+  assert.equal(firstSet.stderr, '');
+  assert.equal(existsSync(lockPath), true);
+  const lockContents = readFileSync(lockPath, 'utf8');
+  const secondSet = run('interrupt-set', root);
+  assert.equal(secondSet.status, 0, secondSet.stderr);
+  assert.equal(secondSet.stdout, '{"status":"locked"}\n');
+  assert.equal(readFileSync(lockPath, 'utf8'), lockContents);
+
+  const firstClear = run('interrupt-clear', root);
+  assert.equal(firstClear.status, 0, firstClear.stderr);
+  assert.equal(firstClear.stdout, '{"status":"cleared"}\n');
+  assert.equal(firstClear.stderr, '');
+  assert.equal(existsSync(lockPath), false);
+  const secondClear = run('interrupt-clear', root);
+  assert.equal(secondClear.status, 0, secondClear.stderr);
+  assert.equal(secondClear.stdout, '{"status":"cleared"}\n');
+
+  const fileRoot = path.join(root, 'not-a-directory');
+  writeFileSync(fileRoot, '');
+  for (const command of ['interrupt-set', 'interrupt-clear']) {
+    for (const invalidRoot of [undefined, path.join(root, 'missing'), fileRoot]) {
+      const result = invalidRoot === undefined ? run(command) : run(command, invalidRoot);
+      assert.equal(result.status, 2, result.stderr);
+      assert.equal(result.stdout, '');
+      assert.equal(result.stderr, '{"error":"missing root"}\n');
+    }
+  }
+});
+
+test('accepts the specified single effect object rather than obsolete effect arrays', () => {
+  assert.equal(extractDispatchMetadata(event('/tmp/demo').input).kind, 'managed');
+});
+
+test('fresh resumed managed workspace rejects missing metadata before any successful dispatch', async t => {
+  const root = mkdtempSync(path.join(tmpdir(), 'gate-boundary-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  mkdirSync(path.join(root, '.omp/plans'), { recursive: true });
+  writeFileSync(path.join(root, '.omp/plans/execution-state.json'), JSON.stringify({ schemaVersion: 2, projectRoot: root }));
+  const gate = createToolCallGate({ evaluateDispatch: () => ({ allowed: true }), log: () => {} });
+  const result = await gate.handleToolCall({ toolName: 'task', input: { task: 'Unbound mutation', agent: 'engineer' } }, { cwd: root });
+  assert.equal(result?.block, true);
+});
+
+test('evaluator errors never disclose raw error payload to diagnostics', async t => {
+  const logs = [];
+  let evaluations = 0;
+  const fixture = runtimeFixture(t);
+  const gate = createToolCallGate({ evaluateDispatch: () => { evaluations++; throw Error('SECRET_ERROR_CANARY'); }, log: value => logs.push(value) });
+  const result = await gate.handleToolCall(dispatchEvent(fixture), { cwd: fixture.root });
+  assert.equal(evaluations, 1);
+  assert.equal(result?.block, true);
+  assert.equal(JSON.stringify(logs).includes('SECRET_ERROR_CANARY'), false);
+});
+
+test('Option 1B global maintenance permits workflow-policy and skills, preserving production and strict state denials', async t => {
+  const fixture = runtimeFixture(t);
+  const root = '/home/opencode/.omp/agent';
+  const local = file => file === root || file.startsWith(root + '/') ? fixture.root + file.slice(root.length) : file;
+  const gate = createToolCallGate({ evaluateDispatch: () => ({ allowed: true }), log: () => {},
+    realpathSync: file => file === root ? root : realpathSync(local(file)).replace(fixture.root, root),
+    lstatSync: file => lstatSync(local(file)),
+  });
+  const ctx = coordinatorContext(root);
+  for (const tool of ['edit', 'write']) {
+    assert.equal(await gate.handleToolCall(toolEvent(tool, 'workflow-policy/execution-gate.ts'), ctx), undefined);
+    assert.equal(await gate.handleToolCall(toolEvent(tool, 'skills/dispatch-policy/SKILL.md'), ctx), undefined);
+    assertCoordinatorDenied(await gate.handleToolCall(toolEvent(tool, '/home/opencode/projects/default/taxprep/src/file.ts'), ctx));
+    for (const target of ['.omp/plans/execution-state.json', '.omp/state/interrupt.lock', '.omp/state.json']) {
+      assertCoordinatorDenied(await gate.handleToolCall(toolEvent(tool, target), ctx));
+    }
+    assertCoordinatorDenied(await gate.handleToolCall(toolEvent(tool, 'workflow-policy-other/file.ts'), ctx));
+    assertCoordinatorDenied(await gate.handleToolCall(toolEvent(tool, 'workflow-policy/../agents/critic.md'), ctx));
+    assertCoordinatorDenied(await gate.handleToolCall(toolEvent(tool, 'skills/../agents/critic.md'), ctx));
+    assertCoordinatorDenied(await createToolCallGate({ evaluateDispatch: () => ({ allowed: true }), log: () => {} })
+      .handleToolCall(toolEvent(tool, '/synthetic-production/workflow-policy/file.ts'), coordinatorContext(fixture.root)));
+  }
+});
+
+function reviewBoundaryContext(t, dependencies = {}) {
+  const fixture = runtimeFixture(t, state => {
+    Object.assign(state.tasks.find(task => task.id === 'research01'), {
+      status: 'pending', evidenceIds: [], agentRoles: ['code-reviewer'],
+    });
+  });
+  const requestEntry = {
+    name: 'Review', taskId: 'research01', agent: 'code-reviewer',
+    effects: { kind: 'read', paths: ['spec.md'] },
+  };
+  const event = dispatchEvent(fixture, [requestEntry]);
+  const record = reviewSequenceFixture(fixture, [event]);
+  const gate = createToolCallGate({
+    evaluateDispatch,
+    discoverAgents: async () => ({ agents: [{ name: 'code-reviewer', tools: ['read'] }], searchedDirs: [] }),
+    log: () => {},
+    ...dependencies,
+  });
+  return { fixture, event, record, gate, context: { cwd: fixture.root, agent: { id: 'review-parent' } } };
+}
+
+test('reservation-time target drift keeps the generic E_REVIEW denial', async t => {
+  const ctx = reviewBoundaryContext(t);
+  const originalRegistry = readFileSync(ctx.record.registryPath, 'utf8');
+  const changed = JSON.parse(originalRegistry);
+  changed.candidates[0].dispatches[0].targetRevision = 'reservation-drift';
+  const changedRegistry = JSON.stringify(changed);
+  const runFile = path.join(ctx.fixture.root, '.omp/plans/review-runs.json');
+  const files = [ctx.fixture.statePath, ctx.record.registryPath, runFile];
+  const before = files.map(file => existsSync(file) ? readFileSync(file, 'utf8') : null);
+  let registryReads = 0;
+  const gate = createToolCallGate({
+    evaluateDispatch,
+    discoverAgents: async () => ({ agents: [{ name: 'code-reviewer', tools: ['read'] }], searchedDirs: [] }),
+    log: () => {},
+    readFileSync(file, ...args) {
+      if (path.resolve(file) === path.resolve(ctx.record.registryPath) && ++registryReads === 2) return changedRegistry;
+      return readFileSync(file, ...args);
+    },
+  });
+  const result = await gate.handleToolCall(ctx.event, ctx.context);
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_REVIEW:/);
+  assert.doesNotMatch(result.reason, /E_REVIEW_TARGET|reservation-drift/);
+  assert.equal(result.detail, undefined);
+  assert.ok(registryReads >= 2);
+  assert.deepEqual(files.map(file => existsSync(file) ? readFileSync(file, 'utf8') : null), before);
+});
+
+test('resume-time target drift keeps the generic E_REVIEW denial', async t => {
+  const ctx = reviewBoundaryContext(t);
+  const admitted = await ctx.gate.handleToolCall(ctx.event, ctx.context);
+  assert.equal(admitted, undefined);
+  ctx.gate.handleToolResult({
+    toolName: 'task', toolCallId: ctx.event.toolCallId,
+    details: { progress: [{ index: 0, id: 'SyntheticReviewChild' }] },
+  }, ctx.context);
+  ctx.gate.onAgentRegistryChange([{ id: 'SyntheticReviewChild', parentId: 'review-parent', status: 'idle' }]);
+
+  const registry = JSON.parse(readFileSync(ctx.record.registryPath, 'utf8'));
+  registry.candidates[0].dispatches[0].targetRevision = 'resume-drift';
+  writeFileSync(ctx.record.registryPath, JSON.stringify(registry));
+  const files = [
+    ctx.fixture.statePath, ctx.record.registryPath,
+    path.join(ctx.fixture.root, '.omp/plans/review-runs.json'),
+  ];
+  const before = files.map(file => existsSync(file) ? readFileSync(file, 'utf8') : null);
+  const denied = await ctx.gate.handleToolCall({
+    toolName: 'write', input: { path: 'agent://SyntheticReviewChild', content: 'resume' },
+  }, ctx.context);
+  assert.equal(denied?.block, true);
+  assert.match(denied.reason, /E_REVIEW:/);
+  assert.doesNotMatch(denied.reason, /E_REVIEW_TARGET|resume-drift/);
+  assert.equal(denied.detail, undefined);
+  assert.deepEqual(files.map(file => existsSync(file) ? readFileSync(file, 'utf8') : null), before);
+});
+
+test('second managed check returns its targeted issue code and detail', async t => {
+  let registryPath = null;
+  let changedRegistry = null;
+  let registryReads = 0;
+  const ctx = reviewBoundaryContext(t, {
+    readFileSync(file, ...args) {
+      if (registryPath === path.resolve(file) && ++registryReads === 1) return changedRegistry;
+      return readFileSync(file, ...args);
+    },
+  });
+  registryPath = path.resolve(ctx.record.registryPath);
+  const changed = JSON.parse(readFileSync(registryPath, 'utf8'));
+  changed.candidates[0].dispatches[0].targetRevision = 'second-check-drift';
+  changedRegistry = JSON.stringify(changed);
+
+  const result = await ctx.gate.handleToolCall(ctx.event, ctx.context);
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_REVIEW_TARGET/);
+  assert.match(result.detail, /targetRevision: descriptor=second-check-drift candidate=rev-1/);
+  assert.ok(registryReads >= 1);
+});

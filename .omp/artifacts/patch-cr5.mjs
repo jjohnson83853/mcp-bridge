@@ -1,0 +1,15 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+const src = '.omp/artifacts/header-transit-review-seed-cr4.json';
+const dst = '.omp/artifacts/header-transit-review-seed-cr5.json';
+const s = JSON.parse(readFileSync(src, 'utf8'));
+const name = 'ReviewHeaderSpecR5';
+s.intent = 'Dispatch ReviewHeaderSpecR5 (code-reviewer)';
+s.instructions = 'Specification-mode staged review for feature header-parameter-transit, revision r5 (CR3 repair). Treat the bound specification as a planner DRAFT, not an approved input or implementation plan. Confirm each CR3 finding is closed and that the repair introduced no new defect; bind exactly the reviewed inputs. Report Findings with severity and confidence, exact file:line anchors, and surgical repair direction; HIGH and MEDIUM findings block; LOW advisory only. End with exactly one recommendation line: APPROVE or REQUEST CHANGES.';
+s.workflowDispatch.revision = 'r5';
+const req = s.workflowDispatch.requests[0];
+req.name = name;
+req.targetCandidateId = 'header-parameter-transit-spec-r5';
+req.targetRevision = 'r5';
+s.tasks = [{ name, agent: 'code-reviewer', solutionSpace: 'Independent specification feasibility and correctness review; inspect named seams and planned oracles; do not design or implement repairs.', task: 'Review the exact candidate header-parameter-transit-spec-r5 revision r5, a targeted repair after a REQUEST CHANGES verdict, for source fidelity, correctness and implementability. First verify each CR3 finding is closed: H1 handshake counting is discovery-based with exactly one server-discover and zero initialize; H2 the pagination fixture names tools so the header tool sorts last under unique-id ordering; M1 deadline and cancel exceptions are scoped with zero breaker accounting; M2 the index claim is scoped to the install instant with a safe residual skew; M3 a positive-TTL SetCacheable fixture asserts an exact zero list delta; L1 the runbook oracle is structural plus inspection; L2 response capture is permitted in T1. Then re-verify every path:line anchor against the working tree and go-sdk v1.8.0; check requirement coverage, oracle distinctness, focused command patterns matching each named oracle, RED and GREEN discipline, envelope and task write scopes, and that no acceptance criterion was weakened by the repair. Report Findings with severity, confidence and exact anchors; block on any HIGH or MEDIUM finding.' }];
+writeFileSync(dst, JSON.stringify(s, null, 2) + '\n');
+console.log('ok');

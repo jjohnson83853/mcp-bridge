@@ -1,0 +1,20 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "header-parameter-transit",
+  "revision": "r6",
+  "requests": [
+    {
+      "name": "DeployedHeaderVerification",
+      "taskId": "T4",
+      "agent": "operator",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          "docs/runbooks/header-parameters.md"
+        ]
+      }
+    }
+  ]
+}

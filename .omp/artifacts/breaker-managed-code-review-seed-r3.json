@@ -1,0 +1,34 @@
+{
+  "intent": "Dispatch ReviewBreakerSpecR3 (code-reviewer)",
+  "instructions": "Specification-mode independent staged review. Root /home/opencode/projects/default/mcp-bridge; candidate upstream-breaker-recovery-spec-r3 revision r3, author planner. View .omp/artifacts/upstream-breaker-recovery-planner-r3.md as an immutable DRAFT, not implementation or approved authority. Shared risk packet: specification sections 3,4,5,6,7,8,9 and ticket 01 (R1-R8, AC1-AC12, T0/T1). Verify AC5 refresh AND reload test feasibility against public service/cmd interfaces; compare envelope with fallback instructions. Reconcile ticket acceptance, observability exceptions and planned race/coverage commands. Report severity+confidence, exact anchors and surgical fix direction for each finding. HIGH/MEDIUM block; LOW advisory. End with exactly one final heading \"### Recommendation\" containing ONLY: \"APPROVE\", \"REQUEST CHANGES\", or \"COMMENT\"; no text after verdict. A PASS-equivalent verdict requires zero HIGH or MEDIUM findings and explicit endorsement of the R/AC/T/envelope contracts.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "upstream-breaker-recovery",
+    "revision": "r3",
+    "requests": [
+      {
+        "name": "ReviewBreakerSpecR3",
+        "taskId": "CR1",
+        "agent": "code-reviewer",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/upstream-breaker-recovery/spec.md"
+          ]
+        },
+        "targetCandidateId": "upstream-breaker-recovery-spec-r3",
+        "targetRevision": "r3"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ReviewBreakerSpecR3",
+      "agent": "code-reviewer",
+      "solutionSpace": "Independent specification feasibility and correctness review (round 3); inspect named Go seams and planned deterministic oracles; do not design or implement repairs.",
+      "task": "Review the exact candidate in specification mode (Round 3). Check BeginProbe denial behavior versus discovery accounting, one-shot completion on error/cancellation, calls racing probe completion, runtime.go unchanged, stateful-session limitation and test scope. Verify resolution of C1 (single-flight probe ownership guard in Dedicated, preventing secondary probe claims if concurrent failures trigger RecordFailure mid-flight, with admission remaining strictly closed) and C2 (AC10 telemetry oracle bound to live RefresherOptions.Metrics instance asserting byte-identical families/keys, existing bridge_catalog_refresh_total increment, and warn sink log delivery). Verify AC5 refresh AND reload test feasibility against public service/cmd interfaces; compare envelope with fallback instructions. Reconcile ticket acceptance, observability exceptions and planned race/coverage commands. Report severity+confidence, exact anchors and surgical fix direction for each finding. HIGH/MEDIUM block; LOW advisory. End with exactly one final heading \"### Recommendation\" containing ONLY: \"APPROVE\", \"REQUEST CHANGES\", or \"COMMENT\"; no text after verdict. A PASS-equivalent verdict requires zero HIGH or MEDIUM findings and explicit endorsement of the R/AC/T/envelope contracts."
+    }
+  ]
+}

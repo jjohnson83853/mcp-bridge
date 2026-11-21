@@ -1,0 +1,18 @@
+--- FAIL: TestDedicatedParamHeadersReachPeerInStatelessMode (0.01s)
+    --- FAIL: TestDedicatedParamHeadersReachPeerInStatelessMode/single-page (0.00s)
+        header_params_test.go:198: CallTool outcome = &{InputRequired:false Failure:0xc000280880}; want success
+    --- FAIL: TestDedicatedParamHeadersReachPeerInStatelessMode/PageSize:1 (0.00s)
+        header_params_test.go:198: CallTool outcome = &{InputRequired:false Failure:0xc000112840}; want success
+--- FAIL: TestStatefulParamHeadersReuseDiscoveryCache (0.00s)
+    --- FAIL: TestStatefulParamHeadersReuseDiscoveryCache/zero-ttl (0.00s)
+        header_params_test.go:358: zero-ttl tools/list delta = 0; want refetch
+--- FAIL: TestParamHeaderFailurePathsUseSafeCodes (0.00s)
+    --- FAIL: TestParamHeaderFailurePathsUseSafeCodes/list_failure (0.00s)
+        header_params_test.go:404: failure = &{Code:upstream_protocol_error ExecutionState:unknown}; want backend_unavailable/not_started
+        header_params_test.go:408: tools/call delta after list failure = 1; want 0
+        header_params_test.go:411: tools/list delta after list failure = 0; want exactly 1
+    --- FAIL: TestParamHeaderFailurePathsUseSafeCodes/unsupported_version_observability (0.00s)
+        header_params_test.go:433: RuntimeErrorInfo = &{Code:unknown Kind:internal Retryable:false Remediation:inspect the bridge logs and configuration}; want configuration, nonretryable, and fixed remediation
+FAIL
+FAIL	github.com/jjohnson83853/mcp-bridge/internal/upstream	0.029s
+FAIL

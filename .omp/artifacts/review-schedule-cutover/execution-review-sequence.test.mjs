@@ -1,0 +1,1664 @@
+// SYNTHETIC TEST DATA ONLY: these isolated receipts confer no real authority.
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, writeFileSync, readFileSync, renameSync, rmSync, symlinkSync, realpathSync, lstatSync, statSync, readdirSync, unlinkSync } from 'node:fs';
+import path from 'node:path';
+import { evaluateDispatch } from './execution-contract.mjs';
+import { createToolCallGate } from './execution-gate.ts';
+import { runtimeFixture, legacySidecarFixture, dispatchEvent, reviewSequenceFixture } from './execution-gate-fixtures.mjs';
+import { v2Sha as sha } from './execution-state-fixtures.mjs';
+import { canonicalJson } from './execution-contract-binding.mjs';
+import { reviewSequenceIssues, recordReviewRun, reviewStallSignal, reviewMateriality, classifyReviewFindings, severityGate, roundCapIssues, lineageReviewHistory, reviewRoundCount, bindWithReviewRound } from './execution-review-sequence.mjs';
+import * as reviewSequence from './execution-review-sequence.mjs';
+import { cli } from './execution-state.mjs';
+
+test('review taper blocks by substantive class only in rounds one and two', () => {
+  const contradiction = { class: 'statement-contradiction', severity: 'LOW',
+    anchor: 'spec.md:12', fix: 'Reconcile the contradictory statements.' };
+  const mechanical = { class: 'stale-citation', severity: 'HIGH',
+    anchor: 'spec.md:20', fix: 'Refresh the citation.' };
+  assert.deepEqual(reviewSequence.blockingFindings({ round: 1, findings: [mechanical] }), []);
+  assert.deepEqual(reviewSequence.blockingFindings({ round: 1, findings: [contradiction] }), [contradiction]);
+  assert.deepEqual(reviewSequence.blockingFindings({ round: 2, findings: [contradiction] }), [contradiction]);
+  assert.deepEqual(reviewSequence.blockingFindings({ round: 3, findings: [contradiction] }), []);
+});
+
+function setup(t, mutate = () => {}, legacy = false) {
+  const f = (legacy ? legacySidecarFixture : runtimeFixture)(t, s => {
+    s.tasks[0].status = 'pending'; s.tasks[0].evidenceIds = [];
+    s.tasks[0].agentRoles = ['critic', 'code-reviewer', 'planner'];
+  });
+  const target = { targetCandidateId: 'synthetic-spec', targetRevision: f.state.revision };
+  const entries = [{ name: 'Review', taskId: 'research01', agent: 'critic', effects: { kind: 'read', paths: ['spec.md'] }, ...target }];
+  const event = dispatchEvent(f, entries);
+  const unbound = { toolName: 'task', toolCallId: 'synthetic-critic-unbound', input: { context: 'Read only', tasks: event.input.tasks.map(item => ({ ...item, ...target })) } };
+  const first = { toolName: 'task', toolCallId: 'synthetic-first', input: { context: 'Read only', tasks: [{ name: 'First', agent: 'code-reviewer', task: 'Review exact candidate', solutionSpace: 'Read-only candidate review.', ...target }] } };
+  const record = reviewSequenceFixture(f, [event, unbound, first]);
+  const { registry, registryPath, candidate } = record;
+  mutate(registry, f, record);
+  writeFileSync(registryPath, JSON.stringify(registry));
+  const { statePath, ...request } = JSON.parse(event.input.context).workflowDispatch;
+  const gate = () => createToolCallGate({ evaluateDispatch, discoverAgents: async () => ({ agents: ['critic', 'code-reviewer', 'planner'].map(name => ({ name, tools: ['read'] })), searchedDirs: [] }), log: () => {} });
+  return { f, registry, registryPath, entries, request, event, unbound, first, gate, candidate, record };
+}
+function syncReviewEntry(c) {
+  c.entries[0].agent = 'code-reviewer';
+  const wrapper = JSON.parse(c.event.input.context);
+  wrapper.workflowDispatch.requests[0] = structuredClone(c.entries[0]);
+  c.event.input.tasks[0].agent = 'code-reviewer';
+  c.event.input.context = JSON.stringify(wrapper);
+  c.candidate.dispatches[0].agent = 'code-reviewer';
+  c.candidate.dispatches[0].requestSha256 = sha(canonicalJson(c.entries[0]));
+  writeFileSync(c.registryPath, JSON.stringify(c.registry));
+}
+
+for (const [name, mutate, expected] of [
+  ['descriptor target differs from candidate identity', (c) => {
+    c.candidate.dispatches[0].targetRevision = 'descriptor-r2';
+  }, ['targetRevision', 'descriptor=descriptor-r2', 'candidate=${REVISION}']],
+  ['request target differs from matched descriptor', c => {
+    c.entries[0].targetRevision = 'request-r2';
+  }, ['targetRevision', 'request=request-r2', 'candidate/descriptor=${REVISION}']],
+  ['request pair absent when descriptor pair is absent', (c) => {
+    delete c.entries[0].targetCandidateId;
+    delete c.entries[0].targetRevision;
+    delete c.candidate.dispatches[0].targetCandidateId;
+    delete c.candidate.dispatches[0].targetRevision;
+  }, ['absent pair', 'request=targetCandidateId:<absent>', 'descriptor=targetCandidateId:<absent>']],
+  ['descriptor pair absent on a candidate without one', c => {
+    delete c.candidate.dispatches[0].targetCandidateId;
+    delete c.candidate.dispatches[0].targetRevision;
+  }, ['targetCandidateId', 'descriptor=<absent>', 'candidate=synthetic-spec']],
+]) test(`review target rejects ${name} before binding`, t => {
+  const c = setup(t);
+  mutate(c);
+  syncReviewEntry(c);
+  const [issue] = reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input });
+  assert.equal(issue?.code, 'E_REVIEW_TARGET');
+  for (const value of expected) {
+    assert.ok(issue.detail.includes(value.replace('${REVISION}', c.f.state.revision)), issue.detail);
+  }
+});
+
+test('review target detail sanitizes request and descriptor values locally', t => {
+  const c = setup(t);
+  c.entries[0].targetRevision = `r2\n${'x'.repeat(600)}`;
+  syncReviewEntry(c);
+  const [issue] = reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input });
+  assert.equal(issue?.code, 'E_REVIEW_TARGET');
+  assert.equal(issue.detail.includes('\n'), false);
+  assert.ok(issue.detail.includes(`request=r2${'x'.repeat(510)}`));
+  assert.ok(issue.detail.includes(`candidate/descriptor=${c.f.state.revision}`));
+});
+
+test('descriptor target values are sanitized and bounded independently', t => {
+  const c = setup(t);
+  c.candidate.dispatches[0].targetRevision = `r2\n${'x'.repeat(600)}`;
+  syncReviewEntry(c);
+  const [issue] = reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input });
+  assert.equal(issue?.code, 'E_REVIEW_TARGET');
+  assert.equal(issue.detail.includes('\n'), false);
+  assert.ok(issue.detail.includes(`descriptor=r2${'x'.repeat(510)}`));
+  assert.ok(issue.detail.includes(`candidate=${c.f.state.revision}`));
+});
+
+test('target mismatch precedes stale dispatch-byte binding', t => {
+  const c = setup(t);
+  c.entries[0].targetRevision = 'request-r2';
+  const [issue] = reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input });
+  assert.equal(issue?.code, 'E_REVIEW_TARGET');
+  assert.match(issue.detail, /targetRevision: request=request-r2/);
+});
+
+test('missing target pair precedes candidate revision mismatch', t => {
+  const c = setup(t);
+  delete c.entries[0].targetCandidateId;
+  delete c.entries[0].targetRevision;
+  syncReviewEntry(c);
+  const [issue] = reviewSequenceIssues(c.f.root, c.entries, {}, {
+    payload: c.event.input, revision: 'stale-state-revision',
+  });
+  assert.equal(issue?.code, 'E_REVIEW_TARGET');
+  assert.match(issue.detail, /absent pair/);
+});
+
+test('target metadata changes candidate fingerprints and stale receipt digests still fail', t => {
+  const c = setup(t);
+  const reviewerEntries = c.first.input.tasks;
+  const initialBindings = [];
+  assert.deepEqual(reviewSequenceIssues(c.f.root, reviewerEntries, {}, {
+    payload: c.first.input, bindings: initialBindings,
+  }), []);
+  const run = { ...initialBindings[0], invocationId: 'synthetic-review-run' };
+  recordReviewRun(c.f.root, run, 'pending');
+  recordReviewRun(c.f.root, run, 'succeeded');
+
+  c.candidate.dispatches[0].targetRevision = 'tampered-unmatched-descriptor';
+  writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  const changedBindings = [];
+  assert.deepEqual(reviewSequenceIssues(c.f.root, reviewerEntries, {}, {
+    payload: c.first.input, bindings: changedBindings,
+  }), []);
+  const storedRun = JSON.parse(readFileSync(path.join(c.f.root, '.omp/plans/review-runs.json'), 'utf8'))
+    .runs.find(item => item.candidateId === c.candidate.id);
+  assert.notEqual(storedRun.fingerprint, changedBindings[0].fingerprint);
+
+  const receipt = setup(t);
+  receipt.candidate.codeReview.source.sha256 = '0'.repeat(64);
+  writeFileSync(receipt.registryPath, JSON.stringify(receipt.registry));
+  assert.equal(reviewSequenceIssues(receipt.f.root, receipt.entries, {}, {
+    payload: receipt.event.input,
+  })[0]?.code, 'E_REVIEW');
+});
+
+
+for (const [name, mutate] of [
+  ['missing', r => { delete r.candidates[0].codeReview; }],
+  ['rejected', r => { r.candidates[0].codeReview.verdict = 'REQUEST CHANGES'; }],
+  ['comment', r => { r.candidates[0].codeReview.verdict = 'COMMENT'; }],
+  ['pending', r => { r.candidates[0].codeReview.verdict = 'pending'; }],
+  ['substring', r => { r.candidates[0].codeReview.verdict = 'NOT APPROVE'; }],
+  ['stale revision', r => { r.candidates[0].codeReview.revision = 'old'; }],
+  ['wrong input set', r => { r.candidates[0].codeReview.inputs = []; }],
+  ['self review', r => { r.candidates[0].codeReview.reviewerId = 'planner'; }],
+  ['same reviewer', r => { r.candidates[0].codeReview.reviewerId = 'synthetic-critic'; }],
+  ['repaired input', (r, f) => { writeFileSync(path.join(f.root, 'spec.md'), 'repaired'); }],
+  ['malformed receipt', r => { r.candidates[0].codeReview = 'APPROVE'; }],
+  ['source rejection', (r, f, record) => { record.observation.output = '### Recommendation\nREQUEST CHANGES\n'; const source = JSON.stringify(record.observation); writeFileSync(record.sourcePath, source); r.candidates[0].codeReview.source.sha256 = sha(source); }],
+]) test(`Critic denies ${name} approval in shared CLI evaluator and native preparation`, async t => {
+  const c = setup(t, mutate);
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, false);
+  const unbound = { toolName: 'task', input: { context: 'Read only', tasks: c.event.input.tasks } };
+  assert.match((await c.gate().handleToolCall(unbound, { cwd: c.f.root }))?.reason ?? '', /E_REVIEW/);
+});
+
+test('independent positive exact-input review unlocks managed and unbound Critic', async t => {
+  const c = setup(t);
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, true);
+  assert.equal(await c.gate().handleToolCall(c.event, { cwd: c.f.root }), undefined);
+  assert.equal(await c.gate().handleToolCall(c.unbound, { cwd: c.f.root }), undefined);
+});
+
+test('same-candidate review batch fails wholly despite a prior positive verdict', async t => {
+  const c = setup(t);
+  const first = { name: 'First', agent: 'code-reviewer', task: 'Review exact candidate', solutionSpace: 'Read-only candidate review.' };
+  const result = await c.gate().handleToolCall({ toolName: 'task', input: { context: 'Read only', tasks: [...c.event.input.tasks, first] } }, { cwd: c.f.root });
+  assert.match(result?.reason ?? '', /E_REVIEW/);
+});
+
+test('unregistered Critic cannot bypass via an unmanaged workspace or renamed task', async t => {
+  const c = setup(t); const event = { toolName: 'task', input: { ...c.event.input.tasks[0], name: 'Unknown' } };
+  assert.match((await c.gate().handleToolCall(event, { cwd: c.f.root }))?.reason ?? '', /E_REVIEW/);
+});
+
+test('legacy canonical state plus established schema2 sidecar preserves dispatch compatibility', async t => {
+  const c = setup(t, () => {}, true);
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, true);
+  assert.equal(await c.gate().handleToolCall(c.event, { cwd: c.f.root }), undefined);
+});
+
+
+function saveObservation(c) {
+  const runs = path.join(c.f.root, '.omp/plans/review-runs.json');
+  if (existsSync(runs)) c.record.observation.invocationId = JSON.parse(readFileSync(runs)).runs
+    .find(run => run.candidateId === c.candidate.id)?.invocationId;
+  const source = JSON.stringify(c.record.observation);
+  writeFileSync(c.record.sourcePath, source);
+  c.candidate.codeReview.source.sha256 = sha(source);
+  writeFileSync(c.registryPath, JSON.stringify(c.registry));
+}
+
+for (const output of ['APPROVE', '### Recommendation\nNOT APPROVE', '### Recommendation\nCOMMENT',
+  '### Recommendation\nAPPROVE\n### Recommendation\nAPPROVE', '### Recommendation\nAPPROVE / REQUEST CHANGES / COMMENT',
+  '### Recommendation\nAPPROVE\nextra text']) test(`non-exact installed verdict cannot unlock: ${JSON.stringify(output)}`, t => {
+  const c = setup(t); c.record.observation.output = output; saveObservation(c);
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, false);
+});
+
+test('explicit policy PASS is supported, but installed PASS is not', t => {
+  const c = setup(t); c.record.observation.output = '### Verdict\nPASS\n';
+  c.candidate.codeReview.verdict = 'PASS'; saveObservation(c);
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, false);
+  c.candidate.codeReview.format = 'policy'; saveObservation(c);
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, true);
+});
+
+test('repairing sidecar hashes or revision alone cannot reuse an older observation', async t => {
+  const c = setup(t);
+  writeFileSync(path.join(c.f.root, 'extra.md'), 'before');
+  c.candidate.inputs.push({ path: 'extra.md', sha256: sha('before') });
+  c.record.observation.inputs = structuredClone(c.candidate.inputs); saveObservation(c);
+  writeFileSync(path.join(c.f.root, 'extra.md'), 'after');
+  c.candidate.inputs[1].sha256 = sha('after');
+  c.candidate.codeReview.inputs = structuredClone(c.candidate.inputs);
+  writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, false);
+  assert.match((await c.gate().handleToolCall(c.unbound, { cwd: c.f.root }))?.reason ?? '', /E_REVIEW/);
+  c.record.observation.inputs = structuredClone(c.candidate.inputs); saveObservation(c);
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, true);
+});
+
+test('changed native task or wrapper instructions cannot reuse an approval', async t => {
+  for (const change of [e => { e.input.tasks[0].task += ' changed'; }, e => { const w = JSON.parse(e.input.context); w.instructions += ' changed'; e.input.context = JSON.stringify(w); }]) {
+    const c = setup(t); change(c.event);
+    assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, false);
+    assert.match((await c.gate().handleToolCall(c.event, { cwd: c.f.root }))?.reason ?? '', /E_REVIEW/);
+  }
+});
+
+test('missing payload, sidecar and malformed registry fail closed without blocking planner discovery', async t => {
+  const c = setup(t);
+  assert.equal(evaluateDispatch(c.f.statePath, c.request).allowed, false);
+  for (const bytes of ['not json', JSON.stringify({ schemaVersion: 2, candidates: [] }), JSON.stringify({ schemaVersion: 1, candidates: [c.candidate, c.candidate] })]) {
+    writeFileSync(c.registryPath, bytes);
+    assert.match((await c.gate().handleToolCall(c.unbound, { cwd: c.f.root }))?.reason ?? '', /E_REVIEW/);
+  }
+  rmSync(c.registryPath);
+  assert.match((await c.gate().handleToolCall(c.unbound, { cwd: c.f.root }))?.reason ?? '', /E_REVIEW/);
+  assert.equal(await c.gate().handleToolCall({ toolName: 'task', input: { name: 'Discover', agent: 'planner', task: 'Inspect inputs', solutionSpace: 'Read-only planning.' } }, { cwd: c.f.root }), undefined);
+});
+
+test('separate native calls prohibit both overlap directions and invalidate old positive source after rerun', async t => {
+  const c = setup(t); const gate = c.gate(); const ctx = { cwd: c.f.root };
+  assert.equal(await gate.handleToolCall(c.first, ctx), undefined);
+  assert.match((await gate.handleToolCall(c.unbound, ctx))?.reason ?? '', /E_REVIEW/);
+  gate.handleToolResult({ toolName: 'task', toolCallId: c.first.toolCallId, details: { results: [{ index: 0, exitCode: 0 }] } }, ctx);
+  assert.match((await gate.handleToolCall(c.unbound, ctx))?.reason ?? '', /E_REVIEW/);
+  // New actual observation in this synthetic fixture; changed source, same input.
+  c.record.observation.output = 'Review completed again.\n### Recommendation\nAPPROVE\n'; saveObservation(c);
+  assert.equal(await gate.handleToolCall(c.unbound, ctx), undefined, 'new positive source recovers the completed prerequisite in the same session');
+  assert.match((await gate.handleToolCall(c.first, ctx))?.reason ?? '', /E_REVIEW/);
+  const unknown = structuredClone(c.first); unknown.input.tasks[0].name = 'Unknown candidate';
+  assert.match((await gate.handleToolCall(unknown, ctx))?.reason ?? '', /E_REVIEW/);
+  gate.handleToolResult({ toolName: 'task', toolCallId: c.unbound.toolCallId, details: { results: [{ index: 0, exitCode: 0 }] } }, ctx);
+  assert.equal(await gate.handleToolCall(c.first, ctx), undefined);
+});
+
+test('disjoint candidates remain independent while overlapping inputs or ambiguous identities deny', async t => {
+  const c = setup(t);
+  const other = structuredClone(c.candidate);
+  other.id = 'independent'; other.inputs = [{ path: 'other.md', sha256: sha('independent') }];
+  writeFileSync(path.join(c.f.root, 'other.md'), 'independent');
+  other.codeReview = null;
+  other.dispatches = other.dispatches.filter(d => d.agent === 'code-reviewer');
+  other.dispatches.forEach(dispatch => { dispatch.targetCandidateId = other.id; });
+  c.first.input.tasks[0].targetCandidateId = other.id;
+  c.candidate.dispatches = c.candidate.dispatches.filter(d => d.agent === 'critic');
+  c.record.observation.dispatches = structuredClone(c.candidate.dispatches);
+  c.registry.candidates.push(other); saveObservation(c);
+  const batch = { ...c.unbound.input, tasks: [...c.unbound.input.tasks, ...c.first.input.tasks] };
+  assert.deepEqual(reviewSequenceIssues(c.f.root, batch.tasks, {}, { payload: batch }), []);
+  assert.equal(await c.gate().handleToolCall({ toolName: 'task', toolCallId: 'synthetic-independent-batch', input: batch }, { cwd: c.f.root }), undefined);
+  other.inputs = structuredClone(c.candidate.inputs); writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  assert.equal(reviewSequenceIssues(c.f.root, batch.tasks, {}, { payload: batch })[0].code, 'E_REVIEW');
+});
+
+for (const [label, definition] of [
+  ['installed readonly', { name: 'code-reviewer', tools: ['read', 'grep', 'glob', 'find'], spawns: [] }],
+  ['write capable', { name: 'code-reviewer', tools: ['read', 'write'] }],
+  ['spawn capable', { name: 'code-reviewer', tools: ['read'], spawns: ['engineer'] }],
+]) test(`first-stage preparation preserves profile authority: ${label}`, async t => {
+  const c = setup(t);
+  const gate = createToolCallGate({ evaluateDispatch, log: () => {}, discoverAgents: async () => ({ agents: [definition], searchedDirs: [] }) });
+  const result = await gate.handleToolCall(c.first, { cwd: c.f.root });
+  if (label === 'installed readonly') assert.equal(result, undefined);
+  else assert.match(result?.reason ?? '', /E_READONLY_NOT_EXEMPT/);
+});
+
+test('shadowed first-stage preparation is denied despite a valid candidate binding', async t => {
+  const c = setup(t); const directory = path.join(c.f.root, 'agents'); mkdirSync(directory);
+  writeFileSync(path.join(directory, 'code-reviewer.md'), '---\nname: code-reviewer\ntools: [write]\n---\n');
+  const gate = createToolCallGate({ evaluateDispatch, log: () => {}, discoverAgents: async () => ({
+    agents: [{ name: 'code-reviewer', filePath: '/bundled/code-reviewer.md', tools: ['read'] }], searchedDirs: [directory],
+  }) });
+  assert.match((await gate.handleToolCall(c.first, { cwd: c.f.root }))?.reason ?? '', /E_READONLY_NOT_EXEMPT/);
+});
+
+for (const [label, mutate, expected] of [
+  ['passing', () => {}, 0],
+  ['missing', r => { r.candidates[0].codeReview = null; }, 1],
+  ['rejected', r => { r.candidates[0].codeReview.verdict = 'REQUEST CHANGES'; }, 1],
+  ['stale', r => { r.candidates[0].codeReview.revision = 'stale'; }, 1],
+  ['repaired declaration', r => { r.candidates[0].inputs = []; }, 1],
+]) test(`prepare/check-dispatch both apply the same exact-source prerequisite: ${label}`, t => {
+  const c = setup(t, mutate);
+  const wrapper = JSON.parse(c.event.input.context);
+  const seed = { intent: 'Review candidate', instructions: wrapper.instructions, workflowDispatch: wrapper.workflowDispatch, tasks: c.event.input.tasks };
+  const seedPath = path.join(c.f.root, 'seed.json');
+  const requestPath = path.join(c.f.root, 'request.json');
+  const payloadPath = path.join(c.f.root, 'payload.json');
+  writeFileSync(seedPath, JSON.stringify(seed)); writeFileSync(requestPath, JSON.stringify(c.request));
+  writeFileSync(payloadPath, JSON.stringify(c.event.input));
+  assert.equal(cli(['prepare-dispatch', seedPath]).code, expected);
+  assert.equal(cli(['check-dispatch', c.f.statePath, requestPath, payloadPath]).code, expected);
+  assert.equal(cli(['check-dispatch', c.f.statePath, requestPath]).code, 1, 'Critic needs exact native payload even with valid observation');
+});
+
+test('schema2 normalized CRLF spec binding coexists with exact raw reviewed bytes', t => {
+  const c = setup(t); const specPath = path.join(c.f.root, 'spec.md');
+  const crlf = readFileSync(specPath, 'utf8').replace(/\n/g, '\r\n'); writeFileSync(specPath, crlf);
+  c.candidate.inputs[0].sha256 = sha(crlf);
+  c.candidate.codeReview.inputs = structuredClone(c.candidate.inputs);
+  c.record.observation.inputs = structuredClone(c.candidate.inputs); saveObservation(c);
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, true);
+});
+
+test('actual registry child settlement clears review reservation but not the invalidated old source', async t => {
+  const c = setup(t); const gate = c.gate(); const ctx = { cwd: c.f.root, agent: { id: 'synthetic-parent' } };
+  assert.equal(await gate.handleToolCall(c.first, ctx), undefined);
+  gate.handleToolResult({ toolName: 'task', toolCallId: c.first.toolCallId, details: { progress: [{ index: 0, id: 'synthetic-child' }] } }, ctx);
+  gate.onAgentRegistryChange([{ id: 'synthetic-child', parentId: 'synthetic-parent', status: 'idle' }]);
+  assert.match((await gate.handleToolCall(c.unbound, ctx))?.reason ?? '', /E_REVIEW/);
+  c.record.observation.output = 'SYNTHETIC fresh settled result.\n### Recommendation\nAPPROVE\n'; saveObservation(c);
+  assert.match((await c.gate().handleToolCall(c.unbound, ctx))?.reason ?? '', /E_REVIEW/, 'registry-only settlement is not successful terminal evidence');
+});
+
+test('managed coordinator can record and clear only the exact review-observation sidecar through native writes', async t => {
+  const c = setup(t); const virtualRoot = '/synthetic-review-project';
+  // Keep real lock I/O in the disposable fixture while the gate sees a non-/tmp cwd.
+  const local = file => file === virtualRoot || file.startsWith(virtualRoot + '/') ? c.f.root + file.slice(virtualRoot.length) : file;
+  const virtual = file => file === c.f.root || file.startsWith(c.f.root + '/') ? virtualRoot + file.slice(c.f.root.length) : file;
+  const gate = createToolCallGate({ evaluateDispatch, log: () => {},
+    discoverAgents: async () => ({ agents: ['critic', 'code-reviewer'].map(name => ({ name, tools: ['read'] })), searchedDirs: [] }),
+    readFileSync: (file, encoding) => readFileSync(local(file), encoding),
+    realpathSync: file => virtual(realpathSync(local(file))),
+    lstatSync: file => lstatSync(local(file)), statSync: file => statSync(local(file)),
+    readdirSync: (file, options) => readdirSync(local(file), options),
+    openSync: (file, ...args) => openSync(local(file), ...args),
+    closeSync, fsyncSync,
+    unlinkSync: file => unlinkSync(local(file)),
+    writeFileSync: (file, bytes, options) => writeFileSync(typeof file === 'number' ? file : local(file), bytes, options),
+    renameSync: (from, to) => renameSync(local(from), local(to)),
+  });
+  const ctx = { cwd: virtualRoot, agent: { kind: 'main', id: 'synthetic-main' } };
+  const write = (file, content) => gate.handleToolCall({ toolName: 'write', input: { path: virtual(file), content } }, ctx);
+  const positive = structuredClone(c.candidate.codeReview);
+  c.candidate.codeReview = null;
+  const pending = JSON.stringify(c.registry);
+  assert.equal(await write(c.registryPath, pending), undefined);
+  writeFileSync(c.registryPath, pending); // Execute the allowed synthetic native write.
+  assert.match((await gate.handleToolCall(c.unbound, ctx))?.reason ?? '', /E_REVIEW/);
+  assert.equal(await gate.handleToolCall(c.first, ctx), undefined);
+  gate.handleToolResult({ toolName: 'task', toolCallId: c.first.toolCallId, details: { results: [{ index: 0, exitCode: 0 }] } }, ctx);
+  const sourcePath = path.join(c.f.root, '.omp/artifacts/new-review.json'); mkdirSync(path.dirname(sourcePath), { recursive: true });
+  c.record.observation.invocationId = JSON.parse(readFileSync(path.join(c.f.root, '.omp/plans/review-runs.json'))).runs[0].invocationId;
+  c.record.observation.output = 'SYNTHETIC actual completed new observation.\n### Recommendation\nAPPROVE\n';
+  const source = JSON.stringify(c.record.observation);
+  assert.equal(await write(sourcePath, source), undefined); writeFileSync(sourcePath, source);
+  c.candidate.codeReview = { ...positive, source: { path: sourcePath, sha256: sha(source) } };
+  const completed = JSON.stringify(c.registry);
+  assert.equal(await write(c.registryPath, completed), undefined); writeFileSync(c.registryPath, completed);
+  assert.equal(await gate.handleToolCall(c.unbound, ctx), undefined);
+  for (const file of [c.f.statePath, path.join(c.f.root, '.omp/plans/approval.json')]) {
+    assert.match((await write(file, '{}'))?.reason ?? '', /E_COORDINATOR_EDIT_FORBIDDEN/);
+  }
+  rmSync(c.registryPath); symlinkSync(sourcePath, c.registryPath);
+  assert.match((await write(c.registryPath, '{}'))?.reason ?? '', /E_COORDINATOR_EDIT_FORBIDDEN/);
+});
+
+function settleReview(c, gate, ctx, event, childId, exitCode = 0) {
+  gate.handleToolResult({ toolName: 'task', toolCallId: event.toolCallId,
+    details: { results: [{ index: 0, id: childId, exitCode }] } }, ctx);
+}
+
+test('H1 settled reviewers enforce both overlap directions on individual and broadcast resumes', async t => {
+  for (const target of ['synthetic-first-child', 'all']) {
+    const c = setup(t); const gate = c.gate();
+    const ctx = { cwd: c.f.root, agent: { id: 'synthetic-parent' } };
+    assert.equal(await gate.handleToolCall(c.first, ctx), undefined);
+    settleReview(c, gate, ctx, c.first, 'synthetic-first-child');
+    // A new observation of the latest run, not replayed bytes.
+    const runs = path.join(c.f.root, '.omp/plans/review-runs.json');
+    if (existsSync(runs)) c.record.observation.invocationId = JSON.parse(readFileSync(runs)).runs[0].invocationId;
+    c.record.observation.output = 'SYNTHETIC new review.\n### Recommendation\nAPPROVE\n'; saveObservation(c);
+    assert.equal(await gate.handleToolCall(c.unbound, ctx), undefined);
+    const resume = { toolName: 'write', toolCallId: `resume-${target}`, input: { path: `agent://${target}`, content: 'Review the same candidate again.' } };
+    assert.match((await gate.handleToolCall(resume, ctx))?.reason ?? '', /E_REVIEW/);
+    settleReview(c, gate, ctx, c.unbound, 'synthetic-critic-child');
+    if (target === 'all') {
+      assert.match((await gate.handleToolCall(resume, ctx))?.reason ?? '', /E_REVIEW/, 'broadcast cannot restart both dependent stages');
+      resume.input.path = 'agent://synthetic-first-child';
+    }
+    assert.equal(await gate.handleToolCall(resume, ctx), undefined);
+    assert.match((await gate.handleToolCall(c.unbound, ctx))?.reason ?? '', /E_REVIEW/);
+  }
+});
+
+test('H1 resumed reviewer rejects changed candidate revision and foreign owner; progress stays read-only', async t => {
+  const c = setup(t); const gate = c.gate();
+  const ctx = { cwd: c.f.root, agent: { id: 'synthetic-parent' } };
+  assert.equal(await gate.handleToolCall(c.first, ctx), undefined);
+  settleReview(c, gate, ctx, c.first, 'synthetic-first-child');
+  const resume = { toolName: 'write', toolCallId: 'resume', input: { path: 'agent://synthetic-first-child', content: 'Review again.' } };
+  assert.match((await gate.handleToolCall(resume, { ...ctx, agent: { id: 'foreign' } }))?.reason ?? '', /E_REVIEW/);
+  c.candidate.revision = 'repaired'; writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  assert.match((await gate.handleToolCall(resume, ctx))?.reason ?? '', /E_REVIEW/);
+  assert.equal(await gate.handleToolCall({ ...resume, input: { path: 'agent://synthetic-first-child?progress' } }, ctx), undefined);
+});
+
+test('H2 clear failed rerun cannot replay genuine approval in fresh native gate or CLI', async t => {
+  const c = setup(t); const old = structuredClone(c.candidate.codeReview);
+  const gate = c.gate(); const ctx = { cwd: c.f.root };
+  c.candidate.codeReview = null; writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  assert.equal(await gate.handleToolCall(c.first, ctx), undefined);
+  settleReview(c, gate, ctx, c.first, 'failed-child', 1);
+  c.candidate.codeReview = old; writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, false);
+  assert.match((await c.gate().handleToolCall(c.unbound, ctx))?.reason ?? '', /E_REVIEW/);
+});
+
+test('H2 latest successful invocation is required; pending, failed and superseded results cannot unlock', async t => {
+  const c = setup(t); const gate = c.gate(); const ctx = { cwd: c.f.root };
+  assert.equal(await gate.handleToolCall(c.first, ctx), undefined);
+  c.record.observation.output = 'SYNTHETIC pending output.\n### Recommendation\nAPPROVE\n'; saveObservation(c);
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, false);
+  settleReview(c, gate, ctx, c.first, 'first-child');
+  saveObservation(c);
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, true);
+  const old = structuredClone(c.candidate.codeReview);
+  const rerun = structuredClone(c.first); rerun.toolCallId = 'synthetic-rerun';
+  assert.equal(await gate.handleToolCall(rerun, ctx), undefined);
+  settleReview(c, gate, ctx, c.first, 'first-child');
+  c.record.observation.output = 'SYNTHETIC rerun.\n### Recommendation\nAPPROVE\n'; saveObservation(c);
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, false, 'delayed old terminal cannot settle latest invocation');
+  settleReview(c, gate, ctx, rerun, 'rerun-child', 1);
+  saveObservation(c);
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, false);
+  c.candidate.codeReview = old; writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  assert.equal(evaluateDispatch(c.f.statePath, c.request, { reviewPayload: c.event.input }).allowed, false);
+});
+const reviewRounds = (lastRevision = 7, firstRevision = 3) => Array.from(
+  { length: lastRevision - firstRevision + 1 }, (_, index) => {
+    const revision = firstRevision + index;
+    const findings = [
+      { id: 'ADV-B', status: 'OPEN', severity: 'blocking', evidenceClass: 'correctness', anchor: 'src/a.mjs:12' },
+      { id: 'ADV-H', status: 'OPEN', severity: 'blocking', evidenceClass: 'security', anchor: 'src/b.mjs:8' },
+    ];
+    return {
+      candidateId: `candidate-r${revision}`,
+      revision: `r${revision}`,
+      verdict: 'REVISE',
+      inputHashes: { spec: `hash-${revision}` },
+      findings,
+      priorFindings: structuredClone(findings),
+    };
+  },
+);
+
+test('AC1 five non-passing review rounds expose a stalled owner-decision signal', () => {
+  const reviewsHistory = reviewRounds();
+  const candidate = { id: 'candidate-r7', revision: 'r7' };
+  const registry = { schemaVersion: 1, candidates: reviewsHistory.map(({ candidateId, revision }) => ({ id: candidateId, revision })) };
+  const signal = reviewStallSignal(candidate, registry, reviewsHistory);
+  assert.deepEqual(signal, {
+    lineageKey: 'candidate',
+    nonPassStreak: 5,
+    noProgressCount: 4,
+    carriedOpenIds: ['ADV-B', 'ADV-H'],
+    newBlockingIds: [],
+    stalled: true,
+  });
+});
+
+test('AC2 one REVISE round does not stall', () => {
+  const reviewsHistory = reviewRounds(3, 3);
+  const signal = reviewStallSignal({ id: 'candidate-r3', revision: 'r3' },
+    { candidates: [{ id: 'candidate-r3' }] }, reviewsHistory);
+  assert.equal(signal.nonPassStreak, 1);
+  assert.equal(signal.stalled, false);
+});
+
+test('AC3 exact-locator findings route to technical repair and create no owner questions', () => {
+  const findings = [
+    { id: 'F-1', path: 'src/a.mjs', locator: 'line 12', requiredChange: 'Handle empty input.', withinEnvelope: true },
+    { id: 'F-2', path: 'src/b.mjs', locator: 'function parse', requiredChange: 'Preserve the existing format.', withinEnvelope: true },
+  ];
+  const classified = classifyReviewFindings(findings, []);
+  assert.deepEqual(classified.ownerDecision, []);
+  assert.deepEqual(classified.technicalRepair, findings);
+});
+
+test('AC4 hash-only changes are non-material and revision renames preserve counters', () => {
+  const priorReview = { inputHashes: { spec: 'before' }, findings: [{ id: 'B-1', severity: 'blocking', status: 'OPEN', evidenceClass: 'correctness' }] };
+  const nextReview = { inputHashes: { spec: 'after' }, findings: structuredClone(priorReview.findings) };
+  assert.deepEqual(reviewMateriality(priorReview, nextReview), { material: false, resolvedIds: [], newEvidenceClasses: [] });
+  const reviewsHistory = reviewRounds();
+  const beforeRestart = reviewStallSignal({ id: 'candidate-r7' }, { candidates: [] }, reviewsHistory);
+  const registryAfterRename = JSON.parse(JSON.stringify({
+    schemaVersion: 1,
+    candidates: [{ id: 'candidate-r8', revision: 'r8', lineageKey: beforeRestart.lineageKey,
+      nonPassStreak: beforeRestart.nonPassStreak, noProgressCount: beforeRestart.noProgressCount }],
+    reviewsHistory,
+  }));
+  const afterRestart = reviewStallSignal({ id: 'candidate-r8' }, registryAfterRename, registryAfterRename.reviewsHistory);
+  assert.equal(afterRestart.lineageKey, 'candidate');
+  assert.equal(afterRestart.nonPassStreak, 5);
+  assert.equal(afterRestart.noProgressCount, 4);
+});
+
+test('AC6 another lineage keeps independent review counters', () => {
+  const signal = reviewStallSignal({ id: 'other-r1' }, { candidates: [] }, [
+    { candidateId: 'other-r1', revision: 'r1', verdict: 'REVISE', findings: [] },
+  ]);
+  assert.equal(signal.lineageKey, 'other');
+  assert.equal(signal.nonPassStreak, 1);
+  assert.equal(signal.stalled, false);
+});
+
+test('AC7 serialized registry survives restart with an identical derived signal', () => {
+  const registry = { schemaVersion: 1, candidates: [{ id: 'candidate-r7', revision: 'r7' }], reviewsHistory: reviewRounds() };
+  const candidate = { id: 'candidate-r7', revision: 'r7' };
+  const expected = reviewStallSignal(candidate, registry, registry.reviewsHistory);
+  const restartedRegistry = JSON.parse(JSON.stringify(registry));
+  assert.doesNotThrow(() => JSON.stringify(restartedRegistry));
+  assert.deepEqual(reviewStallSignal(candidate, restartedRegistry, restartedRegistry.reviewsHistory), expected);
+});
+test('review materiality requires resolved anchors or new blocking evidence classes', () => {
+  const priorReview = {
+    findings: [{ id: 'B-1', severity: 'blocking', anchor: 'src/a.mjs:4', evidenceClass: 'correctness' }],
+  };
+  const nextReview = {
+    findings: [
+      { id: 'B-1', severity: 'blocking', evidenceClass: 'correctness' },
+      { id: 'B-2', severity: 'blocking', evidenceClass: 'security' },
+    ],
+    priorFindings: [{ id: 'B-1', status: 'RESOLVED', anchor: 'src/a.mjs:9' }],
+  };
+  assert.deepEqual(reviewMateriality(priorReview, nextReview), {
+    material: true, resolvedIds: ['B-1'], newEvidenceClasses: ['security'],
+  });
+});
+
+test('mixed owner and repo-answerable findings split, demoting only the repair subset', () => {
+  const owner = { id: 'D-1', decisionId: 'D-1', question: 'Change the settled decision?' };
+  const repair = { id: 'F-1', repoAnswerable: true, summary: 'Correct an implementation detail.' };
+  const result = classifyReviewFindings([owner, repair], ['D-1']);
+  assert.deepEqual(result.ownerDecision, [owner]);
+  assert.deepEqual(result.technicalRepair, [repair]);
+  assert.deepEqual(result.demoted, [repair]);
+});
+test('unsuffixed candidate IDs retain full lineage and PASS resets the consecutive streak', () => {
+  const candidateId = 'candidate-r8-beta';
+  const reviewsHistory = [
+    { id: candidateId, revision: 'r1', verdict: 'REVISE', findings: [], priorFindings: [] },
+    { candidateId, revision: 'r2', verdict: 'PASS', findings: [], priorFindings: [] },
+    { id: candidateId, revision: 'r3', verdict: 'REVISE', findings: [], priorFindings: [] },
+  ];
+  const signal = reviewStallSignal({ id: candidateId }, { candidates: [] }, reviewsHistory);
+  assert.equal(signal.lineageKey, candidateId);
+  assert.equal(signal.nonPassStreak, 1);
+  assert.equal(signal.noProgressCount, 2);
+  assert.equal(signal.stalled, false);
+});
+
+test('review signal rejects unparsable lineage history instead of inventing counters', () => {
+  assert.throws(() => reviewStallSignal({ id: 'candidate' }, { candidates: [] }, [
+    { candidateId: 'candidate', revision: 'r1', verdict: 'REVISE', findings: null },
+  ]));
+  assert.throws(() => reviewStallSignal({ id: '' }, { candidates: [] }, []));
+});
+
+test('materiality recognizes multiple evidence classes on a new blocking finding', () => {
+  const result = reviewMateriality(
+    { findings: [{ id: 'B-1', severity: 'blocking', evidenceClasses: ['correctness'] }] },
+    { findings: [{ id: 'B-2', severity: 'blocking', evidenceClasses: ['security', 'privacy'] }] },
+  );
+  assert.deepEqual(result, { material: true, resolvedIds: [], newEvidenceClasses: ['security', 'privacy'] });
+});
+
+test('severityGate uses class and round, never severity or blocking flags', () => {
+  const findings = [
+    { id: 'H1', class: 'stale-citation', severity: 'HIGH', blocking: true },
+    { id: 'M1', class: 'undefined-term', severity: 'MEDIUM' },
+    { id: 'L1', class: 'statement-contradiction', severity: 'LOW' },
+    { id: 'L2', class: 'lifecycle-hazard', severity: 'LOW' },
+  ];
+  const gate = severityGate(findings);
+  assert.equal(gate.pass, false);
+  assert.deepEqual(gate.blocking.map(f => f.id), ['L1', 'L2']);
+  assert.deepEqual(gate.advisory.map(f => f.id), ['H1', 'M1']);
+  assert.equal(severityGate(findings, 3).pass, true);
+});
+
+test('roundCapIssues allows exhaustion without an owner override', () => {
+  const registry = { candidates: [{ id: 'feature-r3' }], reviewHistory: [
+    { seq: 1, kind: 'round', lineageKey: 'feature', candidateId: 'feature-r1', revision: 'r1', verdict: 'REVISE', findings: [] },
+    { seq: 2, kind: 'round', lineageKey: 'feature', candidateId: 'feature-r2', revision: 'r2', verdict: 'REVISE', findings: [] },
+  ] };
+  const candidate = { id: 'feature-r3', maxRounds: 2 };
+  assert.deepEqual(roundCapIssues(candidate, registry), []);
+  assert.equal(roundCapIssues(candidate, registry, true).length, 0);
+  assert.equal(roundCapIssues({ id: 'feature-r3' }, registry).length, 0);
+});
+const recordedRound = (seq, lineageKey, candidateId, revision, verdict = 'REVISE') => ({
+  seq, kind: 'round', lineageKey, candidateId, revision, verdict, findings: [],
+});
+const boundReview = (candidateId, revision, verdict = 'REVISE') => ({
+  role: 'code-reviewer', candidateId, revision, verdict,
+  source: { path: 'review.json', sha256: 'a'.repeat(64) },
+});
+test('AC01-1 overwriting a candidate entry after repair retains the prior immutable round', () => {
+  const candidate = { id: 'feature-r1', revision: 'r1', codeReview: boundReview('feature-r1', 'r1') };
+  const registry = { schemaVersion: 1, candidates: [candidate], reviewHistory: [
+    recordedRound(1, 'feature', 'feature-r1', 'r1'),
+  ] };
+  const before = reviewRoundCount(registry, 'feature');
+
+  registry.candidates[0] = { ...candidate, codeReview: null };
+  const afterClear = JSON.parse(JSON.stringify(registry));
+  assert.equal(reviewRoundCount(afterClear, 'feature'), before);
+  assert.equal(lineageReviewHistory(afterClear, 'feature').rounds[0].revision, 'r1');
+
+  afterClear.candidates[0] = {
+    ...afterClear.candidates[0],
+    revision: 'r2',
+    codeReview: boundReview('feature-r1', 'r2', 'PASS'),
+  };
+  const afterRepair = JSON.parse(JSON.stringify(afterClear));
+  const history = lineageReviewHistory(afterRepair, 'feature');
+  assert.equal(reviewRoundCount(afterRepair, 'feature'), 2);
+  assert.deepEqual(history.rounds.map(({ candidateId, revision, verdict }) => ({ candidateId, revision, verdict })), [
+    { candidateId: 'feature-r1', revision: 'r1', verdict: 'REVISE' },
+    { candidateId: 'feature-r1', revision: 'r2', verdict: 'PASS' },
+  ]);
+  assert.equal(history.rounds[0].verdict, 'REVISE');
+});
+test('AC01-2 revision and dispatch edits or candidate count do not account rounds', () => {
+  const candidate = { id: 'feature-r1', revision: 'spec-r1', dispatches: [{ name: 'Review-A' }],
+    codeReview: boundReview('feature-r1', 'spec-r1') };
+  const registry = { candidates: [candidate], reviewHistory: [
+    recordedRound(1, 'feature', 'feature-r1', 'spec-r1'),
+  ] };
+  assert.equal(reviewRoundCount(registry, 'feature'), 1);
+  candidate.revision = 'spec-r9';
+  candidate.dispatches[0].name = 'Review-B';
+  registry.candidates.push({ id: 'feature-r2', revision: 'spec-r10', codeReview: null });
+  assert.equal(reviewRoundCount(registry, 'feature'), 1);
+  registry.reviewHistory.push(recordedRound(2, 'feature', 'feature-r2', 'spec-r10'));
+  assert.equal(reviewRoundCount(registry, 'feature'), 2);
+});
+test('AC01-3 transport run records do not count or satisfy the critic prerequisite', t => {
+  const c = setup(t, registry => { registry.candidates[0].codeReview = null; });
+  const before = reviewRoundCount(c.registry, 'synthetic-spec');
+  const runPath = path.join(c.f.root, '.omp/plans/review-runs.json');
+  for (const status of ['pending', 'failed']) {
+    writeFileSync(runPath, JSON.stringify({
+      schemaVersion: 1,
+      runs: [{
+        candidateId: c.candidate.id,
+        invocationId: `invocation-${status}`,
+        fingerprint: 'a'.repeat(64),
+        reviewerId: 'synthetic-code-reviewer',
+        status,
+      }],
+    }));
+    assert.equal(reviewRoundCount(c.registry, 'synthetic-spec'), before);
+    assert.equal(reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input })[0]?.code, 'E_REVIEW');
+  }
+});
+test('AC01-4 restart and explicit alias preserve a consumed-round cap', () => {
+  const reviewHistory = Array.from({ length: 4 }, (_, index) =>
+    recordedRound(index + 1, 'legacy', `legacy-r${index + 1}`, `r${index + 1}`));
+  reviewHistory.push({ seq: 5, kind: 'alias', lineageKey: 'renamed', from: 'legacy', to: 'renamed',
+    authorityRef: 'owner-decision-1', maxRounds: 4 });
+  const candidate = { id: 'renamed-r5', revision: 'r5' };
+  const registry = { schemaVersion: 1, candidates: [{ id: 'renamed-r5', revision: 'r5' }], reviewHistory };
+  const restarted = JSON.parse(JSON.stringify(registry));
+  assert.deepEqual(restarted.reviewHistory.map(({ seq, kind }) => [seq, kind]), [
+    [1, 'round'], [2, 'round'], [3, 'round'], [4, 'round'], [5, 'alias'],
+  ]);
+  const lineage = lineageReviewHistory(restarted, 'renamed');
+  assert.deepEqual(lineage.aliasChain, ['legacy', 'renamed']);
+  assert.deepEqual(lineage.rounds.map(({ seq, candidateId, revision }) => [seq, candidateId, revision]), [
+    [1, 'legacy-r1', 'r1'], [2, 'legacy-r2', 'r2'],
+    [3, 'legacy-r3', 'r3'], [4, 'legacy-r4', 'r4'],
+  ]);
+  assert.deepEqual(roundCapIssues(candidate, restarted), []);
+  assert.equal(roundCapIssues(candidate, restarted, true).length, 0);
+  const mismatched = { ...candidate, maxRounds: 3 };
+  assert.deepEqual(roundCapIssues(mismatched, restarted)[0], {
+    code: 'E_ROUND_CAP', location: 'reviewSequence',
+    detail: 'cap-continuity: candidate lineage renamed must retain predecessor maxRounds=4; an explicit owner override is required.',
+  });
+  const invalid = { id: 'uncapped-r1', maxRounds: 0 };
+  assert.deepEqual(roundCapIssues(invalid, { candidates: [invalid] })[0], {
+    code: 'E_ROUND_CAP', location: 'reviewSequence',
+    detail: 'cap-continuity: candidate lineage uncapped has an invalid maxRounds value.',
+  });
+  const dangling = JSON.parse(JSON.stringify(registry));
+  dangling.reviewHistory[4].from = 'missing-lineage';
+  assert.equal(roundCapIssues(candidate, dangling)[0]?.code, 'E_REVIEW');
+  const cyclic = JSON.parse(JSON.stringify(registry));
+  cyclic.reviewHistory.push({ seq: 6, kind: 'alias', lineageKey: 'legacy',
+    from: 'renamed', to: 'legacy', authorityRef: 'owner-decision-2' });
+  assert.equal(roundCapIssues(candidate, cyclic)[0]?.code, 'E_REVIEW');
+});
+test('AC01-5 malformed lineage accounting blocks positive admission and round counting', t => {
+  const c = setup(t);
+  const review = c.candidate.codeReview;
+  c.registry.reviewHistory = [{
+    seq: 1, kind: 'legacy-unobserved', lineageKey: 'synthetic-spec',
+    candidateId: review.candidateId, revision: review.revision,
+  }];
+  writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  assert.equal(reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input })[0]?.code, 'E_REVIEW');
+
+  c.registry.reviewHistory = [
+    recordedRound(2, 'synthetic-spec', 'one', 'r1'),
+    recordedRound(1, 'synthetic-spec', 'two', 'r2'),
+  ];
+  writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  assert.equal(reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input })[0]?.code, 'E_REVIEW');
+  c.registry.reviewHistory = {};
+  writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  assert.equal(roundCapIssues({ id: 'synthetic-spec', maxRounds: 1 }, c.registry)[0]?.code, 'E_REVIEW');
+  c.registry.reviewHistory = [{ seq: 1, kind: 'unknown', lineageKey: 'synthetic-spec' }];
+  writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  assert.equal(reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input })[0]?.code, 'E_REVIEW');
+  c.registry.reviewHistory = [{ seq: 1, kind: 'round', lineageKey: 'synthetic-spec',
+    candidateId: 'candidate', revision: 'r1', verdict: 'REVISE' }];
+  writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  assert.equal(reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input })[0]?.code, 'E_REVIEW');
+
+  const conflicting = structuredClone(c.registry);
+  conflicting.reviewHistory = [recordedRound(1, 'synthetic-spec', review.candidateId, review.revision,
+    review.verdict === 'PASS' ? 'APPROVE' : 'PASS')];
+  assert.ok(lineageReviewHistory(conflicting, 'synthetic-spec').issues.some(issue => issue.code === 'E_REVIEW'));
+});
+
+test('contradictory recorded outcomes remain invalid after clearing and restarting', t => {
+  const c = setup(t);
+  const { candidateId, revision } = c.candidate.codeReview;
+  c.registry.reviewHistory = [
+    recordedRound(1, 'synthetic-spec', candidateId, revision, 'PASS'),
+    recordedRound(2, 'synthetic-spec', candidateId, revision, 'REVISE'),
+  ];
+  c.candidate.codeReview = null;
+  const restarted = JSON.parse(JSON.stringify(c.registry));
+  assert.ok(lineageReviewHistory(restarted, 'synthetic-spec').issues.some(issue => issue.code === 'E_REVIEW'));
+});
+
+test('a recorded lineage requires each positive binding to append its matching round', t => {
+  const c = setup(t);
+  c.registry.reviewHistory = [
+    recordedRound(1, 'synthetic-spec', 'synthetic-spec-r1', 'r1'),
+  ];
+  writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  assert.equal(reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input })[0]?.code, 'E_REVIEW');
+});
+test('AC01-6 legacy derivation marks unknown observations without inventing verdicts', () => {
+  const registry = { schemaVersion: 1, candidates: [
+    { id: 'feature-r1', revision: 'spec-r5', codeReview: boundReview('feature-r1', 'spec-r5') },
+    { id: 'feature-r2', revision: 'spec-r6', codeReview: null },
+    { id: 'feature-r3', revision: 'spec-r7' },
+  ] };
+  const history = lineageReviewHistory(registry, 'feature');
+  assert.equal(registry.schemaVersion, 1);
+  assert.equal(history.rounds.length, 1);
+  assert.equal(history.rounds[0].verdict, 'REVISE');
+  assert.equal(history.unobserved.length, 2);
+  assert.ok(history.unobserved.every(entry => !Object.hasOwn(entry, 'verdict')));
+  const uncapped = { schemaVersion: 1, candidates: [{ id: 'renamed-r4', revision: 'spec-r8' }],
+    reviewHistory: [
+      { seq: 1, kind: 'legacy-unobserved', lineageKey: 'feature',
+        candidateId: 'feature-r3', revision: 'spec-r7' },
+      { seq: 2, kind: 'alias', lineageKey: 'renamed', from: 'feature', to: 'renamed',
+        authorityRef: 'AC01-6 fixture' },
+    ] };
+  assert.deepEqual(roundCapIssues(uncapped.candidates[0], uncapped), []);
+  const invalidAlias = structuredClone(uncapped);
+  invalidAlias.reviewHistory[1].maxRounds = 0;
+  assert.ok(lineageReviewHistory(invalidAlias, 'renamed').issues.some(issue => issue.code === 'E_REVIEW'));
+});
+test('C2 rejects an alias that loses, changes, or invalidates its predecessor round cap', () => {
+  const createRegistry = (roundCount, nextCap = undefined) => {
+    const reviewHistory = Array.from({ length: roundCount }, (_, index) =>
+      recordedRound(index + 1, 'legacy', `legacy-r${index + 1}`, `r${index + 1}`));
+    reviewHistory.push({
+      seq: roundCount + 1, kind: 'alias', lineageKey: 'renamed',
+      from: 'legacy', to: 'renamed', authorityRef: 'C2 fixture', maxRounds: 4,
+    });
+    const predecessor = { id: `legacy-r${roundCount}`, maxRounds: 4 };
+    const candidate = { id: 'renamed-r5' };
+    if (nextCap !== undefined) candidate.maxRounds = nextCap;
+    return { candidate, registry: { candidates: [predecessor, candidate], reviewHistory } };
+  };
+
+  const removed = createRegistry(4);
+  const removedIssue = roundCapIssues(removed.candidate, removed.registry)[0];
+  assert.equal(removedIssue?.code, 'E_ROUND_CAP');
+  assert.match(removedIssue?.detail ?? '', /cap-continuity/);
+  assert.deepEqual(roundCapIssues(removed.candidate, removed.registry, true), []);
+  const uncapped = createRegistry(4);
+  uncapped.registry.candidates = [uncapped.candidate];
+  assert.deepEqual(roundCapIssues(uncapped.candidate, uncapped.registry), []);
+  const invalid = createRegistry(4, '4');
+  assert.equal(roundCapIssues(invalid.candidate, invalid.registry)[0]?.code, 'E_ROUND_CAP');
+  const decreased = createRegistry(1, 3);
+  assert.equal(roundCapIssues(decreased.candidate, decreased.registry)[0]?.code, 'E_ROUND_CAP');
+  const increased = createRegistry(1, 5);
+  assert.equal(roundCapIssues(increased.candidate, increased.registry)[0]?.code, 'E_ROUND_CAP');
+});
+
+test('C2 retains alias-lineage cap continuity without blocking exhaustion', () => {
+  const createRegistry = roundCount => {
+    const reviewHistory = Array.from({ length: roundCount }, (_, index) =>
+      recordedRound(index + 1, 'legacy', `legacy-r${index + 1}`, `r${index + 1}`));
+    reviewHistory.push({
+      seq: roundCount + 1, kind: 'alias', lineageKey: 'renamed',
+      from: 'legacy', to: 'renamed', authorityRef: 'C2 fixture',
+    });
+    const predecessor = { id: `legacy-r${Math.max(1, roundCount)}`, maxRounds: 4 };
+    const candidate = { id: 'renamed-r5', maxRounds: 4 };
+    return { candidate, registry: { candidates: [predecessor, candidate], reviewHistory } };
+  };
+
+  const belowCap = createRegistry(3);
+  assert.deepEqual(roundCapIssues(belowCap.candidate, belowCap.registry), []);
+  const atCap = createRegistry(4);
+  assert.deepEqual(roundCapIssues(atCap.candidate, atCap.registry), []);
+  assert.deepEqual(roundCapIssues(atCap.candidate, atCap.registry, true), []);
+});
+const producerCandidate = () => ({
+  id: 'feature-r2',
+  revision: 'r2',
+  authorIds: ['planner'],
+  inputs: [{ path: 'spec.md', sha256: 'c'.repeat(64) }],
+  dispatches: [
+    { name: 'Critic', agent: 'critic', reviewerId: 'critic-1' },
+    { name: 'Review', agent: 'code-reviewer', reviewerId: 'reviewer-2' },
+  ],
+  codeReview: null,
+});
+const producerRegistry = (candidate = producerCandidate(), reviewHistory = []) => ({
+  schemaVersion: 1,
+  candidates: [candidate],
+  ...(reviewHistory.length ? { reviewHistory } : {}),
+});
+const producerBinding = (candidate, overrides = {}) => ({
+  candidateId: candidate.id,
+  reviewerId: 'reviewer-2',
+  authorIds: structuredClone(candidate.authorIds),
+  inputs: structuredClone(candidate.inputs),
+  dispatches: structuredClone(candidate.dispatches),
+  verdict: 'REQUEST CHANGES',
+  findings: [{ id: 'H1', severity: 'HIGH', detail: 'Preserve this finding.' }],
+  format: 'installed',
+  source: { path: 'review-r2.json', sha256: 'd'.repeat(64) },
+  recordedAt: '2026-11-14T12:01:00.000Z',
+  ...overrides,
+});
+const criticBinding = (candidate, overrides = {}) => ({
+  role: 'critic',
+  candidateId: candidate.id,
+  reviewerId: 'critic-1',
+  authorIds: structuredClone(candidate.authorIds),
+  inputs: structuredClone(candidate.inputs),
+  dispatches: structuredClone(candidate.dispatches),
+  verdict: 'PASS',
+  format: 'installed',
+  source: { path: 'critic-r2.json', sha256: 'e'.repeat(64) },
+  recordedAt: '2026-11-14T12:02:00.000Z',
+  ...overrides,
+});
+
+function criticRunBinding(c, invocationId = 'synthetic-critic-run') {
+  const inputs = c.candidate.inputs.map(input => ({
+    path: realpathSync(path.resolve(c.f.root, input.path)),
+    sha256: input.sha256,
+  })).sort((left, right) => left.path.localeCompare(right.path));
+  return {
+    candidateId: c.candidate.id,
+    revision: c.candidate.revision,
+    fingerprint: sha(canonicalJson({
+      id: c.candidate.id,
+      revision: c.candidate.revision,
+      authorIds: c.candidate.authorIds,
+      inputs,
+      dispatches: c.candidate.dispatches,
+    })),
+    reviewerId: c.candidate.dispatches.find(dispatch => dispatch.agent === 'critic').reviewerId,
+    agent: 'critic',
+    invocationId,
+  };
+}
+
+function installCriticObservation(t, verdict = 'PASS', mutateSource = () => {}) {
+  const c = setup(t);
+  const reviewerId = c.candidate.dispatches.find(dispatch => dispatch.agent === 'critic').reviewerId;
+  const observation = {
+    role: 'critic',
+    reviewerId,
+    candidateId: c.candidate.id,
+    revision: c.candidate.revision,
+    invocationId: 'synthetic-critic-run',
+    authorIds: structuredClone(c.candidate.authorIds),
+    inputs: structuredClone(c.candidate.inputs),
+    dispatches: structuredClone(c.candidate.dispatches),
+    output: `### Verdict\n${verdict}\nSpec ID: synthetic-spec\nRevision: ${c.candidate.revision}\nFindings by ID: none\n`,
+  };
+  mutateSource(observation);
+  const sourcePath = path.join(c.f.root, 'critic-observation.json');
+  const sourceBytes = JSON.stringify(observation);
+  writeFileSync(sourcePath, sourceBytes);
+  const binding = {
+    ...criticBinding(c.candidate, {
+      reviewerId,
+      verdict,
+      source: { path: sourcePath, sha256: sha(sourceBytes) },
+    }),
+  };
+  const appended = bindWithReviewRound(c.registry, binding);
+  if (appended.ok) {
+    c.registry = appended.registry;
+    c.candidate = appended.candidate;
+    writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  }
+  const run = criticRunBinding(c);
+  return { c, observation, binding, appended, run };
+}
+
+test('critic observations bind identity, source, revision, time and a PASS receipt without rewriting reviewer approval', t => {
+  const fixture = installCriticObservation(t);
+  const { c, binding, appended, run } = fixture;
+  assert.equal(appended.ok, true);
+  const reviewerApproval = structuredClone(c.record.observation);
+  const record = appended.criticObservation;
+  assert.deepEqual(record, {
+    seq: 1,
+    role: 'critic',
+    reviewerId: binding.reviewerId,
+    candidateId: c.candidate.id,
+    revision: c.candidate.revision,
+    authorIds: c.candidate.authorIds,
+    inputs: c.candidate.inputs,
+    dispatches: c.candidate.dispatches,
+    verdict: 'PASS',
+    format: 'installed',
+    inputsSha256: sha(canonicalJson(binding.inputs)),
+    source: binding.source,
+    recordedAt: binding.recordedAt,
+  });
+  recordReviewRun(c.f.root, run, 'pending');
+  recordReviewRun(c.f.root, run, 'succeeded');
+  const runStore = JSON.parse(readFileSync(path.join(c.f.root, '.omp/plans/review-runs.json'), 'utf8'));
+  assert.deepEqual(runStore.observations, [{
+    ...record,
+    source: { path: path.resolve(binding.source.path), sha256: binding.source.sha256 },
+    receipt: {
+      sourceId: path.resolve(binding.source.path),
+      recordedAt: binding.recordedAt,
+      response: { origin: 'reviewer', verdict: 'pass' },
+    },
+  }]);
+  assert.equal(c.candidate.codeReview.verdict, 'APPROVE');
+  assert.deepEqual(c.record.observation, reviewerApproval);
+  assert.equal(c.candidate.criticObservations.length, 1);
+  assert.equal(Object.hasOwn(c.registry, 'criticObservations'), false);
+  assert.equal(bindWithReviewRound(c.registry, binding).ok, false, 'a critic observation cannot overwrite its earlier record');
+  assert.equal(c.candidate.criticObservations.length, 1);
+});
+test('competing run writers commit one critic observation and its run entry', t => {
+  const fixture = installCriticObservation(t);
+  const { c, run } = fixture;
+  const runStorePath = path.join(c.f.root, '.omp/plans/review-runs.json');
+  recordReviewRun(c.f.root, run, 'pending');
+
+  const commits = [];
+  let competingError;
+  let contenderStarted = false;
+  const dependencies = {
+    lockOptions: { timeoutMs: 0 },
+    writeFileSync(file, ...args) {
+      if (!contenderStarted && typeof file === 'string' && file.endsWith('.tmp')) {
+        contenderStarted = true;
+        try {
+          recordReviewRun(c.f.root, run, 'succeeded');
+          commits.push('competing');
+        } catch (error) {
+          competingError = error;
+        }
+      }
+      return writeFileSync(file, ...args);
+    },
+  };
+
+  const returnedRun = recordReviewRun(c.f.root, run, 'succeeded', dependencies);
+  commits.push('primary');
+
+  assert.deepEqual(returnedRun, {
+    candidateId: run.candidateId,
+    invocationId: run.invocationId,
+    fingerprint: run.fingerprint,
+    reviewerId: run.reviewerId,
+    status: 'succeeded',
+    role: 'critic',
+    revision: run.revision,
+  });
+
+  assert.deepEqual(commits, ['primary']);
+  assert.match(competingError.message, /E_REVIEW_REGISTRY_CHANGED/);
+  const storedBytes = readFileSync(runStorePath);
+  const stored = JSON.parse(storedBytes.toString('utf8'));
+  assert.equal(stored.observations.length, 1);
+  assert.equal(stored.observations[0].candidateId, c.candidate.id);
+  assert.equal(stored.observations[0].revision, c.candidate.revision);
+  assert.equal(stored.observations[0].verdict, 'PASS');
+  assert.equal(stored.runs.filter(entry => entry.candidateId === c.candidate.id
+    && entry.role === 'critic').length, 1);
+  assert.deepEqual(stored.runs.find(entry => entry.role === 'critic'), {
+    candidateId: run.candidateId,
+    invocationId: run.invocationId,
+    fingerprint: run.fingerprint,
+    reviewerId: run.reviewerId,
+    status: 'succeeded',
+    role: 'critic',
+    revision: run.revision,
+  });
+});
+
+test('recordReviewRun refuses a held registry lock without changing registry or run bytes', t => {
+  const fixture = installCriticObservation(t);
+  const { c, run } = fixture;
+  const registryPath = c.registryPath;
+  const runStorePath = path.join(c.f.root, '.omp/plans/review-runs.json');
+  recordReviewRun(c.f.root, run, 'pending');
+  const registryBytes = readFileSync(registryPath);
+  const runBytes = readFileSync(runStorePath);
+  const lockPath = `${path.resolve(registryPath)}.lock`;
+  writeFileSync(lockPath, '{}');
+
+  try {
+    assert.throws(() => recordReviewRun(c.f.root, run, 'succeeded', {
+      lockOptions: { timeoutMs: 0 },
+    }), /E_REVIEW_REGISTRY_CHANGED/);
+    assert.deepEqual(readFileSync(registryPath), registryBytes);
+    assert.deepEqual(readFileSync(runStorePath), runBytes);
+  } finally {
+    rmSync(lockPath, { force: true });
+  }
+});
+
+
+test('critic receipt recording refuses missing and mismatched bound evidence instead of trusting text', t => {
+  const missing = setup(t);
+  const run = criticRunBinding(missing, 'unbound-critic-run');
+  recordReviewRun(missing.f.root, run, 'pending');
+  assert.throws(() => recordReviewRun(missing.f.root, run, 'succeeded'), /critic observation/);
+  assert.throws(() => recordReviewRun(missing.f.root, { ...run, output: '### Verdict\nPASS' }, 'succeeded'), /critic observation/);
+
+  const mismatched = installCriticObservation(t, 'PASS', observation => {
+    observation.reviewerId = 'coordinator-supplied-reviewer';
+  });
+  assert.equal(mismatched.appended.ok, true);
+  recordReviewRun(mismatched.c.f.root, mismatched.run, 'pending');
+  assert.throws(() => recordReviewRun(mismatched.c.f.root, mismatched.run, 'succeeded'), /critic observation/);
+  const runStorePath = path.join(mismatched.c.f.root, '.omp/plans/review-runs.json');
+  assert.deepEqual(JSON.parse(readFileSync(runStorePath, 'utf8')).observations, []);
+
+  const wrongVerdict = installCriticObservation(t, 'PASS', observation => {
+    observation.output = observation.output.replace('PASS', 'REVISE');
+  });
+  recordReviewRun(wrongVerdict.c.f.root, wrongVerdict.run, 'pending');
+  assert.throws(() => recordReviewRun(wrongVerdict.c.f.root, wrongVerdict.run, 'succeeded'), /critic observation/);
+  assert.deepEqual(JSON.parse(readFileSync(path.join(wrongVerdict.c.f.root, '.omp/plans/review-runs.json'), 'utf8')).observations, []);
+});
+
+test('negative critic evidence remains append-only history and never becomes a passing receipt', t => {
+  const fixture = installCriticObservation(t, 'REVISE');
+  assert.equal(fixture.appended.ok, true);
+  const approval = structuredClone(fixture.c.candidate.codeReview);
+  recordReviewRun(fixture.c.f.root, fixture.run, 'pending');
+  recordReviewRun(fixture.c.f.root, fixture.run, 'succeeded');
+  const stored = JSON.parse(readFileSync(path.join(fixture.c.f.root, '.omp/plans/review-runs.json'), 'utf8'));
+  assert.equal(stored.observations[0].verdict, 'REVISE');
+  assert.equal(stored.observations[0].receipt, null);
+  assert.equal(fixture.c.candidate.criticObservations[0].verdict, 'REVISE');
+  assert.deepEqual(fixture.c.candidate.codeReview, approval);
+  assert.equal(bindWithReviewRound(fixture.c.registry, {
+    ...fixture.binding,
+    verdict: 'PASS',
+  }).ok, false, 'negative source evidence cannot be relabeled as PASS');
+  assert.equal(fixture.c.candidate.criticObservations[0].verdict, 'REVISE');
+});
+
+test('critic persona emits the installed Verdict and receipt identity contract', () => {
+  const persona = readFileSync(new URL('../agents/critic.md', import.meta.url), 'utf8');
+  assert.match(persona, /Output must contain exactly one `### Verdict` heading, followed by a line containing/);
+  assert.match(persona, /only one of PASS, REVISE, or BLOCKED\. Include these lines: `Spec ID:/);
+  assert.match(persona, /`Revision: <reviewed revision>`, and `Findings by ID:/);
+  assert.match(persona, /Never normalize Critic PASS to CodeReviewer APPROVE/);
+});
+
+test('AC01-4 locked producer mutation carries the alias-recorded cap forward', t => {
+  const { registryPath } = setup(t);
+  const candidate = { ...producerCandidate(), maxRounds: 4 };
+  const alias = { seq: 2, kind: 'alias', lineageKey: 'feature', from: 'legacy', to: 'feature',
+    authorityRef: 'AC01-4 fixture', maxRounds: 4 };
+  const registry = producerRegistry(candidate, [
+    { seq: 1, kind: 'legacy-unobserved', lineageKey: 'legacy', candidateId: 'legacy-r1', revision: 'r1' },
+    alias,
+  ]);
+  writeFileSync(registryPath, JSON.stringify(registry));
+
+  const result = reviewSequence.withReviewRegistryLock(registryPath, {}, {}, () => {
+    const current = JSON.parse(readFileSync(registryPath, 'utf8'));
+    const appended = bindWithReviewRound(current, producerBinding(current.candidates[0]));
+    if (!appended.ok) return appended;
+    writeFileSync(registryPath, JSON.stringify(appended.registry));
+    return appended;
+  });
+  assert.equal(result.ok, true);
+  const written = JSON.parse(readFileSync(registryPath, 'utf8'));
+  assert.deepEqual(written.reviewHistory[1], alias);
+  assert.equal(written.reviewHistory[2].kind, 'round');
+});
+
+test('AC01-8 producer atomically binds the complete observation and records negative findings', () => {
+  const registry = producerRegistry({
+    id: 'feature-r1', revision: 'r1',
+    codeReview: boundReview('feature-r1', 'r1'),
+  });
+  registry.candidates.push(producerCandidate());
+  const binding = producerBinding(registry.candidates[1]);
+  const legacyRound = {
+    verdict: 'REVISE',
+    findings: [{ id: 'OLD-H1', severity: 'HIGH' }],
+    inputsSha256: 'b'.repeat(64),
+    sourceSha256: 'a'.repeat(64),
+    recordedAt: '2026-11-14T12:00:00.000Z',
+  };
+  const original = structuredClone(registry);
+
+  const withoutLegacy = bindWithReviewRound(registry, binding);
+  assert.equal(withoutLegacy.ok, false);
+  assert.equal(withoutLegacy.issues[0]?.code, 'E_ROUND_APPEND');
+  assert.deepEqual(registry, original);
+
+  const appended = bindWithReviewRound(registry, binding, { legacyRound });
+  assert.equal(appended.ok, true);
+  assert.deepEqual(appended.candidate.codeReview, {
+    role: 'code-reviewer',
+    reviewerId: binding.reviewerId,
+    candidateId: 'feature-r2',
+    revision: 'r2',
+    authorIds: binding.authorIds,
+    inputs: binding.inputs,
+    dispatches: binding.dispatches,
+    verdict: binding.verdict,
+    format: 'installed',
+    source: binding.source,
+  });
+  assert.notStrictEqual(appended.candidate, registry.candidates[1]);
+  assert.strictEqual(appended.registry.candidates[1], appended.candidate);
+  assert.equal(appended.registry.schemaVersion, 1);
+  assert.equal(reviewRoundCount(appended.registry, 'feature'), 2);
+  assert.deepEqual(appended.registry.reviewHistory.map(({ seq, candidateId }) => ({ seq, candidateId })), [
+    { seq: 1, candidateId: 'feature-r1' },
+    { seq: 2, candidateId: 'feature-r2' },
+  ]);
+  assert.deepEqual(appended.registry.reviewHistory[0].findings, legacyRound.findings);
+  assert.deepEqual(appended.entry.findings, binding.findings);
+  assert.equal(appended.entry.verdict, 'REQUEST CHANGES');
+  assert.equal(appended.entry.inputsSha256, sha(canonicalJson(binding.inputs)));
+  assert.equal(appended.entry.sourceSha256, binding.source.sha256);
+  assert.deepEqual(Object.keys(appended.entry).sort(), [
+    'candidateId', 'findings', 'inputsSha256', 'kind', 'lineageKey', 'recordedAt',
+    'reviewerId', 'revision', 'seq', 'sourceSha256', 'verdict',
+  ]);
+  assert.deepEqual(registry, original);
+
+  const bindOnly = bindWithReviewRound(producerRegistry(producerCandidate(), [
+    recordedRound(1, 'feature', 'feature-r1', 'r1'),
+  ]), { candidateId: 'feature-r2' });
+  assert.equal(bindOnly.ok, false);
+  assert.equal(bindOnly.issues[0]?.code, 'E_ROUND_APPEND');
+
+  const capped = producerRegistry({ ...producerCandidate(), maxRounds: 1 }, [
+    recordedRound(1, 'feature', 'feature-r1', 'r1'),
+  ]);
+  assert.equal(bindWithReviewRound(capped, producerBinding(capped.candidates[0])).ok, true);
+  const overridden = bindWithReviewRound(capped, producerBinding(capped.candidates[0]), { ownerOverride: true });
+  assert.equal(overridden.ok, true);
+  assert.equal(reviewRoundCount(overridden.registry, 'feature'), 2);
+});
+
+test('producer enforces the closed binding fields and installed verdict vocabulary', () => {
+  const candidate = producerCandidate();
+  const base = producerBinding(candidate);
+  for (const field of Object.keys(base)) {
+    const binding = { ...base };
+    delete binding[field];
+    assert.equal(bindWithReviewRound(producerRegistry(), binding).issues[0]?.code, 'E_REVIEW', field);
+  }
+  for (const field of ['role', 'revision', 'inputsSha256', 'sourceSha256', 'extra']) {
+    assert.equal(bindWithReviewRound(producerRegistry(), { ...base, [field]: 'unexpected' })
+      .issues[0]?.code, 'E_REVIEW', field);
+  }
+  for (const [format, verdict] of [['policy', 'PASS'], ['installed', 'PASS'], ['installed', 'REVISE']]) {
+    assert.equal(bindWithReviewRound(producerRegistry(), { ...base, format, verdict })
+      .issues[0]?.code, 'E_REVIEW', `${format}/${verdict}`);
+  }
+  const nullableTime = bindWithReviewRound(producerRegistry(), { ...base, recordedAt: null });
+  assert.equal(nullableTime.ok, true);
+  assert.equal(nullableTime.entry.recordedAt, null);
+  assert.equal(nullableTime.entry.sourceSha256, base.source.sha256);
+});
+
+test('producer requires observation descriptors to match the registered candidate', () => {
+  const candidate = producerCandidate();
+  const base = producerBinding(candidate);
+  const mismatches = [
+    { authorIds: ['another-author'] },
+    { inputs: [{ ...candidate.inputs[0], sha256: 'e'.repeat(64) }] },
+    { dispatches: [...candidate.dispatches, { name: 'Other', agent: 'critic', reviewerId: 'critic-2' }] },
+  ];
+  for (const mismatch of mismatches) {
+    assert.equal(bindWithReviewRound(producerRegistry(), { ...base, ...mismatch })
+      .issues[0]?.code, 'E_REVIEW');
+  }
+});
+
+test('producer enforces reviewer independence before binding', () => {
+  const candidate = producerCandidate();
+  const base = producerBinding(candidate);
+  const invalidBindings = [
+    { ...base, reviewerId: 'planner' },
+    { ...base, reviewerId: 'critic-1' },
+    { ...base, reviewerId: '' },
+  ];
+  for (const binding of invalidBindings) {
+    assert.equal(bindWithReviewRound(producerRegistry(), binding).issues[0]?.code, 'E_REVIEW');
+  }
+  const authorMatchesCritic = {
+    ...candidate,
+    authorIds: ['planner', 'critic-1'],
+  };
+  const criticAuthorBinding = producerBinding(authorMatchesCritic, {
+    authorIds: structuredClone(authorMatchesCritic.authorIds),
+  });
+  assert.equal(bindWithReviewRound(producerRegistry(authorMatchesCritic), criticAuthorBinding)
+    .issues[0]?.code, 'E_REVIEW');
+});
+
+function bindAdmissionFixture(t, runStatus = 'succeeded') {
+  const c = setup(t, registry => { registry.candidates[0].codeReview = null; });
+  const reviewBindings = [];
+  assert.deepEqual(reviewSequenceIssues(c.f.root, c.first.input.tasks, {}, {
+    payload: c.first.input,
+    bindings: reviewBindings,
+  }), []);
+  const run = { ...reviewBindings[0], invocationId: 'synthetic-completed-review' };
+  recordReviewRun(c.f.root, run, 'pending');
+  if (runStatus !== 'pending') recordReviewRun(c.f.root, run, runStatus);
+  const source = {
+    ...structuredClone(c.record.observation),
+    invocationId: run.invocationId,
+    output: 'SYNTHETIC actual completed review.\n### Recommendation\nAPPROVE\n',
+  };
+  const sourceBytes = JSON.stringify(source);
+  writeFileSync(c.record.sourcePath, sourceBytes);
+  const binding = {
+    candidateId: c.candidate.id,
+    reviewerId: source.reviewerId,
+    authorIds: structuredClone(c.candidate.authorIds),
+    inputs: structuredClone(c.candidate.inputs),
+    dispatches: structuredClone(c.candidate.dispatches),
+    verdict: 'APPROVE',
+    findings: [],
+    format: 'installed',
+    source: { path: c.record.sourcePath, sha256: sha(sourceBytes) },
+    recordedAt: '2026-11-14T12:01:00.000Z',
+  };
+  const appended = bindWithReviewRound(c.registry, binding);
+  assert.equal(appended.ok, true);
+  c.registry = appended.registry;
+  c.candidate = appended.candidate;
+  writeFileSync(c.registryPath, JSON.stringify(c.registry));
+  return { c, binding, source, run };
+}
+
+function saveAdmissionSource(fixture, mutate = () => {}) {
+  const source = structuredClone(fixture.source);
+  mutate(source);
+  const sourceBytes = JSON.stringify(source);
+  writeFileSync(fixture.c.record.sourcePath, sourceBytes);
+  fixture.c.candidate.codeReview.source.sha256 = sha(sourceBytes);
+  fixture.source = source;
+  writeFileSync(fixture.c.registryPath, JSON.stringify(fixture.c.registry));
+}
+test('installed-bold-heading-binds', t => {
+  const fixture = bindAdmissionFixture(t);
+  const { c } = fixture;
+  assert.deepEqual(reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input }), []);
+  saveAdmissionSource(fixture, source => {
+    source.output = 'SYNTHETIC actual completed review.\n**Recommendation**\nAPPROVE\n';
+  });
+  assert.deepEqual(reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input }), []);
+});
+
+test('installed-h2-heading-binds', t => {
+  const fixture = bindAdmissionFixture(t);
+  const { c } = fixture;
+  saveAdmissionSource(fixture, source => {
+    source.output = 'SYNTHETIC actual completed review.\n## Recommendation\nAPPROVE\n';
+  });
+  assert.deepEqual(reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input }), []);
+});
+
+test('policy-bold-heading-binds', t => {
+  const fixture = bindAdmissionFixture(t);
+  const { c } = fixture;
+  c.candidate.codeReview.format = 'policy';
+  c.candidate.codeReview.verdict = 'PASS';
+  c.registry.reviewHistory[0].verdict = 'PASS';
+  saveAdmissionSource(fixture, source => {
+    source.output = 'SYNTHETIC actual completed review.\n**Verdict**\nPASS\n';
+  });
+  assert.deepEqual(reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input }), []);
+});
+
+test('trailing-prose-fails-closed', t => {
+  const fixture = bindAdmissionFixture(t);
+  const { c } = fixture;
+  saveAdmissionSource(fixture, source => {
+    source.output = 'SYNTHETIC actual completed review.\n**Recommendation**\nAPPROVE\nextra';
+  });
+  const bindings = [];
+  assert.equal(reviewSequenceIssues(c.f.root, c.entries, {}, {
+    payload: c.event.input,
+    bindings,
+  })[0]?.code, 'E_REVIEW');
+  assert.deepEqual(bindings, []);
+});
+
+test('midbody-and-mixed-vocabulary-fail-closed', t => {
+  const repeatedHeading = bindAdmissionFixture(t);
+  saveAdmissionSource(repeatedHeading, source => {
+    source.output = 'notes\n### Recommendation\nCOMMENT\n### Recommendation\nAPPROVE';
+  });
+  assert.equal(reviewSequenceIssues(repeatedHeading.c.f.root, repeatedHeading.c.entries, {}, {
+    payload: repeatedHeading.c.event.input,
+  })[0]?.code, 'E_REVIEW');
+
+  const wrongFormat = bindAdmissionFixture(t);
+  saveAdmissionSource(wrongFormat, source => {
+    source.output = '### Verdict\nAPPROVE\n';
+  });
+  assert.equal(reviewSequenceIssues(wrongFormat.c.f.root, wrongFormat.c.entries, {}, {
+    payload: wrongFormat.c.event.input,
+  })[0]?.code, 'E_REVIEW');
+});
+
+test('variant-heading-binding-mismatch-rejected', t => {
+  const fixture = bindAdmissionFixture(t);
+  fixture.c.candidate.dispatches[1].instructionsSha256 = 'e'.repeat(64);
+  fixture.c.candidate.codeReview.dispatches = structuredClone(fixture.c.candidate.dispatches);
+  saveAdmissionSource(fixture, source => {
+    source.dispatches = structuredClone(fixture.c.candidate.dispatches);
+    source.output = 'SYNTHETIC actual completed review.\n**Recommendation**\nAPPROVE\n';
+  });
+  assert.equal(reviewSequenceIssues(fixture.c.f.root, fixture.c.entries, {}, {
+    payload: fixture.c.event.input,
+  })[0]?.code, 'E_REVIEW');
+});
+
+
+function refreshAdmissionRunFingerprint(fixture) {
+  const candidate = fixture.c.candidate;
+  const normalizedInputs = candidate.inputs.map(input => ({
+    path: realpathSync(path.resolve(fixture.c.f.root, input.path)),
+    sha256: input.sha256,
+  })).sort((a, b) => a.path.localeCompare(b.path));
+  const fingerprint = sha(canonicalJson({
+    id: candidate.id,
+    revision: candidate.revision,
+    authorIds: candidate.authorIds,
+    inputs: normalizedInputs,
+    dispatches: candidate.dispatches,
+  }));
+  const runPath = path.join(fixture.c.f.root, '.omp/plans/review-runs.json');
+  const store = JSON.parse(readFileSync(runPath, 'utf8'));
+  store.runs[0].fingerprint = fingerprint;
+  writeFileSync(runPath, JSON.stringify(store));
+}
+
+test('AC01-8 complete producer binding enables positive admission from its exact source', t => {
+  const fixture = bindAdmissionFixture(t);
+  const { c } = fixture;
+  assert.deepEqual(c.candidate.codeReview, {
+    role: 'code-reviewer',
+    reviewerId: fixture.binding.reviewerId,
+    candidateId: c.candidate.id,
+    revision: c.candidate.revision,
+    authorIds: fixture.binding.authorIds,
+    inputs: fixture.binding.inputs,
+    dispatches: fixture.binding.dispatches,
+    verdict: 'APPROVE',
+    format: 'installed',
+    source: fixture.binding.source,
+  });
+  assert.equal(reviewRoundCount(c.registry, 'synthetic-spec'), 1);
+  assert.deepEqual(reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input }), []);
+});
+
+test('installed producer binding rejects hand-bound policy format and vocabulary mismatches', t => {
+  const policy = bindAdmissionFixture(t);
+  policy.c.candidate.codeReview.format = 'policy';
+  writeFileSync(policy.c.registryPath, JSON.stringify(policy.c.registry));
+  assert.equal(reviewSequenceIssues(policy.c.f.root, policy.c.entries, {}, {
+    payload: policy.c.event.input,
+  })[0]?.code, 'E_REVIEW');
+
+  const wrongVocabulary = bindAdmissionFixture(t);
+  wrongVocabulary.c.candidate.codeReview.verdict = 'PASS';
+  wrongVocabulary.c.registry.reviewHistory[0].verdict = 'PASS';
+  saveAdmissionSource(wrongVocabulary, source => {
+    source.output = '### Recommendation\nPASS\n';
+  });
+  assert.equal(reviewSequenceIssues(wrongVocabulary.c.f.root, wrongVocabulary.c.entries, {}, {
+    payload: wrongVocabulary.c.event.input,
+  })[0]?.code, 'E_REVIEW');
+});
+
+test('positive admission refuses each source artifact contract mismatch', t => {
+  const mutations = [
+    ['role', source => { source.role = 'critic'; }],
+    ['reviewerId', source => { source.reviewerId = 'another-reviewer'; }],
+    ['candidateId', source => { source.candidateId = 'another-candidate'; }],
+    ['revision', source => { source.revision = 'another-revision'; }],
+    ['authorIds', source => { source.authorIds = ['another-author']; }],
+    ['inputs', source => { source.inputs[0].sha256 = '0'.repeat(64); }],
+    ['output', source => { source.output = ''; }],
+    ['dispatches', source => { source.dispatches[0].reviewerId = 'another-reviewer'; }],
+  ];
+  for (const [field, mutate] of mutations) {
+    const fixture = bindAdmissionFixture(t);
+    saveAdmissionSource(fixture, mutate);
+    assert.equal(reviewSequenceIssues(fixture.c.f.root, fixture.c.entries, {}, {
+      payload: fixture.c.event.input,
+    })[0]?.code, 'E_REVIEW', field);
+  }
+});
+
+test('positive admission enforces run status, fingerprint, invocation and reviewer bindings', t => {
+  for (const status of ['pending', 'failed']) {
+    const fixture = bindAdmissionFixture(t, status);
+    assert.equal(reviewSequenceIssues(fixture.c.f.root, fixture.c.entries, {}, {
+      payload: fixture.c.event.input,
+    })[0]?.code, 'E_REVIEW', status);
+  }
+
+  const staleFingerprint = bindAdmissionFixture(t);
+  staleFingerprint.c.candidate.dispatches[1].instructionsSha256 = 'e'.repeat(64);
+  staleFingerprint.c.candidate.codeReview.dispatches = structuredClone(staleFingerprint.c.candidate.dispatches);
+  saveAdmissionSource(staleFingerprint, source => {
+    source.dispatches = structuredClone(staleFingerprint.c.candidate.dispatches);
+  });
+  assert.equal(reviewSequenceIssues(staleFingerprint.c.f.root, staleFingerprint.c.entries, {}, {
+    payload: staleFingerprint.c.event.input,
+  })[0]?.code, 'E_REVIEW');
+
+  const invocationMismatch = bindAdmissionFixture(t);
+  saveAdmissionSource(invocationMismatch, source => { source.invocationId = 'different-invocation'; });
+  assert.equal(reviewSequenceIssues(invocationMismatch.c.f.root, invocationMismatch.c.entries, {}, {
+    payload: invocationMismatch.c.event.input,
+  })[0]?.code, 'E_REVIEW');
+
+  const reviewerMismatch = bindAdmissionFixture(t);
+  const runPath = path.join(reviewerMismatch.c.f.root, '.omp/plans/review-runs.json');
+  const runStore = JSON.parse(readFileSync(runPath, 'utf8'));
+  runStore.runs[0].reviewerId = 'different-reviewer';
+  writeFileSync(runPath, JSON.stringify(runStore));
+  assert.equal(reviewSequenceIssues(reviewerMismatch.c.f.root, reviewerMismatch.c.entries, {}, {
+    payload: reviewerMismatch.c.event.input,
+  })[0]?.code, 'E_REVIEW');
+});
+
+test('missing run record remains the documented admission residual and never adds a round', t => {
+  const fixture = bindAdmissionFixture(t);
+  const runPath = path.join(fixture.c.f.root, '.omp/plans/review-runs.json');
+  rmSync(runPath);
+  assert.deepEqual(reviewSequenceIssues(fixture.c.f.root, fixture.c.entries, {}, {
+    payload: fixture.c.event.input,
+  }), []);
+  assert.equal(reviewRoundCount(fixture.c.registry, 'synthetic-spec'), 1);
+});
+
+test('positive admission independently refuses hand-bound reviewer dependence', t => {
+  const authorReview = bindAdmissionFixture(t);
+  const reviewerId = authorReview.c.candidate.codeReview.reviewerId;
+  authorReview.c.candidate.authorIds = [reviewerId];
+  authorReview.c.candidate.codeReview.authorIds = [reviewerId];
+  saveAdmissionSource(authorReview, source => { source.authorIds = [reviewerId]; });
+  refreshAdmissionRunFingerprint(authorReview);
+  assert.equal(reviewSequenceIssues(authorReview.c.f.root, authorReview.c.entries, {}, {
+    payload: authorReview.c.event.input,
+  })[0]?.code, 'E_REVIEW');
+
+  const dependentReviewer = bindAdmissionFixture(t);
+  const criticReviewerId = dependentReviewer.c.candidate.dispatches[0].reviewerId;
+  dependentReviewer.c.candidate.codeReview.reviewerId = criticReviewerId;
+  const runPath = path.join(dependentReviewer.c.f.root, '.omp/plans/review-runs.json');
+  const runStore = JSON.parse(readFileSync(runPath, 'utf8'));
+  runStore.runs[0].reviewerId = criticReviewerId;
+  writeFileSync(runPath, JSON.stringify(runStore));
+  saveAdmissionSource(dependentReviewer, source => { source.reviewerId = criticReviewerId; });
+  assert.equal(reviewSequenceIssues(dependentReviewer.c.f.root, dependentReviewer.c.entries, {}, {
+    payload: dependentReviewer.c.event.input,
+  })[0]?.code, 'E_REVIEW');
+
+  const missingDependentId = bindAdmissionFixture(t);
+  missingDependentId.c.candidate.dispatches[0].reviewerId = '';
+  missingDependentId.c.candidate.codeReview.dispatches = structuredClone(missingDependentId.c.candidate.dispatches);
+  saveAdmissionSource(missingDependentId, source => {
+    source.dispatches = structuredClone(missingDependentId.c.candidate.dispatches);
+  });
+  refreshAdmissionRunFingerprint(missingDependentId);
+  assert.equal(reviewSequenceIssues(missingDependentId.c.f.root, missingDependentId.c.entries, {}, {
+    payload: missingDependentId.c.event.input,
+  })[0]?.code, 'E_REVIEW');
+
+  const authorDependent = bindAdmissionFixture(t);
+  authorDependent.c.candidate.authorIds.push('synthetic-critic');
+  authorDependent.c.candidate.codeReview.authorIds = structuredClone(authorDependent.c.candidate.authorIds);
+  saveAdmissionSource(authorDependent, source => {
+    source.authorIds = structuredClone(authorDependent.c.candidate.authorIds);
+  });
+  refreshAdmissionRunFingerprint(authorDependent);
+  assert.equal(reviewSequenceIssues(authorDependent.c.f.root, authorDependent.c.entries, {}, {
+    payload: authorDependent.c.event.input,
+  })[0]?.code, 'E_REVIEW');
+});
+test('review registry lock maps acquisition refusals to changed-registry denials', t => {
+  const c = setup(t);
+  const file = c.record.registryPath;
+  const lockPath = `${path.resolve(file)}.lock`;
+  let called = false;
+
+  const ioFailure = reviewSequence.withReviewRegistryLock(file, {}, {
+    openSync() {
+      const error = Error('synthetic lock I/O failure');
+      error.code = 'EACCES';
+      throw error;
+    },
+  }, () => { called = true; });
+  assert.deepEqual(ioFailure, {
+    ok: false, code: 'E_REVIEW_REGISTRY_CHANGED', lockCode: 'E_LOCK_IO',
+  });
+  assert.equal(called, false);
+
+  writeFileSync(lockPath, '{}');
+  const locked = reviewSequence.withReviewRegistryLock(file, { timeoutMs: 0 }, {}, () => { called = true; });
+  assert.deepEqual(locked, {
+    ok: false, code: 'E_REVIEW_REGISTRY_CHANGED', lockCode: 'E_LOCKED',
+  });
+  assert.equal(called, false);
+  rmSync(lockPath);
+
+  let reentrant;
+  const outer = reviewSequence.withReviewRegistryLock(file, {}, {}, () => {
+    assert.equal(existsSync(lockPath), true);
+    reentrant = reviewSequence.withReviewRegistryLock(file, {}, {}, () => { called = true; });
+    return 'locked callback result';
+  });
+  assert.equal(outer, 'locked callback result');
+  assert.deepEqual(reentrant, {
+    ok: false, code: 'E_REVIEW_REGISTRY_CHANGED', lockCode: 'E_LOCK_REENTRANT',
+  });
+  assert.equal(called, false);
+  assert.equal(existsSync(lockPath), false);
+});
+
+// R4 refusal-cause coverage: a refusal must name its cause instead of the one fixed critic sentence.
+test('review sequence names an accounting failure instead of the generic critic sentence', t => {
+  const c = setup(t, r => { r.reviewHistory = {}; });
+  const [issue] = reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input });
+  assert.equal(issue?.code, 'E_REVIEW');
+  assert.match(issue.detail, /lineage-accounting: reviewHistory must be an array\./);
+  assert.doesNotMatch(issue.detail, /Critic requires/);
+});
+
+test('review sequence names duplicate candidate ids and bounds the values it echoes', t => {
+  const c = setup(t, r => {
+    r.candidates[0].id = `dup\n${'x'.repeat(600)}`;
+    r.candidates.push({ ...structuredClone(r.candidates[0]) });
+  });
+  const [issue] = reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input });
+  assert.equal(issue?.code, 'E_REVIEW');
+  assert.match(issue.detail, /duplicate candidate ids: /);
+  assert.equal(issue.detail.includes('\n'), false);
+  assert.ok(issue.detail.length <= 512, String(issue.detail.length));
+  assert.doesNotMatch(issue.detail, /Critic requires/);
+});
+
+test('review sequence names a missing recorded round with candidate and revision', t => {
+  const c = setup(t, r => {
+    r.reviewHistory = [{ seq: 1, kind: 'alias', lineageKey: 'synthetic-spec',
+      from: 'synthetic-spec', to: 'synthetic-spec-renamed', authorityRef: 'R4 fixture' }];
+  });
+  const [issue] = reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input });
+  assert.equal(issue?.code, 'E_REVIEW');
+  assert.match(issue.detail, /no recorded review round for candidate synthetic-spec@/);
+  assert.ok(issue.detail.includes(`@${c.f.state.revision};`), issue.detail);
+  assert.doesNotMatch(issue.detail, /Critic requires/);
+});
+
+test('review sequence surfaces a thrown cause bounded by the 512-character channel', t => {
+  const c = setup(t, r => { r.candidates[0].codeReview.revision = 'stale-revision'; });
+  const [issue] = reviewSequenceIssues(c.f.root, c.entries, {}, { payload: c.event.input });
+  assert.equal(issue?.code, 'E_REVIEW');
+  assert.match(issue.detail, /review-sequence check failed: prerequisite/);
+  assert.ok(issue.detail.length <= 512, String(issue.detail.length));
+});
+
+test('gate denial carries the review-sequence cause into reason and detail', async t => {
+  const c = setup(t, r => { r.candidates.push({ ...structuredClone(r.candidates[0]) }); });
+  const unbound = { toolName: 'task', input: { context: 'Read only', tasks: c.event.input.tasks } };
+  const result = await c.gate().handleToolCall(unbound, { cwd: c.f.root });
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_REVIEW/);
+  assert.match(result.reason, /duplicate candidate ids: synthetic-spec/);
+  assert.match(result.detail ?? '', /duplicate candidate ids: synthetic-spec/);
+  assert.doesNotMatch(result.reason, /Critic requires/);
+});

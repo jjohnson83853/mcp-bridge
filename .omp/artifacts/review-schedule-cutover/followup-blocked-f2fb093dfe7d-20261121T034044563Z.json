@@ -1,0 +1,40 @@
+{
+  "complete": false,
+  "status": "blocked-missing-governed-implementation-lane",
+  "task": "Two-file test-contract follow-up",
+  "requestedFiles": [
+    "workflow-policy/execution-gate.boundary.test.ts",
+    "workflow-policy/execution-runtime-smoke.test.mjs"
+  ],
+  "ownerRequest": "Keep guards unchanged, run both suites without exclusions, finish delivery if green.",
+  "findings": {
+    "canonicalState": "/home/opencode/.omp/agent/.omp/plans/execution-state.json",
+    "activeFeature": "read-only-review-recovery",
+    "revision": "r1",
+    "authorizedImplementationRole": "harness-engineer",
+    "allowedWritePaths": [
+      "workflow-policy/execution-amendment.mjs",
+      "workflow-policy/execution-amendment.test.mjs",
+      "workflow-policy/execution-gate.ts",
+      "workflow-policy/execution-gate-retry.test.mjs"
+    ],
+    "reviews": {
+      "specification": null,
+      "tasks": null
+    },
+    "eligibleFollowupTask": false
+  },
+  "authorityBoundary": "S03/L04 reserve permanent tests to the implementation role. The prior S04C main-session exception ended at handoff and does not extend to these two files. User outcome authorization does not override that developer-level role boundary.",
+  "unchanged": [
+    "Both requested tests",
+    "Production guards",
+    "RULES.md",
+    "Canonical state",
+    "Review registries",
+    "Historical denials",
+    "Retry counters"
+  ],
+  "checks": "No test rerun or mutation dispatch attempted; the existing failures are already known.",
+  "clearingAction": "Establish an approved implementation task/envelope for the two files under the governing workflow, or update the governing developer policy with an explicit bounded main-session exception. Do not repurpose recovery tasks or fabricate approvals.",
+  "delivery": "Not attempted; no green unfiltered test result or eligible Git-delivery state."
+}

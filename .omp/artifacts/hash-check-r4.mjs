@@ -1,0 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+const canonical=v=>Array.isArray(v)?'['+v.map(canonical).join(',')+']':v&&typeof v==='object'?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canonical(v[k])).join(',')+'}':JSON.stringify(v);
+const H=x=>createHash('sha256').update(x).digest('hex');
+const s=JSON.parse(readFileSync('.omp/artifacts/header-transit-review-seed-cr4.json','utf8'));
+const reg=JSON.parse(readFileSync('.omp/plans/review-sequence.json','utf8'));
+const d=reg.candidates.at(-1).dispatches[0];
+const got=[H(canonical(s.workflowDispatch.requests[0])),H(s.tasks[0].task),H(s.instructions)];
+const want=[d.requestSha256,d.taskSha256,d.instructionsSha256];
+console.log(JSON.stringify({got,want,match:got.map((g,i)=>g===want[i])},null,2));

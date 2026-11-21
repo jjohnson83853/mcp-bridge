@@ -121,7 +121,7 @@ func runtimeErrorInfo(reason string) (ErrorInfo, bool) {
 		info.Kind, info.Retryable, info.Remediation = "dependency", true, "verify the upstream dependencies and retry"
 	case "tool_reported_error":
 		info.Kind, info.Remediation = "dependency", "correct the upstream tool behavior"
-	case "client_missing":
+	case "client_missing", "parameter_header_unsupported":
 		info.Kind, info.Remediation = "configuration", "correct the server configuration or credentials"
 	case "invalid_config", "pin_rejected":
 		info.Kind, info.Remediation = "configuration", "correct the configuration"

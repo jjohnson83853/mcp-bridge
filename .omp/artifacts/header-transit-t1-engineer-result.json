@@ -1,0 +1,31 @@
+{
+  "text": "Spawned agent `HeaderParamWireReproduction` (job `HeaderParamWireReproduction`).",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [],
+    "totalDurationMs": 1,
+    "progress": [
+      {
+        "index": 0,
+        "id": "HeaderParamWireReproduction",
+        "agent": "engineer",
+        "agentSource": "user",
+        "status": "pending",
+        "task": "Complete assignment thoroughly:\n\nImplement ticket T1 RED tests exactly as specified in the instructions: two files only, TestParameterHeaderTransitWireFacts and TestParameterHeaderStatefulControlIsAchievable in cmd/mcp-bridge/serve_header_params_test.go, with the modern-peer fixture in internal/upstream/header_params_test.go. Tests must compile and fail on the current production tree for the missing parameter headers, not for a compile error. Run the two named tests and go vet; report exact output and exit codes. Do not edit production code or anything outside the two named files.",
+        "assignment": "Implement ticket T1 RED tests exactly as specified in the instructions: two files only, TestParameterHeaderTransitWireFacts and TestParameterHeaderStatefulControlIsAchievable in cmd/mcp-bridge/serve_header_params_test.go, with the modern-peer fixture in internal/upstream/header_params_test.go. Tests must compile and fail on the current production tree for the missing parameter headers, not for a compile error. Run the two named tests and go vet; report exact output and exit codes. Do not edit production code or anything outside the two named files.",
+        "recentTools": [],
+        "recentOutput": [],
+        "toolCount": 0,
+        "requests": 0,
+        "tokens": 0,
+        "cost": 0,
+        "durationMs": 0
+      }
+    ],
+    "async": {
+      "state": "running",
+      "jobId": "HeaderParamWireReproduction",
+      "type": "task"
+    }
+  }
+}

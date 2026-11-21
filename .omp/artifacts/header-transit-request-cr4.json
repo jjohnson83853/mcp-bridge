@@ -1,0 +1,26 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "header-parameter-transit",
+  "revision": "r4",
+  "requests": [
+    {
+      "name": "ReviewHeaderSpecR4",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/header-parameter-transit/spec.md",
+          ".scratch/header-parameter-transit/issues/01-header-parameter-wire-reproduction.md",
+          ".scratch/header-parameter-transit/issues/02-header-parameters-traverse-stateless-calls.md",
+          ".scratch/header-parameter-transit/issues/03-stateful-and-legacy-protocol-boundary.md",
+          ".scratch/header-parameter-transit/issues/04-deployed-github-verification.md"
+        ]
+      },
+      "targetCandidateId": "header-parameter-transit-spec-r4",
+      "targetRevision": "r4"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "intent": "Probe T4 dispatch admissibility (operator)",
+  "instructions": "Read-only probe; do not execute.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "header-parameter-transit",
+    "revision": "r6",
+    "requests": [
+      {
+        "name": "DeployedHeaderVerification",
+        "taskId": "T4",
+        "agent": "operator",
+        "effects": {"kind": "read", "paths": ["docs/runbooks/header-parameters.md"]}
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "DeployedHeaderVerification",
+      "agent": "operator",
+      "solutionSpace": "one deployed probe: exact call and evidence fields given",
+      "task": "probe-only; no execution"
+    }
+  ]
+}

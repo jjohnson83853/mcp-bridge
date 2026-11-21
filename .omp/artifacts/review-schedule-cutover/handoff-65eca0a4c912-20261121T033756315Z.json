@@ -1,0 +1,94 @@
+{
+  "complete": false,
+  "status": "scoped-verification-passed-full-suite-blocked",
+  "task": "S04C review-schedule cutover",
+  "authority": "Owner clarified that anchor validation is not an admission denial and directed refresh/continuation. No further admission denial occurred.",
+  "sourceRoot": "/home/opencode/.omp/agent",
+  "changes": [
+    "Restored legacy passing-review history compatibility while retaining full source/inputs/reviewer binding for negative review outcomes.",
+    "Corrected retired-allowance fixture virtual filesystem mapping; verified cross-project writes remain denied even with the retired environment flag.",
+    "Preserved canonical missing-review denial precedence in the envelope-rejection regression."
+  ],
+  "verification": {
+    "red": {
+      "source": "continuation-stopped-20261121T033137Z.json",
+      "canonicalDispatchExitCode": 1,
+      "pass": 4,
+      "fail": 4
+    },
+    "focusedGreen": {
+      "source": "continuation-stopped-20261121T033137Z.json",
+      "exitCode": 0,
+      "pass": 13,
+      "fail": 0
+    },
+    "finalRegression": {
+      "command": "node --test --test-skip-pattern='Option 1B global maintenance permits workflow-policy and skills|policy documents load with valid frontmatter and consistent CLI paths across every rule' workflow-policy/execution-review-sequence.test.mjs workflow-policy/execution-gate.test.ts",
+      "exitCode": 0,
+      "pass": 338,
+      "fail": 0,
+      "limit": "Two previously recorded failing imported tests explicitly excluded. This is not a full-suite green result."
+    },
+    "freshActivation": {
+      "command": "node /home/opencode/projects/default/mcp-bridge/.omp/artifacts/review-schedule-cutover/cutover-activation-driver.mjs",
+      "exitCode": 0,
+      "evidence": "activation-9f36feffd413-20261121T033630394Z.json",
+      "evidenceBytes": 162162,
+      "boundary": "installed ExtensionRunner.emitToolCall with configured prompt-scope.ts actually loaded",
+      "cases": [
+        {
+          "name": "round-1-stale-citation",
+          "pid": 36577,
+          "exitCode": 0,
+          "passed": true,
+          "blocked": false
+        },
+        {
+          "name": "round-1-statement-contradiction",
+          "pid": 36655,
+          "exitCode": 0,
+          "passed": true,
+          "blocked": true
+        },
+        {
+          "name": "round-3-statement-contradiction",
+          "pid": 36730,
+          "exitCode": 0,
+          "passed": true,
+          "blocked": false,
+          "durableResidualVerified": true
+        }
+      ],
+      "providerRequests": 0,
+      "children": [],
+      "canonicalSyntheticStateUnchanged": true,
+      "limit": "Proves fresh-process activation, not reloading the already-running parent session."
+    }
+  },
+  "temporaryAllowance": {
+    "sourceRemoved": true,
+    "removalReceipt": "execution-gate.ts#C552",
+    "regression": "retired S04C allowance cannot admit cross-project source writes: PASS",
+    "reinstated": false
+  },
+  "preserved": [
+    "Existing snapshots and handoffs",
+    "Historical denials and retry counters",
+    "Live canonical state and T28 records",
+    "Review registries",
+    "Authorization/provenance/view/path/envelope/lock/tg/role protections"
+  ],
+  "cleanup": "Both owned disposable activation scripts deleted after capture; evidence retained.",
+  "blockers": [
+    {
+      "file": "workflow-policy/execution-gate.boundary.test.ts:181-192",
+      "finding": "Global maintenance skills write is expected allowed by the existing test but denied by current admission behavior. Outside this task: do not broaden access merely to satisfy the test."
+    },
+    {
+      "file": "workflow-policy/execution-runtime-smoke.test.mjs:437-453",
+      "finding": "Existing RULES.md exceeds the test's 6500-byte style budget (previously observed 11337). Neither RULES.md nor that test is in the five-file change scope."
+    }
+  ],
+  "discipline": "Round-2 delta scope and mechanical pre-submission discipline remain documented, not newly mechanically enforced.",
+  "delivery": "Uncommitted and unshipped. Full acceptance and delivery blocked; no git operation or fabricated completion/approval."
+}

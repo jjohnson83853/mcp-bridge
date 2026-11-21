@@ -1,0 +1,111 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "upstream-breaker-recovery-spec-r2",
+  "revision": "r2",
+  "verdict": "APPROVE",
+  "format": "installed",
+  "invocationId": "24686001-39e7-4c8d-b9fd-386b0810858f",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-breaker-recovery/spec.md",
+      "sha256": "84eee6b563b3f213945dc55a71732efe6233f8cabfd14292ef93acb7d895495a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/agents/domain.md",
+      "sha256": "54d97f3bd91612a42d28b473463c37e8283fa86274aa77e9033528e0dbf039e7"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/agents/issue-tracker.md",
+      "sha256": "ed489dcd8b47b6dd0d7e45a9f5dcff9f6a238af59ffc8b12be295c083124c60d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-breaker-recovery/issues/01-breaker-discovery-probe-recovery.md",
+      "sha256": "0e4f9334f883b0aa65ababb75e2264c39757fa96d4d9affad0df6310e8a5a7dd"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-breaker-recovery/backlog.md",
+      "sha256": "3d3642aabe4c34c2cde34f80319e4991a5314f30ee6c6d92bea82f12680b1ce5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-breaker-recovery/incident-2026-11-14.md",
+      "sha256": "d331e01fe8455633dd5e2025477f31114f38cee4385f78797d42c681150865f6"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/runtime.go",
+      "sha256": "71ae731c3a2272ce619501d9f6359e28c87a89d09b898378e18498cfc1db67ff"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/runtime_test.go",
+      "sha256": "2640bdbd21e0fa37e7108f8668507e0fd74fd1a9c3aaf2ae425fa9496d9597dc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/runtime_edge_test.go",
+      "sha256": "e8d0e14c05b3e44d84093c1622a1bb3f2699aec2e9f008eaf644f5d7fbef510f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated.go",
+      "sha256": "90e45fa1cbb36d8dcbb47bf372547846b0825b280c279651dc4fcab147a5279c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated_test.go",
+      "sha256": "346a4abff220dd657e225ce68c74544598972da5f922f29cba76b826e12d09d6"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/refresh.go",
+      "sha256": "44f6c674a7a2989499c4f077a902aadd9ac3b5473a22a79eb91926e80dd55f40"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/reload.go",
+      "sha256": "313a30b017bb1f5f120d8ed7b6b43a3c93b81e20a7b7e1ff3f75793d87a11a5d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "52969ba88183ce2dee55f1b5c9aac95816b66a6e65ee9242bcbb36877ede3cd4"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "c011fe40e81af117e58f10aeb5a0294fe7f8455b636a0c8b3155187b9416a987"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "7c1e9e1393a74ad59625731059e4ae5f6e5d48a0fa05f70a4b0f858817a6570a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/upstream-breaker-recovery-planner-r2.md",
+      "sha256": "84eee6b563b3f213945dc55a71732efe6233f8cabfd14292ef93acb7d895495a"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewBreakerSpecR2",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "e65f94c73446f52a3b11a43887683c3a421adfe9f942d1888adf555b3f8b23cb",
+      "targetCandidateId": "upstream-breaker-recovery-spec-r2",
+      "targetRevision": "r2",
+      "taskSha256": "df8031a89a913f8118ba2d1eb77fc05a03a916466772edd00b0d0fbd7f48834e",
+      "instructionsSha256": "da00a7c6d7e6795c078646ee7008b6fda5ab07db7f7b419c3e5fe2a0016dcae5"
+    },
+    {
+      "name": "CritiqueBreakerSpecR2",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "0f4f0e93452d3e50f885d3d716752becefdba7a795e309a0825a93006ce35424",
+      "targetCandidateId": "upstream-breaker-recovery-spec-r2",
+      "targetRevision": "r2",
+      "taskSha256": "c656935c350ad19c829fe4d242ac17dcb8e6d66cfca39e6bf84515cb8cd438d6",
+      "instructionsSha256": "da00a7c6d7e6795c078646ee7008b6fda5ab07db7f7b419c3e5fe2a0016dcae5"
+    }
+  ],
+  "output": "All verification complete. Every anchor, seam, and closure claim has been checked against live source. Composing the final review within the byte contract.\n\n## Code Review Summary\n\n**Mode:** Specification, Round 2 — candidate `upstream-breaker-recovery-spec-r2` (r2, DRAFT). Inputs: spec §1–10, ticket 01, r1+r2 state packets, review-sequence r2 binding (line 1324), live anchors: runtime.go, dedicated.go, refresh.go, reload.go, wiring.go, serve.go, metrics.go, verify.yml, test oracles, config, backlog.\n\n**Files Reviewed:** 1 spec + 13 source/evidence anchors — **Total Issues:** 4 LOW advisory, 0 blocking; 7/7 r1 findings closed.\n\n### By Severity\nCRITICAL: 0 · HIGH: 0 · MEDIUM: 0 · LOW: 4\n\n### r1 Closure Verification (all confirmed against source)\n- **[MEDIUM] AC5 fallback:** closed — §6 mandates BLOCKED-with-evidence + stop + explicit owner envelope-widening; §9/§10 agree, no pre-authorization. Feasibility proven: `service.NewRuntime()` (reload.go:245), exported `Reload`/`AdmitStartup`, `NewRefresher` (refresh.go:111), `Trigger`(:152)/`Passes`(:179)/`Run`(:186); no import cycle (service imports no upstream).\n- **[LOW] anchors:** closed — reload.go:618 exact; serve.go:217-231 covers the wiring block (216-233, `Discover:` 222); `ReloadDeps` = reload.go:23.\n- **[LOW] gate alternation:** closed — `TestFailedProbe` in §6 cmd #1.\n- **[LOW] reload-leg exception:** closed — §5+§7+AD7; both legs converge on `build`→reload.go:618; SIGHUP plumbing serve.go:209-211; T1 edits only dedicated.go.\n- **[LOW] defer+set-once:** closed — AD2/§4/I6 normative, panic-safe, exactly-once.\n- **[LOW] AC10 oracle:** closed — `NewMetrics` metrics.go:141 / `Handler` :179, named in §5+§7.\n- **[LOW] ticket seam:** closed — `runPass` unexported (refresh.go:212); public mapping recorded.\n\n### Assigned Checks — all pass\nDenial vs accounting: `probeErr!=nil`→plain `discover`, zero breaker mutation; AD3 keeps RecordFailure/RecordSuccess out of discovery (matches current dedicated.go). One-shot on error/cancel: complete(false) resets `openedAt=now`, releases `probeActive` (runtime.go:304-312); AC9 wording matches. Racing calls: AdmitCall rejects while halfOpen (:243); loser Discover = plain discovery; concurrent RecordFailure-vs-probe acknowledged as §9 target, pre-existing semantics. runtime.go unchanged: envelope, prohibited scope, design all agree. Stateful limitation documented; ticket 2 title verified (backlog:55); AC11 asserts no eviction. Envelope vs fallback consistent — cmd/ out of scope, escape owner-gated. Ticket AC-1..7→AC1..AC7 preserved, AC8–12 additive (requirements sha identical r1↔r2 → no R/AC change); AC7/T1#3-4 = verify.yml:42/48/51. Observability exceptions carry reason+consequence; reload leg not publicly drivable from internal/upstream, so the source-anchor exception is justified.\n\n### Issues\n- **[LOW] Stale extraction range** — spec.md §3/§4 (`dedicated.go:71-140`). Confidence HIGH. Actual body 71–149 (next func at 151); 140 is `break`, truncating sort/return/braces. Fix: cite 71–149 in both places (§6's 71–196 is correct).\n- **[LOW] Residual §3 anchor drift (pre-existing)** — wiring.go discover = 192–203 (spec 194-204); `ServerClient` = runtime.go:33–49 (spec 31-47; described fields 42–47 covered, claim holds). Confidence HIGH. Fix: 192–203 / 33–49.\n- **[LOW] Redundant alternation** — §6 cmd #1 `TestDiscover|TestDiscovery`. Confidence HIGH. Unanchored regexp: first member prefix-matches; drop the duplicate.\n- **[LOW] AC5 seam wording** — §5: Trigger()+await Passes() alone hangs; the queued trigger is consumed only by `Run`'s loop (refresh.go:186-201). Confidence MEDIUM. Fix: state Run(ctx) runs (goroutine) while Trigger+Passes is awaited.\n\n### Positive Observations\n- Identical requirements sha256 across r1/r2 bindings — machine-checkable no-R/AC-change evidence.\n- §9 cleanly separates planned vs executed verification; no fabricated results.\n- AC12's named existing tests all exist (runtime_test.go:75,110; runtime_edge_test.go:118); `peerState{initializes,executions}` verified.\n\nR1–R8, AC1–AC12, T0/T1 and the §10 envelope are endorsed as mutually consistent, source-accurate, and feasible via public interfaces.\n\n### Recommendation\nAPPROVE"
+}

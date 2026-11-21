@@ -1,0 +1,12 @@
+--- FAIL: TestParameterHeaderTransitWireFacts (0.03s)
+    serve_header_params_test.go:185: mode=default-stateless method="tools/call" protocol="2026-07-28" owner="" repo="" body={"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"_meta":{"io.modelcontextprotocol/clientCapabilities":{"roots":{"listChanged":true}},"io.modelcontextprotocol/clientInfo":{"name":"mcp-bridge-alpha","version":"1"},"io.modelcontextprotocol/protocolVersion":"2026-07-28"},"name":"parameter_headers","arguments":{"owner":"ticket-owner-42","repo":"header-transit-repo"}}} control_is_error=false
+    serve_header_params_test.go:192: parameter-header call returned isError=true; missing parameter headers: owner="" repo="" body={"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"_meta":{"io.modelcontextprotocol/clientCapabilities":{"roots":{"listChanged":true}},"io.modelcontextprotocol/clientInfo":{"name":"mcp-bridge-alpha","version":"1"},"io.modelcontextprotocol/protocolVersion":"2026-07-28"},"name":"parameter_headers","arguments":{"owner":"ticket-owner-42","repo":"header-transit-repo"}}}
+    serve_header_params_test.go:195: Mcp-Param-owner = ""; want "ticket-owner-42"
+    serve_header_params_test.go:198: Mcp-Param-repo = ""; want "header-transit-repo"
+--- FAIL: TestParameterHeaderRestartSurvivesInStatelessMode (0.03s)
+    serve_header_params_test.go:299: post-restart tools/call result = map[code:upstream_protocol_error execution_state:unknown message:the upstream call did not complete retryable:false]; want a successful new-generation echo
+--- FAIL: TestLegacyParamHeaderCallFailsWithNamedCode (0.03s)
+    serve_header_params_test.go:379: legacy parameter-header call returned isError=false; want named protocol rejection: map[request_id:08b215df945c2703d5f089cbad2b45c5 server:alpha tool_name:alpha__parameter_headers upstream_result:map[content:[map[text:{"owner":"ticket-owner-42","repo":"header-transit-repo"} type:text]]]]
+FAIL
+FAIL	github.com/jjohnson83853/mcp-bridge/cmd/mcp-bridge	0.135s
+FAIL

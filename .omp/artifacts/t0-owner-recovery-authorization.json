@@ -1,0 +1,10 @@
+{
+  "kind": "user-message",
+  "taskId": "T0",
+  "feature": "upstream-breaker-recovery",
+  "messages": [
+    "I authorize the recovery amendment for T0. Use your planner and proceed.",
+    "ok. do that and proceed with the planner"
+  ],
+  "scope": "Task-local recovery for T0 with unchanged read-only effects; no review, role, safety, or implementation-authorization waiver."
+}

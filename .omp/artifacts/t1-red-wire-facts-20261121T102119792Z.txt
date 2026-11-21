@@ -1,0 +1,11 @@
+$ bash -c 'set +e; out=$(go test ./cmd/mcp-bridge -run "^TestParameterHeaderTransitWireFacts$" -count=1 2>&1); code=$?; printf "%s\n" "$out"; if [ "$code" -eq 1 ] && printf "%s\n" "$out" | grep -q "missing parameter headers"; then printf "expected-RED verified: test exit %s\n" "$code"; else printf "expected-RED check failed: exit %s\n" "$code"; exit 1; fi'
+exit code: 0
+--- FAIL: TestParameterHeaderTransitWireFacts (0.04s)
+    serve_header_params_test.go:175: mode=default-stateless method="tools/call" protocol="2026-07-28" owner="" repo="" body={"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"_meta":{"io.modelcontextprotocol/clientCapabilities":{"roots":{"listChanged":true}},"io.modelcontextprotocol/clientInfo":{"name":"mcp-bridge-alpha","version":"1"},"io.modelcontextprotocol/protocolVersion":"2026-07-28"},"name":"parameter_headers","arguments":{"owner":"ticket-owner-42","repo":"header-transit-repo"}}} control_is_error=false
+    serve_header_params_test.go:182: parameter-header call returned isError=true; missing parameter headers: owner="" repo="" body={"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"_meta":{"io.modelcontextprotocol/clientCapabilities":{"roots":{"listChanged":true}},"io.modelcontextprotocol/clientInfo":{"name":"mcp-bridge-alpha","version":"1"},"io.modelcontextprotocol/protocolVersion":"2026-07-28"},"name":"parameter_headers","arguments":{"owner":"ticket-owner-42","repo":"header-transit-repo"}}}
+    serve_header_params_test.go:185: Mcp-Param-owner = ""; want "ticket-owner-42"
+    serve_header_params_test.go:188: Mcp-Param-repo = ""; want "header-transit-repo"
+FAIL
+FAIL	github.com/jjohnson83853/mcp-bridge/cmd/mcp-bridge	0.045s
+FAIL
+expected-RED verified: test exit 1

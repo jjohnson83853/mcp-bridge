@@ -1,0 +1,18 @@
+{
+  "complete": false,
+  "candidateId": "upstream-breaker-recovery-spec-r1",
+  "revision": "r1",
+  "stage": "code-reviewer",
+  "candidateManifest": ".omp/artifacts/breaker-review-candidate-33dedda704c9-20261120T000253177Z.json",
+  "payload": ".omp/artifacts/breaker-code-review-payload-33dedda704c9-20261120T000253177Z.json",
+  "localPreflight": {"exitCode": 0, "nativePayloadLintFailure": null, "reviewSequenceIssues": []},
+  "nativeAdmission": {
+    "code": "E_REVIEW_TARGET",
+    "detail": "absent pair: request=targetCandidateId:<absent>,targetRevision:<absent>; descriptor=targetCandidateId:upstream-breaker-recovery-spec-r1,targetRevision:r1"
+  },
+  "observation": "The saved payload contains both target fields, but native admission reported them absent. The declared task-tool schema does not expose those item fields. Transport behavior is not yet independently diagnosed.",
+  "codeReviewerLaunched": false,
+  "criticLaunched": false,
+  "retryAttempted": false,
+  "implementationAuthorized": false
+}

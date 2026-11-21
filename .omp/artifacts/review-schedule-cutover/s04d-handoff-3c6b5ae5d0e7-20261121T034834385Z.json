@@ -1,0 +1,42 @@
+{
+  "complete": false,
+  "status": "blocked-unfiltered-suite-failure-outside-authorized-edit-scope",
+  "authority": "Fresh owner-designated S04D session; no dispatch waivers represented as approvals.",
+  "sourceRoot": "/home/opencode/.omp/agent",
+  "changes": [
+    "execution-gate.boundary.test.ts: expect the existing skills-write denial for edit and write; update the test title; retain other assertions.",
+    "execution-runtime-smoke.test.mjs: remove only the obsolete RULES.md byte-budget assertion."
+  ],
+  "snapshots": {
+    "directory": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/review-schedule-cutover",
+    "boundarySha256": "2ac94a6d1ea1af2a7219c345698b3fbe1b3dd6f5e4fa17206277a05532b9910d",
+    "smokeSha256": "b0c04f9873833683b59cc1dcf9c30da8be2e292461d5990172214971c23950dc",
+    "suffix": "-20261121T034725039552943Z.before",
+    "verified": "cp -n, cmp and matching SHA-256 outputs before editing"
+  },
+  "red": "Preserved regression-d75bb72c7ebb-20261121T033137Z.log and handoff-65eca0a4c912-20261121T033756315Z.json; failures not rerun for confirmation.",
+  "verification": {
+    "command": "node --test workflow-policy/execution-review-sequence.test.mjs workflow-policy/execution-gate.test.ts",
+    "exitCode": 1,
+    "tests": 340,
+    "pass": 339,
+    "fail": 1,
+    "skipped": 0,
+    "cancelled": 0,
+    "evidence": "s04d-regression-da298efc4d59-20261121T034813424895255Z.log",
+    "evidenceBytes": 32812,
+    "evidenceSha256": "da298efc4d59cb76e7a779023baff55c9a8a94f617898791fd7f62ef08578563",
+    "failure": "execution-runtime-smoke.test.mjs:461: AGENTS.md must not exceed 1,600 bytes (style budget, measured 1666)",
+    "classification": "Task/test contract failure; assertion and AGENTS.md edits outside S04D scope. No unresolved causal diagnosis.",
+    "shellCapture": "Persistent errexit stopped the wrapper on Node exit 1 before log finalization. Captured output retrieved and renamed without rerunning tests."
+  },
+  "delivery": {
+    "attempted": false,
+    "commit": null,
+    "push": null,
+    "reason": "Required unfiltered command did not exit 0."
+  },
+  "preserved": "No production guard, RULES.md, canonical state, T28 record, review registry, historical denial or retry counter was edited by this session. Unrelated existing work left intact.",
+  "nextAuthorityNeeded": "Explicit bounded authorization for the separate AGENTS.md byte-budget contract failure; no automatic retry or scope widening.",
+  "exception": "S04D ends at this verification and handoff."
+}

@@ -1,0 +1,21 @@
+{
+  "complete": false,
+  "stage": "code-reviewer",
+  "candidateId": "upstream-breaker-recovery-spec-r1",
+  "revision": "r1",
+  "seed": ".omp/artifacts/breaker-managed-code-review-seed-a16cf54221d3-20261120T000854400Z.json",
+  "verifiedCarrier": "Managed JSON workflowDispatch in batch context; targetCandidateId and targetRevision preserved; native item fields strictly within active schema.",
+  "descriptorValidation": "PASS: review-sequence descriptor and inputs match exact managed request.",
+  "preflightDenial": {
+    "code": "E_TASK_NOT_FRONTIER",
+    "reasons": [
+      "dispatch task is unknown (requested CR1; registered tasks: T0)",
+      "review-sequence check failed: spec not reviewed (canonical execution-state points to .scratch/upstream-breaker-recovery/spec.md, while candidate reviewed inputs point to .omp/artifacts/upstream-breaker-recovery-planner-r1.md)"
+    ]
+  },
+  "blockedPrerequisite": "Canonical execution state has not registered the review task CR1 and has not bound spec.path/sha256 to the reviewed planner artifact. Coordinator cannot apply that canonical state edit directly (E_COORDINATOR_EDIT_FORBIDDEN).",
+  "codeReviewerLaunched": false,
+  "criticLaunched": false,
+  "retryAttempted": false,
+  "harnessDefectEstablished": false
+}

@@ -1,0 +1,48 @@
+{
+  "complete": false,
+  "status": "blocked",
+  "feature": "header-parameter-transit",
+  "revision": "r5",
+  "ownerDirection": "Proceed with counter reconciliation and evidence-backed repair preparation; not approval of implementation or weakening acceptance.",
+  "counterReconciliation": {
+    "recordedReviewRevisions": ["r1", "r2", "r4", "r5"],
+    "completedReviewRounds": 4,
+    "originalMaxRounds": 4,
+    "baseline": "r1",
+    "r3": "Produced, superseded before a recorded review; do not invent a verdict.",
+    "s15": "Four recorded reviews are not proof of four failed plan-change attempts. Original exhaustion explanation was unsupported.",
+    "w09c": "Mechanical lineage cap still blocks continuation independently of S15. Later candidates omit maxRounds; omission grants no reset."
+  },
+  "blockers": [
+    {
+      "code": "E_ROUND_CAP",
+      "evidence": "workflow-policy/execution-review-sequence.mjs:866-869 rejects completed rounds >= maxRounds absent ownerOverride; :1149-1151 checks all candidates before dispatch classification.",
+      "missingCapability": "A supported public operation for binding explicit owner authorization and carrying context.ownerRoundOverride into both preflights and native admission.",
+      "inspection": "Exact ownerRoundOverride search in workflow-policy and extensions returned only development-workflow.md:19 and the consumer execution-review-sequence.mjs:1150. No carrier found in execution-state.mjs or execution-gate.ts. This is source inspection, not a new runtime denial.",
+      "clearingAction": "Provide an independently reviewed, task-bound supported override operation, preserving lineage, all four rounds, historical observations and default limits; or identify an existing operation with verified semantics. Do not edit counters, rename work, or inject an unvalidated wrapper field."
+    },
+    {
+      "code": "E_EVIDENCE_LANE_UNESTABLISHED",
+      "evidence": "Canonical CR1 and CT1 grant read effects to reviewers only; T1 grants engineer writes but remains implementation-gated. Effective planner, debugger and tdd-guide profiles have no shell execution.",
+      "clearingAction": "Establish an explicitly permitted disposable fixture-execution lane and bounded probe contract before running probes; do not enable shell tools on read-only roles or launch gated T1 early."
+    }
+  ],
+  "preparedFindingLedger": [
+    {"id":"F1","class":"contract-contradiction","status":"reopened-from-r4-M2","rootInvariant":"Discovery index guarantee must agree across R2, design, publication schedule and I2.","requiredEvidence":"A publication/index interleaving and whether header omission can execute any effect.","guard":"Do not silently relax an absolute guarantee merely because its requirement ID is unchanged."},
+    {"id":"F2","class":"r-ac-coverage-gap","status":"open","rootInvariant":"Exactly-one execution requires an asserted peer tools/call count, not receipt-only evidence.","affected":"R1/R5; AC02-1/AC03-1"},
+    {"id":"F3-F6","class":"source-fidelity","status":"advisory","affected":"wiring/go.mod anchors, connect/admit ordering, timeout boundaries and SDK citation ranges"},
+    {"id":"Q-legacy","class":"fixture-feasibility","status":"unverified","requiredEvidence":"Distinguish legacy DiscoverResult on the wire from client-synthesized unsupported-version error; assert negotiated version."},
+    {"id":"Q-ttl","class":"fixture-determinism","status":"unverified","requiredEvidence":"Cache TTL exceeds the full bounded test interval; exact zero list delta and exactly one execution observed."}
+  ],
+  "futureEvidencePacket": [
+    "Observed modern and legacy negotiation plus discover/initialize counts",
+    "Name-sorted paginated tool discovery with exact list deltas",
+    "Positive-TTL cache hit and zero additional list requests",
+    "Exactly-one execution on each success path",
+    "Failure/cancel/deadline outcome and zero-breaker-accounting evidence",
+    "Planner-owned reconciled specification, stable finding ledger and shared W09E risk evidence"
+  ],
+  "unchanged": ["canonical state", "specification", "source", "tests", "review registry", "review counters", "authorization", "role permissions"],
+  "launched": [],
+  "runtimeVerification": "NOT RUN; no runtime evidence claimed. No live dispatch retry consumed."
+}

@@ -1,0 +1,8 @@
+instructions: |2
+  Provide prompts I can pasted to get through blokers.
+advisors:
+  - name: default
+    model: openrouter/z-ai/glm-5.3:high
+    enabled: false
+  - name: Cheap2
+    model: openrouter/z-ai/glm-5.3-flashx:high

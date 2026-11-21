@@ -1,0 +1,30 @@
+{
+  "complete": false,
+  "status": "committed-push-blocked",
+  "commit": "5d0a93295de7300ed383f0a42b11da86a1472714",
+  "branch": "main",
+  "selectiveCommit": "Required commit API; seven authorized files; unrelated changes preserved.",
+  "verification": {
+    "command": "node --test workflow-policy/execution-review-sequence.test.mjs workflow-policy/execution-gate.test.ts",
+    "exitCode": 0,
+    "pass": 340,
+    "fail": 0,
+    "skipped": 0,
+    "evidence": "owner-requested-suite-0bbc7b0fda79-20261121T035747087698830Z.log"
+  },
+  "deliveryVerification": {
+    "command": "node workflow-policy/execution-state.mjs verify-delivery /home/opencode/.omp/agent",
+    "exitCode": 1,
+    "result": {
+      "ok": false,
+      "code": "E_DIRTY_WORKTREE",
+      "detail": "Working tree is dirty"
+    }
+  },
+  "push": {
+    "attempted": false,
+    "reason": "Required pre-delivery cleanliness check failed. No guard bypass or automatic retry."
+  },
+  "remaining": "Fourteen unrelated changed paths left untouched, including the owner-authored additional smoke assertion removal; no stash, reset or unrelated commit.",
+  "preserved": "Canonical state, T28 records, review registries, historical denials and retry counters unchanged."
+}

@@ -1,0 +1,119 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "header-parameter-transit-spec-r5",
+  "revision": "r5",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/spec.md",
+      "sha256": "4649575ab4a711cd3a31ab2ca4530b346ca33d683a21349a3dbd979c814aa249"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/mcp-bridge-defects/backlog.md",
+      "sha256": "53fd26de180ebb88379df6b2f0d7d57cfda069c78da08e7e189811963e06d97c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/01-header-parameter-wire-reproduction.md",
+      "sha256": "e8f309ceffb0c6b22517751ffa72afd2fbb13e8303fff5966ede64d2fd23d930"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/02-header-parameters-traverse-stateless-calls.md",
+      "sha256": "256b597cddd3b3abd3277d7bf120d8dcbfba890e2db4a5888d0b1eef09ab5fc4"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/03-stateful-and-legacy-protocol-boundary.md",
+      "sha256": "c70bdcfddf693716e98f51b9d3c7b471a08f7cbda80ad22a6bb142ec046206c7"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/04-deployed-github-verification.md",
+      "sha256": "8782d491d2f2f010c50c21ec04332c4f2f21193cbfb7a0e1adaecdd446db5823"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/agents/domain.md",
+      "sha256": "54d97f3bd91612a42d28b473463c37e8283fa86274aa77e9033528e0dbf039e7"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/agents/issue-tracker.md",
+      "sha256": "ed489dcd8b47b6dd0d7e45a9f5dcff9f6a238af59ffc8b12be295c083124c60d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/header-transit-planner-r1.md",
+      "sha256": "8054d28f24cdf82475a27df8c0ad3e73ed5bf36da91db299be709e2e147b8347"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated.go",
+      "sha256": "90e45fa1cbb36d8dcbb47bf372547846b0825b280c279651dc4fcab147a5279c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/runtime.go",
+      "sha256": "71ae731c3a2272ce619501d9f6359e28c87a89d09b898378e18498cfc1db67ff"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/client.go",
+      "sha256": "619cd0bf3da71890f4a66f325d6a7e90182858c41c6eed57eeb85b8f3664467e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated_test.go",
+      "sha256": "346a4abff220dd657e225ce68c74544598972da5f922f29cba76b826e12d09d6"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated_edge_test.go",
+      "sha256": "cf107312fd94d1d720f3008d6fa545a1dfdd7117cc6ac9ddd537a442f31d77fc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "01d26f7e6524104e6e0ed067f2da2dfbc0ebf17951fab0bdd0a3fc0479c8f98d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "38ac2ee5dfc44918a67fcf48ec7c05b67a1822f7c8b722b1aee91d634de6039d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/core/core.go",
+      "sha256": "0caaa1ba4d05d59b7182acdcb9f3fe331933e963f5a682724588145db31b25bd"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "52969ba88183ce2dee55f1b5c9aac95816b66a6e65ee9242bcbb36877ede3cd4"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "c011fe40e81af117e58f10aeb5a0294fe7f8455b636a0c8b3155187b9416a987"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_upstream_restart_test.go",
+      "sha256": "9b4eadd11a61fa5816aa7bd8cffc677fc22cd8cd3c130a59e5f627bbaf8835cb"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "5367c512ec2f16f73fc0fdc7b320d24cb5a32190ad70c8c22b4cdd01a12fc330"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewHeaderSpecR5",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "c8d63b23ae20a486c2c54c07d5574c17b3a85c27ec5a17559bec5d0a965e7ddd",
+      "taskSha256": "9d486a51905e9399560bf3d5bab429abaa52881b163b75d7e404edd4005ccfb3",
+      "instructionsSha256": "3050ab18a1c5b65745e82888d25fee9e2b36fb41e93f6a7a6921c428a83a7988",
+      "targetCandidateId": "header-parameter-transit-spec-r5",
+      "targetRevision": "r5"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** Specification (staged). Candidate `header-parameter-transit-spec-r5` / r5. Bound inputs: `.scratch/header-parameter-transit/spec.md`, `issues/01`–`04`. Total issues: 6.\n\n### By Severity\nCRITICAL 0 / HIGH 0 / MEDIUM 2 / LOW 4\n\n### CR3 closure\n- **H1 CLOSED.** AC01-4 (spec.md:123) and AC03-1 (:130) assert one `server/discover`, zero `initialize`. `latestProtocolVersion` is `2026-07-28` (client.go:327,390; existing negotiation test `internal/upstream/runtime_test.go:150`), so the pinned peer negotiates on the first probe.\n- **H2 CLOSED.** Tool unique ID is the name (server.go:261); `all()` sorts keys (features.go:103, page via `paginateList` server.go:2215). `aaa_control_tool` < `mmm_body_tool` < `zzz_header_tool` gives exactly 3 pages at `PageSize: 1`.\n- **M1 CLOSED.** I5 (:111) and §4:105 scope deadline/cancel to `deadline_exceeded`/`internal_error` with `unknown`; the specified seam returns the prepare error before `RecordFailure`/`RecordSuccess` (runtime.go:204–231, 266/286). Zero accounting is structurally reachable.\n- **M2 PARTIAL.** See F1.\n- **M3 CLOSED.** `SetCacheable` (server.go:183, invoked at :1114) plus `cache.get` TTL semantics make the exact zero list delta feasible.\n- **L1 CLOSED.** AC03-3 (:132) is six greps plus explicit content inspection.\n- **L2 CLOSED.** T1 scope (:153) captures HTTP status and JSON-RPC error code of rejected requests.\n\n### Issues\n**[MEDIUM][HIGH] F1 — R2 remains absolute while I2 admits under-inclusion.**\nspec.md:13 (R2) vs :111 (I2) and :95. R2 requires the index to \"never disagree … in the under-inclusive direction for an already-published tool\"; I2 permits the catalog to publish a header-bound tool the index lacks for one refresh interval, and §4 scopes the property to \"each installation\". A design invariant cannot narrow a requirement, so the CR3 M2 repair is textual-only in §4.\nFix: restate R2's last sentence as the snapshot-scoped guarantee (index contains every header-bound tool of the discovery it derives from; one interval of catalog lag stays body-only and is rejected before execution). No R/AC id, envelope or test change.\n\n**[MEDIUM][HIGH] F2 — R1/R5 \"exactly one execution\" has no oracle.**\nR1 (:11), R5 (:19), AC02-1 (:125), AC03-1 (:130). Neither success-path AC asserts the peer recorded exactly one `tools/call`; T1:156 records the count only as receipt evidence. A duplicate execution (transport retry) would pass every named oracle.\nFix: add \"the peer records exactly one `tools/call` request\" to AC02-1 and AC03-1.\n\n**[LOW][HIGH] F3 — stale anchor.** spec.md:40 cites `cmd/mcp-bridge/wiring.go:142`; the facade is at `wiring.go:177–178`.\n\n**[LOW][HIGH] F4 — stale anchor.** spec.md:33 and :254 cite `go.mod:11`; go-sdk v1.8.0 is `go.mod:8`.\n\n**[LOW][HIGH] F5 — sequence contradicted by source.** spec.md:107 orders stateless calls \"admission → connect\"; `Dedicated.CallTool` connects at dedicated.go:377 and admits inside `ServerClient.CallTool` (runtime.go:190). The normative prepare-after-admission text is correct; fix the sequence line.\n\n**[LOW][MEDIUM] F6 — timeout/range wording.** spec.md:103 says all RPCs share the call timeout; the stateless connect uses the parent context (`CallContext` starts at runtime.go:178/184). `put` is client.go:1276 (cited 1277–1300); `sortKeys` is features.go:100–104 (cited 76–99).\n\n### Open Questions\n- AC03-2 (:131) \"probe rejected with `CodeUnsupportedProtocolVersion`\": a legacy-pinned peer answers 200 with a legacy `DiscoverResult` (server.go:926–952; discover exempt at streamable.go:1526–1533) and the error is synthesized client-side (client.go:443–448). The fallback outcome is sound; confirm the test asserts the negotiated version, not a wire error. LOW.\n- AC03-1's positive-TTL fixture needs a TTL comfortably longer than the test; \"`TTLMs > 0`\" alone permits expiry and would break the exact-zero assertion. LOW.\n\n### Positive Observations\nModern-peer stateless transport, older-only legacy pin, argument retention and payload-free rejection are source-accurate; all write sets sit exactly inside `env-1`; every focused `-run` pattern matches its named oracle; deadline/cancel scoping is now explicit; no ticket criterion was weakened.\n\n### Recommendation\nREQUEST CHANGES",
+  "invocationId": "4b91c067-5f56-450e-9f90-dbe22a3c73c3",
+  "recordedAt": "2026-11-21T01:48:00.206Z"
+}

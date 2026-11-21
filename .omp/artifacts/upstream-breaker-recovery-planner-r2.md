@@ -1,0 +1,180 @@
+# Upstream Breaker Recovery — Discovery-Probe Close Path (SpecDD, feature `upstream-breaker-recovery`)
+
+## 1. STATUS
+Spec ID `upstream-breaker-recovery`, revision r2. State: **DRAFT** (ready for staged review; no execution authorization). Objective: give a latched-open per-server circuit breaker a reachable, execution-free close path through the existing discovery leg, so a returned upstream clears without a process restart and without replaying any unadmitted tool call. Evidence scope: incident `incident-2026-11-14.md`, ticket `issues/01-breaker-discovery-probe-recovery.md`, backlog findings 8–10. Revision history: r1 → r2 addresses the seven findings of `ReviewBreakerSpecR1` (1 MEDIUM, 6 LOW) with no added/removed R/AC/T IDs and no envelope widening. No code, tests, builds, or runtime probes were executed while producing this spec (see §9).
+
+## 2. REQUIREMENTS
+<!-- specdd:requirements:start -->
+**R1 (core).** A latched-open per-server breaker (opened by `RecordFailure` reaching `threshold`) MUST regain a reachable close path through the non-executing discovery leg, with no process restart and with zero replay of unadmitted tool executions. `BeginProbe()` is today the only close path and has zero production callers; this requirement adds its first caller.
+
+**R2 (probe admission and completion).** `Dedicated.Discover` MUST claim the single half-open probe via `ServerClient.BeginProbe()` before it acquires a session or lists tools, exactly when the breaker is open, `openDuration` has elapsed since `openedAt`, and no probe is active. It MUST complete the claim exactly once: discovery returning nil error → `complete(true)`; any discovery error (initialize/tools_list/status/malformed/timeout/cancellation) → `complete(false)`. When the breaker is closed, cooldown has not elapsed, or a probe is already active, `BeginProbe` denies the claim and `Discover` performs ordinary discovery with **no** breaker mutation.
+
+**R3 (strictly non-probing tool path).** `AdmitCall` and `CallTool` MUST NOT claim, complete, or replay a probe. While the breaker is open or half-open they reject with `backend_unavailable` / execution state `not_started`, dispatch zero upstream calls, and never re-execute the previously-failed call.
+
+**R4 (unchanged session acquisition).** The probe MUST reuse `Discover`'s existing acquisition verbatim: `stateless:true` (default) opens a fresh ephemeral connection per probe (`client.Connect` + `defer session.Close()`); `stateless:false` reuses the runtime's cached session from `sessionFor`. No eviction, reconnect, or new session policy is introduced.
+
+**R5 (both discovery legs).** Periodic refresh and SIGHUP/reload invoke the same `in.deps.Discover` → `upstreamRegistry.discover` → `client.Discover`, so both legs may recover a latched breaker; recovery is not tied to one trigger.
+
+**R6 (single probe, safe overlap).** At most one probe is in flight per server. A concurrent `Discover` that cannot claim the probe runs ordinary discovery and mutates no breaker state; tool calls remain rejected for the duration of the active probe. A cancelled/deadline-truncated probe completes as failure exactly once and leaves no probe reserved.
+
+**R7 (existing telemetry only).** Observability MUST reuse existing signals: a failed probe already emits the per-server `upstream_discovery_failed` record; a successful probe is evidenced by the existing refresh/`backend_complete` records. No new log event, metric, label, or envelope field is added.
+
+**R8 (stateful limitation = separate scope).** The cached-session wedge under `stateless:false` (`sessionFor` never evicts on transport failure) is documented and explicitly out of scope; it is backlog ticket 2 ("Evict the cached upstream session on transport failure"). It MUST NOT be silently fixed or widened here.
+
+**Non-goals.** No session eviction/reconnect (ticket 2); no refresh-failure attribution fields (ticket 3); no read-only pin expansion (ticket 4); no new configuration setting; no change to breaker threshold/`openDuration` defaults or to `RecordFailure`/`RecordSuccess`/`AdmitCall`/`BeginProbe` logic; no change to `DiscoverPrompts`, prompt routing, or the closed observe vocabulary; no tool-call-as-probe and no execution replay.
+<!-- specdd:requirements:end -->
+
+## 3. EVIDENCE AND UNCERTAINTY
+
+### VERIFIED (source-anchored)
+- Breaker is per-server state on `ServerClient`: fields `failures/threshold/openDuration/openedAt/halfOpen/probeActive` (`internal/upstream/runtime.go:31-47`); `RecordFailure` opens at threshold for transport/malformed/deadline and opens immediately on auth (`:258-283`); `RecordSuccess` resets only when closed (`:285-292`); `AdmitCall` rejects while `halfOpen || !openedAt.IsZero()` (`:236-252`); `BeginProbe` requires `openedAt` non-zero, `now >= openedAt+openDuration`, and `!probeActive`, then sets `halfOpen=probeActive=true` and returns a one-shot `func(bool)` that closes on true / resets `openedAt=now` on false (`:294-312`).
+- `BeginProbe` has **zero production callers** and `RecordSuccess` is unreachable while open (backlog finding 8; confirmed by read of `runtime.go`).
+- `Dedicated.Discover` (`internal/upstream/dedicated.go:71-140`) acquires a session (stateless: fresh `client.Connect` + `defer session.Close`; stateful: `sessionFor`), then paginates `ListTools`; every failure path returns `reportDiscoveryFailure(...)`. It performs **no** breaker accounting today.
+- `reportDiscoveryFailure` (`dedicated.go:151-196`) emits `upstream_discovery_failed` via `d.logger.Log`: level `warn`, operation `refresh`, `Server=d.client.ID`, `Error=RuntimeErrorInfo(reasonClass)`, fields `endpoint` (sanitized), `failure_stage`, `failure_reason`, optional `http_status`, optional `next_attempt_ms`.
+- `Dedicated.sessionFor` (`dedicated.go:294-309`) caches one `*mcp.ClientSession` for the runtime lifetime and never evicts.
+- `NewDedicated` requires non-nil `Logger` (`dedicated.go:54-56`); `ServerOptions.Now` threads to `ServerClient.now` (`runtime.go:126-150`), so tests can drive cooldown deterministically through the exported constructor.
+- `wiring.go` `upstreamRegistry.discover` (`cmd/mcp-bridge/wiring.go:194-204`) calls `client.Discover(ctx)` under `RefreshTimeout`; `cmd/mcp-bridge/serve.go:217-231` wires `service.RefreshDeps{ ... ReloadDeps{Discover: registry.discover, DiscoverPrompts: registry.discoverPrompts, NewClient: registry.newClient, ...}}`. `internal/service/reload.go:618` calls `in.deps.Discover(server)`; `service.Runtime.Refresh` (`refresh.go:51-63`) reuses the same build path (`in.deps.Discover`) so both legs share the probe.
+- Observe envelope is closed: `buildEnvelope` (`internal/observe/envelope.go:144-181`) rejects unknown level/event/operation/outcome; `eventMessage` (`log.go:198-264`) has a `default`; `addEnvelopeFields` (`envelope.go:244-333`) **silently drops** unknown `Fields` keys; `Entry.Server` is validated by `safeServer`.
+- Metrics (`internal/observe/metrics.go`) expose a bounded `serverSet` and existing counters/gauges via exported `NewMetrics(serverIDs []string)` (`metrics.go:141`) and `(*Metrics).Handler() http.Handler` (`metrics.go:179`); there is **no** breaker metric today.
+- `service.Refresher` public seam (`internal/service/refresh.go`): `NewRefresher` (`:111`), `Trigger()` queues a notification-triggered pass (`:152`, non-blocking, coalescing), `Passes() int64` reports completed passes (`:179`), `Run(ctx)` drives interval+trigger passes; the ticket's `Refresher.runPass()` is an **unexported** method (`refresh.go:212`) that forwards to `runPassFor("trigger")`.
+- Test oracles exist: `runtime_edge_test.go:127-174` and `runtime_test.go:88-125` exercise `BeginProbe`/`halfOpen`/`AdmitCall` behaviorally; `dedicated_test.go` is `package upstream_test` with a real httptest MCP peer helper `newPeer`/`peerState{initializes,executions}`. `internal/service` does **not** import `internal/upstream`, so an `upstream_test` file may import `service`.
+- Coverage gate (`.github/workflows/verify.yml:42,48,51`): `go test -race ./...`; `go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./...`; `go run ./cmd/covcheck` (90% source-line gate).
+- Incident: refresh succeeded throughout while pinned HA calls kept failing 34–46 ms with `backend_unavailable`/`transport_failed`, and only a new process cleared it (findings 5, 7–10; Loki `P8E80F9AEF21F6940`).
+
+### UNKNOWN (does not block this ticket)
+- Whether runtime bridge A's `homeassistant` server is `stateless:false` (deployed config unreadable read-only; default `true`). Consequence: the fix is validated for `stateless:true`; under `stateless:false` a poisoned cached session keeps the probe failing (breaker stays open — safe) or flaps, per R8/ticket 2. Recorded, not guessed.
+- Which side truncated the upstream stream. Irrelevant to breaker state machine correctness.
+
+### [AUTO-DECISION] entries (for coordinator persistence)
+- **AD1 — probe ownership in `Dedicated.Discover`.** `BeginProbe` is already the breaker's single-probe primitive; `Discover` is the sole non-executing leg reached by both refresh and reload; wiring/refresh code stays unchanged. Consequence: probe accounting lives in one file; `DiscoverPrompts` is deliberately excluded.
+- **AD2 — thin wrapper, no `runtime.go` change; `defer`+set-once completion is normative.** `Discover` claims, then runs the existing body, then completes exactly once with `err == nil`. Completion MUST be installed with `defer` and guarded by a set-once boolean so it is invoked on every return path **and** during panic unwinding (this `defer` form is normative, not an optional equivalent); a panic inside the body therefore cannot strand `probeActive=true`. Consequence: minimal diff; exactly-once preserved under normal return and panic.
+- **AD3 — no breaker mutation on the non-probe discovery path.** Do not call `RecordFailure`/`RecordSuccess` from discovery. Consequence: a healthy discovery never masks accumulating call failures; existing consecutive-failure semantics preserved.
+- **AD4 — reuse existing telemetry.** Reason: avoids duplicate/noisy events and a closed-vocabulary schema change governed by the delivered structured-logging feature. Consequence: an operator distinguishes probe outcome by correlating a server's `upstream_discovery_failed`/refresh records with later `backend_complete` successes, not a dedicated probe field.
+- **AD5 — stateful limitation documented, not fixed** (R8 → ticket 2).
+- **AD6 — probe wraps the whole `Discover` body**, including the stateless `closed` guard; a closed runtime's claim completes `false` (harmless).
+- **AD7 — R5 reload leg is source-anchored, not behaviorally driven.** AC5 exercises the refresh trigger only; the SIGHUP reload leg shares the identical `in.deps.Discover` → `registry.discover` → `client.Discover` path (`internal/service/reload.go:618` vs `refresh.go:51-63`) and no production change touches either leg, so one behavioral leg plus the shared source anchor covers both (exception recorded in §5 and §7).
+
+## 4. DESIGN
+<!-- specdd:design:start -->
+**Approach.** Add the first production caller of `BeginProbe` inside `Dedicated.Discover`, as a thin admission/ completion wrapper around the existing discovery body; change nothing else in the breaker or session machinery.
+
+**Component and contract (`internal/upstream/dedicated.go` only).**
+1. Extract the current `Discover` body (lines 71-140 as of r1) into an unexported method with the same behavior and signature: `func (d *Dedicated) discover(ctx context.Context) ([]core.ToolDefinition, error)`. It keeps the HTTP-status context value, stateless `closed` guard + fresh `client.Connect` + `defer session.Close()`, stateful `sessionFor`, handshake detection, paginated `ListTools`, deterministic sort, and every `reportDiscoveryFailure` return.
+2. Replace `Discover` with the probe wrapper: call `complete, probeErr := d.client.BeginProbe()`; if `probeErr != nil` (closed breaker, cooldown not elapsed, or probe already active) `return d.discover(ctx)` with no breaker mutation; otherwise install completion with `defer` and a set-once boolean, run `defs, err := d.discover(ctx)`, call `complete(err == nil)`, then `return defs, err`. The `defer` form is **normative** (AD2): the guarded `complete` runs on every return path and during panic unwinding, so `probeActive`/`halfOpen` are never stranded by a panic in the body. Completion is invoked at most once by construction.
+
+**Invariants.**
+- (I1) A probe is claimed only when `BeginProbe` grants it; the wrapper never inspects breaker fields directly, so closed/cooldown/active conditions are owned by `ServerClient`.
+- (I2) `err == nil` iff a complete, deterministic catalog was produced; a partial/malformed/cancelled discovery is a failed probe (conservative).
+- (I3) The tool path never touches `BeginProbe`; `AdmitCall` continues to reject while `halfOpen` or open.
+- (I4) Overlap: only the granting caller mutates breaker state; non-granting callers run plain discovery. `probeActive` guarantees at most one claim.
+- (I5) `Discover` for a closed breaker is byte-for-byte behavior-preserving versus today (it simply calls `discover`).
+- (I6) Completion is a `defer`-installed set-once closure; it fires exactly once on normal return and on panic unwind, never twice.
+
+**Sequence (happy path, stateless).** tool calls fail `threshold` times → `openedAt=now`, breaker open → `AdmitCall` rejects (AC4) → time passes `openDuration` → refresh/reload calls `Discover` → `BeginProbe` grants → fresh `Connect`+`ListTools` succeed → `complete(true)` → `failures=0`, `openedAt` zero, `halfOpen=false` → `AdmitCall` admits (AC1/AC2/AC6).
+
+**Failure path.** Probe claimed → `discover` errors (network/status/timeout/cancel) → `reportDiscoveryFailure` emits the existing `upstream_discovery_failed` record (AC10) → `complete(false)` → `openedAt=now`, `halfOpen=false`, `failures` unchanged → breaker still rejects (AC3); next claim only after another `openDuration`.
+
+**Compatibility/security/failure behavior.** No public API, config, wire, or storage change. Probe paths carry the existing `RefreshTimeout` context; cancellation/deadline completes as failure (AC9). No credentials, tokens, or payloads are logged (existing envelopes unchanged).
+
+**Alternatives rejected (meaningful trade-offs only).** (a) Probe claimed in `refresh.go`/wiring: would duplicate the admission condition and miss the reload leg. (b) Lazy admission check inside `AdmitCall`: would admit/replay an execution, violating R3. (c) Evicting the cached session or opening a fresh session in the probe under stateful mode: ticket-2 scope, silently widening this feature.
+<!-- specdd:design:end -->
+
+## 5. ACCEPTANCE CRITERIA
+| AC | Req | Ticket | Observable pass/fail | Verification |
+|----|-----|--------|----------------------|--------------|
+| AC1 | R2 | AC-1 | With an injected clock and a healthy peer: latch the breaker (`RecordFailure`×threshold), advance clock by `openDuration`, `Discover` returns a complete catalog **and** a subsequent `AdmitCall` returns nil; before advancing the clock the same call leaves the breaker open. | `go test ./internal/upstream -run '^TestDiscoverClaimsProbeAndClosesBreakerAfterCooldown$' -count=1` |
+| AC2 | R2 | AC-2 | Successful probe closes the breaker: `AdmitCall` admits immediately; a single later transport failure does not re-open (proves `failures` reset to 0, `openedAt` zero, `halfOpen` false). | same test / `^TestDiscoverClaimsProbeAndClosesBreakerAfterCooldown$` |
+| AC3 | R2 | AC-3 | Failed probe keeps the breaker open: `AdmitCall` still `unavailable`, and a later `BeginProbe` stays ineligible until `openDuration` elapses again from the reset instant. | `^TestDiscoverProbeFailureKeepsBreakerOpenAndResetsCooldown$` |
+| AC4 | R3 | AC-4 | While open/half-open, `CallTool` returns `backend_unavailable`/`not_started`, the peer's `executions` stays 0, and no probe is consumed; repeated rejects never dispatch. | `^TestToolCallsNeverProbeOrReplayWhileOpen$` |
+| AC5 | R1,R5 | AC-5 | Full lifecycle via the refresh driver: latch via `threshold` transport failures, advance clock, then drive a `service.Refresher` pass through the **public** seam (`Refresher.Trigger()` to queue a notification-triggered pass, await `Refresher.Passes()` increment, or drive `Refresher.Run(ctx)` with a cancellable context) whose `Discover` is the real `Dedicated.Discover`; the pass succeeds, the breaker closes, and a subsequent `CallTool` succeeds with no restart. | `^TestDiscoveryProbeClosesLatchedBreakerThroughRefresherPass$` |
+| AC6 | R4 | AC-6 | With `stateless:true`, the probe opens a fresh ephemeral connection (peer `initializes` increments by one) independent of any prior session; sessions are closed after. | `^TestStatelessProbeUsesFreshEphemeralConnection$` |
+| AC7 | all | AC-7 | `go test -race -p 1 ./...` exits 0 and `go run ./cmd/covcheck` reports ≥90.0% source-line coverage. | suite + covcheck (§6) |
+| AC8 | R6 | — | Only one probe admitted per server: a second overlapping `Discover` during an active probe performs plain discovery, mutates no breaker state, and tool calls stay rejected. | `^TestConcurrentDiscoveryAdmitsSingleProbe$` |
+| AC9 | R2,R6 | — | A probe whose context is cancelled/deadline-exceeded completes as failure exactly once: breaker stays open, `openedAt` reset, and no probe remains reserved (`BeginProbe` becomes eligible again only after cooldown). | `^TestCancelledProbeCompletesAsFailureOnce$` |
+| AC10 | R7 | — | A failed probe emits exactly one `upstream_discovery_failed` record for that server (valid v1 envelope JSON, warn lane, finite `failure_reason`, no payload/token) and registers no new metric series/label; a successful probe emits no new event and no new metric series. Metrics oracle: scrape `observe.NewMetrics(serverIDs).Handler()` (metrics.go:141/179) before and after the probe and assert the exposed series/label set is byte-identical (no new breaker series/label). | `^TestFailedProbeEmitsDiscoveryFailureRecordWithoutNewTelemetry$` |
+| AC11 | R8 | — | `DiscoverPrompts`/`sessionFor` are unchanged (cached session still reused, no eviction); the stateful probe path still completes the claim on failure; the limitation is documented. | `^TestStatefulProbeUsesCachedSessionWithoutEviction$` |
+| AC12 | R1,R3 | — | Closed-breaker/happy path unchanged: with the breaker closed `Discover`/`DiscoverPrompts`/`CallTool` behave as before and no probe is claimed; existing `TestCallAdmissionIsBoundedAndBreakerProbeDoesNotAdmitTools`, `TestServerCallBreakerAndHalfOpenProbeTransitions`, `TestBreakerCountsConsecutiveTransportFaultsOnly`, and discovery tests pass unmodified in meaning. | focused run over `internal/upstream` |
+
+All ACs are behavioral assertions, not compile/fixture failures. No AC is weakened to reach GREEN.
+
+**Ticket seam mapping (finding 7).** Ticket AC-5 names `Refresher.runPass()`, which is **unexported** (`internal/service/refresh.go:212`) and unavailable to an `upstream_test` file. AC5 therefore drives the identical pass through the public seam: `Refresher.Trigger()` (`refresh.go:152`) queues one notification-triggered pass and `Refresher.Passes()` (`refresh.go:179`) is the completed-pass observable used to await it (or `Refresher.Run(ctx)` with a cancellable context). This is a naming/visibility mapping only — the exercised pass and its `in.deps.Discover` path are the same; no mutation of the ticket's intent.
+
+**R5 reload-leg coverage exception (finding 4).** AC5 drives the **refresh** leg behaviorally. The **SIGHUP reload** leg is covered by a shared-source anchor, not a second behavioral test: `internal/service/reload.go:618` invokes the same `in.deps.Discover(server)` → `registry.discover` → `client.Discover` chain that `refresh.go` uses, and no production change touches either leg's build path. Recorded here and in §7 as an explicit, justified coverage exception rather than an implied gap.
+
+## 6. TASK LEDGER
+<!-- specdd:tasks:start -->
+**T0 — Planning and refinement (read-only; this spec).** Status: produced by this planner dispatch. Inputs: ticket 01, backlog, incident, and the source anchors in §3. Deliverable: sections 1–9 of this specification. Scope: read-only; no production/test/config/observe file is written by T0. AC IDs: none executable (inspection).
+
+**T1 — Discovery-probe breaker recovery (single engineer-owned task; production + permanent tests).**
+- **Objective.** Make `Dedicated.Discover` claim the half-open probe when `BeginProbe` grants it, completing the claim exactly once on the discovery outcome (via the normative `defer`+set-once form, AD2); preserve non-probing tool admission and unchanged session acquisition.
+- **Dependencies.** T0 (this spec). No code dependency on other tickets.
+- **Required inputs/evidence.** §3 anchors; ticket AC-1..AC-7; `internal/upstream/runtime.go:236-312`; `internal/upstream/dedicated.go:71-196,294-309`; `cmd/mcp-bridge/wiring.go:194-204`; `cmd/mcp-bridge/serve.go:217-231`; `internal/service/reload.go:618`; `internal/service/refresh.go:51-63,111,152,179`.
+- **Expected files (write set).**
+  - Production: `internal/upstream/dedicated.go` — split `Discover` into `discover` + probe wrapper; no other production file.
+  - Tests: extend `internal/upstream/dedicated_test.go`; add `internal/upstream/breaker_probe_recovery_test.go` (package `upstream_test`) for AC1–AC6, AC8–AC12; AC5 imports `internal/service` (no cycle: service does not import upstream).
+- **Allowed scope.** The probe wrapper and `discover` extraction; new behavioral tests in `internal/upstream`; deterministic clock via `ServerOptions.Now`; real httptest MCP peer via existing `newPeer`; `observe.NewMetrics(...).Handler()` scrape for AC10.
+- **Prohibited scope.** No change to `internal/upstream/runtime.go` (`BeginProbe`/`AdmitCall`/`RecordFailure`/`RecordSuccess` semantics), to `DiscoverPrompts`/`sessionFor`/`CallTool`, or to `internal/service`, `internal/observe`, `internal/config`, `cmd/`, docs, or any schema/metric; no session eviction/reconnect; no new event/metric/label; no config setting.
+- **RED step.** Add `TestDiscoverClaimsProbeAndClosesBreakerAfterCooldown` (and the failure-case test) asserting the breaker closes after a successful post-cooldown discovery. Before the production change it must fail as an **assertion failure** (after `Discover`, `AdmitCall` still returns `errUnavailable` / `CallTool` still `backend_unavailable`), not a compile error.
+- **Implementation deliverable.** `discover` extraction + wrapper; completion exactly once via the normative `defer`+set-once closure; behavior for a closed breaker unchanged. (No code is authored in this spec.)
+- **AC IDs.** AC1–AC12.
+- **Required validation commands (all must exit 0).**
+  1. `go test ./internal/upstream -run 'TestDiscover|TestDiscovery|TestFailedProbe|TestToolCallsNeverProbe|TestConcurrentDiscovery|TestCancelledProbe|TestStatelessProbe|TestStatefulProbe' -count=1`
+  2. `go test ./internal/upstream ./internal/service ./cmd/mcp-bridge -count=1`
+  3. `go test -race -p 1 ./...`
+  4. `go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck` (≥90.0%)
+  5. `go vet ./...`; `gofmt -l internal/upstream/dedicated.go internal/upstream/*_test.go` (empty)
+- **Decision-log location.** Coordinator-persisted decisions/ledger at `.omp/plans/upstream-breaker-recovery/execution-state.json` and the feature decisions/log; engineer records `[AUTO-DECISION]` items from §3 via the task receipt.
+- **Failed/blocked reporting.** If the AC5 `service.Refresher` public seam cannot be driven from an `upstream_test` file (no usable public trigger/pass path), report **BLOCKED-with-evidence** naming the blocked symbol and the exact missing public path, and stop. Do **not** relocate the AC5 test into `cmd/mcp-bridge` (or otherwise use `registry.discover`): that relocation is outside the approved envelope in §10 and requires **explicit owner authorization to widen the envelope** before any file is written. Do not weaken the lifecycle assertion. Any need to edit `runtime.go`, `sessionFor`, or `observe` → BLOCKED, not improvised.
+<!-- specdd:tasks:end -->
+
+## 7. OBSERVABILITY
+(Loaded `skill://observability-contract`; applied per affected component.)
+
+**Components and collection path.** Only `internal/upstream` discovery/breaker behavior changes. Records are produced by the existing owned `*observe.Logger` (`d.logger`) and flow unchanged: structured JSON on stdout (info) / stderr (warn/error) → container logs → Loki (datasource uid `P8E80F9AEF21F6940`, labels `source_subsystem=<container>`). No new sink or collector.
+
+**Logging schema/severity/events.** Envelope is the existing closed version-1 shape (`internal/observe/envelope.go`). The probe introduces **no new event**: a failed probe is the existing per-server `upstream_discovery_failed` record (level `warn`, operation `refresh`, `server`, `error.code=discovery_failed|upstream_unavailable|client_missing`, `failure_stage`, `failure_reason`, optional `http_status`, optional `next_attempt_ms`); a successful probe is evidenced by the existing refresh-pass records and later `backend_complete` successes for that server. No credentials/tokens/payloads are logged (unchanged redaction).
+
+**Loki.** Labels remain bounded (no server/request IDs in labels; the server id stays a field, consistent with existing refresh records). Retention and ingestion-failure handling are unchanged (existing `logging_write_failed` fallback lane).
+
+**Prometheus.** No new metric, label, or bucket. Existing `bridge_catalog_refresh_total{server,outcome,reason}` already records the probe's pass result and `bridge_readiness{server}` its availability. The AC10 oracle scrapes `observe.NewMetrics(serverIDs).Handler()` (`internal/observe/metrics.go:141/179`) before and after the probe and asserts the exposed series/label set is unchanged.
+
+**Operations and failure visibility.** No new dashboard/alert plumbing. Existing recovery view: for a given `server`, the `backend_unavailable` `backend_complete` series stopping and a subsequent successful discovery + `backend_complete` indicates probe recovery.
+
+**Verification (tied to AC/T).** AC10, owned by T1: a failed probe emits exactly one `upstream_discovery_failed` record for the server, parses as a single valid v1 JSON envelope on the warn lane, carries a finite `failure_reason` and no payload/token, and adds no metric series or label (assert via the `observe.NewMetrics(...).Handler()` scrape before/after that the registry/label set is unchanged). AC7's suite run proves the envelope/JSON and scrape tests (`internal/observe`, `logging_contract_test.go`) still pass.
+
+**Justified exceptions (reason + consequence).**
+- *No dedicated probe event/counter:* Reason — a probe is a discovery; its outcome is already emitted (failure) or already reflected in existing refresh/readiness/`backend_complete` signals, and adding a new event would require widening the closed `eventMessage`/envelope vocabulary and duplicate existing signals. Consequence — a half-open-probe attempt is not directly serialized; an operator infers recovery by correlating that server's discovery/refresh records with resumed call successes.
+- *No new dashboards/alerts/tracing:* Reason — no new signal family is created and the change is in-process. Consequence — alerting reuses existing unready/error/stale views.
+- *Reused-metrics oracle instead of an upstream-owned emitter:* Reason — `internal/upstream` never touches `observe.Metrics`, so R7's "no new metric series/label" is asserted from the test by scraping the existing `observe.NewMetrics(...).Handler()` before and after (AC10); the production code gains no metric dependency. Consequence — the assertion is registry-level, exactly matching the requirement.
+- *R5 SIGHUP reload leg is source-anchored, not behaviorally driven:* Reason — AC5 exercises the refresh trigger; the reload leg shares the identical `in.deps.Discover` → `registry.discover` → `client.Discover` chain (`internal/service/reload.go:618` vs `refresh.go:51-63`) and no production change alters either leg. Consequence — a regression confined to the reload wiring (not the shared `Discover`) would not be caught by AC5; such a change is out of this feature's envelope (§10) and would require its own coverage. Recorded, not implied.
+- *Transport/context boundary:* `Discover` receives the caller's `RefreshTimeout` context and makes no SDK-`ctx`-as-request assumption; no request-correlated metric is added inside the transport handler.
+
+## 8. RELEASE AND RECOVERY
+- **Change class.** In-process behavior fix in a single binary. No config key, wire, storage, or schema change; no DB migration; no new port or dependency.
+- **Deployment order.** Standard image rollout of `registry.bullprog.com:5000/mcp-bridge`. No coordinated steps; each instance is independent.
+- **Operational effect after rollout.** A latched breaker on the new binary clears on the next eligible discovery (next refresh pass, ≤ observed `RefreshInterval` ≈300 s, with the default `openDuration` = 30 s already elapsed) or on the next SIGHUP reload, with no restart. A breaker latched on an **old** binary still requires a restart until the new binary is running.
+- **Rollback.** Revert the commit and redeploy the previous image; no state to unwind. Rollback re-introduces the need for a restart to clear a latched breaker (the pre-existing mitigation).
+- **Irreversible steps.** None. No data written.
+
+## 9. CRITIC HANDOFF
+
+**Highest-risk assumptions/decisions.** (1) Probe ownership in `Discover` (AD1) and the thin-wrapper exactly-once completion via the normative `defer`+set-once form (AD2/I6). (2) No breaker mutation on the non-probe discovery path (AD3) — verify no discovery success/failure path touches `RecordFailure`/`RecordSuccess`. (3) Telemetry reuse without a closed-vocabulary change (AD4, §7 exception). (4) The AC5 integration test's public `service.Refresher` seam (`Trigger()`/`Passes()`/`Run(ctx)`; ticket name `runPass()` is unexported).
+
+**Missing coverage to scrutinize.** AC9 cancellation timing; AC8 overlap semantics (single claim, plain discovery for losers); AC11 that `sessionFor`/`DiscoverPrompts` are genuinely unmodified; AC12 that closed-breaker behavior is byte-preserving; AC10 metric-oracle scrape scope.
+
+**Review targets (W09E candidate-bound matrix).**
+- *Lifecycle:* producers/consumers/clear paths of `openedAt`/`halfOpen`/`probeActive` across bootstrap (snapshot, no probe), ordinary operation (tool failures open), recovery (probe closes), and restart; counterexample — two rapid refresh passes with `openDuration` elapsed must not double-claim; panic inside the body must still complete (I6).
+- *Shared state:* writers of breaker fields are `RecordFailure`/`RecordSuccess`/`BeginProbe`-callback (and the new wrapper calls the callback); walk a competing schedule (in-flight call failure vs probe completion vs second `Discover`).
+- *Contract:* R→AC→T coverage (R1–R8 all mapped; T1 owns AC1–AC12); no weakened AC; AC5 achievable via public API with the ticket-name mapping recorded; errors/boundary cases present.
+- *Authority:* read-only planning artifact; no approval/consent claimed; implementation requires the workflow's explicit user checkpoints and independent review; AC5 relocation is BLOCKED-with-evidence and owner-gated, never pre-authorized.
+- *Observability:* trace emission→delivery and confirm AC10's assertions (including the `observe.NewMetrics(...).Handler()` before/after scrape); confirm the justified exceptions (R5 reload leg, reused-metrics oracle) and their consequences are accepted.
+- *Repair closure:* any critic amendment must repair the root invariant (probe exactly-once, non-probing tool path) across all clauses/fixtures, not one sentence.
+
+**Revision closure (ReviewBreakerSpecR1).** MEDIUM AC5 blocked-fallback reworded to BLOCKED-with-evidence + owner-authorized envelope widening (§6); anchor drift corrected (`internal/service/reload.go:618`, `cmd/mcp-bridge/serve.go:217-231`, `ReloadDeps`) (§3/§6); `TestFailedProbe` added to the focused `-run` alternation (§6); R5 reload-leg source-anchor exception recorded (§5/§7); `defer`+set-once completion made normative (AD2 §3, §4); AC10 metrics oracle named (`observe.NewMetrics(...).Handler()` before/after) (§5/§7); ticket `Refresher.runPass()` → public `Trigger()`/`Passes()`/`Run(ctx)` mapping recorded (§5). No R/AC/T IDs added or removed; envelope unchanged.
+
+**Verification status of this artifact.** Planning document/source inspection only. No tests, builds, formatters, coverage, race, or runtime probes were executed; RED/GREEN and the suite/covcheck gates are planned verification (AC1–AC12), not observed results. All §3 anchors were read from the working tree; `[INFERENCE]` marks the two UNKNOWN items as unresolved rather than confirmed.
+
+## 10. ENVELOPE (approved scope for this feature)
+<!-- specdd:envelope:start -->
+Root: `/home/opencode/projects/default/mcp-bridge`. In scope: `internal/upstream/dedicated.go` (probe wrapper + `discover` extraction) and `internal/upstream` test files (`dedicated_test.go` extended, `breaker_probe_recovery_test.go` new). Out of scope: `internal/upstream/runtime.go`; `DiscoverPrompts`/`sessionFor`/`CallTool`; `internal/service/*`; `internal/observe/*`; `internal/config/*`; `cmd/mcp-bridge/*`; docs; any new config key, log event, metric, label, wire, or storage change; session eviction/reconnect (ticket 2); refresh-failure attribution (ticket 3); read-only pin expansion (ticket 4). Effects: read + write (implementation), test execution. Forbidden effects: network/deploy/schedule/credentials/infrastructure beyond the existing test httptest server. Widening this envelope (e.g. relocating an AC5 test into `cmd/mcp-bridge`) requires explicit owner authorization before any write.
+<!-- specdd:envelope:end -->

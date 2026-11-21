@@ -157,7 +157,7 @@ var outcomeVocabulary = []string{"unknown", "success", "failure", "error", "deni
 
 // reasonVocabulary is the closed set of terminal reasons, including the
 // tool-admission and tool-reported failure families.
-var reasonVocabulary = []string{"none", "unknown", "host_rejected", "origin_rejected", "client_auth_failed", "session_auth_failed", "session_capacity", "request_too_large", "route_not_found", "backend_unavailable", "backend_auth_failed", "backend_busy", "deadline_exceeded", "upstream_protocol_error", "unsupported_capability", "invalid_config", "client_disconnected", "tool_reported_error", "unknown_tool", "invalid_arguments", "catalog_changed", "unsupported_schema", "malformed_request", "invalid_request", "method_not_found", "request_cancelled", "internal_error", "correlation_unavailable"}
+var reasonVocabulary = []string{"none", "unknown", "host_rejected", "origin_rejected", "client_auth_failed", "session_auth_failed", "session_capacity", "request_too_large", "route_not_found", "backend_unavailable", "backend_auth_failed", "backend_busy", "deadline_exceeded", "upstream_protocol_error", "unsupported_capability", "invalid_config", "parameter_header_unsupported", "client_disconnected", "tool_reported_error", "unknown_tool", "invalid_arguments", "catalog_changed", "unsupported_schema", "malformed_request", "invalid_request", "method_not_found", "request_cancelled", "internal_error", "correlation_unavailable"}
 
 func finiteOutcome(value string) string {
 	return finite(value, "unknown", outcomeVocabulary...)

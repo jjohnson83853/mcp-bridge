@@ -1,0 +1,2562 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import * as gateApi from './execution-gate.ts';
+import { createToolCallGate, extractDispatchMetadata, lintUnmanagedPayload, resolveReadOnlyAgent, reviewPauseDenial } from './execution-gate.ts';
+import { evaluateDispatch } from './execution-contract.mjs';
+import { evaluateState } from './execution-state.mjs';
+import { runtimeFixture, dispatchEvent, reviewSequenceFixture } from './execution-gate-fixtures.mjs';
+import { v2Sha as sha } from './execution-state-fixtures.mjs';
+import { canonicalJson } from './execution-contract-binding.mjs';
+import { reviewStallSignal } from './execution-review-sequence.mjs';
+import * as reviewSequence from './execution-review-sequence.mjs';
+import { deliveryComplete } from './execution-transition.mjs';
+import { ownerAmendmentToken } from './execution-amendment.mjs';
+import './execution-gate.boundary.test.ts';
+import './execution-runtime-smoke.test.mjs';
+
+const readEntry = { name: 'Research', taskId: 'research01', agent: 'scout', effects: { kind: 'read', paths: ['spec.md'] } };
+const readonlyDiscovery = async () => ({ agents: [{ name: 'scout', tools: ['read', 'grep', 'glob', 'find'] }, { name: 'engineer', tools: ['read', 'write', 'edit'] }], searchedDirs: [] });
+function setup(t, mutate, deps = {}, canonical = true) {
+  const fixture = runtimeFixture(t, mutate, canonical);
+  const logs = [];
+  const gate = createToolCallGate({ evaluateDispatch, discoverAgents: readonlyDiscovery, log: entry => logs.push(entry), ...deps });
+  return { fixture, logs, gate, call: event => gate.handleToolCall(event ?? dispatchEvent(fixture), { cwd: fixture.root }) };
+}
+
+function localGitTestDependencies() {
+  const env = { ...process.env, GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null' };
+  for (const key of ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE']) delete env[key];
+  return {
+    spawnSync(command, args, options) {
+      return spawnSync(command, args, { ...options, env });
+    },
+  };
+}
+
+function initializeCleanLocalGitRepository(root, gitDependencies) {
+  const git = (...args) => gitDependencies.spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+  const initialized = git('init', '--quiet');
+  assert.equal(initialized.status, 0, initialized.stderr);
+  const staged = git('add', '-A');
+  assert.equal(staged.status, 0, staged.stderr);
+  const committed = git('-c', 'user.name=Slice4 Test', '-c', 'user.email=slice4@example.invalid',
+    '-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'fixture');
+  assert.equal(committed.status, 0, committed.stderr);
+}
+
+function wrapper(event, change) {
+  const body = JSON.parse(event.input.context);
+  return { ...event, input: { ...event.input, context: JSON.stringify(change(body)) } };
+}
+function assertPayloadFailure(payload, code, field) {
+  const result = gateApi.validateDispatchPayload(payload);
+  assert.equal(result.ok, false);
+  assert.equal(result.code, code);
+  assert.equal(result.field, field);
+  assert.equal(typeof result.detail, 'string');
+  assert.ok(result.detail.length > 0);
+  return result;
+}
+function plannerPayload(task, instructions = 'Design the interfaces without producing patches.') {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const body = JSON.parse(payload.context);
+  body.workflowDispatch.requests[0].agent = 'planner';
+  body.instructions = instructions;
+  return {
+    ...payload,
+    context: JSON.stringify(body),
+    tasks: [{ ...payload.tasks[0], agent: 'planner', task }],
+  };
+}
+
+const CLI_PATH = fileURLToPath(new URL('./execution-state.mjs', import.meta.url));
+
+
+const dispatchSeed = () => ({
+  intent: 'Dispatch scoped task',
+  instructions: 'Execute only the task below.',
+  workflowDispatch: {
+    statePath: '.omp/plans/execution-state.json',
+    schemaVersion: 1,
+    projectRoot: '/project',
+    feature: 'sample-feature',
+    revision: 'sample-r1',
+    requests: [{ name: 'Research', taskId: 'research01', agent: 'scout', effects: { kind: 'read', paths: ['spec.md'] } }],
+  },
+  tasks: [{ name: 'Research', agent: 'scout', task: 'Read the scoped specification.', solutionSpace: 'Read-only fact retrieval.' }],
+});
+
+test('dispatch builder returns a stable native payload accepted by the runtime validator', () => {
+  const seed = dispatchSeed();
+  const first = gateApi.buildDispatchPayload(seed);
+  assert.equal(first.ok, true);
+  assert.deepEqual(gateApi.validateDispatchPayload(first.payload), { ok: true, shape: 'batch' });
+  assert.deepEqual(gateApi.buildDispatchPayload(seed), first);
+  assert.deepEqual(JSON.parse(first.payload.context), {
+    instructions: seed.instructions,
+    workflowDispatch: seed.workflowDispatch,
+  });
+});
+
+test('dispatch validator reports safe field-specific failures before tool invocation', () => {
+  const built = gateApi.buildDispatchPayload(dispatchSeed());
+  assert.equal(built.ok, true);
+  const payload = built.payload;
+  const body = JSON.parse(payload.context);
+
+  const missingInstructions = { ...body };
+  delete missingInstructions.instructions;
+  assert.equal(gateApi.validateDispatchPayload({ ...payload, context: JSON.stringify(missingInstructions) }).field, 'context.instructions');
+  assert.equal(gateApi.validateDispatchPayload({ ...payload, context: `prefix ${payload.context}` }).field, 'context');
+  assert.equal(gateApi.validateDispatchPayload({ ...payload, tasks: [{ ...payload.tasks[0], name: 'Wrong' }] }).field, 'tasks[].name');
+
+  const invalidEffect = structuredClone(body);
+  invalidEffect.workflowDispatch.requests[0].effects.kind = 'shell';
+  assert.equal(
+    gateApi.validateDispatchPayload({ ...payload, context: JSON.stringify(invalidEffect) }).field,
+    'context.workflowDispatch.requests[0].effects.kind',
+  );
+});
+
+test('dispatch payload rejects batches above three tasks with a typed concurrency denial', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const tooManyTasks = { ...payload, tasks: [...payload.tasks, ...payload.tasks, ...payload.tasks, ...payload.tasks] };
+  assertPayloadFailure(tooManyTasks, 'E_CONCURRENCY_LIMIT', 'tasks.concurrency');
+});
+
+test('dispatch payload rejects tasks and wrapper instructions exceeding 32 KiB', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  assertPayloadFailure({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task: 'x'.repeat(32_769) }],
+  }, 'E_PAYLOAD_TOO_LARGE', 'task.size');
+  assertPayloadFailure({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task: `${'x'.repeat(32_769)}\n.omp/artifacts/payload.txt` }],
+  }, 'E_PAYLOAD_TOO_LARGE', 'task.size');
+
+  const wrapper = JSON.parse(payload.context);
+  const tooLargeInstructions = { ...wrapper, instructions: 'x'.repeat(32_769) };
+  assertPayloadFailure({
+    ...payload,
+    context: JSON.stringify(tooLargeInstructions),
+  }, 'E_PAYLOAD_TOO_LARGE', 'context.instructions.size');
+  assertPayloadFailure({
+    ...payload.tasks[0],
+    task: JSON.stringify(tooLargeInstructions),
+  }, 'E_PAYLOAD_TOO_LARGE', 'context.instructions.size');
+});
+
+test('dispatch payload admits indented and fenced unified diffs in planner prompts', () => {
+  for (const task of [
+    'Design the contract.\n  --- a/src/old.ts\n  +++ b/src/new.ts\n  @@ -1,1 +1,1 @@',
+    'Design the contract:\n```diff\n--- a/src/old.ts\n+++ b/src/new.ts\n@@ -1,1 +1,1 @@\n```',
+  ]) {
+    assert.equal(gateApi.validateDispatchPayload(plannerPayload(task)).ok, true);
+  }
+  assert.equal(gateApi.validateDispatchPayload(
+    plannerPayload('Design the contract.', 'Review this patch:\n  ```diff\n  --- a/src/old.ts\n  +++ b/src/new.ts\n  ```'),
+  ).ok, true);
+});
+
+test('dispatch payload admits prose formerly treated as raw telemetry', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const thirtyLines = Array.from({ length: 30 }, (_, index) => `stdout: line ${index}`).join('\n');
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task: thirtyLines }],
+  }).ok, true);
+
+  const rawDump = Array.from({ length: 31 }, (_, index) => index % 3 === 0
+    ? `stdout: line ${index}`
+    : index % 3 === 1 ? `stderr= line ${index}` : `[stdout] line ${index}`).join('\n');
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task: rawDump }],
+  }).ok, true);
+  for (const weakPointer of ['notes.md', 'reports/telemetry.log']) {
+    assert.equal(gateApi.validateDispatchPayload({
+      ...payload,
+      tasks: [{ ...payload.tasks[0], task: `${rawDump}\nsee ${weakPointer}` }],
+    }).ok, true);
+  }
+  for (const pointer of ['.omp/artifacts/telemetry.log', 'local://telemetry.log']) {
+    assert.equal(gateApi.validateDispatchPayload({
+      ...payload,
+      tasks: [{ ...payload.tasks[0], task: `${rawDump}\n${pointer}` }],
+    }).ok, true);
+  }
+
+  for (const task of ['x'.repeat(4_000), 'x'.repeat(4_001), `${'x'.repeat(4_001)}\nsummary`]) {
+    assert.equal(gateApi.validateDispatchPayload({
+      ...payload,
+      tasks: [{ ...payload.tasks[0], task }],
+    }).ok, true);
+  }
+
+  const wrapper = JSON.parse(payload.context);
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    context: JSON.stringify({ ...wrapper, instructions: rawDump }),
+  }).ok, true);
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    context: JSON.stringify({ ...wrapper, instructions: `${rawDump}\nnotes.md` }),
+  }).ok, true);
+});
+
+test('dispatch payload reports a non-JSON batch context as dispatch metadata', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const result = gateApi.validateDispatchPayload({
+    ...payload,
+    context: 'Raw dump follows.\nstdout: line 1\nstderr: line 2',
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'E_DISPATCH_METADATA');
+  assert.equal(result.field, 'context');
+});
+
+test('dispatch payload accepts a 35-line architectural Markdown task', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const task = Array.from({ length: 35 }, (_, index) =>
+    `- **Decision ${index + 1}:** Keep the module boundary explicit and describe its contract in the design notes.`,
+  ).join('\n');
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task }],
+  }).ok, true);
+  const longProse = Array.from({ length: 40 }, (_, index) =>
+    `Design decision ${index + 1} preserves explicit component ownership, describes the public interface, names its caller, and explains the expected failure behavior.`,
+  ).join(' ');
+  assert.ok(longProse.length > 4_000);
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task: longProse }],
+  }).ok, true);
+});
+
+test('dispatch payload accepts comma-rich Markdown and CSV-looking prose', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const markdown = Array.from({ length: 35 }, (_, index) =>
+    `- **Decision ${index + 1}:** Preserve ownership, describe the public interface, and document failure behavior.`,
+  ).join('\n');
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task: markdown }],
+  }).ok, true);
+  const headings = Array.from({ length: 35 }, (_, index) =>
+    `### Decision ${index + 1}: Preserve ownership, describe the public interface, and document failure behavior.`,
+  ).join('\n');
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task: headings }],
+  }).ok, true);
+
+  const csv = Array.from({ length: 31 }, (_, index) => `${index},ERROR,worker`).join('\n');
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task: csv }],
+  }).ok, true);
+  const compactCsv = Array.from({ length: 31 }, (_, index) => `${index},ERROR,worker,dispatch_denied`).join('\n');
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task: compactCsv }],
+  }).ok, true);
+});
+
+test('dispatch payload accepts repeated compact CSV rows', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const background = Array.from({ length: 30 }, (_, index) =>
+    `Design note ${index + 1} describes the interface and failure behavior.`,
+  ).join('\n');
+  const oneCompactRow = `${background}\nalpha,beta,gamma,delta`;
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task: oneCompactRow }],
+  }).ok, true);
+
+  const fiveRepeatedRows = `${background}\n${Array.from({ length: 5 }, () =>
+    'alpha,beta,gamma,delta',
+  ).join('\n')}`;
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task: fiveRepeatedRows }],
+  }).ok, true);
+});
+test('dispatch payload accepts consecutive two-column table rows', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const background = Array.from({ length: 30 }, (_, index) =>
+    `Design note ${index + 1} describes the interface and failure behavior.`,
+  ).join('\n');
+  const formats = [
+    ['CSV', 'alpha,beta'],
+    ['TSV', 'alpha\tbeta'],
+    ['aligned', 'alpha  beta'],
+  ];
+
+  for (const [format, row] of formats) {
+    const validateRows = rows => gateApi.validateDispatchPayload({
+      ...payload,
+      tasks: [{ ...payload.tasks[0], task: `${background}\n${rows.join('\n')}` }],
+    });
+    assert.equal(validateRows(Array(4).fill(row)).ok, true, `${format}: four rows should pass`);
+    assert.equal(validateRows(Array(5).fill(row)).ok, true, `${format}: five rows should pass`);
+    assert.equal(
+      validateRows(Array(5).fill(`- ${row}`)).ok,
+      true,
+      `${format}: Markdown list rows should be excluded`,
+    );
+    assert.equal(
+      validateRows([row, row, 'A note separates the rows.', row, row, row]).ok,
+      true,
+      `${format}: separated rows should not count as consecutive`,
+    );
+  }
+});
+
+test('dispatch payload does not treat stdout and stderr prose as output markers', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const task = Array.from({ length: 31 }, (_, index) =>
+    `stdout and stderr are mentioned in this ordinary prose sentence, line ${index}.`,
+  ).join('\n');
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task }],
+  }).ok, true);
+});
+
+test('dispatch payload does not treat exit-count prose as an exit status marker', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const task = Array.from({ length: 31 }, (_, index) =>
+    `The process exited 3 times during this prose description, on pass ${index}.`,
+  ).join('\n');
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task }],
+  }).ok, true);
+});
+
+test('dispatch payload admits prose containing delimited exit status markers', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const task = Array.from({ length: 31 }, () => 'exit status: 3').join('\n');
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task }],
+  }).ok, true);
+});
+
+test('dispatch payload admits long unbroken lines below the payload-size limit', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const task = `${'x'.repeat(4_001)}\nsummary`;
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task }],
+  }).ok, true);
+});
+
+test('dispatch payload admits a 35-line timestamped terminal log dump', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const task = Array.from({ length: 35 }, (_, index) =>
+    `2026-11-07T12:34:${String(index).padStart(2, '0')}Z ERROR service=worker task_id=research01 event=dispatch_denied duration_ms=${index}`,
+  ).join('\n');
+  assert.equal(gateApi.validateDispatchPayload({
+    ...payload,
+    tasks: [{ ...payload.tasks[0], task }],
+  }).ok, true);
+});
+
+test('dispatch payload rejects missing, empty, and out-of-range solutionSpace descriptions', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  for (const solutionSpace of ['', ' ', 'x'.repeat(1_001), undefined, 42]) {
+    const task = { ...payload.tasks[0] };
+    if (solutionSpace === undefined) delete task.solutionSpace;
+    else task.solutionSpace = solutionSpace;
+    assertPayloadFailure({ ...payload, tasks: [task] }, 'E_INVALID_SOLUTION_SPACE', 'task.solutionSpace');
+  }
+  for (const solutionSpace of ['a', 'TODO', 'Fix', 'fix', 'none', 'Fix the null dereference in parser.ts', 'fix later', 'none of the above', 'x'.repeat(1_000)]) {
+    assert.equal(gateApi.validateDispatchPayload({
+      ...payload,
+      tasks: [{ ...payload.tasks[0], solutionSpace }],
+    }).ok, true);
+  }
+});
+
+test('dispatch payload accepts the concurrency and size limits', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const tasks = Array.from({ length: 3 }, (_, index) => ({
+    ...payload.tasks[0],
+    name: `Research ${index + 1}`,
+  }));
+  const wrapper = JSON.parse(payload.context);
+  wrapper.workflowDispatch.requests = tasks.map((task, index) => ({
+    name: task.name,
+    taskId: `research0${index + 1}`,
+    agent: task.agent,
+    effects: { kind: 'read', paths: ['spec.md'] },
+  }));
+  const pointer = '\n.omp/artifacts/payload.txt';
+  tasks[0].task = 'x'.repeat(32_768 - pointer.length) + pointer;
+  tasks[0].solutionSpace = 'x'.repeat(1_000);
+  tasks[1].solutionSpace = '12345';
+
+  assert.deepEqual(gateApi.validateDispatchPayload({
+    ...payload,
+    context: JSON.stringify(wrapper),
+    tasks,
+  }), { ok: true, shape: 'batch' });
+});
+test('flat dispatch accepts a serialized wrapper above 4_000 characters', () => {
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+  const wrapper = JSON.parse(payload.context);
+  wrapper.instructions = 'x'.repeat(3_900);
+  const flat = { ...payload.tasks[0], task: JSON.stringify(wrapper) };
+  assert.ok(flat.task.length > 4_000);
+  assert.deepEqual(gateApi.validateDispatchPayload(flat), { ok: true, shape: 'flat' });
+});
+
+
+test('check-payload CLI accepts valid payloads and emits structured lint failures', t => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'execution-gate-payload-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const payloadPath = path.join(dir, 'payload.json');
+  const payload = gateApi.buildDispatchPayload(dispatchSeed()).payload;
+
+  writeFileSync(payloadPath, JSON.stringify(payload));
+  const accepted = spawnSync(process.execPath, [CLI_PATH, 'check-payload', payloadPath], { encoding: 'utf8' });
+  assert.equal(accepted.status, 0, accepted.stderr);
+  assert.deepEqual(JSON.parse(accepted.stdout), { ok: true, shape: 'batch' });
+
+  const invalid = structuredClone(payload);
+  invalid.tasks[0].solutionSpace = '';
+  writeFileSync(payloadPath, JSON.stringify(invalid));
+  const denied = spawnSync(process.execPath, [CLI_PATH, 'check-payload', payloadPath], { encoding: 'utf8' });
+  assert.equal(denied.status, 1, denied.stderr);
+  const output = JSON.parse(denied.stdout);
+  assert.equal(output.ok, false);
+  assert.equal(output.code, 'E_INVALID_SOLUTION_SPACE');
+  assert.equal(output.field, 'task.solutionSpace');
+  assert.equal(typeof output.detail, 'string');
+  assert.deepEqual(output.reasons.map(({ code }) => code), ['E_INVALID_SOLUTION_SPACE']);
+  const rawTask = `service=worker task_id=research01 event=dispatch_denied ${'x'.repeat(32_769)}`;
+  const raw = structuredClone(payload);
+  raw.tasks[0].task = rawTask;
+  writeFileSync(payloadPath, JSON.stringify(raw));
+  const oversizedDenied = spawnSync(process.execPath, [CLI_PATH, 'check-payload', payloadPath], { encoding: 'utf8' });
+  assert.equal(oversizedDenied.status, 1, oversizedDenied.stderr);
+  assert.equal(oversizedDenied.stderr, '');
+  const oversizedOutput = JSON.parse(oversizedDenied.stdout);
+  assert.equal(oversizedOutput.code, 'E_PAYLOAD_TOO_LARGE');
+  assert.equal(oversizedOutput.field, 'task.size');
+  assert.equal(oversizedOutput.detail.includes(rawTask), false);
+  assert.equal(oversizedDenied.stdout.includes('service=worker'), false);
+});
+
+test('live gate logs a payload-free oversized-task denial', async t => {
+  const { fixture, logs, call } = setup(t);
+  const event = dispatchEvent(fixture);
+  const rawTask = `service=worker task_id=research01 event=dispatch_denied ${'x'.repeat(32_769)}`;
+  event.input.tasks[0].task = rawTask;
+  const result = await call(event);
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_PAYLOAD_TOO_LARGE/);
+  assert.deepEqual(logs.at(-1), { event: 'dispatch_denied', code: 'E_PAYLOAD_TOO_LARGE' });
+  assert.equal(JSON.stringify(logs).includes('service=worker'), false);
+});
+
+test('live gate preserves typed payload-lint denials', async t => {
+  const { fixture, logs, call } = setup(t);
+  const event = dispatchEvent(fixture);
+  event.input.tasks[0].solutionSpace = '';
+  const result = await call(event);
+  assert.match(result.reason, /E_INVALID_SOLUTION_SPACE/);
+  assert.equal(logs.at(-1).code, 'E_INVALID_SOLUTION_SPACE');
+});
+
+test('native shape contract rejects missing task content and duplicate mapping before dispatch', () => {
+  for (const change of [
+    task => ({ ...task, task: '' }),
+    task => ({ ...task, solutionSpace: ' ' }),
+    task => ({ ...task, unknown: true }),
+  ]) {
+    const seed = dispatchSeed();
+    seed.tasks = seed.tasks.map(change);
+    assert.equal(gateApi.buildDispatchPayload(seed).ok, false);
+  }
+  const seed = dispatchSeed();
+  seed.workflowDispatch.requests.push({ ...seed.workflowDispatch.requests[0], name: 'Other', taskId: 'other01' });
+  seed.tasks.push({ ...seed.tasks[0] });
+  assert.equal(gateApi.buildDispatchPayload(seed).ok, false);
+});
+
+test('batch and flat shape validator use the same wrapper/native contract', () => {
+  const seed = dispatchSeed();
+  const built = gateApi.buildDispatchPayload(seed);
+  const flat = { ...seed.tasks[0], task: built.payload.context };
+  assert.deepEqual(gateApi.validateDispatchPayload(flat), { ok: true, shape: 'flat' });
+  for (const [field, value] of Object.entries({ effort: 'hi', outputSchema: { type: 'object' }, schemaMode: 'strict', isolated: true })) {
+    const payload = structuredClone(built.payload);
+    payload.tasks[0][field] = value;
+    assert.equal(gateApi.validateDispatchPayload(payload).ok, true);
+  }
+  for (const outputSchema of [true, false, '{"type":"string"}', null]) {
+    assert.equal(gateApi.buildDispatchPayload({ ...seed, tasks: [{ ...seed.tasks[0], outputSchema }] }).ok, true);
+  }
+  for (const [field, value] of [['effort', 'installed-value'], ['schemaMode', 'installed-value'], ['outputSchema', []], ['outputSchema', 42], ['isolated', 'true']]) {
+    const payload = structuredClone(built.payload);
+    payload.tasks[0][field] = value;
+    assert.equal(gateApi.validateDispatchPayload(payload).ok, false, field);
+  }
+});
+
+test('workflow dispatch accepts optional nonempty target pairs and keeps strict unknown-field rejection', () => {
+  const legacy = gateApi.buildDispatchPayload(dispatchSeed());
+  assert.equal(legacy.ok, true);
+  assert.deepEqual(gateApi.validateDispatchPayload(legacy.payload), { ok: true, shape: 'batch' });
+
+  const seed = dispatchSeed();
+  Object.assign(seed.workflowDispatch.requests[0], {
+    targetCandidateId: 'candidate-r1', targetRevision: 'r1',
+  });
+  const built = gateApi.buildDispatchPayload(seed);
+  assert.equal(built.ok, true);
+  assert.deepEqual(gateApi.validateDispatchPayload(built.payload), { ok: true, shape: 'batch' });
+
+  for (const [field, value] of [['targetCandidateId', ''], ['targetRevision', 7], ['unexpected', true]]) {
+    const payload = structuredClone(built.payload);
+    const wrapper = JSON.parse(payload.context);
+    wrapper.workflowDispatch.requests[0][field] = value;
+    payload.context = JSON.stringify(wrapper);
+    const invalid = gateApi.validateDispatchPayload(payload);
+    assert.equal(invalid.ok, false, field);
+    assert.equal(invalid.code, 'E_DISPATCH_METADATA', field);
+  }
+});
+
+for (const [field, value] of [['effort', 'invalid'], ['schemaMode', 'invalid'], ['isolated', 'true'], ['outputSchema', []]]) test(`optional ${field} values fail builder and live admission consistently`, async t => {
+  const seed = dispatchSeed();
+  seed.tasks[0][field] = value;
+  assert.equal(gateApi.buildDispatchPayload(seed).ok, false);
+  const ctx = setup(t);
+  const event = dispatchEvent(ctx.fixture);
+  event.input.tasks[0][field] = value;
+  assert.match((await ctx.call(event)).reason, /E_DISPATCH_MISMATCH/);
+});
+
+for (const [left, right, alias, denied] of [
+  ['src/', 'src/fixture.txt', false, true],
+  ['src/missing/', 'src/missing/new.txt', false, true],
+  ['src/fixture.txt', 'alias/fixture.txt', true, true],
+  ['src/a.txt', 'src/b.txt', false, false],
+  ['src/a', 'src/ab', false, false],
+]) test(`concurrent mutation scopes ${left} / ${right} enforce canonical overlap`, async t => {
+  const ctx = setup(t, (s, root) => {
+    if (alias) symlinkSync(path.join(root, 'src'), path.join(root, 'alias'));
+    const task = s.tasks.find(task => task.id === 'impl02');
+    task.effects.paths = [left];
+    task.blockedBy = [];
+    Object.assign(s.tasks.find(task => task.id === 'research01'), {
+      stage: 'implementation', status: 'pending', evidenceIds: [], agentRoles: ['engineer'],
+      effects: { kind: 'write', paths: [right] },
+    });
+  });
+  const entries = [left, right].map((p, index) => ({
+    name: `Writer${index}`, taskId: index ? 'research01' : 'impl02', agent: 'engineer', effects: { kind: 'write', paths: [p] },
+  }));
+  const request = JSON.parse(dispatchEvent(ctx.fixture, entries).input.context).workflowDispatch;
+  const { statePath, ...authorityRequest } = request;
+  assert.equal(evaluateDispatch(statePath, authorityRequest).allowed, true);
+  const result = await ctx.call(dispatchEvent(ctx.fixture, entries));
+  assert.equal(result?.block === true, denied);
+  if (denied) assert.match(result.reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+});
+
+test('scope preflight permits shared reads and same-task paths, fails closed on unavailable or escaped paths', t => {
+  const fixture = runtimeFixture(t);
+  const request = paths => ({ projectRoot: fixture.root, requests: paths });
+  const effect = (kind, paths) => ({ effects: { kind, paths } });
+  assert.equal(gateApi.dispatchScopeError(request([
+    effect('read', ['spec.md']), effect('read', ['spec.md']),
+  ])), null);
+  assert.equal(gateApi.dispatchScopeError(request([
+    effect('write', ['src/', 'src/fixture.txt']),
+  ])), null);
+  assert.equal(gateApi.dispatchScopeError(request([effect('write', ['/outside-root/new.txt'])])), 'E_PATH_ESCAPE');
+  symlinkSync(path.join(fixture.root, 'absent-target'), path.join(fixture.root, 'broken'));
+  assert.equal(gateApi.dispatchScopeError(request([effect('write', ['broken/new.txt'])])), 'E_PATH_ESCAPE');
+});
+
+function activeWriters(t, secondPath = 'src/fixture.txt', deps = {}) {
+  const ctx = setup(t, (s, root) => {
+    symlinkSync(path.join(root, 'src'), path.join(root, 'alias'));
+    s.tasks.find(task => task.id === 'impl02').blockedBy = [];
+    Object.assign(s.tasks.find(task => task.id === 'research01'), {
+      stage: 'implementation', status: 'pending', evidenceIds: [], agentRoles: ['engineer'],
+      effects: { kind: 'write', paths: [secondPath] },
+    });
+  }, deps);
+  const event = (id, taskId, p, name) => ({
+    ...dispatchEvent(ctx.fixture, [{ name, taskId, agent: 'engineer', effects: { kind: 'write', paths: [p] } }]),
+    toolCallId: id,
+  });
+  return { ...ctx, first: event('call-a', 'impl02', 'src/', 'WriterA'),
+    second: event('call-b', 'research01', secondPath, 'WriterB'), context: { cwd: ctx.fixture.root, agent: { id: 'Main' } } };
+}
+
+function updateFixtureRevision(fixture, revision) {
+  fixture.state.revision = revision;
+  const markerPath = path.join(fixture.root, 'gate/marker.json');
+  const marker = JSON.parse(readFileSync(markerPath, 'utf8'));
+  marker.revision = revision;
+  writeFileSync(fixture.statePath, JSON.stringify(fixture.state));
+  writeFileSync(markerPath, JSON.stringify(marker));
+}
+
+test('active scopes reject separate-call symlink aliases until actual child completion, not async ack', async t => {
+  const ctx = activeWriters(t, 'alias/fixture.txt');
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    async: { state: 'running' }, progress: [{ index: 0, id: 'UniquifiedWriterA' }],
+  } }, ctx.context);
+  ctx.gate.onAgentRegistryChange([{ id: 'WriterA', status: 'idle', parentId: 'Main' }]);
+  assert.match((await ctx.gate.handleToolCall(ctx.second, ctx.context)).reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+  ctx.gate.onAgentRegistryChange([{ id: 'UniquifiedWriterA', status: 'idle', parentId: 'Main' }]);
+  assert.equal(await ctx.gate.handleToolCall(ctx.second, ctx.context), undefined);
+});
+
+test('active reservation admission is atomic across concurrent calls', async t => {
+  const ctx = activeWriters(t);
+  const results = await Promise.all([ctx.first, ctx.second].map(event => ctx.gate.handleToolCall(event, ctx.context)));
+  assert.equal(results.filter(value => value === undefined).length, 1);
+  assert.equal(results.filter(value => value?.block === true).length, 1);
+});
+
+for (const result of [{ exitCode: 1, error: 'launch failed' }, { exitCode: 0 }, { aborted: true }]) test(`active scopes release on native settled result ${JSON.stringify(result)}`, async t => {
+  const ctx = activeWriters(t);
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    results: [{ index: 0, id: 'ActualWriterA', ...result }],
+  } }, ctx.context);
+  assert.equal(await ctx.gate.handleToolCall(ctx.second, ctx.context), undefined);
+});
+
+test('active scopes allow independent writes and reject unrelated completion evidence', async t => {
+  const ctx = activeWriters(t, 'src-other/file.txt');
+  ctx.fixture.state.envelope.writePaths.push('src-other/');
+  writeFileSync(ctx.fixture.statePath, JSON.stringify(ctx.fixture.state));
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  assert.equal(await ctx.gate.handleToolCall(ctx.second, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'unrelated', details: { results: [{ index: 0, exitCode: 0 }] } }, ctx.context);
+  const third = { ...ctx.first, toolCallId: 'call-c' };
+  assert.match((await ctx.gate.handleToolCall(third, ctx.context)).reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+});
+
+test('active scopes retain a failed-launch reservation while queued jobs are absent from the registry', async t => {
+  // A partially scheduled native call can queue jobs that the registry has not
+  // registered yet, so an empty registry plus a task-level isError and no
+  // per-item terminal result must not release the overlapping reservation.
+  const ctx = activeWriters(t, 'src/fixture.txt', { getAgentRegistry: () => [] });
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', isError: true, details: { results: [], progress: [] } }, ctx.context);
+  assert.match((await ctx.gate.handleToolCall(ctx.second, ctx.context)).reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    results: [{ index: 0, id: 'ActualWriterA', exitCode: 1, error: 'launch failed' }],
+  } }, ctx.context);
+  assert.equal(await ctx.gate.handleToolCall(ctx.second, ctx.context), undefined);
+});
+
+test('active scopes retain failed-launch reservations when child evidence is unavailable or ambiguous', async t => {
+  const children = [];
+  const ctx = activeWriters(t, 'src/fixture.txt', { getAgentRegistry: () => children });
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  children.push({ id: 'UnknownFreshChild', parentId: 'Main', status: 'running' });
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', isError: true }, ctx.context);
+  assert.match((await ctx.gate.handleToolCall(ctx.second, ctx.context)).reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+});
+
+
+test('settled writer resumption is interlocked while an overlapping reservation is active', async t => {
+  const ctx = activeWriters(t);
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    results: [{ index: 0, id: 'SettledWriterA', exitCode: 0 }],
+  } }, ctx.context);
+  assert.equal(await ctx.gate.handleToolCall(ctx.second, ctx.context), undefined);
+  const resume = { toolName: 'write', input: { path: 'agent://SettledWriterA', content: 'resume the implementation task' } };
+  const blocked = await ctx.gate.handleToolCall(resume, ctx.context);
+  assert.equal(blocked?.block, true);
+  assert.match(blocked.reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+  // Non-mutating and unknown targets are not writers and stay writable.
+  assert.equal(await ctx.gate.handleToolCall({ toolName: 'write', input: { path: 'agent://ReadOnlyChild', content: 'note' } }, ctx.context), undefined);
+  // The interlock clears once the overlapping writer settles.
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-b', details: {
+    results: [{ index: 0, id: 'SettledWriterB', exitCode: 0 }],
+  } }, ctx.context);
+  assert.equal(await ctx.gate.handleToolCall(resume, ctx.context), undefined);
+});
+
+test('settled independent writer scopes remain resumable beside a non-conflicting reservation', async t => {
+  const ctx = activeWriters(t, 'src-other/file.txt');
+  ctx.fixture.state.envelope.writePaths.push('src-other/');
+  writeFileSync(ctx.fixture.statePath, JSON.stringify(ctx.fixture.state));
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    results: [{ index: 0, id: 'SettledWriterA', exitCode: 0 }],
+  } }, ctx.context);
+  assert.equal(await ctx.gate.handleToolCall(ctx.second, ctx.context), undefined);
+  assert.equal(await ctx.gate.handleToolCall({ toolName: 'write', input: { path: 'agent://SettledWriterA', content: 'continue' } }, ctx.context), undefined);
+});
+
+
+test('resumed writer reservation blocks overlapping dispatch until the child settles again', async t => {
+  const ctx = activeWriters(t);
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    results: [{ index: 0, id: 'SettledWriterA', exitCode: 0 }],
+  } }, ctx.context);
+  const resume = { toolName: 'write', toolCallId: 'resume-a', input: { path: 'agent://SettledWriterA', content: 'continue' } };
+  assert.equal(await ctx.gate.handleToolCall(resume, ctx.context), undefined);
+  assert.match((await ctx.gate.handleToolCall(ctx.second, ctx.context)).reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+  ctx.gate.onAgentRegistryChange([{ id: 'SettledWriterA', parentId: 'Main', status: 'running' }]);
+  ctx.gate.onAgentRegistryChange([{ id: 'SettledWriterA', parentId: 'Main', status: 'idle' }]);
+  assert.equal(await ctx.gate.handleToolCall(ctx.second, ctx.context), undefined);
+});
+
+for (const status of ['idle', 'parked', 'aborted']) test(`resumed writer reservation releases when child becomes ${status}`, async t => {
+  const ctx = activeWriters(t);
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    results: [{ index: 0, id: 'SettledWriterA', exitCode: 0 }],
+  } }, ctx.context);
+  assert.equal(await ctx.gate.handleToolCall({
+    toolName: 'write', toolCallId: 'resume-a',
+    input: { path: 'agent://SettledWriterA', content: 'continue' },
+  }, ctx.context), undefined);
+  assert.match((await ctx.gate.handleToolCall(ctx.second, ctx.context)).reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+  if (status !== 'aborted') {
+    ctx.gate.onAgentRegistryChange([{ id: 'SettledWriterA', parentId: 'Main', status: 'running' }]);
+  }
+  ctx.gate.onAgentRegistryChange([{ id: 'SettledWriterA', parentId: 'Main', status }]);
+  const unblockedEvent = { ...ctx.second, toolCallId: `call-b-unblocked-${status}` };
+  assert.equal(await ctx.gate.handleToolCall(unblockedEvent, ctx.context), undefined);
+});
+
+test('settled writer scopes remain interlocked after more than 128 child events', async t => {
+  const ctx = activeWriters(t);
+  for (let index = 0; index < 130; index++) {
+    const event = { ...ctx.first, toolCallId: `settled-call-${index}` };
+    assert.equal(await ctx.gate.handleToolCall(event, ctx.context), undefined);
+    ctx.gate.handleToolResult({ toolName: 'task', toolCallId: event.toolCallId, details: {
+      results: [{ index: 0, id: `SettledWriter${index}`, exitCode: 0 }],
+    } }, ctx.context);
+  }
+  assert.equal(await ctx.gate.handleToolCall(ctx.second, ctx.context), undefined);
+  const blocked = await ctx.gate.handleToolCall({
+    toolName: 'write', input: { path: 'agent://SettledWriter0', content: 'resume oldest writer' },
+  }, ctx.context);
+  assert.equal(blocked?.block, true);
+  assert.match(blocked.reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+});
+
+
+test('resumed writer with pendingStart is not released on immediate idle before running', async t => {
+  const ctx = activeWriters(t);
+  const researchProbe = toolCallId => ({ ...ctx.second, toolCallId });
+  const implementationProbe = toolCallId => ({ ...ctx.first, toolCallId });
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    results: [{ index: 0, id: 'SettledWriterA', exitCode: 0 }],
+  } }, ctx.context);
+  assert.equal(await ctx.gate.handleToolCall({
+    toolName: 'write', toolCallId: 'resume-a',
+    input: { path: 'agent://SettledWriterA', content: 'continue' },
+  }, ctx.context), undefined);
+  assert.match((await ctx.gate.handleToolCall(researchProbe('probe-research-initial'), ctx.context)).reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+  // Child is still observed 'idle' right after write tool call
+  ctx.gate.onAgentRegistryChange([{ id: 'SettledWriterA', parentId: 'Main', status: 'idle' }]);
+  // Must NOT be released: overlapping dispatch must still be denied!
+  assert.match((await ctx.gate.handleToolCall(implementationProbe('probe-implementation-after-idle'), ctx.context)).reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+  // Now child runs
+  ctx.gate.onAgentRegistryChange([{ id: 'SettledWriterA', parentId: 'Main', status: 'running' }]);
+  // Still active while running
+  assert.match((await ctx.gate.handleToolCall(researchProbe('probe-research-running'), ctx.context)).reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+  // Child settles back to idle
+  ctx.gate.onAgentRegistryChange([{ id: 'SettledWriterA', parentId: 'Main', status: 'idle' }]);
+  // Now reservation releases and overlapping dispatch succeeds
+  assert.equal(await ctx.gate.handleToolCall(implementationProbe('probe-implementation-after-settlement'), ctx.context), undefined);
+});
+
+test('resumed writer originally spawned by another agent releases on settlement (cross-owner)', async t => {
+  const ctx = activeWriters(t);
+  // Spawner is SubCoordinator, not Main
+  const subCoordContext = { cwd: ctx.fixture.root, agent: { id: 'SubCoordinator' } };
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, subCoordContext), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    results: [{ index: 0, id: 'CrossOwnerWriter', exitCode: 0 }],
+  } }, subCoordContext);
+  // Main resumes CrossOwnerWriter
+  assert.equal(await ctx.gate.handleToolCall({
+    toolName: 'write', toolCallId: 'resume-cross',
+    input: { path: 'agent://CrossOwnerWriter', content: 'continue from Main' },
+  }, ctx.context), undefined);
+  // Overlapping write from ctx.context (Main) is blocked
+  assert.match((await ctx.gate.handleToolCall(ctx.second, ctx.context)).reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+  // Child transitions running, then idle with parentId: 'SubCoordinator'
+  ctx.gate.onAgentRegistryChange([{ id: 'CrossOwnerWriter', parentId: 'SubCoordinator', status: 'running' }]);
+  ctx.gate.onAgentRegistryChange([{ id: 'CrossOwnerWriter', parentId: 'SubCoordinator', status: 'idle' }]);
+  // Reservation should release even though reservation.owner is Main because child.parentId matches scope.owner
+  assert.equal(await ctx.gate.handleToolCall(ctx.second, ctx.context), undefined);
+});
+
+test('errored write to agent:// releases reservation created by its invocation token', async t => {
+  const ctx = activeWriters(t);
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    results: [{ index: 0, id: 'SettledWriterA', exitCode: 0 }],
+  } }, ctx.context);
+  assert.equal(await ctx.gate.handleToolCall({
+    toolName: 'write', toolCallId: 'resume-error',
+    input: { path: 'agent://SettledWriterA', content: 'continue' },
+  }, ctx.context), undefined);
+  // Overlapping write blocked
+  assert.match((await ctx.gate.handleToolCall(ctx.second, ctx.context)).reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+  // Write tool call failed with event.isError === true
+  ctx.gate.handleToolResult({ toolName: 'write', toolCallId: 'resume-error', isError: true }, ctx.context);
+  // Reservation should be released immediately
+  assert.equal(await ctx.gate.handleToolCall(ctx.second, ctx.context), undefined);
+});
+
+test('calling releaseObservedChildren with status idle immediately after resume does not release reservation', async t => {
+  const ctx = activeWriters(t);
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    results: [{ index: 0, id: 'SettledWriterA', exitCode: 0 }],
+  } }, ctx.context);
+  assert.equal(await ctx.gate.handleToolCall({
+    toolName: 'write', toolCallId: 'resume-a',
+    input: { path: 'agent://SettledWriterA', content: 'continue' },
+  }, ctx.context), undefined);
+  // Calling releaseObservedChildren with status: 'idle' immediately after resume DOES NOT release the reservation
+  ctx.gate.onAgentRegistryChange([{ id: 'SettledWriterA', parentId: 'Main', status: 'idle' }]);
+  // Overlapping dispatch remains denied
+  assert.match((await ctx.gate.handleToolCall(ctx.second, ctx.context)).reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+  // Child transitions to running (clears pendingStart)
+  ctx.gate.onAgentRegistryChange([{ id: 'SettledWriterA', parentId: 'Main', status: 'running' }]);
+  // Child settles back to idle
+  ctx.gate.onAgentRegistryChange([{ id: 'SettledWriterA', parentId: 'Main', status: 'idle' }]);
+  // Now overlapping dispatch is allowed
+  const thirdEvent = {
+    ...dispatchEvent(ctx.fixture, [{ name: 'WriterC', taskId: 'research01', agent: 'engineer', effects: { kind: 'write', paths: ['src/fixture.txt'] } }]),
+    toolCallId: 'call-c',
+  };
+  assert.equal(await ctx.gate.handleToolCall(thirdEvent, ctx.context), undefined);
+});
+
+
+test('H1: already-running child at resume seeds pendingStart false and releases on subsequent idle', async t => {
+  let registry = [];
+  const ctx = activeWriters(t, 'src/fixture.txt', { getAgentRegistry: () => registry });
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    results: [{ index: 0, id: 'SettledWriterA', exitCode: 0 }],
+  } }, ctx.context);
+
+  // Target child is already running in registry before resume
+  registry = [{ id: 'SettledWriterA', parentId: 'Main', status: 'running' }];
+  assert.equal(await ctx.gate.handleToolCall({
+    toolName: 'write', toolCallId: 'resume-a',
+    input: { path: 'agent://SettledWriterA', content: 'wake active child' },
+  }, ctx.context), undefined);
+
+  // Overlapping write is blocked while reservation is active
+  assert.match((await ctx.gate.handleToolCall(ctx.second, ctx.context)).reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+
+  // Since the child was already running, a subsequent idle transition releases it.
+  registry = [{ id: 'SettledWriterA', parentId: 'Main', status: 'idle' }];
+  ctx.gate.onAgentRegistryChange(registry);
+  assert.equal(await ctx.gate.handleToolCall(ctx.second, ctx.context), undefined);
+});
+
+test('H2: aborted is terminal and releases reservation immediately even with pendingStart true', async t => {
+  const ctx = activeWriters(t);
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    results: [{ index: 0, id: 'SettledWriterA', exitCode: 0 }],
+  } }, ctx.context);
+
+  // Resume when child was not running -> pendingStart is true
+  assert.equal(await ctx.gate.handleToolCall({
+    toolName: 'write', toolCallId: 'resume-a',
+    input: { path: 'agent://SettledWriterA', content: 'continue' },
+  }, ctx.context), undefined);
+
+  // Overlapping write is blocked
+  assert.match((await ctx.gate.handleToolCall(ctx.second, ctx.context)).reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+
+  // Child transitions to aborted before running; aborted MUST release immediately
+  ctx.gate.onAgentRegistryChange([{ id: 'SettledWriterA', parentId: 'Main', status: 'aborted' }]);
+  assert.equal(await ctx.gate.handleToolCall(ctx.second, ctx.context), undefined);
+});
+
+test('H3: write to agent://<target>?progress does not reserve mutator', async t => {
+  const ctx = activeWriters(t);
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    results: [{ index: 0, id: 'SettledWriterA', exitCode: 0 }],
+  } }, ctx.context);
+
+  // Write to agent://SettledWriterA?progress should NOT create a mutator reservation
+  const progressWrite = {
+    toolName: 'write',
+    toolCallId: 'write-prog-1',
+    input: { path: 'agent://SettledWriterA?progress', content: 'acknowledging task progress' },
+  };
+  assert.equal(await ctx.gate.handleToolCall(progressWrite, ctx.context), undefined);
+
+  // ?progress does not wake an execution turn, so it must not block overlapping writers.
+  assert.equal(await ctx.gate.handleToolCall(ctx.second, ctx.context), undefined);
+});
+
+
+test('C1 epoch guard prevents cross-lifecycle generation reuse', async t => {
+  const ctx = activeWriters(t);
+  assert.equal(await ctx.gate.handleToolCall(ctx.first, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'call-a', details: {
+    results: [{ index: 0, id: 'EpochWriter', exitCode: 0 }],
+  } }, ctx.context);
+  assert.equal(await ctx.gate.handleToolCall({
+    toolName: 'write', toolCallId: 'resume-before-revision',
+    input: { path: 'agent://EpochWriter', content: 'continue' },
+  }, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'old-generation-call', details: {
+    results: [{ id: 'EpochWriter', exitCode: 0, generation: 1 }],
+  } }, ctx.context);
+
+  updateFixtureRevision(ctx.fixture, 'rev-2');
+  const currentDispatch = {
+    ...dispatchEvent(ctx.fixture, [{ name: 'WriterA', taskId: 'impl02', agent: 'engineer', effects: { kind: 'write', paths: ['src/'] } }]),
+    toolCallId: 'current-call',
+  };
+  assert.equal(await ctx.gate.handleToolCall(currentDispatch, ctx.context), undefined);
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'current-call', details: {
+    results: [{ index: 0, id: 'EpochWriter', exitCode: 0 }],
+  } }, ctx.context);
+  assert.equal(await ctx.gate.handleToolCall({
+    toolName: 'write', toolCallId: 'resume-current',
+    input: { path: 'agent://EpochWriter', content: 'continue again' },
+  }, ctx.context), undefined);
+
+  ctx.gate.handleToolResult({ toolName: 'task', toolCallId: 'old-generation-call', details: {
+    results: [{ id: 'EpochWriter', exitCode: 0 }],
+  } }, ctx.context);
+  const blocked = await ctx.gate.handleToolCall({
+    ...dispatchEvent(ctx.fixture, [{ name: 'WriterB', taskId: 'research01', agent: 'engineer', effects: { kind: 'write', paths: ['src/fixture.txt'] } }]),
+    toolCallId: 'current-overlap',
+  }, ctx.context);
+  assert.equal(blocked?.block, true);
+  assert.match(blocked.reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+});
+
+test('C2 admission rejects revision drift during evaluation', async t => {
+  const { promise: firstEvaluationStarted, resolve: signalFirst } = Promise.withResolvers();
+  const { promise: firstEvaluationGate, resolve: releaseFirst } = Promise.withResolvers();
+  let evaluationCount = 0;
+  const ctx = activeWriters(t, 'src/fixture.txt', {
+    evaluateDispatch: async (statePath, request) => {
+      const report = evaluateDispatch(statePath, request);
+      if (evaluationCount++ === 0) {
+        signalFirst();
+        await firstEvaluationGate;
+      }
+      return report;
+    },
+  });
+  const firstDispatch = { ...ctx.first, toolCallId: 'stale-admission' };
+  const pendingAdmission = ctx.gate.handleToolCall(firstDispatch, ctx.context);
+  await firstEvaluationStarted;
+  updateFixtureRevision(ctx.fixture, 'rev-2');
+
+  const nextRevisionDispatch = {
+    ...dispatchEvent(ctx.fixture, [{ name: 'WriterB', taskId: 'research01', agent: 'engineer', effects: { kind: 'write', paths: ['src/fixture.txt'] } }]),
+    toolCallId: 'current-admission',
+  };
+  assert.equal(await ctx.gate.handleToolCall(nextRevisionDispatch, ctx.context), undefined);
+  releaseFirst();
+  const denied = await pendingAdmission;
+  assert.equal(denied?.block, true);
+  assert.match(denied.reason, /E_STATE_SOURCE/);
+});
+function pendingResearch(s) {
+  s.authorization = null;
+  s.reviews = null;
+  s.tasks = s.tasks.map(task => task.id === 'research01' ? { ...task, status: 'pending', evidenceIds: [] } : task);
+}
+
+for (const flat of [false, true]) test(`valid ${flat ? 'flat' : 'batch'} matches actual shared authority/effects and allows without mutating input`, async t => {
+  const ctx = setup(t);
+  const event = dispatchEvent(ctx.fixture, undefined, flat);
+  const original = structuredClone(event);
+  assert.equal(await ctx.call(event), undefined);
+  assert.deepEqual(event, original);
+});
+
+test('accepts arbitrary JSON whitespace/key order and real nonempty instructions', async t => {
+  const ctx = setup(t);
+  const event = dispatchEvent(ctx.fixture);
+  const body = JSON.parse(event.input.context);
+  const changed = { ...event, input: { ...event.input, context: ' \n' + JSON.stringify({ instructions: 'Inspect reviewed implementation.', workflowDispatch: body.workflowDispatch }, null, 2) + '\n' } };
+  assert.equal(await ctx.call(changed), undefined);
+});
+
+for (const [name, change] of [
+  ['trailing narrative', body => JSON.stringify(body) + ' suffix'],
+  ['extra wrapper keys', body => JSON.stringify({ ...body, extra: 'payload' })],
+  ['empty instructions', body => JSON.stringify({ ...body, instructions: '  ' })],
+  ['missing instructions', body => JSON.stringify({ workflowDispatch: body.workflowDispatch })],
+  ['extra request keys', body => JSON.stringify({ ...body, workflowDispatch: { ...body.workflowDispatch, extra: true } })],
+  ['obsolete effect array', body => JSON.stringify({ ...body, workflowDispatch: { ...body.workflowDispatch, requests: body.workflowDispatch.requests.map(entry => ({ ...entry, effects: [entry.effects] })) } })],
+]) test(`rejects ${name} before dispatch`, async t => {
+  const ctx = setup(t);
+  const event = dispatchEvent(ctx.fixture);
+  const result = await ctx.call({ ...event, input: { ...event.input, context: change(JSON.parse(event.input.context)) } });
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_DISPATCH_METADATA/);
+});
+
+// R1 boundary pin: a prose-PREFIXED wrapper no longer earns the shape hint; it classifies as unmanaged
+// read-only preparation, so a writer target is refused with the read-only-candidate code instead.
+test('rejects a prose-prefixed wrapper as read-only preparation for a writer', async t => {
+  const ctx = setup(t);
+  const event = dispatchEvent(ctx.fixture);
+  const result = await ctx.call({ ...event, input: { ...event.input, context: 'prefix ' + event.input.context } });
+  assert.equal(result?.block, true, 'a prose-prefixed wrapper must not dispatch');
+  assert.match(result.reason, /E_READONLY_NOT_EXEMPT/, 'prose is unmanaged preparation, which refuses writers');
+});
+
+test('rejects unsupported workflow effect kinds before authority evaluation', async t => {
+  let evaluations = 0;
+  const ctx = setup(t, undefined, {
+    evaluateDispatch: async () => {
+      evaluations++;
+      return { allowed: true, authority_ready: true };
+    },
+  });
+  const event = dispatchEvent(ctx.fixture);
+  const wrapper = JSON.parse(event.input.context);
+  wrapper.workflowDispatch.requests[0].effects.kind = 'shell';
+  const result = await ctx.call({
+    ...event,
+    input: { ...event.input, context: JSON.stringify(wrapper) },
+  });
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_DISPATCH_METADATA/);
+  assert.equal(evaluations, 0);
+});
+
+test('malformed dispatch diagnostics give safe corrective guidance', async t => {
+  const ctx = setup(t);
+  const event = dispatchEvent(ctx.fixture);
+  const wrapper = JSON.parse(event.input.context);
+  wrapper.unexpected = 'SECRET_CANARY';
+  const result = await ctx.call({
+    ...event,
+    input: { ...event.input, context: JSON.stringify(wrapper) },
+  });
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /exact JSON workflowDispatch wrapper/);
+  assert.equal(result.reason.includes('SECRET_CANARY'), false);
+});
+
+for (const [name, change] of [
+  ['case-only native rename', input => ({ ...input, tasks: input.tasks.map(item => ({ ...item, name: 'implement' })) })],
+  ['different agent', input => ({ ...input, tasks: input.tasks.map(item => ({ ...item, agent: 'scout' })) })],
+  ['missing explicit agent', input => ({ ...input, tasks: input.tasks.map(({ agent, ...item }) => item) })],
+  ['extra native item', input => ({ ...input, tasks: [...input.tasks, { ...input.tasks[0], name: 'Extra' }] })],
+  ['case-duplicate native item', input => ({ ...input, tasks: [...input.tasks, { ...input.tasks[0], name: 'implement' }] })],
+  ['tools override', input => ({ ...input, tasks: input.tasks.map(item => ({ ...item, tools: ['write'] })) })],
+  ['prompt override', input => ({ ...input, tasks: input.tasks.map(item => ({ ...item, systemPrompt: 'override' })) })],
+  ['top-level agent', input => ({ ...input, agent: 'engineer' })],
+  ['blank native instructions', input => ({ ...input, tasks: input.tasks.map(item => ({ ...item, task: ' ' })) })],
+]) test(`rejects native identity/definition bypass: ${name}`, async t => {
+  const ctx = setup(t);
+  const event = dispatchEvent(ctx.fixture);
+  assert.equal((await ctx.call({ ...event, input: change(event.input) }))?.block, true);
+});
+
+for (const [name, mutate] of [
+  ['unknown task', entry => ({ ...entry, taskId: 'unknown' })],
+  ['ungranted role', entry => ({ ...entry, agent: 'scout' })],
+  ['changed path', entry => ({ ...entry, effects: { kind: 'write', paths: ['src/other'] } })],
+  ['additional path', entry => ({ ...entry, effects: { kind: 'write', paths: ['src/', 'spec.md'] } })],
+  ['missing path', entry => ({ ...entry, effects: { kind: 'write', paths: [] } })],
+  ['changed kind', entry => ({ ...entry, effects: { kind: 'read', paths: ['src/'] } })],
+  ['escaping path', entry => ({ ...entry, effects: { kind: 'write', paths: ['../outside'] } })],
+]) test(`real shared evaluator denies ${name}`, async t => {
+  const ctx = setup(t);
+  const base = { name: 'Implement', taskId: 'impl02', agent: 'engineer', effects: { kind: 'write', paths: ['src/'] } };
+  assert.equal((await ctx.call(dispatchEvent(ctx.fixture, [mutate(base)])))?.block, true);
+});
+
+test('canonical path-set equality allows order changes, not extra permission', async t => {
+  const ctx = setup(t, s => { s.tasks = s.tasks.map(task => task.id === 'impl02' ? { ...task, effects: { kind: 'write', paths: ['src/a', 'src/b'] } } : task); });
+  assert.equal(await ctx.call(dispatchEvent(ctx.fixture, [{ name: 'Implement', taskId: 'impl02', agent: 'engineer', effects: { kind: 'write', paths: ['src/b', 'src/a'] } }])), undefined);
+});
+
+test('mixed valid/invalid batch denies atomically', async t => {
+  const ctx = setup(t);
+  const event = dispatchEvent(ctx.fixture, [{ name: 'Implement', taskId: 'impl02', agent: 'engineer', effects: { kind: 'write', paths: ['src/'] } }, { ...readEntry, taskId: 'missing' }]);
+  assert.equal((await ctx.call(event))?.block, true);
+});
+
+test('verified read-only research remains usable with valid null preauthorization and no marker', async t => {
+  const ctx = setup(t, pendingResearch);
+  rmSync(path.join(ctx.fixture.root, 'gate/marker.json'));
+  assert.equal(await ctx.call(dispatchEvent(ctx.fixture, [readEntry])), undefined);
+  assert.equal((await ctx.call())?.block, true);
+});
+
+for (const [name, definition] of [
+  ['missing role', null], ['default tools', { name: 'scout' }],
+  ['write tool', { name: 'scout', tools: ['read', 'write'] }],
+  ['lsp mutation surface', { name: 'scout', tools: ['read', 'lsp'] }],
+  ['unknown tool', { name: 'scout', tools: ['read', 'unknown'] }],
+  ['spawn permission', { name: 'scout', tools: ['read'], spawns: ['engineer'] }],
+  ['disabled role', { name: 'scout', tools: ['read'], disable: true }],
+]) test(`read-only exemption denies ${name}`, async t => {
+  const ctx = setup(t, pendingResearch, { discoverAgents: async () => ({ agents: definition ? [definition] : [], searchedDirs: [] }) });
+  assert.equal((await ctx.call(dispatchEvent(ctx.fixture, [readEntry])))?.block, true);
+});
+
+test('test-engineer never becomes exempt through a read-only-looking declaration', async t => {
+  const ctx = setup(t, s => { pendingResearch(s); s.tasks = s.tasks.map(task => task.id === 'research01' ? { ...task, agentRoles: ['test-engineer'] } : task); }, { discoverAgents: async () => ({ agents: [{ name: 'test-engineer', tools: ['read'] }] }) });
+  assert.equal((await ctx.call(dispatchEvent(ctx.fixture, [{ ...readEntry, agent: 'test-engineer' }])))?.block, true);
+});
+
+test('role resolver rejects duplicate/shadowed installed declarations rather than trusting names', async t => {
+  const fixture = runtimeFixture(t);
+  const dir = path.join(fixture.root, 'agents');
+  mkdirSync(dir);
+  writeFileSync(path.join(dir, 'scout.md'), '---\nname: scout\ndescription: read only\ntools: [read]\n---\n');
+  writeFileSync(path.join(dir, 'other.md'), '---\nname: scout\ndescription: duplicate\ntools: [write]\n---\n');
+  const discoverAgents = async () => ({ agents: [{ name: 'scout', filePath: path.join(dir, 'scout.md'), tools: ['read'] }], searchedDirs: [dir] });
+  assert.equal((await resolveReadOnlyAgent('scout', { cwd: fixture.root, discoverAgents })).resolved, false);
+  rmSync(path.join(dir, 'other.md'));
+  const shadowed = async () => ({ agents: [{ name: 'scout', tools: ['read'], source: 'bundled' }], searchedDirs: [dir] });
+  assert.equal((await resolveReadOnlyAgent('scout', { cwd: fixture.root, discoverAgents: shadowed })).resolved, false);
+});
+
+test('missing live role discovery never grants a read-only exemption', async t => {
+  const ctx = setup(t, pendingResearch, { discoverAgents: undefined });
+  assert.equal((await ctx.call(dispatchEvent(ctx.fixture, [readEntry])))?.block, true);
+});
+
+test('fresh workspace and a denied first dispatch both require metadata', async t => {
+  const ctx = setup(t, s => { s.authorization = null; });
+  const unmanaged = { toolName: 'task', input: { task: 'plain work', name: 'Work', agent: 'engineer', solutionSpace: 'given' } };
+  assert.equal((await ctx.call(unmanaged))?.block, true);
+  assert.equal((await ctx.call())?.block, true);
+  assert.equal((await ctx.call(unmanaged))?.block, true);
+});
+
+test('outside any managed workspace standing policy remains unchanged', async t => {
+  const fixture = runtimeFixture(t);
+  rmSync(path.join(fixture.root, '.omp'), { recursive: true });
+  const gate = createToolCallGate({ evaluateDispatch, log: () => {} });
+  assert.equal(await gate.handleToolCall({ toolName: 'task', input: { task: 'ordinary exempt work' } }, { cwd: fixture.root }), undefined);
+  assert.equal(await gate.handleToolCall({ toolName: 'write', input: { path: 'xd://subagent' } }, { cwd: fixture.root }), undefined);
+});
+
+for (const device of ['subagent', 'subagent_send', 'subagent_resume']) test(`fresh managed workspace denies unbound alternate ${device}`, async t => {
+  const ctx = setup(t);
+  const result = await ctx.call({ toolName: 'write', input: { path: `xd://${device}`, content: '{}' } });
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_ALTERNATE_ROUTE/);
+});
+
+test('ordinary tools and nondelegating devices are not a new sandbox', async t => {
+  const ctx = setup(t);
+  for (const event of [{ toolName: 'read', input: { path: 'spec.md' } }, { toolName: 'bash', input: { command: 'echo ok' } }, { toolName: 'write', input: { path: '/tmp/ordinary' } }, { toolName: 'write', input: { path: 'xd://report_issue' } }, { toolName: 'write', input: { path: 'agent://Existing' } }]) assert.equal(await ctx.call(event), undefined);
+});
+
+test('live Graphify handler allows clean local Git repositories', async t => {
+  const gitDependencies = localGitTestDependencies();
+  const ctx = setup(t, undefined, gitDependencies);
+  initializeCleanLocalGitRepository(ctx.fixture.root, gitDependencies);
+  const result = await ctx.gate.handleToolCall({ toolName: 'graphify' }, { cwd: ctx.fixture.root });
+  assert.equal(result, undefined);
+  assert.deepEqual(ctx.logs.filter(entry => entry.event === 'dispatch_denied'), []);
+});
+
+test('live Graphify handler blocks namespaced calls on dirty repositories with safe guidance', async t => {
+  const gitDependencies = localGitTestDependencies();
+  const ctx = setup(t, undefined, gitDependencies);
+  initializeCleanLocalGitRepository(ctx.fixture.root, gitDependencies);
+  const cleanCall = await ctx.gate.handleToolCall({ toolName: 'graphify' }, { cwd: ctx.fixture.root });
+  assert.equal(cleanCall, undefined);
+  writeFileSync(path.join(ctx.fixture.root, 'private.diff'), 'PRIVATE_CHANGE_CANARY');
+  const result = await ctx.gate.handleToolCall({ toolName: 'mcp__graphify_query' }, { cwd: ctx.fixture.root });
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_DIRTY_WORKTREE/);
+  assert.match(result.reason, /narrow search/);
+  assert.doesNotMatch(JSON.stringify(result), /private\.diff|PRIVATE_CHANGE_CANARY/);
+  assert.deepEqual(ctx.logs.filter(entry => entry.event === 'dispatch_denied'), [
+    { event: 'dispatch_denied', code: 'E_DIRTY_WORKTREE' },
+  ]);
+});
+
+test('live Graphify handler blocks calls outside a Git repository', async t => {
+  const gitDependencies = localGitTestDependencies();
+  const ctx = setup(t, undefined, gitDependencies);
+  const result = await ctx.gate.handleToolCall({ toolName: 'graphify' }, { cwd: ctx.fixture.root });
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_NOT_A_REPO/);
+  assert.match(result.reason, /verified Git repository/);
+  assert.deepEqual(ctx.logs.filter(entry => entry.event === 'dispatch_denied'), [
+    { event: 'dispatch_denied', code: 'E_NOT_A_REPO' },
+  ]);
+});
+
+test('live Graphify handler fails closed on Git status errors without exposing stderr', async t => {
+  const calls = [];
+  const ctx = setup(t, undefined, {
+    spawnSync(command, args, options) {
+      calls.push({ command, args, cwd: options.cwd });
+      return { status: 1, stdout: '', stderr: 'PRIVATE_GIT_DIAGNOSTIC' };
+    },
+  });
+  const result = await ctx.gate.handleToolCall({ toolName: 'graphify' }, { cwd: ctx.fixture.root });
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_GIT_STATUS/);
+  assert.doesNotMatch(JSON.stringify(result), /PRIVATE_GIT_DIAGNOSTIC/);
+  assert.deepEqual(calls, [{
+    command: 'git',
+    args: ['status', '--porcelain'],
+    cwd: ctx.fixture.root,
+  }]);
+});
+
+
+test('actual extension cwd prevents borrowing another project authority', async t => {
+  const ctx = setup(t);
+  const other = runtimeFixture(t);
+  assert.equal((await ctx.gate.handleToolCall(dispatchEvent(ctx.fixture), { cwd: other.root }))?.block, true);
+  assert.equal((await ctx.gate.handleToolCall(dispatchEvent(ctx.fixture)))?.block, true);
+});
+
+test('foreign feature/revision and noncurrent state cannot borrow valid authority', async t => {
+  const ctx = setup(t);
+  for (const field of ['feature', 'revision']) {
+    const event = wrapper(dispatchEvent(ctx.fixture), body => ({ ...body, workflowDispatch: { ...body.workflowDispatch, [field]: 'foreign' } }));
+    assert.equal((await ctx.call(event))?.block, true);
+  }
+  const other = path.join(ctx.fixture.root, 'other-state.json');
+  writeFileSync(other, readFileSync(ctx.fixture.statePath));
+  const event = wrapper(dispatchEvent(ctx.fixture), body => ({ ...body, workflowDispatch: { ...body.workflowDispatch, statePath: other } }));
+  assert.equal((await ctx.call(event))?.block, true);
+});
+
+test('no ancestor plan scan can accidentally manage an unrelated nested project', async t => {
+  const ctx = setup(t);
+  const child = path.join(ctx.fixture.root, 'child-project');
+  mkdirSync(child);
+  const result = await ctx.gate.handleToolCall({ toolName: 'task', input: { task: 'standing exempt work' } }, { cwd: child });
+  assert.equal(result, undefined);
+});
+
+test('ambiguous current plan and linked state sources fail closed', async t => {
+  const ctx = setup(t);
+  const target = path.join(ctx.fixture.root, 'linked-state.json');
+  writeFileSync(target, readFileSync(ctx.fixture.statePath));
+  rmSync(ctx.fixture.statePath);
+  symlinkSync(target, ctx.fixture.statePath);
+  assert.equal((await ctx.call())?.block, true);
+  rmSync(ctx.fixture.statePath);
+  writeFileSync(path.join(path.dirname(ctx.fixture.statePath), 'pending-plan.md'), '# Current planning');
+  assert.equal((await ctx.call({ toolName: 'task', input: { task: 'unbound work' } }))?.block, true);
+});
+
+function legacyState(root, marker = true) {
+  const base = path.join(root, '.omp/plans');
+  const evidence = path.join(root, '.superpowers/sdd');
+  mkdirSync(base, { recursive: true });
+  mkdirSync(evidence, { recursive: true });
+  const feature = 'reconciliation';
+  const revision = 'r-old';
+  const receipt = { revision, evidence: path.join(evidence, 'receipt') };
+  const state = { schemaVersion: 1, feature, revision, approvals: { requirements: receipt, design: receipt, tasks: receipt }, reviews: { specification: receipt, tasks: receipt }, tasks: [{ id: 'OLD', stage: 'implementation', status: 'pending', blockedBy: [], requires: [] }], availableCapabilities: [], blockers: [], gate: { feature, revision, markerPath: path.join(evidence, 'GATE_OPEN'), extensionPath: path.join(evidence, 'extension'), loadEvidencePath: path.join(evidence, 'loaded') } };
+  const checkpointRevisions = Object.fromEntries(['approvals.requirements', 'approvals.design', 'approvals.tasks', 'reviews.specification', 'reviews.tasks'].map(key => [key, revision]));
+  for (const file of ['receipt', 'extension', 'loaded', ...(marker ? ['GATE_OPEN'] : [])]) writeFileSync(path.join(evidence, file), `${feature} ${revision} SYNTHETIC TEST DATA`);
+  writeFileSync(path.join(base, 'execution-state.json'), JSON.stringify({ ...state, checkpointRevisions }));
+}
+
+test('missing required project marker blocks different-feature source mutation without an installed project extension', async t => {
+  const ctx = setup(t);
+  const sidecar = moveState(ctx.fixture, path.join('.omp', 'plans', ctx.fixture.state.feature, 'execution-state.json'));
+  legacyState(ctx.fixture.root, false);
+  const result = await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar));
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_PROJECT_GATE/);
+});
+
+test('valid historical protection composes without demanding unrelated feature task IDs', async t => {
+  const ctx = setup(t);
+  const sidecar = moveState(ctx.fixture, path.join('.omp', 'plans', ctx.fixture.state.feature, 'execution-state.json'));
+  legacyState(ctx.fixture.root);
+  assert.equal(await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar)), undefined);
+});
+
+test('another feature may never overwrite protected historical state or marker paths', async t => {
+  const ctx = setup(t, s => { s.envelope.writePaths = ['src/', '.superpowers/sdd']; });
+  const sidecar = moveState(ctx.fixture, path.join('.omp', 'plans', ctx.fixture.state.feature, 'execution-state.json'));
+  legacyState(ctx.fixture.root);
+  assert.equal((await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar)))?.block, true);
+});
+
+test('symlinked historical state is not a legacy gate bypass', async t => {
+  const ctx = setup(t);
+  const sidecar = moveState(ctx.fixture, path.join('.omp', 'plans', ctx.fixture.state.feature, 'execution-state.json'));
+  legacyState(ctx.fixture.root);
+  const current = path.join(ctx.fixture.root, '.omp/plans/execution-state.json');
+  const target = path.join(ctx.fixture.root, 'legacy.json');
+  writeFileSync(target, readFileSync(current));
+  rmSync(current);
+  symlinkSync(target, current);
+  assert.equal((await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar)))?.block, true);
+});
+
+test('readiness is reread on every allowed attempt rather than cached', async t => {
+  const ctx = setup(t);
+  assert.equal(await ctx.call(), undefined);
+  const state = JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8'));
+  writeFileSync(ctx.fixture.statePath, JSON.stringify({ ...state, authorization: null }));
+  assert.equal((await ctx.call())?.block, true);
+});
+
+for (const [name, evaluate] of [
+  ['exception', () => { throw Error('SECRET_CANARY'); }],
+  ['missing report', () => undefined], ['wrong verdict type', () => ({ allowed: 'yes' })],
+  ['timeout', () => Promise.withResolvers().promise],
+]) test(`fail closed on evaluator ${name}`, async t => {
+  const ctx = setup(t, undefined, { evaluateDispatch: evaluate, timeoutMs: 10 });
+  const result = await ctx.call();
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_INTERNAL/);
+  assert.equal(JSON.stringify(ctx.logs).includes('SECRET_CANARY'), false);
+});
+
+test('reason, path and native name canaries cannot escape bounded diagnostics', async t => {
+  const ctx = setup(t, undefined, { evaluateDispatch: () => ({ allowed: false, reasons: [{ code: 'SECRET_CANARY', detail: 'SECRET_CANARY' }] }) });
+  const event = dispatchEvent(ctx.fixture, [{ name: 'SECRET_CANARY', taskId: 'impl02', agent: 'engineer', effects: { kind: 'write', paths: ['src/'] } }]);
+  const result = await ctx.call(event);
+  assert.equal(result?.block, true);
+  assert.ok(result.reason.length < 600);
+  assert.equal(JSON.stringify({ result, logs: ctx.logs }).includes('SECRET_CANARY'), false);
+});
+
+test('a task-permitted role missing from actual runtime discovery is denied', async t => {
+  const ctx = setup(t, undefined, { discoverAgents: async () => ({ agents: [], searchedDirs: [] }) });
+  const result = await ctx.call();
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_ROLE_NOT_PERMITTED/);
+});
+
+test('historical marker symlink escape cannot borrow another project marker', async t => {
+  const ctx = setup(t);
+  const sidecar = moveState(ctx.fixture, path.join('.omp', 'plans', ctx.fixture.state.feature, 'execution-state.json'));
+  legacyState(ctx.fixture.root);
+  const other = runtimeFixture(t);
+  const outside = path.join(other.root, 'marker');
+  writeFileSync(outside, 'reconciliation r-old SYNTHETIC TEST DATA');
+  const marker = path.join(ctx.fixture.root, '.superpowers/sdd/GATE_OPEN');
+  rmSync(marker);
+  symlinkSync(outside, marker);
+  const result = await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar));
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_PROJECT_GATE/);
+});
+
+// --- single-intake remediation: shared producer/consumer authority contract ---
+const engineerWrite = [{ name: 'Implement', taskId: 'impl02', agent: 'engineer', effects: { kind: 'write', paths: ['src/'] } }];
+const researchRead = agent => [{
+  name: 'Research', taskId: 'research01', agent, effects: { kind: 'read', paths: ['spec.md'] },
+  ...(['critic', 'code-reviewer'].includes(agent)
+    ? { targetCandidateId: 'synthetic-spec', targetRevision: 'rev-1' }
+    : {}),
+}];
+const notReadyAuthority = [
+  ['nested specification review null', s => { s.reviews.specification = null; }],
+  ['nested tasks review null', s => { s.reviews.tasks = null; }],
+  ['nonexplicit owner receipt', s => { s.authorization.receipt.response.explicit = false; }],
+  ['automatic owner receipt', s => { s.authorization.receipt.response.automatic = true; }],
+  ['timed out owner receipt', s => { s.authorization.receipt.response.timedOut = true; }],
+];
+const pendingResearchGrant = agentRoles => s => {
+  s.tasks = s.tasks.map(task => task.id === 'research01' ? { ...task, status: 'pending', evidenceIds: [], agentRoles } : task);
+};
+const criticDiscovery = async () => ({ agents: [{ name: 'critic', tools: ['read'], spawns: [] }], searchedDirs: [] });
+function gateRequest(fixture, statePath, entries) {
+  return { schemaVersion: 1, projectRoot: fixture.root, feature: fixture.state.feature, revision: fixture.state.revision, requests: entries };
+}
+function assertSharedAllowed(fixture, statePath, entries, label) {
+  const payload = dispatchEvent(fixture, entries).input;
+  const report = evaluateDispatch(statePath, gateRequest(fixture, statePath, entries), { reviewPayload: payload });
+  assert.notEqual(report.status, 'invalid', label);
+  assert.equal(report.allowed, true, label);
+}
+function copyState(fixture, relative) {
+  const target = path.join(fixture.root, relative);
+  mkdirSync(path.dirname(target), { recursive: true });
+  writeFileSync(target, readFileSync(fixture.statePath));
+  return target;
+}
+function moveState(fixture, relative) {
+  const target = copyState(fixture, relative);
+  rmSync(fixture.statePath);
+  return target;
+}
+function atState(event, statePath) {
+  const body = JSON.parse(event.input.context);
+  return { ...event, input: { ...event.input, context: JSON.stringify({ ...body, workflowDispatch: { ...body.workflowDispatch, statePath } }) } };
+}
+
+// D2: while authority is not ready (binding pending inside non-null top-level
+// fields), only effective read-only roles may run research reads; the
+// engineer-granted pending research read must fail closed.
+for (const [name, mutate] of notReadyAuthority) test(`single-intake remediation: not-ready authority denies the engineer-granted pending research read (${name})`, async t => {
+  const ctx = setup(t, s => {
+    mutate(s);
+    pendingResearchGrant(['engineer'])(s);
+  });
+  const entry = researchRead('engineer');
+  assertSharedAllowed(ctx.fixture, ctx.fixture.statePath, entry, name);
+  const result = await ctx.call(dispatchEvent(ctx.fixture, entry));
+  assert.equal(result?.block, true, name);
+  assert.match(result.reason, /E_READONLY_NOT_EXEMPT/, name);
+});
+
+for (const [name, mutate] of notReadyAuthority) test(`single-intake remediation: not-ready authority allows the effective read-only critic research read (${name})`, async t => {
+  const ctx = setup(t, s => {
+    mutate(s);
+    pendingResearchGrant(['critic'])(s);
+  }, { discoverAgents: criticDiscovery });
+  const entry = researchRead('critic');
+  reviewSequenceFixture(ctx.fixture, [dispatchEvent(ctx.fixture, entry)]);
+  assertSharedAllowed(ctx.fixture, ctx.fixture.statePath, entry, name);
+  assert.equal(await ctx.call(dispatchEvent(ctx.fixture, entry)), undefined, name);
+});
+
+test('single-intake remediation: gate fails closed with E_INTERNAL when the real shared report omits authority_ready', async t => {
+  const ctx = setup(t, undefined, { evaluateDispatch: (statePath, request) => { const report = evaluateDispatch(statePath, request); const { authority_ready: _omitted, ...rest } = report; return rest; } });
+  const result = await ctx.call();
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_INTERNAL/);
+});
+
+test('single-intake remediation: gate fails closed with E_INTERNAL when the real shared report has a nonboolean authority_ready', async t => {
+  const ctx = setup(t, undefined, { evaluateDispatch: (statePath, request) => ({ ...evaluateDispatch(statePath, request), authority_ready: 'yes' }) });
+  const result = await ctx.call();
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_INTERNAL/);
+});
+
+test('single-intake remediation: an evaluator-denied read request is never rescued by the read-only exemption', async t => {
+  const ctx = setup(t, s => {
+    pendingResearch(s);
+    pendingResearchGrant(['critic'])(s);
+  }, { discoverAgents: criticDiscovery });
+  reviewSequenceFixture(ctx.fixture, [dispatchEvent(ctx.fixture, researchRead('critic'))]);
+  assert.equal(await ctx.call(dispatchEvent(ctx.fixture, researchRead('critic'))), undefined);
+  const outside = researchRead('critic').map(entry => ({ ...entry, effects: { kind: 'read', paths: ['other.md'] } }));
+  assert.equal(evaluateDispatch(ctx.fixture.statePath, gateRequest(ctx.fixture, ctx.fixture.statePath, outside)).allowed, false);
+  const result = await ctx.call(dispatchEvent(ctx.fixture, outside));
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_EFFECT_OUTSIDE_ENVELOPE/);
+});
+
+test('single-intake remediation: fully authorized authority keeps legitimate engineer research read and implementation write on the normal path', async t => {
+  const ctx = setup(t, s => {
+    pendingResearchGrant(['engineer'])(s);
+    s.tasks = s.tasks.map(task => task.id === 'impl02' ? { ...task, blockedBy: [] } : task);
+  });
+  const entries = [...researchRead('engineer'), ...engineerWrite];
+  assertSharedAllowed(ctx.fixture, ctx.fixture.statePath, entries, 'fully authorized batch');
+  assert.equal(await ctx.call(dispatchEvent(ctx.fixture, entries)), undefined);
+});
+
+// D3: a schema-2 source is the exact canonical state, or the exact-feature
+// sidecar while a valid schema-1 canonical state is current. Anything else —
+// orphan, alternate, wrong-feature directory — is denied before evaluation.
+test('single-intake remediation: orphan schema-2 state is denied when the canonical source is absent', async t => {
+  const ctx = setup(t);
+  const orphan = moveState(ctx.fixture, path.join('.omp', 'plans', 'orphan-v2.json'));
+  assertSharedAllowed(ctx.fixture, orphan, engineerWrite, 'orphan source');
+  const result = await ctx.call(atState(dispatchEvent(ctx.fixture), orphan));
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_STATE_SOURCE/);
+});
+
+test('single-intake remediation: an alternate schema-2 source is denied while the canonical schema-2 state is current', async t => {
+  const ctx = setup(t);
+  const alternate = copyState(ctx.fixture, path.join('.omp', 'plans', 'alternate-v2.json'));
+  assertSharedAllowed(ctx.fixture, alternate, engineerWrite, 'alternate source');
+  const result = await ctx.call(atState(dispatchEvent(ctx.fixture), alternate));
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_STATE_SOURCE/);
+});
+
+test('single-intake remediation: a schema-2 sidecar under a wrong-feature directory is denied beside a valid legacy canonical state', async t => {
+  const ctx = setup(t);
+  const sidecar = moveState(ctx.fixture, path.join('.omp', 'plans', 'wrong-feature', 'execution-state.json'));
+  legacyState(ctx.fixture.root);
+  assertSharedAllowed(ctx.fixture, sidecar, engineerWrite, 'wrong-feature sidecar');
+  const result = await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar));
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_STATE_SOURCE/);
+});
+
+test('single-intake remediation: the exact canonical schema-2 source allows the authorized engineer', async t => {
+  const ctx = setup(t);
+  assertSharedAllowed(ctx.fixture, ctx.fixture.statePath, engineerWrite, 'canonical source');
+  assert.equal(await ctx.call(dispatchEvent(ctx.fixture)), undefined);
+});
+
+test('single-intake remediation: legacy coexistence allows the exact-feature schema-2 sidecar and denies when the historical marker is missing', async t => {
+  const ctx = setup(t);
+  const sidecar = moveState(ctx.fixture, path.join('.omp', 'plans', ctx.fixture.state.feature, 'execution-state.json'));
+  legacyState(ctx.fixture.root);
+  assertSharedAllowed(ctx.fixture, sidecar, engineerWrite, 'exact-feature sidecar');
+  assert.equal(await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar)), undefined);
+  rmSync(path.join(ctx.fixture.root, '.superpowers', 'sdd', 'GATE_OPEN'));
+  const denied = await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar));
+  assert.equal(denied?.block, true);
+  assert.match(denied.reason, /E_PROJECT_GATE/);
+});
+
+test('single-intake remediation: malformed current legacy state denies the schema-2 sidecar', async t => {
+  const ctx = setup(t);
+  const sidecar = moveState(ctx.fixture, path.join('.omp', 'plans', ctx.fixture.state.feature, 'execution-state.json'));
+  legacyState(ctx.fixture.root);
+  const current = path.join(ctx.fixture.root, '.omp/plans/execution-state.json');
+  writeFileSync(current, JSON.stringify({ schemaVersion: 1, feature: 'broken' }));
+  assertSharedAllowed(ctx.fixture, sidecar, engineerWrite, 'sidecar beside malformed current');
+  const result = await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar));
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_STATE_SOURCE/);
+});
+
+test('single-intake remediation: blocked-but-valid legacy canonical still allows the readonly schema-2 sidecar', async t => {
+  const ctx = setup(t, pendingResearchGrant(['scout']));
+  const sidecar = moveState(ctx.fixture, path.join('.omp', 'plans', ctx.fixture.state.feature, 'execution-state.json'));
+  legacyState(ctx.fixture.root);
+  const current = path.join(ctx.fixture.root, '.omp/plans/execution-state.json');
+  const legacy = JSON.parse(readFileSync(current, 'utf8'));
+  legacy.tasks = legacy.tasks.map(task => ({ ...task, requires: ['unavailable-capability'] }));
+  writeFileSync(current, JSON.stringify(legacy));
+  const facade = evaluateState(current);
+  assert.equal(facade.status, 'blocked');
+  const entries = [{ name: 'Research', taskId: 'research01', agent: 'scout', effects: { kind: 'read', paths: ['spec.md'] } }];
+  assertSharedAllowed(ctx.fixture, sidecar, entries, 'readonly sidecar beside blocked legacy');
+  assert.equal(await ctx.call(atState(dispatchEvent(ctx.fixture, entries), sidecar)), undefined);
+});
+
+// D4: an invalid legacy facade report is a typed historical-marker denial, never a
+// usable source. Only the exact marker-only fault (every reason E_EVIDENCE_MISSING
+// at gate.markerPath) beside a recognized non-read effect may deny E_PROJECT_GATE;
+// every other invalid/unreadable/malformed report stays E_STATE_SOURCE. After either
+// denial no sidecar content is read, no dispatch is evaluated, and no source sticks
+// as the active identity.
+function trackedDeps(facadeFault) {
+  const calls = { dispatch: 0, facade: 0, reads: [] };
+  const deps = {
+    evaluateDispatch: (statePath, request) => { calls.dispatch += 1; return evaluateDispatch(statePath, request); },
+    readFileSync: (file, options) => { calls.reads.push(String(file)); return readFileSync(file, options); },
+    evaluateState: (statePath, inner) => {
+      calls.facade += 1;
+      const report = evaluateState(statePath, inner);
+      return facadeFault ? facadeFault(report) : report;
+    },
+  };
+  return { calls, deps };
+}
+const legacyMarkerPath = root => path.join(root, '.superpowers', 'sdd', 'GATE_OPEN');
+const legacyCurrentPath = root => path.join(root, '.omp', 'plans', 'execution-state.json');
+function legacySidecarContext(t, deps, mutate = undefined) {
+  const ctx = setup(t, mutate, deps);
+  const sidecar = moveState(ctx.fixture, path.join('.omp', 'plans', ctx.fixture.state.feature, 'execution-state.json'));
+  legacyState(ctx.fixture.root);
+  return { ctx, sidecar };
+}
+
+test('single-intake remediation: a marker-only invalid legacy report denies a recognized write as E_PROJECT_GATE without reading the sidecar or dispatching', async t => {
+  const { calls, deps } = trackedDeps();
+  const { ctx, sidecar } = legacySidecarContext(t, deps);
+  rmSync(legacyMarkerPath(ctx.fixture.root));
+  const facade = evaluateState(legacyCurrentPath(ctx.fixture.root));
+  assert.equal(facade.status, 'invalid');
+  assert.equal(facade.reasons.length, 1);
+  assert.equal(facade.reasons[0].code, 'E_EVIDENCE_MISSING');
+  assert.equal(facade.reasons[0].location, 'gate.markerPath');
+  const result = await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar));
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_PROJECT_GATE/);
+  assert.equal(calls.dispatch, 0);
+  assert.equal(calls.reads.includes(sidecar), false);
+});
+
+test('single-intake remediation: mixed marker and receipt faults keep the schema-2 sidecar denied as E_STATE_SOURCE', async t => {
+  const { calls, deps } = trackedDeps();
+  const { ctx, sidecar } = legacySidecarContext(t, deps);
+  rmSync(legacyMarkerPath(ctx.fixture.root));
+  rmSync(path.join(ctx.fixture.root, '.superpowers', 'sdd', 'receipt'));
+  const facade = evaluateState(legacyCurrentPath(ctx.fixture.root));
+  assert.equal(facade.status, 'invalid');
+  assert.ok(facade.reasons.length > 1);
+  assert.ok(facade.reasons.some(reason => reason.location !== 'gate.markerPath'));
+  const result = await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar));
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_STATE_SOURCE/);
+  assert.doesNotMatch(result.reason, /E_PROJECT_GATE/);
+  assert.equal(calls.dispatch, 0);
+  assert.equal(calls.reads.includes(sidecar), false);
+});
+
+test('single-intake remediation: a marker-only invalid legacy report denies a read-only request as E_STATE_SOURCE', async t => {
+  const { calls, deps } = trackedDeps();
+  const { ctx, sidecar } = legacySidecarContext(t, deps, pendingResearchGrant(['scout']));
+  rmSync(legacyMarkerPath(ctx.fixture.root));
+  assertSharedAllowed(ctx.fixture, sidecar, [readEntry], 'read producer beside marker-only fault');
+  const result = await ctx.call(atState(dispatchEvent(ctx.fixture, [readEntry]), sidecar));
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_STATE_SOURCE/);
+  assert.doesNotMatch(result.reason, /E_PROJECT_GATE/);
+  assert.equal(calls.dispatch, 0);
+  assert.equal(calls.reads.includes(sidecar), false);
+});
+
+test('single-intake remediation: an unrecognized effect kind never earns the typed historical denial', async t => {
+  const { calls, deps } = trackedDeps();
+  const { ctx, sidecar } = legacySidecarContext(t, deps);
+  rmSync(legacyMarkerPath(ctx.fixture.root));
+  const facade = evaluateState(legacyCurrentPath(ctx.fixture.root));
+  assert.equal(facade.status, 'invalid');
+  assert.equal(facade.reasons.length, 1);
+  assert.equal(facade.reasons[0].location, 'gate.markerPath');
+  const entries = [{ name: 'Implement', taskId: 'impl02', agent: 'engineer', effects: { kind: 'delete', paths: ['src/'] } }];
+  const result = await ctx.call(atState(dispatchEvent(ctx.fixture, entries), sidecar));
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_DISPATCH_METADATA/);
+  assert.doesNotMatch(result.reason, /E_PROJECT_GATE/);
+  assert.equal(calls.dispatch, 0);
+  assert.equal(calls.reads.includes(sidecar), false);
+});
+
+for (const [name, inject] of [
+  ['nonobject report', () => undefined],
+  ['unreadable status', report => ({ ...report, status: 'unreadable' })],
+  ['empty reasons', report => ({ ...report, status: 'invalid', reasons: [] })],
+  ['nonarray reasons', report => ({ ...report, status: 'invalid', reasons: { code: 'E_EVIDENCE_MISSING', location: 'gate.markerPath' } })],
+]) test(`single-intake remediation: a malformed or unreadable legacy facade report stays E_STATE_SOURCE (${name})`, async t => {
+  const { calls, deps } = trackedDeps(inject);
+  const { ctx, sidecar } = legacySidecarContext(t, deps);
+  assert.equal(evaluateState(legacyCurrentPath(ctx.fixture.root)).status, 'ready');
+  assertSharedAllowed(ctx.fixture, sidecar, engineerWrite, `${name} producer`);
+  const result = await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar));
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_STATE_SOURCE/);
+  assert.doesNotMatch(result.reason, /E_PROJECT_GATE/);
+  assert.equal(calls.dispatch, 0);
+  assert.equal(calls.reads.includes(sidecar), false);
+});
+
+test('single-intake remediation: arbitrary thrown facade errors are never trusted as typed denials', async t => {
+  const { calls, deps } = trackedDeps(() => { throw Object.assign(Error('SECRET_CANARY'), { code: 'E_PROJECT_GATE' }); });
+  const { ctx, sidecar } = legacySidecarContext(t, deps);
+  assert.equal(evaluateState(legacyCurrentPath(ctx.fixture.root)).status, 'ready');
+  const first = await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar));
+  assert.equal(first?.block, true);
+  assert.match(first.reason, /E_STATE_SOURCE/);
+  assert.doesNotMatch(first.reason, /E_PROJECT_GATE/);
+  assert.equal(JSON.stringify(first).includes('SECRET_CANARY'), false);
+  const second = await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar));
+  assert.equal(second?.block, true);
+  assert.match(second.reason, /E_STATE_SOURCE/);
+  assert.doesNotMatch(second.reason, /E_PROJECT_GATE/);
+  assert.equal(calls.dispatch, 0);
+  assert.equal(calls.reads.includes(sidecar), false);
+});
+
+test('single-intake remediation: an unsafe sidecar location is denied before the legacy facade is invoked', async t => {
+  const { calls, deps } = trackedDeps();
+  const ctx = setup(t, undefined, deps);
+  const sidecar = moveState(ctx.fixture, path.join('.omp', 'plans', 'wrong-feature', 'execution-state.json'));
+  legacyState(ctx.fixture.root);
+  assertSharedAllowed(ctx.fixture, sidecar, engineerWrite, 'wrong-feature sidecar producer');
+  const result = await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar));
+  assert.equal(result?.block, true);
+  assert.match(result.reason, /E_STATE_SOURCE/);
+  assert.equal(calls.facade, 0);
+  assert.equal(calls.dispatch, 0);
+  assert.equal(calls.reads.includes(sidecar), false);
+});
+
+test('single-intake remediation: a denied legacy source never sticks as the active identity and a restored canonical v2 source allows the next actual request', async t => {
+  const { calls, deps } = trackedDeps();
+  const { ctx, sidecar } = legacySidecarContext(t, deps);
+  rmSync(legacyMarkerPath(ctx.fixture.root));
+  const denied = await ctx.call(atState(dispatchEvent(ctx.fixture), sidecar));
+  assert.equal(denied?.block, true);
+  assert.match(denied.reason, /E_PROJECT_GATE/);
+  writeFileSync(ctx.fixture.statePath, readFileSync(sidecar));
+  rmSync(sidecar);
+  assert.equal(await ctx.call(dispatchEvent(ctx.fixture)), undefined);
+  assert.ok(calls.dispatch >= 1);
+});
+const reviewPauseRounds = () => Array.from({ length: 5 }, (_, index) => {
+  const revision = index + 3;
+  const carried = [
+    { id: 'ADV-B', status: 'OPEN', severity: 'blocking', evidenceClass: 'correctness', anchor: 'src/a.mjs:12' },
+    { id: 'ADV-H', status: 'OPEN', severity: 'blocking', evidenceClass: 'security', anchor: 'src/b.mjs:8' },
+  ];
+  const ownerFinding = {
+    id: 'D-1-conflict', decisionId: 'd-1', kind: 'owner-decision',
+    question: 'Should the settled acceptance contract change?', evidence: [{ path: 'spec.md', anchor: 'R1' }],
+  };
+  return {
+    seq: index + 1,
+    kind: 'round',
+    lineageKey: 'synthetic-spec',
+    candidateId: `synthetic-spec-r${revision}`,
+    revision: `r${revision}`,
+    verdict: 'REVISE',
+    inputHashes: { spec: `hash-${revision}` },
+    findings: [...carried, ownerFinding],
+    priorFindings: structuredClone(carried),
+  };
+});
+
+function rebindReviewCandidate(candidate, event, candidateId) {
+  candidate.id = candidateId;
+  const wrapper = JSON.parse(event.input.context);
+  const request = wrapper.workflowDispatch.requests[0];
+  request.targetCandidateId = candidateId;
+  for (const item of event.input.tasks ?? [event.input]) item.targetCandidateId = candidateId;
+  event.input.context = JSON.stringify(wrapper);
+  for (const dispatch of candidate.dispatches) {
+    dispatch.targetCandidateId = candidateId;
+    if (dispatch.taskId === request.taskId && dispatch.name === request.name && dispatch.agent === request.agent) {
+      dispatch.requestSha256 = sha(canonicalJson(request));
+    }
+  }
+}
+
+function stalledReviewContext(t) {
+  const ctx = setup(t, state => {
+    state.tasks[0] = { ...state.tasks[0], status: 'pending', evidenceIds: [], agentRoles: ['critic', 'code-reviewer'] };
+  }, { discoverAgents: async () => ({
+    agents: [{ name: 'critic', tools: ['read'] }, { name: 'code-reviewer', tools: ['read'] }], searchedDirs: [],
+  }) });
+  const entry = { name: 'Review', taskId: 'research01', agent: 'critic', effects: { kind: 'read', paths: ['spec.md'] } };
+  const event = dispatchEvent(ctx.fixture, [entry]);
+  const record = reviewSequenceFixture(ctx.fixture, [event]);
+  record.candidate.codeReview.verdict = 'REVISE';
+  record.registry.reviewsHistory = reviewPauseRounds();
+  writeFileSync(record.registryPath, JSON.stringify(record.registry));
+  return { ...ctx, event, record };
+}
+function persistSyntheticReviewRound(registryPath, dependencies = {}) {
+  const io = {
+    readFileSync: dependencies.readFileSync ?? readFileSync,
+    writeFileSync: dependencies.writeFileSync ?? writeFileSync,
+    renameSync: dependencies.renameSync ?? renameSync,
+  };
+  return reviewSequence.withReviewRegistryLock(registryPath, {}, dependencies, () => {
+    const registry = JSON.parse(io.readFileSync(registryPath, 'utf8'));
+    const candidate = registry.candidates.find(item => item?.id === 'synthetic-spec');
+    const reviewer = candidate?.dispatches?.find(dispatch => dispatch.agent === 'code-reviewer');
+    if (!candidate || !reviewer) throw Error('synthetic producer candidate is unavailable');
+    const appended = reviewSequence.bindWithReviewRound(registry, {
+      candidateId: candidate.id,
+      reviewerId: reviewer.reviewerId,
+      authorIds: structuredClone(candidate.authorIds),
+      inputs: structuredClone(candidate.inputs),
+      dispatches: structuredClone(candidate.dispatches),
+      verdict: 'REQUEST CHANGES',
+      findings: [],
+      format: 'installed',
+      source: { path: 'synthetic-producer-review.json', sha256: 'e'.repeat(64) },
+      recordedAt: '2026-11-14T12:01:00.000Z',
+    });
+    if (!appended.ok) return appended;
+    const temporary = `${registryPath}.producer.tmp`;
+    io.writeFileSync(temporary, `${JSON.stringify(appended.registry)}\n`, { flag: 'wx', mode: 0o600 });
+    io.renameSync(temporary, registryPath);
+    return appended;
+  });
+}
+
+function pauseRecordBytes(registry) {
+  return JSON.stringify({
+    reviewPauseHistory: registry.reviewPauseHistory ?? [],
+    reviewPauseEvents: registry.reviewPauseEvents ?? [],
+    candidates: registry.candidates.map(candidate => ({
+      pauses: candidate.pauses ?? [],
+      nonPassStreak: candidate.nonPassStreak ?? null,
+      noProgressCount: candidate.noProgressCount ?? null,
+    })),
+  });
+}
+
+function writeReviewHistory(ctx, reviewHistory) {
+  const registry = JSON.parse(readFileSync(ctx.record.registryPath, 'utf8'));
+  delete registry.reviewsHistory;
+  registry.reviewHistory = reviewHistory;
+  writeFileSync(ctx.record.registryPath, JSON.stringify(registry));
+  return registry;
+}
+
+test('AC01-7 gate fallback preserves stall counters and pause cap after serialized alias rename', async t => {
+  const ctx = stalledReviewContext(t);
+  const before = reviewStallSignal(ctx.record.candidate, ctx.record.registry, reviewPauseRounds());
+  assert.deepEqual([before.nonPassStreak, before.noProgressCount], [5, 4]);
+
+  const registry = JSON.parse(JSON.stringify(ctx.record.registry));
+  const candidate = registry.candidates[0];
+  const oldLineage = candidate.id.replace(/-r\d+$/, '') || candidate.id;
+  rebindReviewCandidate(candidate, ctx.event, 'renamed-spec');
+  candidate.codeReview = null;
+  registry.reviewHistory = [
+    ...reviewPauseRounds(),
+    { seq: 6, kind: 'alias', lineageKey: 'renamed-spec', from: oldLineage, to: 'renamed-spec', authorityRef: 'AC01-7 fixture' },
+  ];
+  delete registry.reviewsHistory;
+  registry.reviewPauseHistory = [
+    { lineageKey: oldLineage, pauseId: 'old-1', status: 'resumed' },
+    { lineageKey: 'renamed-spec', pauseId: 'old-2', status: 'resumed' },
+  ];
+  writeFileSync(ctx.record.registryPath, JSON.stringify(registry));
+
+  const result = await ctx.call(ctx.event);
+  assert.equal(result?.code, 'E_REVIEW_PAUSE');
+  assert.deepEqual(result.blocked, {
+    kind: 'review_pause_cap', lineageKey: 'renamed-spec', pauseCount: 2, cap: 2,
+  });
+  const persisted = JSON.parse(readFileSync(ctx.record.registryPath, 'utf8'));
+  assert.deepEqual(persisted.reviewHistory.map(({ seq, kind }) => [seq, kind]), [
+    [1, 'round'], [2, 'round'], [3, 'round'], [4, 'round'], [5, 'round'], [6, 'alias'],
+  ]);
+  assert.deepEqual(
+    [persisted.candidates[0].nonPassStreak, persisted.candidates[0].noProgressCount],
+    [before.nonPassStreak, before.noProgressCount],
+  );
+});
+test('malformed immutable review history denies admission without opening a pause', async t => {
+  const ctx = stalledReviewContext(t);
+  writeReviewHistory(ctx, [
+    { ...reviewPauseRounds()[0], seq: 2 },
+    { ...reviewPauseRounds()[1], seq: 1 },
+    ...reviewPauseRounds().slice(2),
+  ]);
+
+  const result = await ctx.call(ctx.event);
+  assert.match(result?.reason ?? '', /E_REVIEW:/);
+  assert.doesNotMatch(result?.reason ?? '', /E_REVIEW_PAUSE/);
+  assert.equal(Object.hasOwn(JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8')), 'reviewPause'), false);
+});
+test('review fallback ignores failed transport records instead of reopening the substantive-review frontier', async t => {
+  const ctx = stalledReviewContext(t);
+  const registry = JSON.parse(readFileSync(ctx.record.registryPath, 'utf8'));
+  const candidate = registry.candidates[0];
+  candidate.codeReview = null;
+  delete candidate.reviewsHistory;
+  delete candidate.reviewHistory;
+  delete registry.reviewsHistory;
+  registry.reviewHistory = [];
+  writeFileSync(ctx.record.registryPath, JSON.stringify(registry));
+  writeFileSync(path.join(ctx.fixture.root, '.omp/plans/review-runs.json'), JSON.stringify({
+    schemaVersion: 1,
+    runs: [{
+      candidateId: candidate.id, invocationId: 'failed-transport-invocation',
+      fingerprint: 'a'.repeat(64), reviewerId: 'synthetic-code-reviewer', status: 'failed',
+    }],
+  }));
+
+  const result = await ctx.call(ctx.event);
+  assert.match(result?.reason ?? '', /E_REVIEW:/);
+  assert.doesNotMatch(result?.reason ?? '', /E_REVIEW_PAUSE/);
+  assert.equal(Object.hasOwn(JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8')), 'reviewPause'), false);
+});
+
+test('aliased stall counters ignore unrelated PASS and REVISE rounds', async t => {
+  const ctx = stalledReviewContext(t);
+  const targetRounds = reviewPauseRounds().slice(0, 3).map((review, index) => ({
+    ...review,
+    seq: index + 1,
+    lineageKey: 'prior-spec',
+    candidateId: 'synthetic-spec',
+    revision: `r${index + 1}`,
+  }));
+  writeReviewHistory(ctx, [
+    ...targetRounds,
+    { seq: 4, kind: 'round', lineageKey: 'other', candidateId: 'other-r1',
+      revision: 'r4', verdict: 'PASS', findings: [], priorFindings: [] },
+    { seq: 5, kind: 'round', lineageKey: 'other', candidateId: 'other-r2',
+      revision: 'r5', verdict: 'REVISE', findings: [], priorFindings: [] },
+    { seq: 6, kind: 'alias', lineageKey: 'synthetic-spec',
+      from: 'prior-spec', to: 'synthetic-spec', authorityRef: 'C1 fixture' },
+  ]);
+
+  const result = await ctx.call(ctx.event);
+  assert.match(result?.reason ?? '', /E_REVIEW_PAUSE/);
+  const persisted = JSON.parse(readFileSync(ctx.record.registryPath, 'utf8'));
+  assert.deepEqual(
+    [persisted.candidates[0].nonPassStreak, persisted.candidates[0].noProgressCount],
+    [3, 2],
+  );
+});
+
+test('pause classification selects the latest repeated same-ID repair round', async t => {
+  const ctx = stalledReviewContext(t);
+  const repair = { id: 'FIX-1', path: 'src/fix.mjs', locator: 'line 7',
+    requiredChange: 'Apply the exact repair.', withinEnvelope: true };
+  const latestOwnerFinding = {
+    ...reviewPauseRounds()[0].findings.at(-1),
+    question: 'Latest repeated-ID finding',
+  };
+  writeReviewHistory(ctx, reviewPauseRounds().map((review, index) => ({
+    ...review,
+    seq: index + 1,
+    lineageKey: 'synthetic-spec',
+    candidateId: 'synthetic-spec',
+    revision: `r${index + 1}`,
+    findings: index === 0 ? [repair] : index === 4 ? [latestOwnerFinding] : [],
+    priorFindings: [],
+  })));
+
+  const result = await ctx.call(ctx.event);
+  assert.equal(result?.pause?.questions[0]?.question, 'Latest repeated-ID finding');
+});
+
+test('pause classification selects the latest aliased round among interleaved lineages', async t => {
+  const ctx = stalledReviewContext(t);
+  const repair = { id: 'FIX-2', path: 'src/fix.mjs', locator: 'line 9',
+    requiredChange: 'Apply the exact repair.', withinEnvelope: true };
+  const latestOwnerFinding = {
+    ...reviewPauseRounds()[0].findings.at(-1),
+    question: 'Latest aliased finding',
+  };
+  const history = [];
+  for (let index = 0; index < 5; index++) {
+    history.push({
+      ...reviewPauseRounds()[index],
+      seq: index * 2 + 1,
+      lineageKey: 'prior-spec',
+      candidateId: 'prior-spec',
+      revision: `r${index + 1}`,
+      findings: index === 4 ? [latestOwnerFinding] : [repair],
+      priorFindings: [],
+    });
+    history.push({
+      seq: index * 2 + 2,
+      kind: 'round',
+      lineageKey: 'other',
+      candidateId: `other-r${index + 1}`,
+      revision: `other-${index + 1}`,
+      verdict: 'REVISE',
+      findings: [repair],
+      priorFindings: [],
+    });
+  }
+  history.push({
+    seq: 11, kind: 'alias', lineageKey: 'synthetic-spec',
+    from: 'prior-spec', to: 'synthetic-spec', authorityRef: 'C2 fixture',
+  });
+  writeReviewHistory(ctx, history);
+
+  const result = await ctx.call(ctx.event);
+  assert.equal(result?.pause?.questions[0]?.question, 'Latest aliased finding');
+});
+
+
+test('managed first check skips a review pause for a targeted issue without writing state', async t => {
+  const ctx = stalledReviewContext(t);
+  const registry = JSON.parse(readFileSync(ctx.record.registryPath, 'utf8'));
+  registry.candidates[0].dispatches[0].targetRevision = 'first-check-drift';
+  writeFileSync(ctx.record.registryPath, JSON.stringify(registry));
+  const runFile = path.join(ctx.fixture.root, '.omp/plans/review-runs.json');
+  const files = [ctx.fixture.statePath, ctx.record.registryPath, ctx.record.sourcePath, runFile];
+  const before = files.map(file => existsSync(file) ? readFileSync(file, 'utf8') : null);
+  const gate = createToolCallGate({
+    evaluateDispatch: () => ({ allowed: false, authority_ready: true, reasons: [{ code: 'E_REVIEW' }] }),
+    discoverAgents: criticDiscovery,
+    log: () => {},
+  });
+  const result = await gate.handleToolCall(ctx.event, { cwd: ctx.fixture.root });
+  assert.equal(result?.block, true);
+  assert.equal(result.detail, 'targetRevision: descriptor=first-check-drift candidate=rev-1');
+  assert.match(result.reason, /E_REVIEW_TARGET/);
+  assert.deepEqual(files.map(file => existsSync(file) ? readFileSync(file, 'utf8') : null), before);
+  assert.equal(Object.hasOwn(JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8')), 'reviewPause'), false);
+});
+
+test('AC1 stalled owner review returns §4F payload and durably records the pause', async t => {
+  const ctx = stalledReviewContext(t);
+  const result = await ctx.call(ctx.event);
+  assert.match(result?.reason ?? '', /E_REVIEW_PAUSE/);
+  assert.equal(result.pause.kind, 'review_pause');
+  assert.equal(result.pause.lineageKey, 'synthetic-spec');
+  assert.equal(result.pause.classifier, 'owner-decision');
+  assert.equal(result.pause.context.nonPassStreak, 5);
+  assert.deepEqual(result.pause.context.carriedBlockingIds, ['ADV-B', 'ADV-H']);
+  assert.deepEqual(result.pause.questions.map(question => question.id), ['Q1']);
+  const state = JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8'));
+  const registry = JSON.parse(readFileSync(ctx.record.registryPath, 'utf8'));
+  assert.deepEqual(state.reviewPause.questionIds, ['Q1']);
+  assert.equal(state.reviewPause.lineageKey, 'synthetic-spec');
+  assert.equal(state.reviewPause.revision, ctx.fixture.state.revision);
+  assert.equal(typeof state.reviewPause.packetDigest, 'string');
+  assert.equal(registry.candidates[0].nonPassStreak, 5);
+  assert.equal(registry.candidates[0].noProgressCount, 4);
+  const restartedSignal = reviewStallSignal(registry.candidates[0], registry, registry.reviewsHistory);
+  assert.equal(restartedSignal.lineageKey, 'synthetic-spec');
+  assert.equal(restartedSignal.nonPassStreak, 5);
+  assert.equal(restartedSignal.noProgressCount, 4);
+  const restartedGate = createToolCallGate({ evaluateDispatch, discoverAgents: criticDiscovery, log: () => {} });
+  assert.match((await restartedGate.handleToolCall(ctx.event, { cwd: ctx.fixture.root }))?.reason ?? '', /E_REVIEW_PAUSE/);
+});
+
+test('AC5 mismatched pause receipt stays blocked; a bound answer admits one review dispatch', async t => {
+  const ctx = stalledReviewContext(t);
+  const opened = await ctx.call(ctx.event);
+  const pause = JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8')).reviewPause;
+  const mismatched = {
+    ...ctx.event,
+    reviewPauseReceipt: { pauseId: 'foreign-pause', questionId: 'Q1', answer: 'continue',
+      answerDigest: sha(canonicalJson({ pauseId: 'foreign-pause', questionId: 'Q1', answer: 'continue', packetDigest: pause.packetDigest })) },
+  };
+  assert.match((await ctx.call(mismatched))?.reason ?? '', /E_REVIEW_PAUSE/);
+  assert.equal(JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8')).reviewPause.pauseId, pause.pauseId);
+  const resumed = {
+    ...ctx.event,
+    reviewPauseReceipt: { pauseId: opened.pause.pauseId, questionId: 'Q1', answer: 'continue',
+      answerDigest: sha(canonicalJson({ pauseId: opened.pause.pauseId, questionId: 'Q1', answer: 'continue', packetDigest: pause.packetDigest })) },
+  };
+  assert.equal(await ctx.call(resumed), undefined);
+  assert.equal(Object.hasOwn(JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8')), 'reviewPause'), false);
+  assert.match((await ctx.call(ctx.event))?.reason ?? '', /E_REVIEW/);
+});
+test('AC6 a different candidate lineage proceeds while an owner pause is open', async t => {
+  const ctx = stalledReviewContext(t);
+  assert.match((await ctx.call(ctx.event))?.reason ?? '', /E_REVIEW_PAUSE/);
+  const independentEntry = {
+    name: 'IndependentReview', taskId: 'research01', agent: 'code-reviewer',
+    effects: { kind: 'read', paths: ['spec.md'] },
+  };
+  const independentEvent = dispatchEvent(ctx.fixture, [independentEntry]);
+  const independent = reviewSequenceFixture(ctx.fixture, [independentEvent]).candidate;
+  rebindReviewCandidate(independent, independentEvent, 'independent-r1');
+  independent.codeReview = null;
+  ctx.record.registry.candidates.push(independent);
+  writeFileSync(ctx.record.registryPath, JSON.stringify(ctx.record.registry));
+  const gate = createToolCallGate({
+    evaluateDispatch,
+    discoverAgents: async () => ({
+      agents: [{ name: 'critic', tools: ['read'] }, { name: 'code-reviewer', tools: ['read'] }], searchedDirs: [],
+    }),
+    log: () => {},
+  });
+  assert.equal(await gate.handleToolCall(independentEvent, { cwd: ctx.fixture.root }), undefined);
+});
+
+test('review pause cap returns a machine-readable blocked result without another question', async t => {
+  const ctx = stalledReviewContext(t);
+  ctx.record.registry.reviewPauseHistory = [
+    { lineageKey: 'synthetic-spec', pauseId: 'old-1', status: 'resumed' },
+    { lineageKey: 'synthetic-spec', pauseId: 'old-2', status: 'resumed' },
+  ];
+  writeFileSync(ctx.record.registryPath, JSON.stringify(ctx.record.registry));
+  const result = await ctx.call(ctx.event);
+  assert.equal(result?.code, 'E_REVIEW_PAUSE');
+  assert.deepEqual(result.blocked, { kind: 'review_pause_cap', lineageKey: 'synthetic-spec', pauseCount: 2, cap: 2 });
+  assert.equal(Object.hasOwn(JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8')), 'reviewPause'), false);
+});
+
+test('first-round REVISE stays a normal E_REVIEW denial without an owner pause', async t => {
+  const ctx = stalledReviewContext(t);
+  ctx.record.registry.reviewsHistory = reviewPauseRounds().slice(-1);
+  writeFileSync(ctx.record.registryPath, JSON.stringify(ctx.record.registry));
+  const result = await ctx.call(ctx.event);
+  assert.match(result?.reason ?? '', /E_REVIEW:/);
+  assert.equal(Object.hasOwn(JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8')), 'reviewPause'), false);
+});
+
+test('all-locator findings remain repair-routed instead of opening an owner pause', async t => {
+  const ctx = stalledReviewContext(t);
+  ctx.record.registry.reviewsHistory = reviewPauseRounds().map(review => ({
+    ...review,
+    findings: [{ id: `F-${review.revision}`, severity: 'blocking', evidenceClass: 'correctness',
+      path: 'src/fix.mjs', locator: 'line 7', requiredChange: 'Apply the exact local repair.', withinEnvelope: true }],
+    priorFindings: [],
+  }));
+  writeFileSync(ctx.record.registryPath, JSON.stringify(ctx.record.registry));
+  const result = await ctx.call(ctx.event);
+  assert.match(result?.reason ?? '', /E_REVIEW:/);
+  assert.equal(Object.hasOwn(JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8')), 'reviewPause'), false);
+});
+test('pause lifecycle durably records opened, resumed and cleared observations without answer text', async t => {
+  const ctx = stalledReviewContext(t);
+  const opened = await ctx.call(ctx.event);
+  assert.deepEqual(Object.keys(opened.pause).sort(), [
+    'pauseId', 'kind', 'lineageKey', 'revision', 'classifier', 'context', 'questions', 'resume', 'excluded',
+  ].sort());
+  assert.deepEqual(Object.keys(opened.pause.questions[0]).sort(), ['id', 'question', 'evidence', 'answerKind', 'options'].sort());
+  assert.deepEqual(opened.pause.questions[0].evidence, [{ path: 'spec.md', anchor: 'R1' }]);
+  assert.equal(opened.pause.questions[0].answerKind, 'freeform');
+  assert.deepEqual(opened.pause.questions[0].options, []);
+  const pause = JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8')).reviewPause;
+  const answer = 'continue with one review round';
+  const receipt = {
+    pauseId: pause.pauseId,
+    questionId: pause.questionIds[0],
+    answer,
+    answerDigest: sha(canonicalJson({
+      pauseId: pause.pauseId, questionId: pause.questionIds[0], answer, packetDigest: pause.packetDigest,
+    })),
+  };
+  assert.equal(opened.pause.pauseId, pause.pauseId);
+  assert.equal(await ctx.call({ ...ctx.event, reviewPauseReceipt: receipt }), undefined);
+  const state = JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8'));
+  const registry = JSON.parse(readFileSync(ctx.record.registryPath, 'utf8'));
+  const expectedEvents = ['review_pause_opened', 'review_pause_resumed', 'review_pause_cleared'];
+  assert.deepEqual(state.reviewPauseEvents.map(event => event.event), expectedEvents);
+  assert.deepEqual(registry.reviewPauseEvents.map(event => event.event), expectedEvents);
+  assert.equal(JSON.stringify(registry.reviewPauseEvents).includes(answer), false);
+  const decisions = readFileSync(path.join(ctx.fixture.root, '.omp', 'plans', ctx.fixture.state.feature, 'decisions.md'), 'utf8');
+  assert.match(decisions, /\[AUTO-DECISION\] review pause opened:/);
+});
+test('an unparsable detector history fails open to the existing E_REVIEW denial', async t => {
+  const ctx = stalledReviewContext(t);
+  ctx.record.registry.reviewsHistory = 'malformed history';
+  writeFileSync(ctx.record.registryPath, JSON.stringify(ctx.record.registry));
+  const result = await ctx.call(ctx.event);
+  assert.match(result?.reason ?? '', /E_REVIEW:/);
+  assert.doesNotMatch(result?.reason ?? '', /E_REVIEW_PAUSE/);
+  assert.equal(Object.hasOwn(JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8')), 'reviewPause'), false);
+});
+test('delivery completion helper recognizes completed reports and a no-task frontier', () => {
+  assert.equal(deliveryComplete({ completion: { complete: true } }), true);
+  assert.equal(deliveryComplete({
+    completion: { complete: false }, tasks: [], runnable_frontier: [], reasons: [],
+  }), true);
+});
+
+test('delivery completion helper rejects an incomplete report with reasons', () => {
+  assert.equal(deliveryComplete({
+    completion: { complete: false }, runnable_frontier: [], reasons: [{ code: 'E_TASK_BLOCKED' }],
+  }), false);
+});
+
+test('unmanaged payload helper returns its shape and lint failure', () => {
+  const payload = {
+    context: '{}',
+    tasks: [{ name: 'Bad', agent: 'scout', task: 'Read the fixture.', solutionSpace: '' }],
+  };
+  const result = lintUnmanagedPayload(payload);
+  assert.equal(result.shape, 'batch');
+  assert.equal(result.lintFailure.code, 'E_INVALID_SOLUTION_SPACE');
+  assert.equal(result.lintFailure.field, 'task.solutionSpace');
+  assert.equal(result.items, null);
+});
+
+test('read-only pause helper denies a matching lineage without changing evidence', async t => {
+  const ctx = stalledReviewContext(t);
+  await ctx.call(ctx.event);
+  const stateBytes = readFileSync(ctx.fixture.statePath);
+  const registryBytes = readFileSync(ctx.record.registryPath);
+  const items = JSON.parse(ctx.event.input.context).workflowDispatch.requests;
+  const denial = reviewPauseDenial(ctx.fixture.root, items, JSON.parse(stateBytes));
+  assert.equal(denial.code, 'E_REVIEW_PAUSE');
+  assert.match(denial.reason, /paused for owner input/);
+  assert.deepEqual(readFileSync(ctx.fixture.statePath), stateBytes);
+  assert.deepEqual(readFileSync(ctx.record.registryPath), registryBytes);
+});
+
+test('read-only pause helper ignores an unrelated review lineage', async t => {
+  const ctx = stalledReviewContext(t);
+  await ctx.call(ctx.event);
+  const independentEntry = {
+    name: 'IndependentReview', taskId: 'research01', agent: 'code-reviewer',
+    effects: { kind: 'read', paths: ['spec.md'] },
+  };
+  const independentEvent = dispatchEvent(ctx.fixture, [independentEntry]);
+  const independent = reviewSequenceFixture(ctx.fixture, [independentEvent]).candidate;
+  rebindReviewCandidate(independent, independentEvent, 'independent-r1');
+  independent.codeReview = null;
+  ctx.record.registry.candidates.push(independent);
+  writeFileSync(ctx.record.registryPath, JSON.stringify(ctx.record.registry));
+  const items = JSON.parse(independentEvent.input.context).workflowDispatch.requests;
+  assert.equal(reviewPauseDenial(ctx.fixture.root, items, JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8'))), null);
+});
+
+test('read-only pause helper ignores an unavailable or corrupt registry', async t => {
+  const ctx = stalledReviewContext(t);
+  await ctx.call(ctx.event);
+  writeFileSync(ctx.record.registryPath, '{');
+  const items = JSON.parse(ctx.event.input.context).workflowDispatch.requests;
+  assert.equal(reviewPauseDenial(ctx.fixture.root, items, JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8'))), null);
+});
+
+function retryReviewContext(t) {
+  const ctx = setup(t, state => {
+    Object.assign(state.tasks.find(task => task.id === 'research01'), {
+      status: 'pending', evidenceIds: [], agentRoles: ['critic', 'code-reviewer'],
+    });
+  }, { discoverAgents: async () => ({
+    agents: [{ name: 'critic', tools: ['read'] }, { name: 'code-reviewer', tools: ['read'] }], searchedDirs: [],
+  }) });
+  const entry = {
+    name: 'Review', taskId: 'research01', agent: 'critic',
+    effects: { kind: 'read', paths: ['spec.md'] },
+    targetCandidateId: 'synthetic-spec', targetRevision: 'r2',
+  };
+  const event = dispatchEvent(ctx.fixture, [entry]);
+  const unbound = {
+    toolName: 'task',
+    input: { context: 'Unmanaged review.', tasks: [{ ...event.input.tasks[0], targetRevision: ctx.fixture.state.revision }] },
+  };
+  const record = reviewSequenceFixture(ctx.fixture, [event, unbound]);
+  return { ...ctx, event, entry, record };
+}
+
+function updateReviewTarget(ctx, targetRevision, workflowRevision = ctx.fixture.state.revision) {
+  const { candidate } = ctx.record;
+  candidate.revision = workflowRevision;
+  candidate.codeReview.revision = workflowRevision;
+  for (const dispatch of candidate.dispatches) {
+    dispatch.targetCandidateId = candidate.id;
+    dispatch.targetRevision = candidate.revision;
+  }
+  const body = JSON.parse(ctx.event.input.context);
+  body.workflowDispatch.revision = workflowRevision;
+  body.workflowDispatch.requests[0] = {
+    ...ctx.entry, targetCandidateId: candidate.id, targetRevision,
+  };
+  ctx.event.input.context = JSON.stringify(body);
+  ctx.event.input.tasks[0].targetCandidateId = candidate.id;
+  ctx.event.input.tasks[0].targetRevision = targetRevision;
+  const managed = candidate.dispatches.find(dispatch => dispatch.taskId === ctx.entry.taskId
+    && dispatch.name === ctx.entry.name && dispatch.agent === ctx.entry.agent);
+  managed.requestSha256 = sha(canonicalJson(body.workflowDispatch.requests[0]));
+  ctx.record.observation.candidateId = candidate.id;
+  ctx.record.observation.revision = candidate.revision;
+  ctx.record.observation.dispatches = structuredClone(candidate.dispatches);
+  const observation = JSON.stringify(ctx.record.observation);
+  writeFileSync(ctx.record.sourcePath, observation);
+  candidate.codeReview.source.sha256 = sha(observation);
+  writeFileSync(ctx.record.registryPath, JSON.stringify(ctx.record.registry));
+}
+
+function addSyntheticOwnerAmendment(fixture, taskId) {
+  const state = JSON.parse(readFileSync(fixture.statePath, 'utf8'));
+  const task = state.tasks.find(item => item.id === taskId);
+  const source = structuredClone(state.sources.find(item => item.kind === 'user-message'));
+  source.id = 'synthetic-owner-amendment';
+  source.locator = 'synthetic owner amendment signal';
+  state.sources.push(source);
+  state.decisions.push({
+    id: 'synthetic-owner-amendment-decision',
+    inputDigest: sha(canonicalJson({ taskId, effects: task.effects })),
+    kind: 'owner', status: 'resolved', question: 'Confirm test amendment.',
+    answer: 'Confirmed for this synthetic test.', rationale: 'explicit-owner-amendment',
+    sourceIds: [source.id], affects: [taskId],
+  });
+  writeFileSync(fixture.statePath, JSON.stringify(state));
+  return state;
+}
+
+test('targeted refusals retain retry accounting and only a new candidate revision opens a new key', async t => {
+  const ctx = retryReviewContext(t);
+  const first = await ctx.call(ctx.event);
+  const second = await ctx.call(ctx.event);
+  assert.match(first.reason, /E_REVIEW_TARGET/);
+  assert.match(second.reason, /E_REVIEW_TARGET/);
+
+  const amendedState = addSyntheticOwnerAmendment(ctx.fixture, ctx.entry.taskId);
+  assert.notEqual(ownerAmendmentToken(amendedState, [ctx.entry.taskId]), null);
+  updateReviewTarget(ctx, ctx.fixture.state.revision, ctx.fixture.state.revision);
+  const correctedSameRevision = await ctx.call(ctx.event);
+  assert.match(correctedSameRevision.reason, /E_RETRY_NOT_AUTHORIZED/);
+  assert.doesNotMatch(correctedSameRevision.reason, /E_REVIEW_TARGET/);
+
+  updateFixtureRevision(ctx.fixture, 'rev-2');
+  updateReviewTarget(ctx, 'rev-2', 'rev-2');
+  assert.equal(await ctx.call(ctx.event), undefined);
+});
+test('C1 persisted sequence keeps stall counters identical across an explicit alias rename', async t => {
+  const ctx = stalledReviewContext(t);
+  const ownerFinding = {
+    id: 'C1-owner-decision', kind: 'owner-decision',
+    question: 'Should the settled acceptance contract change?', evidence: [{ path: 'spec.md', anchor: 'R1' }],
+  };
+  const rounds = [
+    { seq: 1, kind: 'round', lineageKey: 'x', candidateId: 'x-r9', revision: 'r9',
+      verdict: 'PASS', findings: [ownerFinding], priorFindings: [] },
+    { seq: 2, kind: 'round', lineageKey: 'x', candidateId: 'x-r1', revision: 'r1',
+      verdict: 'REVISE', findings: [ownerFinding], priorFindings: [] },
+    { seq: 3, kind: 'round', lineageKey: 'x', candidateId: 'x-r1', revision: 'r2',
+      verdict: 'REVISE', findings: [ownerFinding], priorFindings: [] },
+  ];
+  const original = ctx.record.registry.candidates[0];
+  rebindReviewCandidate(original, ctx.event, 'x-r1');
+  original.codeReview = null;
+  ctx.record.registry.reviewHistory = rounds;
+  delete ctx.record.registry.reviewsHistory;
+  writeFileSync(ctx.record.registryPath, JSON.stringify(ctx.record.registry));
+  const before = reviewStallSignal(original, ctx.record.registry, rounds);
+
+  const renamedRegistry = structuredClone(ctx.record.registry);
+  const renamedCandidate = renamedRegistry.candidates[0];
+  rebindReviewCandidate(renamedCandidate, ctx.event, 'renamed-r1');
+  renamedCandidate.codeReview = null;
+  renamedRegistry.reviewHistory = [
+    ...rounds,
+    { seq: 4, kind: 'alias', lineageKey: 'renamed', from: 'x', to: 'renamed', authorityRef: 'C1 fixture' },
+  ];
+  writeFileSync(ctx.record.registryPath, JSON.stringify(renamedRegistry));
+
+  const result = await ctx.call(ctx.event);
+  assert.equal(result?.code, 'E_REVIEW_PAUSE');
+  const persisted = JSON.parse(readFileSync(ctx.record.registryPath, 'utf8'));
+  assert.deepEqual(
+    [persisted.candidates[0].nonPassStreak, persisted.candidates[0].noProgressCount],
+    [before.nonPassStreak, before.noProgressCount],
+  );
+  assert.deepEqual([before.nonPassStreak, before.noProgressCount], [2, 2]);
+});
+
+test('C3 refuses a stale registry commit and preserves the concurrent append', async t => {
+  const ctx = stalledReviewContext(t);
+  const registryPath = ctx.record.registryPath;
+  let appended = false;
+  const gate = createToolCallGate({
+    evaluateDispatch, discoverAgents: criticDiscovery, log: () => {},
+    readFileSync(file, encoding) {
+      if (file === registryPath && encoding === undefined && !appended) {
+        const registry = JSON.parse(readFileSync(file, 'utf8'));
+        registry.reviewHistory = [
+          ...(registry.reviewHistory ?? []),
+          { seq: 6, kind: 'round', lineageKey: 'synthetic-spec',
+            candidateId: 'synthetic-spec-r6', revision: 'r6', verdict: 'REVISE', findings: [] },
+        ];
+        writeFileSync(file, JSON.stringify(registry));
+        appended = true;
+      }
+      return encoding === undefined ? readFileSync(file) : readFileSync(file, encoding);
+    },
+  });
+
+  const result = await gate.handleToolCall(ctx.event, { cwd: ctx.fixture.root });
+  assert.equal(appended, true);
+  assert.match(result?.reason ?? '', /E_REVIEW_REGISTRY_CHANGED/);
+  const persisted = JSON.parse(readFileSync(registryPath, 'utf8'));
+  assert.equal(persisted.reviewHistory.at(-1).candidateId, 'synthetic-spec-r6');
+  assert.equal(Object.hasOwn(JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8')), 'reviewPause'), false);
+});
+test('AC01-1 registry pause lock refuses an in-window producer then preserves its post-release append', async t => {
+  const ctx = stalledReviewContext(t);
+  const registryPath = ctx.record.registryPath;
+  ctx.record.candidate.dispatches.push({
+    name: 'ProducerReview', agent: 'code-reviewer', reviewerId: 'synthetic-producer-code-reviewer',
+  });
+  ctx.record.candidate.codeReview = null;
+  writeFileSync(registryPath, JSON.stringify(ctx.record.registry));
+
+  let inWindow;
+  let registryRenames = 0;
+  let registryTempWrites = 0;
+  const io = {
+    readFileSync(file, encoding) {
+      if (file === registryPath && encoding === undefined && !inWindow) {
+        const compareBytes = readFileSync(file);
+        const stateBefore = readFileSync(ctx.fixture.statePath);
+        const registryBefore = JSON.parse(compareBytes.toString('utf8'));
+        const countBefore = reviewSequence.reviewRoundCount(registryBefore, 'synthetic-spec');
+        const pauseBytesBefore = pauseRecordBytes(registryBefore);
+        const renameCountBefore = registryRenames;
+        const tempCountBefore = registryTempWrites;
+        const producerAttempt = persistSyntheticReviewRound(registryPath, io);
+        const registryAfter = readFileSync(registryPath);
+        const stateAfter = readFileSync(ctx.fixture.statePath);
+        const persistedAfter = JSON.parse(registryAfter.toString('utf8'));
+        inWindow = {
+          producerAttempt,
+          registryUnchanged: registryAfter.equals(compareBytes),
+          stateUnchanged: stateAfter.equals(stateBefore),
+          pauseBytesUnchanged: pauseRecordBytes(persistedAfter) === pauseBytesBefore,
+          roundCountUnchanged: reviewSequence.reviewRoundCount(persistedAfter, 'synthetic-spec') === countBefore,
+          noRegistryRename: registryRenames === renameCountBefore,
+          noTemporaryWrite: registryTempWrites === tempCountBefore,
+        };
+        return compareBytes;
+      }
+      return encoding === undefined ? readFileSync(file) : readFileSync(file, encoding);
+    },
+    writeFileSync(file, ...args) {
+      if (typeof file === 'string' && file.startsWith(`${registryPath}.`) && file.endsWith('.tmp')) {
+        registryTempWrites++;
+      }
+      return writeFileSync(file, ...args);
+    },
+    renameSync(from, to) {
+      if (to === registryPath) registryRenames++;
+      return renameSync(from, to);
+    },
+  };
+  const gate = createToolCallGate({
+    evaluateDispatch, discoverAgents: criticDiscovery, log: () => {}, ...io,
+  });
+  const result = await gate.handleToolCall(ctx.event, { cwd: ctx.fixture.root });
+
+  assert.ok(inWindow, 'the compare-to-rename hook ran');
+  assert.deepEqual(inWindow.producerAttempt, {
+    ok: false, code: 'E_REVIEW_REGISTRY_CHANGED', lockCode: 'E_LOCK_REENTRANT',
+  });
+  for (const key of ['registryUnchanged', 'stateUnchanged', 'pauseBytesUnchanged',
+    'roundCountUnchanged', 'noRegistryRename', 'noTemporaryWrite']) assert.equal(inWindow[key], true, key);
+  assert.equal(result?.code, 'E_REVIEW_PAUSE');
+
+  const state = JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8'));
+  const afterPause = JSON.parse(readFileSync(registryPath, 'utf8'));
+  assert.ok(state.reviewPause);
+  assert.equal(afterPause.reviewPauseHistory.length, 1);
+  const lockedSignal = reviewStallSignal(afterPause.candidates[0], afterPause, afterPause.reviewsHistory);
+  assert.deepEqual(
+    [result.pause.context.nonPassStreak, result.pause.context.noProgressCount,
+      afterPause.candidates[0].nonPassStreak, afterPause.candidates[0].noProgressCount],
+    [lockedSignal.nonPassStreak, lockedSignal.noProgressCount, lockedSignal.nonPassStreak, lockedSignal.noProgressCount],
+  );
+
+  const roundsBefore = reviewSequence.reviewRoundCount(afterPause, 'synthetic-spec');
+  const producerCommit = persistSyntheticReviewRound(registryPath);
+  assert.equal(producerCommit.ok, true);
+  const afterProducer = JSON.parse(readFileSync(registryPath, 'utf8'));
+  assert.equal(reviewSequence.reviewRoundCount(afterProducer, 'synthetic-spec'), roundsBefore + 1);
+  assert.ok(reviewSequence.lineageReviewHistory(afterProducer, 'synthetic-spec').rounds
+    .some(round => round.seq === producerCommit.entry.seq));
+  assert.equal(afterProducer.reviewPauseHistory.length, 1);
+  assert.equal(afterProducer.candidates[0].pauses.length, 1);
+  assert.equal(JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8')).reviewPause.pauseId,
+    afterProducer.reviewPauseHistory[0].pauseId);
+});
+
+test('SR4-2 locked reclassification aborts an obsolete pause without consuming a slot', async t => {
+  const ctx = stalledReviewContext(t);
+  const registryPath = ctx.record.registryPath;
+  let interleaved = false;
+  let interleavedRegistryBytes;
+  let interleavedSignal;
+  const registryLockPaths = [];
+  const gate = createToolCallGate({
+    evaluateDispatch, discoverAgents: criticDiscovery, log: () => {},
+    openSync(file, ...args) {
+      registryLockPaths.push(file);
+      if (file === `${path.resolve(registryPath)}.lock` && !interleaved) {
+        interleaved = true;
+        const registry = JSON.parse(readFileSync(registryPath, 'utf8'));
+        const exactRepair = {
+          id: 'SR4-2-resolved-owner-item', path: 'src/fix.mjs', locator: 'line 9',
+          requiredChange: 'Apply the completed technical repair.', withinEnvelope: true,
+        };
+        registry.reviewsHistory = reviewPauseRounds().map((review, index) => index === 4
+          ? { ...review, findings: [exactRepair], priorFindings: [] } : review);
+        interleavedRegistryBytes = Buffer.from(JSON.stringify(registry));
+        writeFileSync(registryPath, interleavedRegistryBytes);
+        interleavedSignal = reviewStallSignal(registry.candidates[0], registry, registry.reviewsHistory);
+      }
+      return openSync(file, ...args);
+    },
+  });
+
+  const result = await gate.handleToolCall(ctx.event, { cwd: ctx.fixture.root });
+  assert.equal(interleaved, true);
+  assert.deepEqual(registryLockPaths, [`${path.resolve(registryPath)}.lock`], 'only the review registry lock should be opened');
+  assert.equal(interleavedSignal.stalled, true);
+  assert.equal(reviewSequence.classifyReviewFindings(
+    JSON.parse(interleavedRegistryBytes.toString('utf8')).reviewsHistory.at(-1).findings, [],
+  ).ownerDecision.length, 0);
+  assert.match(result?.reason ?? '', /E_REVIEW:/);
+  assert.doesNotMatch(result?.reason ?? '', /E_REVIEW_PAUSE/);
+
+  const state = JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8'));
+  const registryBytes = readFileSync(registryPath);
+  const registry = JSON.parse(registryBytes.toString('utf8'));
+  assert.equal(Object.hasOwn(state, 'reviewPause'), false);
+  assert.equal(registryBytes.equals(interleavedRegistryBytes), true);
+  assert.equal(registry.reviewPauseHistory?.length ?? 0, 0);
+  assert.equal(registry.reviewPauseEvents?.length ?? 0, 0);
+  assert.equal(registry.candidates[0].pauses?.length ?? 0, 0);
+  assert.equal(Object.hasOwn(registry.candidates[0], 'nonPassStreak'), false);
+});
+
+
+test('C4 conflicting candidate and registry verdicts fail closed', async t => {
+  const ctx = stalledReviewContext(t);
+  const registry = ctx.record.registry;
+  const candidate = registry.candidates[0];
+  candidate.reviewsHistory = reviewPauseRounds().slice(0, 3);
+  const conflicting = {
+    ...candidate.reviewsHistory[1], seq: 1, verdict: 'PASS',
+  };
+  delete registry.reviewsHistory;
+  registry.reviewHistory = [conflicting];
+  writeFileSync(ctx.record.registryPath, JSON.stringify(registry));
+
+  const result = await ctx.call(ctx.event);
+  assert.match(result?.reason ?? '', /E_REVIEW:/);
+  assert.doesNotMatch(result?.reason ?? '', /E_REVIEW_PAUSE/);
+  assert.equal(Object.hasOwn(JSON.parse(readFileSync(ctx.fixture.statePath, 'utf8')), 'reviewPause'), false);
+});
+
+test('C4 an empty candidate history cannot mask registry lineage history', async t => {
+  const ctx = stalledReviewContext(t);
+  const registry = writeReviewHistory(ctx, reviewPauseRounds().slice(0, 3));
+  registry.candidates[0].reviewsHistory = [];
+  writeFileSync(ctx.record.registryPath, JSON.stringify(registry));
+
+  const result = await ctx.call(ctx.event);
+  assert.equal(result?.code, 'E_REVIEW_PAUSE');
+  const persisted = JSON.parse(readFileSync(ctx.record.registryPath, 'utf8'));
+  assert.deepEqual(
+    [persisted.candidates[0].nonPassStreak, persisted.candidates[0].noProgressCount],
+    [3, 2],
+  );
+});
+
+test('C4 newest sequence supplies the merged round findings', async t => {
+  const ctx = stalledReviewContext(t);
+  const candidateHistory = reviewPauseRounds().slice(0, 3).map((review, index) => ({
+    ...review, candidateId: `synthetic-spec-r${index + 3}`, revision: `r${index + 3}`,
+  }));
+  const latest = {
+    ...candidateHistory[2], seq: 6,
+    findings: [{
+      ...candidateHistory[2].findings.at(-1),
+      question: 'Newest registry round finding',
+    }],
+  };
+  const registry = ctx.record.registry;
+  registry.candidates[0].reviewsHistory = candidateHistory;
+  delete registry.reviewsHistory;
+  registry.reviewHistory = [
+    { ...candidateHistory[0], seq: 4 },
+    { ...candidateHistory[1], seq: 5 },
+    latest,
+  ];
+  writeFileSync(ctx.record.registryPath, JSON.stringify(registry));
+
+  const result = await ctx.call(ctx.event);
+  assert.equal(result?.pause?.questions[0]?.question, 'Newest registry round finding');
+});

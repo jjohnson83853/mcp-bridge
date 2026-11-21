@@ -1,0 +1,9 @@
+[
+  {"id": "H1", "severity": "HIGH", "summary": "AC01-4 and AC03-1 control asserts exactly one initialize; a modern session completes via server discover and sends none."},
+  {"id": "H2", "severity": "HIGH", "summary": "AC02-1 pagination fixture assumes registration order; the list orders by tool name, so the header tool must sort after the others."},
+  {"id": "M1", "severity": "MEDIUM", "summary": "Prepare failures are not all not_started: failureOutcome maps deadline and cancel to deadline_exceeded or internal_error."},
+  {"id": "M2", "severity": "MEDIUM", "summary": "Index swaps before catalog publication; a removed tool can stay published while absent from the index."},
+  {"id": "M3", "severity": "MEDIUM", "summary": "R5 zero-definition clause has no oracle; needs a positive-TTL fixture counting list RPCs."},
+  {"id": "L1", "severity": "LOW", "summary": "AC03-3 oracle greps two strings only; does not verify R7 mechanism, operator action or cost."},
+  {"id": "L2", "severity": "LOW", "summary": "T1 allowed scope omits peer-response capture required by AC01-2."}
+]

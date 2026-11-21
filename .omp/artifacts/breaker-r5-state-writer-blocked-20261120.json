@@ -1,0 +1,21 @@
+{
+  "complete": false,
+  "feature": "upstream-breaker-recovery",
+  "taskId": "T1",
+  "status": "blocked",
+  "code": "E_COORDINATOR_EDIT_FORBIDDEN",
+  "canonicalRevisionObserved": "r4",
+  "plannerPreparation": "RepairBreakerHarnessR5 launched; result pending when this record was written",
+  "blockedOperation": "Install planner-authored same-feature revision with reconciled spec/section/packet bindings and preserved review lineage into .omp/plans/execution-state.json",
+  "evidence": [
+    "/home/opencode/.omp/agent/workflow-policy/execution-gate.ts:1234-1257 strictly forbids direct main-session canonical execution-state edits; permits .scratch and .omp/artifacts and review-sequence metadata only",
+    "/home/opencode/.omp/agent/workflow-policy/execution-transition.mjs:272-283 returns noMutation for the already-current feature",
+    "/home/opencode/.omp/agent/workflow-policy/execution-state.mjs:989-1000 refresh recertifies evidence, not specification revisions",
+    "/home/opencode/.omp/agent/workflow-policy/execution-amendment.mjs:82-102 task amendments update task effects/blockers/decisions, not spec revision or packet; :120-121 require existing authority/reviews",
+    "execution-state.mjs status observed r4, authority_ready=false, runnable_frontier=[CR1,CT1], implementation_frontier=[]",
+    "roundCapIssues for current r4 returned []; preserved registry has one bound legacy CodeReviewer round and unobserved r1/r3/r4 markers; this is not proof that historical reviews never happened"
+  ],
+  "missingPrerequisite": "An owner-authorized supported canonical same-feature revision installation operation or a separately authorized permitted state writer",
+  "preserved": ["canonical r4 state and specification", "existing review manifests and actual output artifacts", "R/AC/T IDs and implementation envelope", "review caps and dispatch/task failure counters"],
+  "notPerformed": ["canonical state mutation", "shell-write workaround", "policy modification", "review bypass", "engineer launch", "application source changes", "runtime verification", "commit or push"]
+}

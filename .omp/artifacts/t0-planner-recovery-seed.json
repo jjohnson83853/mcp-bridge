@@ -1,0 +1,18 @@
+{
+  "intent": "Dispatch authorized read-only planner T0",
+  "instructions": "Root /home/opencode/projects/default/mcp-bridge. Task T0 only; owner-authorized recovery, unchanged read-only effects. Return the COMPLETE specification via native structured yield fields specification and handoff. The task runtime-owned structured result is the designated planning-only sink; do not write files. Coordinator persists canonical content afterward. No implementation, spawns, gate changes, approval claims, or external runtime probes. Final handoff <=3072 UTF-8 bytes; full specification is separate structured artifact content. Read skill://code-access and /home/opencode/.omp/agent/workflow-policy/development-workflow.md. Code access: bounded native reads/searches (codebase-searcher unmounted); Graphify only on verified clean worktree, optional; LSP only if permitted by role, otherwise report limitation and use bounded source evidence. Do not run builds/tests/formatters during planning; report verification not run.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "upstream-breaker-recovery",
+    "revision": "r1",
+    "requests": [{"taskId": "T0", "agent": "planner", "name": "AuthorBreakerRecoverySpec", "effects": {"kind": "read", "paths": []}}]
+  },
+  "tasks": [{
+    "name": "AuthorBreakerRecoverySpec",
+    "agent": "planner",
+    "solutionSpace": "Resolve discovery-driven breaker recovery contracts, concurrency/cooldown and failure semantics; preserve non-executing probe and no execution replay; bound non-stateless session limitation to separate backlog scope.",
+    "task": "Read docs/agents/domain.md and docs/agents/issue-tracker.md first. Inputs: .scratch/upstream-breaker-recovery/issues/01-breaker-discovery-probe-recovery.md, backlog.md and incident-2026-11-14.md in that feature directory. Source anchors: internal/upstream/runtime.go ServerClient.AdmitCall/BeginProbe/RecordFailure/RecordSuccess; internal/upstream/dedicated.go Dedicated.Discover/DiscoverPrompts/sessionFor; internal/service/refresh.go and reload.go refresh/reload discovery; cmd/mcp-bridge/wiring.go upstreamRegistry.Discover. Return complete nine-section SpecDD specification for the approved single breaker recovery ticket, not implementation. Existing spec.md is coordinator-created placeholder, not planner-approved design. Define exact R/AC/T, bounded engineer production+test ownership, RED/GREEN and integration verification, observability and release/recovery. Resolve probe ownership, cooldown, concurrency, cancellation and failed probe behavior; normal execution remains non-probing with no replay. Document separate cached stateful-session limitation without silently widening scope. Use existing specdd section bindings requirements/design/tasks/envelope when organizing canonical content. Read skill://observability-contract for observability. Separate verified evidence, unknowns and auto-decisions. Native structured yield only; no direct file writes."
+  }]
+}

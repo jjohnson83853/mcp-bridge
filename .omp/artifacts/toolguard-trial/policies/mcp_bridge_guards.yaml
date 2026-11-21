@@ -1,0 +1,97 @@
+schema_version: 1
+policy_id: mcp-bridge-repo-guard
+name: mcp-bridge-repo-guard
+description: >
+  Project starter policy for the Tool Guard trial in mcp-bridge. Covers four
+  hazards the generic coding-agent bundle leaves open: piping remote content
+  into a shell, direct writes to .git internals, container/service mutations,
+  and global toolchain installs. Extend rule by rule; each rule has one effect.
+version: 1
+status: approved
+mode: enforcement
+
+scope:
+  tool_groups: [shell, filesystem_writes]
+
+rules:
+  - rule_id: rule-deny-pipe-to-shell
+    name: remote content must not be piped into a shell
+    rule_type: regex
+    conditions:
+      or:
+        - field: parameters.command
+          operator: regex
+          value: '(^|[\s;&|(])(curl|wget|fetch)\b[^|;&]*\|\s*(sudo\s+)?(ba|z|k|da|a)?sh\b'
+        - field: parameters.command
+          operator: regex
+          value: '(^|[\s;&|(])(ba|z|k|da)?sh\s+<\(\s*(curl|wget)\b'
+    effect: deny
+    effect_config:
+      severity: high
+      suggested_response: "Download, inspect, then run the file."
+    citation:
+      document_id: REPO-GUARD
+      section: "1"
+      excerpt: "Remote content must not be piped directly into a shell."
+
+  - rule_id: rule-deny-git-internals
+    name: .git changes go through git only
+    rule_type: regex
+    conditions:
+      or:
+        - field: parameters.file_path
+          operator: regex
+          value: '(^|/)\.git(/|$)'
+        - field: parameters.command
+          operator: regex
+          value: '(^|[\s;&|(])(rm|mv|cp|truncate|tee|install|chmod|chown|shred)\b[^|;&]*\.git(/|[\s";&|]|$)'
+        - field: parameters.command
+          operator: regex
+          value: '(>|>>)[^|;&]*\.git(/|[\s";]|$)'
+    effect: deny
+    effect_config:
+      severity: high
+      suggested_response: "Use git commands; do not edit repository internals."
+    citation:
+      document_id: REPO-GUARD
+      section: "2"
+      excerpt: "Repository internals change only through git, never by direct file writes."
+
+  - rule_id: rule-escalate-container-service-mutations
+    name: container and service mutations need review
+    rule_type: regex
+    conditions:
+      or:
+        - field: parameters.command
+          operator: regex
+          value: '(^|[\s;&|(])(docker|podman)(\s+compose)?\s+(down|rm|rmi|stop|kill|system\s+prune|volume\s+rm|network\s+rm)\b'
+        - field: parameters.command
+          operator: regex
+          value: '(^|[\s;&|(])systemctl\s+(restart|stop|disable|mask|reload)\b'
+        - field: parameters.command
+          operator: regex
+          value: '(^|[\s;&|(])kubectl\s+(apply|delete|scale|rollout|patch|edit)\b'
+    effect: escalate
+    effect_config:
+      severity: medium
+      suggested_response: "Confirm the target and rollback path before mutating runtime state."
+    citation:
+      document_id: REPO-GUARD
+      section: "3"
+      excerpt: "Container and service mutations require manual review."
+
+  - rule_id: rule-escalate-global-installs
+    name: global toolchain installs need review
+    rule_type: regex
+    conditions:
+      field: parameters.command
+      operator: regex
+      value: '(^|[\s;&|(])(npm\s+(i|install)\s+-g|pnpm\s+add\s+-g|yarn\s+global\s+add|pip3?\s+install|go\s+install|cargo\s+install|apt(-get)?\s+install)\b'
+    effect: escalate
+    effect_config:
+      severity: medium
+      suggested_response: "Confirm the package, version, and trust boundary."
+    citation:
+      document_id: REPO-GUARD
+      section: "4"
+      excerpt: "Global installs change the shared toolchain and require review."

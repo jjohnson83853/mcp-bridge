@@ -1,0 +1,31 @@
+{
+  "text": "Spawned agent `HeaderParamTransitFix` (job `HeaderParamTransitFix`).",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [],
+    "totalDurationMs": 0,
+    "progress": [
+      {
+        "index": 0,
+        "id": "HeaderParamTransitFix",
+        "agent": "engineer",
+        "agentSource": "user",
+        "status": "pending",
+        "task": "Complete assignment thoroughly:\n\nImplement ticket T2 exactly per the instructions: test-first RED capture on the unmodified tree, then the three production pieces (header-annotation index union install in Discover; paged definition-cache warm in Dedicated.CallTool behind a new prepared ServerClient seam after admission and inside the call timeout; per-call legacy version gate returning parameter_header_unsupported/not_started), plus the closed vocabulary token in observe and the payload-free dispatch message. Only the seven named files may change. Run the two oracle commands, go vet ./... and go test ./..., and report exact outputs/exit codes. Do not weaken assertions or touch docs.",
+        "assignment": "Implement ticket T2 exactly per the instructions: test-first RED capture on the unmodified tree, then the three production pieces (header-annotation index union install in Discover; paged definition-cache warm in Dedicated.CallTool behind a new prepared ServerClient seam after admission and inside the call timeout; per-call legacy version gate returning parameter_header_unsupported/not_started), plus the closed vocabulary token in observe and the payload-free dispatch message. Only the seven named files may change. Run the two oracle commands, go vet ./... and go test ./..., and report exact outputs/exit codes. Do not weaken assertions or touch docs.",
+        "recentTools": [],
+        "recentOutput": [],
+        "toolCount": 0,
+        "requests": 0,
+        "tokens": 0,
+        "cost": 0,
+        "durationMs": 0
+      }
+    ],
+    "async": {
+      "state": "running",
+      "jobId": "HeaderParamTransitFix",
+      "type": "task"
+    }
+  }
+}

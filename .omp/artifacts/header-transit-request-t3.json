@@ -1,0 +1,21 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "header-parameter-transit",
+  "revision": "r6",
+  "requests": [
+    {
+      "name": "HeaderParamTransitDocs",
+      "taskId": "T3",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "docs/logging-contract.md",
+          "docs/runbooks/header-parameters.md"
+        ]
+      }
+    }
+  ]
+}

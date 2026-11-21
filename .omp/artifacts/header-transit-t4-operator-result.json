@@ -1,0 +1,31 @@
+{
+  "text": "Spawned agent `DeployedHeaderVerification` (job `DeployedHeaderVerification`).",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [],
+    "totalDurationMs": 1,
+    "progress": [
+      {
+        "index": 0,
+        "id": "DeployedHeaderVerification",
+        "agent": "operator",
+        "agentSource": "user",
+        "status": "pending",
+        "task": "Complete assignment thoroughly:\n\nVerify the live deployed bridge end to end: identify container image/ID and endpoint; describe_tool then call_tool for the GitHub header-bound tool (README.md) and the control search tool in the same window; capture content/success, catalog revision, absence of tool_reported_error for the header call, and restart/reload status. Report external evidence only; no edits, restarts are allowed only if required and must be stated.",
+        "assignment": "Verify the live deployed bridge end to end: identify container image/ID and endpoint; describe_tool then call_tool for the GitHub header-bound tool (README.md) and the control search tool in the same window; capture content/success, catalog revision, absence of tool_reported_error for the header call, and restart/reload status. Report external evidence only; no edits, restarts are allowed only if required and must be stated.",
+        "recentTools": [],
+        "recentOutput": [],
+        "toolCount": 0,
+        "requests": 0,
+        "tokens": 0,
+        "cost": 0,
+        "durationMs": 0
+      }
+    ],
+    "async": {
+      "state": "running",
+      "jobId": "DeployedHeaderVerification",
+      "type": "task"
+    }
+  }
+}

@@ -1,0 +1,980 @@
+✔ R-01 coordinator edit and write denials retain the dedicated code and exact guidance (10.761942ms)
+✔ R-02 coordinator edits allow only listed filesystem roots, with strict state denials first (5.365672ms)
+✔ R-02 non-filesystem and missing paths bypass path checks; non-coordinator edits remain allowed (3.929039ms)
+✔ R-03 interrupt lock precedes dispatch validation and does not burn retry attempts (2.935375ms)
+✔ R-04 interrupt CLI set and clear are idempotent and validate roots (1126.244408ms)
+✔ accepts the specified single effect object rather than obsolete effect arrays (0.668127ms)
+✔ fresh resumed managed workspace rejects missing metadata before any successful dispatch (1.905492ms)
+✔ evaluator errors never disclose raw error payload to diagnostics (4.915659ms)
+✖ Option 1B global maintenance permits workflow-policy and skills, preserving production and strict state denials (3.142037ms)
+✔ reservation-time target drift keeps the generic E_REVIEW denial (14.03684ms)
+✔ resume-time target drift keeps the generic E_REVIEW denial (9.606812ms)
+✔ second managed check returns its targeted issue code and detail (5.432819ms)
+✔ capture validator requires every acceptance verdict, including actual native denials (20.676267ms)
+✔ capture validator rejects wrong gate denial codes at every named boundary (1.523508ms)
+✔ capture fails for a child, provider attempt, reversed verdict, absent capture or preflight-only refusal (2.362077ms)
+✔ capture rejects preflight-style denials without a workflow dispatch gate code (0.440736ms)
+✔ capture pins the historical marker denial to the legacy project gate, never state source (0.317983ms)
+✔ role verdicts match actual read-only resolution inputs and each pending case has an isolated task scope (1.246894ms)
+✔ retry-limit probes share one scope and reject unchanged requests after the first shape denial (1.286268ms)
+✔ capture rejects missing critic resolution evidence and role verdicts disconnected from it (0.492484ms)
+✔ capture enforces current role tools, spawn status and planner output contract (2.091145ms)
+✔ resolved spawn assertion accepts nullish and empty representations but rejects children (0.987402ms)
+✔ fresh smoke overlay configures the real adapter while preserving configured extensions (0.559491ms)
+✔ policy documents CLI emits a JSON failure payload to stdout and exits 1 (50.457545ms)
+✔ rule-prefix verifier rejects a bare script reference in an S rule fixture (0.993434ms)
+✔ rule-prefix verifier rejects a bare script reference in a T rule fixture (0.225347ms)
+✔ rule-prefix verifier checks all policy scripts and accepts absolute policy paths (0.51707ms)
+✔ rule-prefix verifier rejects a relative script reference with an intervening subdirectory (0.187024ms)
+✔ rule-prefix verifier rejects an absolute script reference with an intervening subdirectory (0.207423ms)
+✔ recovery verifier rejects a move-only swap between shape and substantive codes (0.561805ms)
+✔ recovery verifier rejects codes swapped across the shape and substantive clauses (0.816448ms)
+✖ policy documents load with valid frontmatter and consistent CLI paths across every rule (2.026902ms)
+✔ owner-authorized cutover artifacts are contained and maintenance-root-only (2.668359ms)
+✖ retired S04C allowance cannot admit cross-project source writes (1.52988ms)
+✔ review taper dispatch round 1 stale-citation REQUEST CHANGES (5.099898ms)
+✔ review taper dispatch round 1 statement-contradiction REQUEST CHANGES (2.949933ms)
+✔ review taper dispatch round 2 lifecycle-hazard REQUEST CHANGES (2.803174ms)
+✔ review taper dispatch round 3 statement-contradiction REQUEST CHANGES (3.524902ms)
+✔ review taper dispatch round 1 statement-contradiction APPROVE (2.946145ms)
+✔ canonical review taper round 1 stale-citation (9.050568ms)
+✔ canonical review taper round 1 statement-contradiction (4.289371ms)
+✔ canonical review taper round 2 lifecycle-hazard (4.983808ms)
+✔ canonical review taper round 3 statement-contradiction (5.898993ms)
+✔ canonical review taper preserves authorization guard (3.819ms)
+✔ canonical review taper preserves source guard (4.368291ms)
+✔ canonical review taper preserves inputs guard (2.653089ms)
+✖ canonical review taper preserves envelope guard (4.764352ms)
+✔ dispatch builder returns a stable native payload accepted by the runtime validator (0.566093ms)
+✔ dispatch validator reports safe field-specific failures before tool invocation (0.351356ms)
+✔ dispatch payload rejects batches above three tasks with a typed concurrency denial (0.20015ms)
+✔ dispatch payload rejects tasks and wrapper instructions exceeding 32 KiB (0.415698ms)
+✔ dispatch payload admits indented and fenced unified diffs in planner prompts (0.35383ms)
+✔ dispatch payload admits prose formerly treated as raw telemetry (0.56961ms)
+✔ dispatch payload reports a non-JSON batch context as dispatch metadata (0.181965ms)
+✔ dispatch payload accepts a 35-line architectural Markdown task (0.286062ms)
+✔ dispatch payload accepts comma-rich Markdown and CSV-looking prose (0.379789ms)
+✔ dispatch payload accepts repeated compact CSV rows (0.249884ms)
+✔ dispatch payload accepts consecutive two-column table rows (0.518824ms)
+✔ dispatch payload does not treat stdout and stderr prose as output markers (0.19528ms)
+✔ dispatch payload does not treat exit-count prose as an exit status marker (0.194158ms)
+✔ dispatch payload admits prose containing delimited exit status markers (0.183297ms)
+✔ dispatch payload admits long unbroken lines below the payload-size limit (0.151397ms)
+✔ dispatch payload admits a 35-line timestamped terminal log dump (0.217242ms)
+✔ dispatch payload rejects missing, empty, and out-of-range solutionSpace descriptions (0.37475ms)
+✔ dispatch payload accepts the concurrency and size limits (0.294278ms)
+✔ flat dispatch accepts a serialized wrapper above 4_000 characters (0.197484ms)
+✔ check-payload CLI accepts valid payloads and emits structured lint failures (479.079275ms)
+✔ live gate logs a payload-free oversized-task denial (1.756199ms)
+✔ live gate preserves typed payload-lint denials (1.193833ms)
+✔ native shape contract rejects missing task content and duplicate mapping before dispatch (0.445916ms)
+✔ batch and flat shape validator use the same wrapper/native contract (0.824844ms)
+✔ workflow dispatch accepts optional nonempty target pairs and keeps strict unknown-field rejection (0.446286ms)
+✔ optional effort values fail builder and live admission consistently (1.370558ms)
+✔ optional schemaMode values fail builder and live admission consistently (1.585506ms)
+✔ optional isolated values fail builder and live admission consistently (1.29751ms)
+✔ optional outputSchema values fail builder and live admission consistently (2.165986ms)
+✔ concurrent mutation scopes src/ / src/fixture.txt enforce canonical overlap (4.707263ms)
+✔ concurrent mutation scopes src/missing/ / src/missing/new.txt enforce canonical overlap (5.263909ms)
+✔ concurrent mutation scopes src/fixture.txt / alias/fixture.txt enforce canonical overlap (4.437142ms)
+✔ concurrent mutation scopes src/a.txt / src/b.txt enforce canonical overlap (6.095926ms)
+✔ concurrent mutation scopes src/a / src/ab enforce canonical overlap (5.187103ms)
+✔ scope preflight permits shared reads and same-task paths, fails closed on unavailable or escaped paths (1.544067ms)
+✔ active scopes reject separate-call symlink aliases until actual child completion, not async ack (8.221235ms)
+✔ active reservation admission is atomic across concurrent calls (5.015398ms)
+✔ active scopes release on native settled result {"exitCode":1,"error":"launch failed"} (5.085762ms)
+✔ active scopes release on native settled result {"exitCode":0} (4.806852ms)
+✔ active scopes release on native settled result {"aborted":true} (5.006661ms)
+✔ active scopes allow independent writes and reject unrelated completion evidence (8.403972ms)
+✔ active scopes retain a failed-launch reservation while queued jobs are absent from the registry (7.53264ms)
+✔ active scopes retain failed-launch reservations when child evidence is unavailable or ambiguous (5.261605ms)
+✔ settled writer resumption is interlocked while an overlapping reservation is active (6.089544ms)
+✔ settled independent writer scopes remain resumable beside a non-conflicting reservation (6.503349ms)
+✔ resumed writer reservation blocks overlapping dispatch until the child settles again (6.60451ms)
+✔ resumed writer reservation releases when child becomes idle (6.633144ms)
+✔ resumed writer reservation releases when child becomes parked (6.826081ms)
+✔ resumed writer reservation releases when child becomes aborted (6.39316ms)
+✔ settled writer scopes remain interlocked after more than 128 child events (216.701282ms)
+✔ resumed writer with pendingStart is not released on immediate idle before running (9.532461ms)
+✔ resumed writer originally spawned by another agent releases on settlement (cross-owner) (6.756549ms)
+✔ errored write to agent:// releases reservation created by its invocation token (5.614173ms)
+✔ calling releaseObservedChildren with status idle immediately after resume does not release reservation (5.728199ms)
+✔ H1: already-running child at resume seeds pendingStart false and releases on subsequent idle (5.751273ms)
+✔ H2: aborted is terminal and releases reservation immediately even with pendingStart true (5.69212ms)
+✔ H3: write to agent://<target>?progress does not reserve mutator (4.241661ms)
+✔ C1 epoch guard prevents cross-lifecycle generation reuse (7.048763ms)
+✔ C2 admission rejects revision drift during evaluation (4.100814ms)
+✔ valid batch matches actual shared authority/effects and allows without mutating input (2.555535ms)
+✔ valid flat matches actual shared authority/effects and allows without mutating input (2.563449ms)
+✔ accepts arbitrary JSON whitespace/key order and real nonempty instructions (2.976483ms)
+✔ rejects trailing narrative before dispatch (1.389584ms)
+✔ rejects extra wrapper keys before dispatch (1.186429ms)
+✔ rejects empty instructions before dispatch (1.23419ms)
+✔ rejects missing instructions before dispatch (1.195035ms)
+✔ rejects extra request keys before dispatch (1.173795ms)
+✔ rejects obsolete effect array before dispatch (1.306136ms)
+✔ rejects a prose-prefixed wrapper as read-only preparation for a writer (1.638556ms)
+✔ rejects unsupported workflow effect kinds before authority evaluation (1.193152ms)
+✔ malformed dispatch diagnostics give safe corrective guidance (1.146885ms)
+✔ rejects native identity/definition bypass: case-only native rename (1.269266ms)
+✔ rejects native identity/definition bypass: different agent (1.256041ms)
+✔ rejects native identity/definition bypass: missing explicit agent (1.157234ms)
+✔ rejects native identity/definition bypass: extra native item (1.241063ms)
+✔ rejects native identity/definition bypass: case-duplicate native item (1.145261ms)
+✔ rejects native identity/definition bypass: tools override (1.227437ms)
+✔ rejects native identity/definition bypass: prompt override (1.217598ms)
+✔ rejects native identity/definition bypass: top-level agent (1.238307ms)
+✔ rejects native identity/definition bypass: blank native instructions (1.35558ms)
+✔ real shared evaluator denies unknown task (2.816389ms)
+✔ real shared evaluator denies ungranted role (2.578418ms)
+✔ real shared evaluator denies changed path (2.414087ms)
+✔ real shared evaluator denies additional path (3.223942ms)
+✔ real shared evaluator denies missing path (2.286695ms)
+✔ real shared evaluator denies changed kind (2.133354ms)
+✔ real shared evaluator denies escaping path (2.338163ms)
+✔ canonical path-set equality allows order changes, not extra permission (3.373445ms)
+✔ mixed valid/invalid batch denies atomically (2.497706ms)
+✔ verified read-only research remains usable with valid null preauthorization and no marker (3.676509ms)
+✔ read-only exemption denies missing role (2.298337ms)
+✔ read-only exemption denies default tools (2.221572ms)
+✔ read-only exemption denies write tool (2.43681ms)
+✔ read-only exemption denies lsp mutation surface (2.619145ms)
+✔ read-only exemption denies unknown tool (2.317013ms)
+✔ read-only exemption denies spawn permission (2.108908ms)
+✔ read-only exemption denies disabled role (2.325899ms)
+✔ test-engineer never becomes exempt through a read-only-looking declaration (2.375724ms)
+✔ role resolver rejects duplicate/shadowed installed declarations rather than trusting names (1.580536ms)
+✔ missing live role discovery never grants a read-only exemption (3.099416ms)
+✔ fresh workspace and a denied first dispatch both require metadata (3.124323ms)
+✔ outside any managed workspace standing policy remains unchanged (1.428288ms)
+✔ fresh managed workspace denies unbound alternate subagent (1.099634ms)
+✔ fresh managed workspace denies unbound alternate subagent_send (1.063806ms)
+✔ fresh managed workspace denies unbound alternate subagent_resume (0.97053ms)
+✔ ordinary tools and nondelegating devices are not a new sandbox (1.263756ms)
+✔ live Graphify handler allows clean local Git repositories (25.935788ms)
+✔ live Graphify handler blocks namespaced calls on dirty repositories with safe guidance (28.84874ms)
+✔ live Graphify handler blocks calls outside a Git repository (5.136056ms)
+✔ live Graphify handler fails closed on Git status errors without exposing stderr (1.414912ms)
+✔ actual extension cwd prevents borrowing another project authority (2.077519ms)
+✔ foreign feature/revision and noncurrent state cannot borrow valid authority (2.303376ms)
+✔ no ancestor plan scan can accidentally manage an unrelated nested project (1.135804ms)
+✔ ambiguous current plan and linked state sources fail closed (1.674134ms)
+✔ missing required project marker blocks different-feature source mutation without an installed project extension (4.021484ms)
+✔ valid historical protection composes without demanding unrelated feature task IDs (4.165777ms)
+✔ another feature may never overwrite protected historical state or marker paths (3.788041ms)
+✔ symlinked historical state is not a legacy gate bypass (1.738055ms)
+✔ readiness is reread on every allowed attempt rather than cached (3.696227ms)
+✔ fail closed on evaluator exception (1.496147ms)
+✔ fail closed on evaluator missing report (1.230673ms)
+✔ fail closed on evaluator wrong verdict type (1.320473ms)
+✔ fail closed on evaluator timeout (33.803523ms)
+✔ reason, path and native name canaries cannot escape bounded diagnostics (2.810568ms)
+✔ a task-permitted role missing from actual runtime discovery is denied (2.823583ms)
+✔ historical marker symlink escape cannot borrow another project marker (4.215952ms)
+✔ single-intake remediation: not-ready authority denies the engineer-granted pending research read (nested specification review null) (3.587421ms)
+✔ single-intake remediation: not-ready authority denies the engineer-granted pending research read (nested tasks review null) (3.108122ms)
+✔ single-intake remediation: not-ready authority denies the engineer-granted pending research read (nonexplicit owner receipt) (7.533611ms)
+✔ single-intake remediation: not-ready authority denies the engineer-granted pending research read (automatic owner receipt) (3.655219ms)
+✔ single-intake remediation: not-ready authority denies the engineer-granted pending research read (timed out owner receipt) (3.367253ms)
+✖ single-intake remediation: not-ready authority allows the effective read-only critic research read (nested specification review null) (11.797065ms)
+✖ single-intake remediation: not-ready authority allows the effective read-only critic research read (nested tasks review null) (3.125455ms)
+✖ single-intake remediation: not-ready authority allows the effective read-only critic research read (nonexplicit owner receipt) (3.236065ms)
+✖ single-intake remediation: not-ready authority allows the effective read-only critic research read (automatic owner receipt) (2.89045ms)
+✖ single-intake remediation: not-ready authority allows the effective read-only critic research read (timed out owner receipt) (3.036907ms)
+✔ single-intake remediation: gate fails closed with E_INTERNAL when the real shared report omits authority_ready (2.849643ms)
+✔ single-intake remediation: gate fails closed with E_INTERNAL when the real shared report has a nonboolean authority_ready (2.530798ms)
+✖ single-intake remediation: an evaluator-denied read request is never rescued by the read-only exemption (5.483415ms)
+✔ single-intake remediation: fully authorized authority keeps legitimate engineer research read and implementation write on the normal path (4.197999ms)
+✔ single-intake remediation: orphan schema-2 state is denied when the canonical source is absent (2.548401ms)
+✔ single-intake remediation: an alternate schema-2 source is denied while the canonical schema-2 state is current (2.582596ms)
+✔ single-intake remediation: a schema-2 sidecar under a wrong-feature directory is denied beside a valid legacy canonical state (3.355441ms)
+✔ single-intake remediation: the exact canonical schema-2 source allows the authorized engineer (4.12515ms)
+✔ single-intake remediation: legacy coexistence allows the exact-feature schema-2 sidecar and denies when the historical marker is missing (6.496175ms)
+✔ single-intake remediation: malformed current legacy state denies the schema-2 sidecar (3.068397ms)
+✔ single-intake remediation: blocked-but-valid legacy canonical still allows the readonly schema-2 sidecar (4.443835ms)
+✔ single-intake remediation: a marker-only invalid legacy report denies a recognized write as E_PROJECT_GATE without reading the sidecar or dispatching (2.458691ms)
+✔ single-intake remediation: mixed marker and receipt faults keep the schema-2 sidecar denied as E_STATE_SOURCE (2.097366ms)
+✔ single-intake remediation: a marker-only invalid legacy report denies a read-only request as E_STATE_SOURCE (2.794999ms)
+✔ single-intake remediation: an unrecognized effect kind never earns the typed historical denial (1.777179ms)
+✔ single-intake remediation: a malformed or unreadable legacy facade report stays E_STATE_SOURCE (nonobject report) (3.141496ms)
+✔ single-intake remediation: a malformed or unreadable legacy facade report stays E_STATE_SOURCE (unreadable status) (3.051605ms)
+✔ single-intake remediation: a malformed or unreadable legacy facade report stays E_STATE_SOURCE (empty reasons) (3.340734ms)
+✔ single-intake remediation: a malformed or unreadable legacy facade report stays E_STATE_SOURCE (nonarray reasons) (3.425313ms)
+✔ single-intake remediation: arbitrary thrown facade errors are never trusted as typed denials (2.872035ms)
+✔ single-intake remediation: an unsafe sidecar location is denied before the legacy facade is invoked (2.747489ms)
+✔ single-intake remediation: a denied legacy source never sticks as the active identity and a restored canonical v2 source allows the next actual request (3.51854ms)
+✔ AC01-7 gate fallback preserves stall counters and pause cap after serialized alias rename (11.168282ms)
+✔ malformed immutable review history denies admission without opening a pause (3.505626ms)
+✔ review fallback ignores failed transport records instead of reopening the substantive-review frontier (3.545772ms)
+✔ aliased stall counters ignore unrelated PASS and REVISE rounds (7.392374ms)
+✔ pause classification selects the latest repeated same-ID repair round (6.486246ms)
+✔ pause classification selects the latest aliased round among interleaved lineages (6.913567ms)
+✔ managed first check skips a review pause for a targeted issue without writing state (2.410249ms)
+✔ AC1 stalled owner review returns §4F payload and durably records the pause (7.06319ms)
+✔ AC5 mismatched pause receipt stays blocked; a bound answer admits one review dispatch (17.287663ms)
+✔ AC6 a different candidate lineage proceeds while an owner pause is open (8.796837ms)
+✔ review pause cap returns a machine-readable blocked result without another question (5.645402ms)
+✔ first-round REVISE stays a normal E_REVIEW denial without an owner pause (4.300924ms)
+✔ all-locator findings remain repair-routed instead of opening an owner pause (4.895901ms)
+✔ pause lifecycle durably records opened, resumed and cleared observations without answer text (10.934169ms)
+✔ an unparsable detector history fails open to the existing E_REVIEW denial (5.280832ms)
+✔ delivery completion helper recognizes completed reports and a no-task frontier (0.221339ms)
+✔ delivery completion helper rejects an incomplete report with reasons (0.090001ms)
+✔ unmanaged payload helper returns its shape and lint failure (0.122351ms)
+✔ read-only pause helper denies a matching lineage without changing evidence (6.403089ms)
+✔ read-only pause helper ignores an unrelated review lineage (6.36707ms)
+✔ read-only pause helper ignores an unavailable or corrupt registry (5.883874ms)
+✖ targeted refusals retain retry accounting and only a new candidate revision opens a new key (8.88838ms)
+✔ C1 persisted sequence keeps stall counters identical across an explicit alias rename (5.804454ms)
+✔ C3 refuses a stale registry commit and preserves the concurrent append (4.548653ms)
+✔ AC01-1 registry pause lock refuses an in-window producer then preserves its post-release append (8.605974ms)
+✔ SR4-2 locked reclassification aborts an obsolete pause without consuming a slot (5.28565ms)
+✔ C4 conflicting candidate and registry verdicts fail closed (4.461287ms)
+✔ C4 an empty candidate history cannot mask registry lineage history (5.779386ms)
+✔ C4 newest sequence supplies the merged round findings (5.766282ms)
+✔ review taper blocks by substantive class only in rounds one and two (6.347563ms)
+✔ review target rejects descriptor target differs from candidate identity before binding (6.947862ms)
+✔ review target rejects request target differs from matched descriptor before binding (2.518706ms)
+✔ review target rejects request pair absent when descriptor pair is absent before binding (2.243263ms)
+✔ review target rejects descriptor pair absent on a candidate without one before binding (3.593442ms)
+✔ review target detail sanitizes request and descriptor values locally (2.594138ms)
+✔ descriptor target values are sanitized and bounded independently (1.97849ms)
+✔ target mismatch precedes stale dispatch-byte binding (1.88323ms)
+✔ missing target pair precedes candidate revision mismatch (1.980745ms)
+✔ target metadata changes candidate fingerprints and stale receipt digests still fail (10.209024ms)
+✔ Critic denies missing approval in shared CLI evaluator and native preparation (13.702386ms)
+✔ Critic denies rejected approval in shared CLI evaluator and native preparation (8.367913ms)
+✔ Critic denies comment approval in shared CLI evaluator and native preparation (8.097301ms)
+✔ Critic denies pending approval in shared CLI evaluator and native preparation (6.271739ms)
+✔ Critic denies substring approval in shared CLI evaluator and native preparation (6.367351ms)
+✔ Critic denies stale revision approval in shared CLI evaluator and native preparation (7.650724ms)
+✔ Critic denies wrong input set approval in shared CLI evaluator and native preparation (4.739114ms)
+✔ Critic denies self review approval in shared CLI evaluator and native preparation (8.105727ms)
+✔ Critic denies same reviewer approval in shared CLI evaluator and native preparation (5.341166ms)
+✔ Critic denies repaired input approval in shared CLI evaluator and native preparation (3.717387ms)
+✔ Critic denies malformed receipt approval in shared CLI evaluator and native preparation (3.72429ms)
+✔ Critic denies source rejection approval in shared CLI evaluator and native preparation (4.649003ms)
+✖ independent positive exact-input review unlocks managed and unbound Critic (4.715279ms)
+✔ same-candidate review batch fails wholly despite a prior positive verdict (2.086315ms)
+✔ unregistered Critic cannot bypass via an unmanaged workspace or renamed task (4.100443ms)
+✖ legacy canonical state plus established schema2 sidecar preserves dispatch compatibility (5.047329ms)
+✔ non-exact installed verdict cannot unlock: "APPROVE" (3.59773ms)
+✔ non-exact installed verdict cannot unlock: "### Recommendation\nNOT APPROVE" (3.605104ms)
+✔ non-exact installed verdict cannot unlock: "### Recommendation\nCOMMENT" (4.405271ms)
+✔ non-exact installed verdict cannot unlock: "### Recommendation\nAPPROVE\n### Recommendation\nAPPROVE" (3.195507ms)
+✔ non-exact installed verdict cannot unlock: "### Recommendation\nAPPROVE / REQUEST CHANGES / COMMENT" (4.840637ms)
+✔ non-exact installed verdict cannot unlock: "### Recommendation\nAPPROVE\nextra text" (3.324562ms)
+✖ explicit policy PASS is supported, but installed PASS is not (5.487904ms)
+✖ repairing sidecar hashes or revision alone cannot reuse an older observation (18.805149ms)
+✔ changed native task or wrapper instructions cannot reuse an approval (16.692895ms)
+✔ missing payload, sidecar and malformed registry fail closed without blocking planner discovery (7.694296ms)
+✖ separate native calls prohibit both overlap directions and invalidate old positive source after rerun (9.93785ms)
+✖ disjoint candidates remain independent while overlapping inputs or ambiguous identities deny (3.875507ms)
+✔ first-stage preparation preserves profile authority: installed readonly (3.475779ms)
+✔ first-stage preparation preserves profile authority: write capable (2.90612ms)
+✔ first-stage preparation preserves profile authority: spawn capable (2.294209ms)
+✔ shadowed first-stage preparation is denied despite a valid candidate binding (4.523135ms)
+✖ prepare/check-dispatch both apply the same exact-source prerequisite: passing (15.811896ms)
+✔ prepare/check-dispatch both apply the same exact-source prerequisite: missing (11.173101ms)
+✔ prepare/check-dispatch both apply the same exact-source prerequisite: rejected (13.766287ms)
+✔ prepare/check-dispatch both apply the same exact-source prerequisite: stale (11.291586ms)
+✔ prepare/check-dispatch both apply the same exact-source prerequisite: repaired declaration (10.286641ms)
+✖ schema2 normalized CRLF spec binding coexists with exact raw reviewed bytes (4.754072ms)
+✔ actual registry child settlement clears review reservation but not the invalidated old source (5.871941ms)
+✖ managed coordinator can record and clear only the exact review-observation sidecar through native writes (8.053227ms)
+✖ H1 settled reviewers enforce both overlap directions on individual and broadcast resumes (5.156826ms)
+✔ H1 resumed reviewer rejects changed candidate revision and foreign owner; progress stays read-only (3.961881ms)
+✔ H2 clear failed rerun cannot replay genuine approval in fresh native gate or CLI (8.853454ms)
+✖ H2 latest successful invocation is required; pending, failed and superseded results cannot unlock (10.126478ms)
+✔ AC1 five non-passing review rounds expose a stalled owner-decision signal (0.954569ms)
+✔ AC2 one REVISE round does not stall (0.197304ms)
+✔ AC3 exact-locator findings route to technical repair and create no owner questions (0.252308ms)
+✔ AC4 hash-only changes are non-material and revision renames preserve counters (1.325733ms)
+✔ AC6 another lineage keeps independent review counters (0.165163ms)
+✔ AC7 serialized registry survives restart with an identical derived signal (0.509796ms)
+✔ review materiality requires resolved anchors or new blocking evidence classes (0.149734ms)
+✔ mixed owner and repo-answerable findings split, demoting only the repair subset (0.193697ms)
+✔ unsuffixed candidate IDs retain full lineage and PASS resets the consecutive streak (0.15292ms)
+✔ review signal rejects unparsable lineage history instead of inventing counters (0.2633ms)
+✔ materiality recognizes multiple evidence classes on a new blocking finding (0.148422ms)
+✔ severityGate uses class and round, never severity or blocking flags (0.224726ms)
+✔ roundCapIssues allows exhaustion without an owner override (0.443681ms)
+✔ AC01-1 overwriting a candidate entry after repair retains the prior immutable round (0.435606ms)
+✔ AC01-2 revision and dispatch edits or candidate count do not account rounds (0.24275ms)
+✔ AC01-3 transport run records do not count or satisfy the critic prerequisite (2.236881ms)
+✔ AC01-4 restart and explicit alias preserve a consumed-round cap (0.884857ms)
+✔ AC01-5 malformed lineage accounting blocks positive admission and round counting (2.21ms)
+✔ contradictory recorded outcomes remain invalid after clearing and restarting (1.528197ms)
+✔ a recorded lineage requires each positive binding to append its matching round (1.605735ms)
+✔ AC01-6 legacy derivation marks unknown observations without inventing verdicts (0.426709ms)
+✔ C2 rejects an alias that loses, changes, or invalidates its predecessor round cap (0.6383ms)
+✔ C2 retains alias-lineage cap continuity without blocking exhaustion (0.337139ms)
+✖ critic observations bind identity, source, revision, time and a PASS receipt without rewriting reviewer approval (4.458022ms)
+✖ competing run writers commit one critic observation and its run entry (3.178075ms)
+✔ recordReviewRun refuses a held registry lock without changing registry or run bytes (3.441555ms)
+✖ critic receipt recording refuses missing and mismatched bound evidence instead of trusting text (4.578569ms)
+✖ negative critic evidence remains append-only history and never becomes a passing receipt (1.750788ms)
+✔ critic persona emits the installed Verdict and receipt identity contract (0.31122ms)
+✔ AC01-4 locked producer mutation carries the alias-recorded cap forward (2.409387ms)
+✔ AC01-8 producer atomically binds the complete observation and records negative findings (1.323299ms)
+✔ producer enforces the closed binding fields and installed verdict vocabulary (1.032557ms)
+✔ producer requires observation descriptors to match the registered candidate (0.325377ms)
+✔ producer enforces reviewer independence before binding (0.414225ms)
+✖ installed-bold-heading-binds (4.822302ms)
+✖ installed-h2-heading-binds (3.789073ms)
+✖ policy-bold-heading-binds (4.431391ms)
+✔ trailing-prose-fails-closed (4.743322ms)
+✔ midbody-and-mixed-vocabulary-fail-closed (6.837422ms)
+✔ variant-heading-binding-mismatch-rejected (3.60779ms)
+✔ AC01-8 complete producer binding enables positive admission from its exact source (3.302701ms)
+✔ installed producer binding rejects hand-bound policy format and vocabulary mismatches (6.571138ms)
+✔ positive admission refuses each source artifact contract mismatch (27.941179ms)
+✔ positive admission enforces run status, fingerprint, invocation and reviewer bindings (14.289971ms)
+✔ missing run record remains the documented admission residual and never adds a round (5.717148ms)
+✔ positive admission independently refuses hand-bound reviewer dependence (11.674001ms)
+✔ review registry lock maps acquisition refusals to changed-registry denials (2.296534ms)
+✔ review sequence names an accounting failure instead of the generic critic sentence (1.786978ms)
+✔ review sequence names duplicate candidate ids and bounds the values it echoes (1.745509ms)
+✔ review sequence names a missing recorded round with candidate and revision (1.922415ms)
+✔ review sequence surfaces a thrown cause bounded by the 512-character channel (1.880255ms)
+✔ gate denial carries the review-sequence cause into reason and detail (2.306522ms)
+ℹ tests 340
+ℹ suites 0
+ℹ pass 311
+ℹ fail 29
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3062.218792
+
+✖ failing tests:
+
+test at workflow-policy/execution-gate.boundary.test.ts:181:1
+✖ Option 1B global maintenance permits workflow-policy and skills, preserving production and strict state denials (3.142037ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   block: true,
+  +   reason: 'workflow dispatch gate: E_COORDINATOR_EDIT_FORBIDDEN: Coordinator direct edit and write tool calls targeting production repository paths are prohibited. Delegate changes to engineer.'
+  + }
+  - undefined
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.boundary.test.ts:192:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { block: true, reason: 'workflow dispatch gate: E_COORDINATOR_EDIT_FORBIDDEN: Coordinator direct edit and write tool calls targeting production repository paths are prohibited. Delegate changes to engineer.' },
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-runtime-smoke.test.mjs:437:1
+✖ policy documents load with valid frontmatter and consistent CLI paths across every rule (2.026902ms)
+  AssertionError [ERR_ASSERTION]: RULES.md must not exceed 6,500 bytes (style budget, measured 11337)
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-runtime-smoke.test.mjs:453:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-gate.test.ts:64:1
+✖ retired S04C allowance cannot admit cross-project source writes (1.52988ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /E_COORDINATOR_EDIT_FORBIDDEN/. Input:
+  
+  'workflow dispatch gate: E_INTERNAL: Gate evaluation failed closed.'
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts:82:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'workflow dispatch gate: E_INTERNAL: Gate evaluation failed closed.',
+    expected: /E_COORDINATOR_EDIT_FORBIDDEN/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-gate.test.ts:205:1
+✖ canonical review taper preserves envelope guard (4.764352ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(result.reason.includes(expected[corruption]))
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts:226:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-gate.test.ts:1640:49
+✖ single-intake remediation: not-ready authority allows the effective read-only critic research read (nested specification review null) (11.797065ms)
+  AssertionError [ERR_ASSERTION]: nested specification review null
+  
+  false !== true
+  
+      at assertSharedAllowed (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts:1607:10)
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts:1647:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-gate.test.ts:1640:49
+✖ single-intake remediation: not-ready authority allows the effective read-only critic research read (nested tasks review null) (3.125455ms)
+  AssertionError [ERR_ASSERTION]: nested tasks review null
+  
+  false !== true
+  
+      at assertSharedAllowed (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts:1607:10)
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts:1647:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-gate.test.ts:1640:49
+✖ single-intake remediation: not-ready authority allows the effective read-only critic research read (nonexplicit owner receipt) (3.236065ms)
+  AssertionError [ERR_ASSERTION]: nonexplicit owner receipt
+  
+  false !== true
+  
+      at assertSharedAllowed (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts:1607:10)
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts:1647:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-gate.test.ts:1640:49
+✖ single-intake remediation: not-ready authority allows the effective read-only critic research read (automatic owner receipt) (2.89045ms)
+  AssertionError [ERR_ASSERTION]: automatic owner receipt
+  
+  false !== true
+  
+      at assertSharedAllowed (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts:1607:10)
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts:1647:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-gate.test.ts:1640:49
+✖ single-intake remediation: not-ready authority allows the effective read-only critic research read (timed out owner receipt) (3.036907ms)
+  AssertionError [ERR_ASSERTION]: timed out owner receipt
+  
+  false !== true
+  
+      at assertSharedAllowed (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts:1607:10)
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts:1647:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-gate.test.ts:1665:1
+✖ single-intake remediation: an evaluator-denied read request is never rescued by the read-only exemption (5.483415ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   block: true,
+  +   detail: 'review-sequence check failed: prerequisite',
+  +   reason: 'workflow dispatch gate: E_REVIEW: A required passing independent review is missing; obtain it before retrying dispatch. review-sequence check failed: prerequisite'
+  + }
+  - undefined
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts:1671:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { block: true, reason: 'workflow dispatch gate: E_REVIEW: A required passing independent review is missing; obtain it before retrying dispatch. review-sequence check failed: prerequisite', detail: 'review-sequence check failed: prerequisite' },
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-gate.test.ts:2479:1
+✖ targeted refusals retain retry accounting and only a new candidate revision opens a new key (8.88838ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   block: true,
+  +   detail: 'review-sequence check failed: prerequisite',
+  +   reason: 'workflow dispatch gate: E_REVIEW: A required passing independent review is missing; obtain it before retrying dispatch. review-sequence check failed: prerequisite'
+  + }
+  - undefined
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts:2495:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { block: true, reason: 'workflow dispatch gate: E_REVIEW: A required passing independent review is missing; obtain it before retrying dispatch. review-sequence check failed: prerequisite', detail: 'review-sequence check failed: prerequisite' },
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:175:1
+✖ independent positive exact-input review unlocks managed and unbound Critic (4.715279ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:177:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:194:1
+✖ legacy canonical state plus established schema2 sidecar preserves dispatch compatibility (5.047329ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:196:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:218:1
+✖ explicit policy PASS is supported, but installed PASS is not (5.487904ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:223:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:226:1
+✖ repairing sidecar hashes or revision alone cannot reuse an older observation (18.805149ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:238:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:261:1
+✖ separate native calls prohibit both overlap directions and invalidate old positive source after rerun (9.93785ms)
+  AssertionError [ERR_ASSERTION]: new positive source recovers the completed prerequisite in the same session
+  + actual - expected
+  
+  + {
+  +   block: true,
+  +   reason: 'workflow dispatch gate: E_RETRY_NOT_AUTHORIZED: Resolve the task-local blocker or apply the explicit owner-directed amendment, reconcile attempt sources, and preflight the amended request; unchanged retries remain bounded.'
+  + }
+  - undefined
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:269:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { block: true, reason: 'workflow dispatch gate: E_RETRY_NOT_AUTHORIZED: Resolve the task-local blocker or apply the explicit owner-directed amendment, reconcile attempt sources, and preflight the amended request; unchanged retries remain bounded.' },
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:277:1
+✖ disjoint candidates remain independent while overlapping inputs or ambiguous identities deny (3.875507ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   {
+  +     code: 'E_REVIEW',
+  +     detail: 'review-sequence check failed: prerequisite',
+  +     location: 'reviewSequence'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:290:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { code: 'E_REVIEW', location: 'reviewSequence', detail: 'review-sequence check failed: prerequisite' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:323:4
+✖ prepare/check-dispatch both apply the same exact-source prerequisite: passing (15.811896ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:332:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:337:1
+✖ schema2 normalized CRLF spec binding coexists with exact raw reviewed bytes (4.754072ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:343:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:356:1
+✖ managed coordinator can record and clear only the exact review-observation sidecar through native writes (8.053227ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   block: true,
+  +   detail: 'review-sequence check failed: prerequisite',
+  +   reason: 'workflow dispatch gate: E_REVIEW: A required passing independent review is missing; obtain it before retrying dispatch. review-sequence check failed: prerequisite'
+  + }
+  - undefined
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:391:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { block: true, reason: 'workflow dispatch gate: E_REVIEW: A required passing independent review is missing; obtain it before retrying dispatch. review-sequence check failed: prerequisite', detail: 'review-sequence check failed: prerequisite' },
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:404:1
+✖ H1 settled reviewers enforce both overlap directions on individual and broadcast resumes (5.156826ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   block: true,
+  +   detail: 'review-sequence check failed: prerequisite',
+  +   reason: 'workflow dispatch gate: E_REVIEW: A required passing independent review is missing; obtain it before retrying dispatch. review-sequence check failed: prerequisite'
+  + }
+  - undefined
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:414:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { block: true, reason: 'workflow dispatch gate: E_REVIEW: A required passing independent review is missing; obtain it before retrying dispatch. review-sequence check failed: prerequisite', detail: 'review-sequence check failed: prerequisite' },
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:450:1
+✖ H2 latest successful invocation is required; pending, failed and superseded results cannot unlock (10.126478ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:457:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:961:1
+✖ critic observations bind identity, source, revision, time and a PASS receipt without rewriting reviewer approval (4.458022ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:964:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:1001:1
+✖ competing run writers commit one critic observation and its run entry (3.178075ms)
+  Error: critic observation prerequisite
+      at boundCriticObservation (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.mjs:228:11)
+      at applyReviewRun (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.mjs:303:25)
+      at file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.mjs:329:21
+      at withStateLock (file:///home/opencode/.omp/agent/workflow-policy/execution-lock.mjs:108:14)
+      at withReviewRegistryLock (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.mjs:37:18)
+      at recordReviewRun (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.mjs:327:18)
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:1026:23)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+
+test at workflow-policy/execution-review-sequence.test.mjs:1083:1
+✖ critic receipt recording refuses missing and mismatched bound evidence instead of trusting text (4.578569ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:1093:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:1107:1
+✖ negative critic evidence remains append-only history and never becomes a passing receipt (1.750788ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:1109:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:1330:1
+✖ installed-bold-heading-binds (4.822302ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   {
+  +     code: 'E_REVIEW',
+  +     detail: 'review-sequence check failed: prerequisite',
+  +     location: 'reviewSequence'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:1337:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { code: 'E_REVIEW', location: 'reviewSequence', detail: 'review-sequence check failed: prerequisite' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:1340:1
+✖ installed-h2-heading-binds (3.789073ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   {
+  +     code: 'E_REVIEW',
+  +     detail: 'review-sequence check failed: prerequisite',
+  +     location: 'reviewSequence'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:1346:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { code: 'E_REVIEW', location: 'reviewSequence', detail: 'review-sequence check failed: prerequisite' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at workflow-policy/execution-review-sequence.test.mjs:1349:1
+✖ policy-bold-heading-binds (4.431391ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   {
+  +     code: 'E_REVIEW',
+  +     detail: 'review-sequence check failed: prerequisite',
+  +     location: 'reviewSequence'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs:1358:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { code: 'E_REVIEW', location: 'reviewSequence', detail: 'review-sequence check failed: prerequisite' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

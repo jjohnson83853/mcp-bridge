@@ -1,0 +1,119 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "header-parameter-transit-spec-r2",
+  "revision": "r2",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/spec.md",
+      "sha256": "4f4d37bb70668f68d5515f285ae7a75c407050a9ed8adb0969fad58417730cfd"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/mcp-bridge-defects/backlog.md",
+      "sha256": "53fd26de180ebb88379df6b2f0d7d57cfda069c78da08e7e189811963e06d97c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/01-header-parameter-wire-reproduction.md",
+      "sha256": "e8f309ceffb0c6b22517751ffa72afd2fbb13e8303fff5966ede64d2fd23d930"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/02-header-parameters-traverse-stateless-calls.md",
+      "sha256": "256b597cddd3b3abd3277d7bf120d8dcbfba890e2db4a5888d0b1eef09ab5fc4"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/03-stateful-and-legacy-protocol-boundary.md",
+      "sha256": "c70bdcfddf693716e98f51b9d3c7b471a08f7cbda80ad22a6bb142ec046206c7"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/04-deployed-github-verification.md",
+      "sha256": "8782d491d2f2f010c50c21ec04332c4f2f21193cbfb7a0e1adaecdd446db5823"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/agents/domain.md",
+      "sha256": "54d97f3bd91612a42d28b473463c37e8283fa86274aa77e9033528e0dbf039e7"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/agents/issue-tracker.md",
+      "sha256": "ed489dcd8b47b6dd0d7e45a9f5dcff9f6a238af59ffc8b12be295c083124c60d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/header-transit-planner-r1.md",
+      "sha256": "8054d28f24cdf82475a27df8c0ad3e73ed5bf36da91db299be709e2e147b8347"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated.go",
+      "sha256": "90e45fa1cbb36d8dcbb47bf372547846b0825b280c279651dc4fcab147a5279c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/runtime.go",
+      "sha256": "71ae731c3a2272ce619501d9f6359e28c87a89d09b898378e18498cfc1db67ff"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/client.go",
+      "sha256": "619cd0bf3da71890f4a66f325d6a7e90182858c41c6eed57eeb85b8f3664467e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated_test.go",
+      "sha256": "346a4abff220dd657e225ce68c74544598972da5f922f29cba76b826e12d09d6"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated_edge_test.go",
+      "sha256": "cf107312fd94d1d720f3008d6fa545a1dfdd7117cc6ac9ddd537a442f31d77fc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "01d26f7e6524104e6e0ed067f2da2dfbc0ebf17951fab0bdd0a3fc0479c8f98d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "38ac2ee5dfc44918a67fcf48ec7c05b67a1822f7c8b722b1aee91d634de6039d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/core/core.go",
+      "sha256": "0caaa1ba4d05d59b7182acdcb9f3fe331933e963f5a682724588145db31b25bd"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "52969ba88183ce2dee55f1b5c9aac95816b66a6e65ee9242bcbb36877ede3cd4"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "c011fe40e81af117e58f10aeb5a0294fe7f8455b636a0c8b3155187b9416a987"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_upstream_restart_test.go",
+      "sha256": "9b4eadd11a61fa5816aa7bd8cffc677fc22cd8cd3c130a59e5f627bbaf8835cb"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "5367c512ec2f16f73fc0fdc7b320d24cb5a32190ad70c8c22b4cdd01a12fc330"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewHeaderSpecR2",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "78da7aeb764c9690b0918f67196f02044bf80e34fde63f0f4b51a571f93bbaec",
+      "taskSha256": "7aecb4cc902d1b0348e09f2335f468d9a36ec5968cb1d00ea02126c2bc3799d8",
+      "instructionsSha256": "3278560d200a071a8f4867221f80127da9319be2b57af3d832d950a0c198642f",
+      "targetCandidateId": "header-parameter-transit-spec-r2",
+      "targetRevision": "r2"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** Specification — candidate `header-parameter-transit-spec-r2`, rev r2. **Reviewed inputs:** `spec.md` (234 L) + `issues/01`–`04`, verified against the working tree and go-sdk v1.8.0 module cache. No execution surface in this read-only lane, so spec-lint was not run; its checks were applied by inspection (section order, balanced markers, AC ids 1:1/ascending, R1–R11 coverage, citations in-bounds — all pass). Ticket-mirror drift (no literal `AC-<n>` labels in tickets) = known noise, pre-declared `spec.md:229`. Full review: `local://header-parameter-transit-r2-review.md` (10128 B).\n\n**Files Reviewed:** 5  **Total Issues:** 4\n\n### By Severity\n- CRITICAL: 0\n- HIGH: 1\n- MEDIUM: 0\n- LOW: 3\n\n### r1 closure (F1–F6)\nF1 CLOSED (legacy pin verified end-to-end: server.go handle gate → `UnsupportedProtocolVersion`+Supported → client retry ≥2026-07-28 only, client.go:371-375 → fallback `initialize` 2025-11-25, client.go:376-381; `usesNewProtocol` false, no cache populated — AC03-2/4 attainable). F2 CLOSED (`spec.md:157` verifiably omits `TestUpstreamEphemeralHandshakeLog`; passes today, unaffected by T1/T2). F3 CLOSED (counts bounded by the real 5m fixture, serve_test.go:125-133). F4 CLOSED (matches streamable_headers.go:202 gate). F6 CLOSED (k+1 pages = per-cursor cache misses, cache.go:36-51). F5 PARTIAL — see L2.\n\n### Issues\n\n**[HIGH] Modern test peer cannot negotiate 2026-07-28 as specified; RED/GREEN unattainable**\nFile: `.scratch/header-parameter-transit/spec.md:138`, `:46`, `:136`, §5 AC01-1\nConfidence: HIGH\nIssue: T1 pins the modern peer to `ServerOptions{SupportedProtocolVersions: [\"2026-07-28\"]}` via the existing harnesses, but both build `NewStreamableHTTPHandler(…, nil)` → `Stateless=false` (dedicated_test.go:47; serve_upstream_restart_test.go:32). go-sdk v1.8.0 `StreamableServerTransport.SupportsProtocolVersion` (streamable.go:871-876) is false for ≥2026-07-28 unless stateless; `Server.Connect` filters the advertised list (server.go:1459), `discover` serves it (server.go:926-929), so the client finds no mutually supported ≥2026-07-28 (client.go:428-443) and falls back to legacy `initialize` (client.go:376-381). The \"modern\" peer negotiates 2025-11-25: post-fix the header call hits the legacy gate → `parameter_header_unsupported` instead of success; AC01-1..4/AC02-1..4/AC03-1 can never go GREEN. Repo counter-evidence: only `StreamableHTTPOptions{Stateless: true}` tests negotiate 2026-07-28 (runtime_test.go:138,149).\nFix: amend T1 scope + AC01-1/`:46` wording: modern peer = stateless handler (`&mcp.StreamableHTTPOptions{Stateless: true}`) built in the new test file (newPeer hardcodes a stateful handler; dedicated_test.go is out of envelope), keeping the `ServerOptions` pin; legacy peer unchanged.\n\n**[LOW] Anchor residue (F5 partial)** — `spec.md:42` area: `Server.Stateless` is config.go:**41** (predicate :48-53); `spec.md:48`: schema canonicalization is core.go:**245-262** (:269-298 is Dispatch); `spec.md:51`: CallTool is runtime.go:**184-233** (cited :178-234). Claims true; repoint anchors. Confidence: HIGH.\n\n**[LOW] Focused `-run` patterns omit two named oracles** — `spec.md:143,157`: `TestStatefulHeaderParameterToolSucceeds` (AC03-1) and `TestLegacyProtocolHeaderParameterToolFailsWithNamedCode` (AC03-2) match no alternation; only full-suite commands 3/4 run them. Extend patterns (e.g. `HeaderParameter`). Confidence: HIGH.\n\n**[LOW] `:155-260` over-broad** — `spec.md:52` includes `TestUpstreamEphemeralHandshakeLog` (:220-260), not a restart test (also body-only, so harmless). Cite :155-218. Confidence: HIGH.\n\n### Open Questions\n[MEDIUM] Server `initialize` fallback against a 2026-07-28-only pinned stateful server (reject vs echo 2025-11-25, shared.go:95-103) untraced; affects only which BLOCKED flavor T1 reports. Confidence: LOW.\n\n### Positive Observations\n- Warm mechanism, CallToolPrepared ordering (after `AdmitCall`, inside call timeout, no breaker mutation), index invariances (I2/W09E), header/body agreement (streamable_headers.go:381-415), and the additive-token safety (no test pins `reasonVocabulary`) all audit clean; write sets T1–T4 sit strictly inside the §10 envelope; covcheck exists for the 90% gate.\n\n### Recommendation\nREQUEST CHANGES",
+  "invocationId": "ac4adb5f-b322-4499-aa67-10a5206cb342",
+  "recordedAt": "2026-11-21T00:36:07.908Z"
+}

@@ -311,6 +311,7 @@ runtime records, the closed mappings are:
 | `backend_unavailable`, `backend_auth_failed`, `backend_busy`, `deadline_exceeded`, `upstream_protocol_error`, `catalog_changed` | `dependency` | `true` | `verify the upstream service and retry` |
 | `tool_reported_error` | `dependency` | `false` | `correct the upstream tool behavior` |
 | `invalid_config` | `configuration` | `false` | `correct the configuration` |
+| `parameter_header_unsupported` | `configuration` | `false` | `correct the server configuration or credentials` |
 | `internal_error`, `correlation_unavailable`, `unknown` | `internal` | `false` | `inspect the bridge logs and configuration` |
 
 `none` has no error object. An unrecognized runtime reason collapses safely to

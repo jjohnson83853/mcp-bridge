@@ -1,0 +1,38 @@
+{
+  "intent": "Dispatch ReviewHeaderSpecR1 (code-reviewer)",
+  "instructions": "Specification-mode staged review for feature header-parameter-transit, revision r4 (full re-plan). Treat .scratch/header-parameter-transit/spec.md as a planner DRAFT, not an approved input or implementation plan. Review the mechanism end-to-end and confirm the re-plan does not reintroduce the defects found in r1/r2 reviews: unreachable modern peer (>=2026-07-28 needs stateless transport), unreachable legacy gate, out-of-envelope or plausibly-red tests used as gates, unpinned tools/list counting, overstated header coverage, and understated paginated warm cost. Bind exactly the reviewed inputs. Report Findings with severity and confidence, exact file:line anchors, and surgical repair direction; HIGH/MEDIUM findings block; LOW advisory only. End with only `### Recommendation` followed by `APPROVE` or `REQUEST CHANGES` (no other verdict format, no writes). Independent read-only analysis; installed spec-lint was run by the coordinator with only known ticket-mirror drift.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "header-parameter-transit",
+    "revision": "r4",
+    "requests": [
+      {
+        "name": "ReviewHeaderSpecR4",
+        "taskId": "CR1",
+        "agent": "code-reviewer",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/header-parameter-transit/spec.md",
+            ".scratch/header-parameter-transit/issues/01-header-parameter-wire-reproduction.md",
+            ".scratch/header-parameter-transit/issues/02-header-parameters-traverse-stateless-calls.md",
+            ".scratch/header-parameter-transit/issues/03-stateful-and-legacy-protocol-boundary.md",
+            ".scratch/header-parameter-transit/issues/04-deployed-github-verification.md"
+          ]
+        },
+        "targetCandidateId": "header-parameter-transit-spec-r4",
+        "targetRevision": "r4"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ReviewHeaderSpecR4",
+      "agent": "code-reviewer",
+      "solutionSpace": "Independent specification feasibility and correctness review; inspect named seams and planned oracles; do not design or implement repairs.",
+      "task": "Review the exact candidate header-parameter-transit-spec-r4 revision r4, a full re-plan authored after two REQUEST CHANGES rounds, for source fidelity, correctness and implementability. Re-verify every path:line anchor against the working tree and go-sdk v1.8.0. Check: the modern test peer is a stateless streamable handler pinned to 2026-07-28 and the observed negotiated version is asserted; the legacy peer is older-only and reaches the fallback initialize path; every focused command pattern actually matches each named oracle; AC counting scopes are pinned; no command gates on a pre-existing out-of-envelope test; the warm tools/list pass paginates inside the call timeout; the CallToolPrepared/admission ordering and breaker accounting are behavior-preserving; the annotation index invariants hold under refresh failure and concurrency; header/body agreement is verified; T1-T4 write sets sit inside the declared envelope. State whether earlier verified properties regressed. Verdict: ### Recommendation with APPROVE or REQUEST CHANGES."
+    }
+  ]
+}

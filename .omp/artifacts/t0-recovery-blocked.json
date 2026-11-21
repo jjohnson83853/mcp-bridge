@@ -1,0 +1,13 @@
+{
+  "complete": false,
+  "taskId": "T0",
+  "status": "blocked",
+  "code": "E_COORDINATOR_EDIT_FORBIDDEN",
+  "operation": "Record explicit-owner-amendment decision and source in .omp/plans/execution-state.json",
+  "ownerAuthorization": ".omp/artifacts/t0-owner-recovery-authorization.json",
+  "evidence": "workflow dispatch gate: E_COORDINATOR_EDIT_FORBIDDEN: Coordinator direct edit and write tool calls targeting production repository paths are prohibited. Delegate changes to engineer.",
+  "stateMutationApplied": false,
+  "plannerDispatched": false,
+  "missingPrerequisite": "Authorized state-writer capability for T0 read-only recovery; effect-amendment helper supports write/test tasks only.",
+  "constraints": "No shell-write workaround, gate change, renamed task, role change, or retry reset."
+}

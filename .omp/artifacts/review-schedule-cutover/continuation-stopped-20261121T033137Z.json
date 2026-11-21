@@ -1,0 +1,47 @@
+{
+  "complete": false,
+  "status": "stopped-after-edit-anchor-refusal",
+  "task": "S04C review-schedule cutover",
+  "ownerInstruction": "One retry of the denied native test edit; stop on another denial; remove temporary five-file allowance at handoff.",
+  "nativeRetry": { "admitted": true, "targets": ["workflow-policy/execution-gate.test.ts"], "initialFocusedTests": { "exitCode": 0, "pass": 5, "fail": 0 } },
+  "stop": {
+    "tool": "edit",
+    "classification": "Undisplayed-anchor validation refusal, not an observed admission-guard denial; conservatively treated as the requested stop condition.",
+    "target": "workflow-policy/execution-review-sequence.mjs:390-393",
+    "message": "This edit anchors to lines 390-393 ... that [workflow-policy/execution-review-sequence.mjs#F663] never displayed",
+    "retried": false,
+    "rejectedPatchAlsoTargeted": "workflow-policy/execution-gate.test.ts",
+    "mutationReceipt": "No successful mutation receipt for the rejected multi-file patch; its intended fixes are not claimed applied."
+  },
+  "allowance": {
+    "sourceRemoved": true,
+    "evidence": "Successful edit receipt execution-gate.ts#C552 removed the OMP_S04C_MAINTENANCE branch and writableS04cSource allowance.",
+    "cachedHostDeactivationVerified": false
+  },
+  "applied": [
+    "Extended native taper tests with round-2 lifecycle and canonical missing-review cases.",
+    "Added read-only reviewScheduleForState verification of source-bound independent observations; no approval or canonical receipt is minted.",
+    "Native gate can satisfy otherwise-runnable canonical null-review prerequisites and persists round-3 residual delivery artifacts.",
+    "Updated taxonomy delivery-record documentation."
+  ],
+  "verification": {
+    "canonicalRed": { "command": "node --test --test-name-pattern='canonical review taper' workflow-policy/execution-gate.test.ts", "exitCode": 1, "pass": 4, "fail": 4, "cause": "Canonical missing-review dispatch denied; substantive denial omitted class and anchor." },
+    "focusedGreen": { "command": "node --test --test-name-pattern='canonical review taper|review taper dispatch' workflow-policy/execution-gate.test.ts", "exitCode": 0, "pass": 13, "fail": 0 },
+    "latestRegression": { "command": "node --test --test-name-pattern='^(?!Option 1B global maintenance permits workflow-policy and skills|policy documents load with valid frontmatter and consistent CLI paths across every rule)' workflow-policy/execution-review-sequence.test.mjs workflow-policy/execution-gate.test.ts", "exitCode": 1, "pass": 311, "fail": 29, "note": "The negative pattern did not exclude the two known imported-suite failures; they ran unintentionally. Other failures include new regressions. No full-green claim." },
+    "log": "regression-d75bb72c7ebb-20261121T033137Z.log",
+    "logBytes": 61510,
+    "logSha256": "d75bb72c7ebb92dc4a3b0ef25389a5202b4c4e0b2440396c3b92681b82e60749",
+    "freshOmpActivation": "Not executed. Node handler fixtures are not actual OMP extension activation proof."
+  },
+  "unresolved": [
+    "scheduledCodeReview now demands rich round binding fields even for legacy passing observations; this regresses legacy positive admission and Critic observation recording. Rejected fix would retain identity-only lookup for previously supported passing history while preserving full source binding for negative outcomes.",
+    "New retired-allowance fixture returns E_INTERNAL: its virtual filesystem adapters are incomplete. Rejected test fix would map existsSync/readFileSync and canonical aliases consistently.",
+    "New envelope guard assertion expects E_EFFECT_OUTSIDE_ENVELOPE, but missing-review refusal precedes the envelope refusal; dispatch remains blocked and no delivery record is emitted.",
+    "Known global skills-write boundary and RULES.md style-budget failures remain outside approved five-file scope.",
+    "Round-2 delta scope and mechanical pre-submission discipline remain documented, not newly mechanically enforced.",
+    "Full regression, fresh-process activation, delivery verification and shipping remain incomplete."
+  ],
+  "snapshots": "Existing .before and owner-admission snapshots preserved. Four new .continuation.before snapshots were created and SHA-256 matched before this session edited those files.",
+  "preserved": "No live canonical execution state, T28 records, review registries, retry counters, historical denials, hooks, role profiles or access controls were edited. Tests used disposable synthetic roots. No guard bypass or source write through another transport after refusal.",
+  "delivery": "Uncommitted, unshipped; no git operation performed."
+}

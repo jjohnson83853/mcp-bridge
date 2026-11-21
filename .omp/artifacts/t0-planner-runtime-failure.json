@@ -1,0 +1,16 @@
+{
+  "taskId": "T0",
+  "agent": "planner",
+  "job": "AuthorBreakerRecoverySpec",
+  "status": "failed",
+  "exitCode": 1,
+  "duration": "16m53s",
+  "reportedProviderModel": "openrouter/deepseek/deepseek-v4.1-flash",
+  "error": "OpenAI responses stream stalled while waiting for the next event",
+  "structuredOutputAvailable": false,
+  "output": "I'll start by reading the mandatory pointers and skills, then the feature inputs. woops again. Do it clean<tool_call>{{par -> </parameter></invoke> no. Write<tool_call>",
+  "observedToolReadCount": null,
+  "observedToolReadCountReason": "Completion notice contains no tool-call inventory.",
+  "specificationProduced": false,
+  "automaticRetryAttempted": false
+}

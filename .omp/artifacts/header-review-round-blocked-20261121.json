@@ -1,0 +1,49 @@
+{
+  "complete": false,
+  "status": "blocked-capability",
+  "task": "start header-parameter-transit review rounds, then dispatch ticket 01",
+  "observedAt": "2026-11-20T23:00:00Z",
+  "observation": "The review schedule cutover is installed (execution-review-sequence.mjs 22:13; commit 5d0a932, push blocked). Round exhaustion no longer blocks: blockingFindings() returns [] for round>=3. But review cannot advance because no supported candidate/descriptor registration writer exists, and ticket 01 is separately denied by canonical authorization.",
+  "reviewRounds": {
+    "lineage": "header-parameter-transit-spec",
+    "completed": ["r1 round1 REQUEST CHANGES", "r2 round2 REQUEST CHANGES", "r4 round3 REQUEST CHANGES", "r5 round4 REQUEST CHANGES"],
+    "r3": "produced, superseded before a recorded review; no verdict",
+    "currentSpecSha": "4649575ab4a711cd3a31ab2ca4530b346ca33d683a21349a3dbd979c814aa249",
+    "currentRoundIsNonBlocking": "blockingFindings(): execution-review-sequence.mjs:857-862 returns [] when round>=3",
+    "cannotRebindSameRevision": "execution-review-sequence.mjs:1110-1116 rejects a second round for the same candidate/revision pair",
+    "cannotDispatchCriticFromR5": "execution-review-sequence.mjs:1229-1233 requires a registered dispatch descriptor; candidate r5 dispatises contain code-reviewer only. positive() at :371 also requires source.dispatches == candidate.dispatches, so a descriptor added after capture invalidates the observation."
+  },
+  "registrationGap": {
+    "evidence": "grep for registerCandidate/upsertCandidate/appendCandidate across workflow-policy returned no matches; execution-state.mjs --help exposes no registration command; bind rejects a missing/ambiguous candidate",
+    "consequence": "No r6 candidate and no critic descriptor can be produced through a supported operation. Prior r2/r4/r5 installation used bespoke artifact scripts (install-header-r5.mjs), not a supported writer."
+  },
+  "ticket01": {
+    "taskId": "T1",
+    "status": "pending, runnable=false",
+    "reasons": [
+      "E_AUTHORIZATION: select a reviewed branch explicitly (packet.selectedBranchId)",
+      "E_AUTHORIZATION: explicit owner authorization is required for mutation (authorization)",
+      "E_REVIEW: independent passing review receipt missing"
+    ],
+    "scheduleWaiver": "execution-gate.ts:843-859 waives only tasks whose every reason is a missing review; T1's authorization reasons keep it blocked"
+  },
+  "existingRecords": {
+    "canonicalState": ".omp/plans/execution-state.json schema2 feature=header-parameter-transit revision=r5 reviews=null authorization=null selectedBranchId=null",
+    "reviewRuns": "four succeeded code-reviewer runs; zero critic runs",
+    "criticObservations": "none"
+  },
+  "s15Count": {
+    "failedPlanChanges": ["r2", "r4", "r5"],
+    "r3": "unreviewed, not counted as a failed change round",
+    "nextRevision": "r6 would be the fourth plan-change attempt and must be meaningfully different (F1 statement-contradiction, F2 r-ac-coverage-gap)"
+  },
+  "clearingActions": [
+    "Owner-authorized, independently reviewed maintenance for candidate+descriptor registration and critic-dispatch lineage; OR an explicit bounded owner exception installing r6 dispatches through the reviewed transaction pattern",
+    "Establish the disposable fixture-execution lane needed to resolve F2 and the legacy/TTL fixture feasibility",
+    "Planner authors r6 closing F1/F2; CodeReviewer round then Critic; record-reviews",
+    "After two positive observations: owner milestone authorization plus explicit branch selection; then dispatch T1 (ticket 01)"
+  ],
+  "unchanged": ["canonical state", "spec", "source", "tests", "review registry", "review counters", "denials", "access controls"],
+  "launched": [],
+  "runtimeVerification": "NOT RUN"
+}

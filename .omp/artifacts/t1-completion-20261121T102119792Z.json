@@ -1,0 +1,59 @@
+{
+  "baseSha64hex": "f35b72c53184d284cfaf0bcfae16297c37b83d14d62a4a57a4174e99cbba2f28",
+  "taskId": "T1",
+  "evidence": [
+    {
+      "id": "ev-t1-red-20261121T102119792Z",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-red-wire-facts-20261121T102119792Z.txt"
+      },
+      "acceptanceIds": [
+        "AC01-1",
+        "AC01-2",
+        "AC01-3"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-21T10:21:21.269Z",
+      "producer": "engineer",
+      "details": {
+        "command": "bash -c 'set +e; out=$(go test ./cmd/mcp-bridge -run \"^TestParameterHeaderTransitWireFacts$\" -count=1 2>&1); code=$?; printf \"%s\\n\" \"$out\"; if [ \"$code\" -eq 1 ] && printf \"%s\\n\" \"$out\" | grep -q \"missing parameter headers\"; then printf \"expected-RED verified: test exit %s\\n\" \"$code\"; else printf \"expected-RED check failed: exit %s\\n\" \"$code\"; exit 1; fi'",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-t1-stateful-20261121T102119792Z",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-stateful-control-20261121T102119792Z.txt"
+      },
+      "acceptanceIds": [
+        "AC01-4"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-21T10:21:21.269Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run \"^TestParameterHeaderStatefulControlIsAchievable$\" -count=1",
+        "exitCode": 0
+      }
+    },
+    {
+      "id": "ev-t1-mechanism-20261121T102119792Z",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-mechanism-attribution-20261121T102119792Z.md"
+      },
+      "acceptanceIds": [
+        "AC01-5"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-21T10:21:21.269Z",
+      "producer": "engineer",
+      "details": {
+        "rubric": "Per-mode mechanism attribution backed by recorded wire facts; inferences labelled",
+        "observedOutcome": "default-stateless missing header emission/cache; stateful control proves protocol carries headers; insufficient protocol version excluded"
+      }
+    }
+  ]
+}

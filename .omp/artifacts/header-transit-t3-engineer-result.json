@@ -1,0 +1,31 @@
+{
+  "text": "Spawned agent `HeaderParamTransitDocs` (job `HeaderParamTransitDocs`).",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [],
+    "totalDurationMs": 0,
+    "progress": [
+      {
+        "index": 0,
+        "id": "HeaderParamTransitDocs",
+        "agent": "engineer",
+        "agentSource": "user",
+        "status": "pending",
+        "task": "Complete assignment thoroughly:\n\nWrite the two T3 documents exactly per the instructions: the header-parameters runbook with the four exact headings covering versions, mechanisms, named failure + operator action, and definition-pass cost; and add parameter_header_unsupported to the logging contract's closed classification table with the exact classification emitted by RuntimeErrorInfo. Keep every other file unchanged. Run the six greps and the TestLoggingContract subset, and report exact outputs/exit codes.",
+        "assignment": "Write the two T3 documents exactly per the instructions: the header-parameters runbook with the four exact headings covering versions, mechanisms, named failure + operator action, and definition-pass cost; and add parameter_header_unsupported to the logging contract's closed classification table with the exact classification emitted by RuntimeErrorInfo. Keep every other file unchanged. Run the six greps and the TestLoggingContract subset, and report exact outputs/exit codes.",
+        "recentTools": [],
+        "recentOutput": [],
+        "toolCount": 0,
+        "requests": 0,
+        "tokens": 0,
+        "cost": 0,
+        "durationMs": 0
+      }
+    ],
+    "async": {
+      "state": "running",
+      "jobId": "HeaderParamTransitDocs",
+      "type": "task"
+    }
+  }
+}

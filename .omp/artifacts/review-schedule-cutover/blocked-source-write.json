@@ -1,0 +1,33 @@
+{
+  "complete": false,
+  "status": "blocked",
+  "task": "S04C review-schedule cutover",
+  "classification": "external-prerequisite/access-control",
+  "authority": "Owner explicitly designated this fresh session as the S04C maintenance implementer; existing admission controls remain enabled.",
+  "sourceChanges": false,
+  "testChanges": false,
+  "snapshotsCreated": true,
+  "redGreenExecuted": false,
+  "regressionExecuted": false,
+  "freshProcessActivationVerified": false,
+  "deniedOperation": {
+    "tool": "edit",
+    "targets": [
+      "/home/opencode/.omp/agent/workflow-policy/execution-review-sequence.test.mjs",
+      "/home/opencode/.omp/agent/workflow-policy/execution-gate.test.ts"
+    ],
+    "result": "Tool Guard: Coding-agent file writes are confined to the working tree; system paths, oversized writes, and private-key material are not permitted."
+  },
+  "requiredPrerequisite": "An admitted editing session whose working tree includes /home/opencode/.omp/agent/workflow-policy, retaining the S04C scope and all existing admission controls. No alternate write transport or bypass was attempted after denial.",
+  "snapshots": [
+    {"file":"review-findings-taxonomy.md.before","bytes":4320,"sha256":"31533ee79c447f0ecbd38ae9ac5be7af5c747d18f6bbf27ea9431b4f7f065d51"},
+    {"file":"execution-review-sequence.mjs.before","bytes":74440,"sha256":"6f59331382ba042a98200cf9d18ec244dd1ee5ba1958d7d3453c32285b0726d2"},
+    {"file":"execution-review-sequence.test.mjs.before","bytes":87017,"sha256":"8041b19c1331746e5b8b126ff8a98cb3414b33bd38b480f8ff8ec6cd1e5dbd9a"},
+    {"file":"execution-gate.ts.before","bytes":94031,"sha256":"4bd5c5e963206f474334ff291ed0a4f2b00395192c0fc6ddfc9d9055fd30e328"},
+    {"file":"execution-gate.test.ts.before","bytes":132605,"sha256":"6b54f5c5267e416c016dfa6903662fbe0a41cb01bd16246883e4cdec384a30bd"}
+  ],
+  "snapshotEvidence": "Individual cp --no-clobber, sha256sum, and wc -c commands each exited 0; names are relative to this artifact directory.",
+  "languageServiceLimit": "A targeted roundCapIssues references request returned no language server for .mjs.",
+  "runnerEvidence": "Historical tree evidence uses node --test for workflow-policy/*.test.mjs and workflow-policy/*.test.ts; installed Node reports v24.22.2. No current test run occurred.",
+  "preserved": "No canonical execution state, T28 records, review registries, denials, retry counters, access controls, hooks, or application source were changed. Unrelated existing work was not altered."
+}

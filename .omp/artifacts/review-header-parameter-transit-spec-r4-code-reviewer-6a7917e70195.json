@@ -1,0 +1,119 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "header-parameter-transit-spec-r4",
+  "revision": "r4",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/spec.md",
+      "sha256": "fb2e471c9126f88bdacb4e9ce23ece9c91dd85b6a70b3187d35dfc6de2abc35d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/mcp-bridge-defects/backlog.md",
+      "sha256": "53fd26de180ebb88379df6b2f0d7d57cfda069c78da08e7e189811963e06d97c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/01-header-parameter-wire-reproduction.md",
+      "sha256": "e8f309ceffb0c6b22517751ffa72afd2fbb13e8303fff5966ede64d2fd23d930"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/02-header-parameters-traverse-stateless-calls.md",
+      "sha256": "256b597cddd3b3abd3277d7bf120d8dcbfba890e2db4a5888d0b1eef09ab5fc4"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/03-stateful-and-legacy-protocol-boundary.md",
+      "sha256": "c70bdcfddf693716e98f51b9d3c7b471a08f7cbda80ad22a6bb142ec046206c7"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/04-deployed-github-verification.md",
+      "sha256": "8782d491d2f2f010c50c21ec04332c4f2f21193cbfb7a0e1adaecdd446db5823"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/agents/domain.md",
+      "sha256": "54d97f3bd91612a42d28b473463c37e8283fa86274aa77e9033528e0dbf039e7"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/agents/issue-tracker.md",
+      "sha256": "ed489dcd8b47b6dd0d7e45a9f5dcff9f6a238af59ffc8b12be295c083124c60d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/header-transit-planner-r1.md",
+      "sha256": "8054d28f24cdf82475a27df8c0ad3e73ed5bf36da91db299be709e2e147b8347"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated.go",
+      "sha256": "90e45fa1cbb36d8dcbb47bf372547846b0825b280c279651dc4fcab147a5279c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/runtime.go",
+      "sha256": "71ae731c3a2272ce619501d9f6359e28c87a89d09b898378e18498cfc1db67ff"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/client.go",
+      "sha256": "619cd0bf3da71890f4a66f325d6a7e90182858c41c6eed57eeb85b8f3664467e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated_test.go",
+      "sha256": "346a4abff220dd657e225ce68c74544598972da5f922f29cba76b826e12d09d6"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated_edge_test.go",
+      "sha256": "cf107312fd94d1d720f3008d6fa545a1dfdd7117cc6ac9ddd537a442f31d77fc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "01d26f7e6524104e6e0ed067f2da2dfbc0ebf17951fab0bdd0a3fc0479c8f98d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "38ac2ee5dfc44918a67fcf48ec7c05b67a1822f7c8b722b1aee91d634de6039d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/core/core.go",
+      "sha256": "0caaa1ba4d05d59b7182acdcb9f3fe331933e963f5a682724588145db31b25bd"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "52969ba88183ce2dee55f1b5c9aac95816b66a6e65ee9242bcbb36877ede3cd4"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "c011fe40e81af117e58f10aeb5a0294fe7f8455b636a0c8b3155187b9416a987"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_upstream_restart_test.go",
+      "sha256": "9b4eadd11a61fa5816aa7bd8cffc677fc22cd8cd3c130a59e5f627bbaf8835cb"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "5367c512ec2f16f73fc0fdc7b320d24cb5a32190ad70c8c22b4cdd01a12fc330"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewHeaderSpecR4",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "f63df8ae375a3572c7515a2a2dadd1941e96adf8708077212a1bd531e6153564",
+      "taskSha256": "4a596279deffe98b22c8053aa753f4b2e1b3c4bdf403f2749ddd98e836801ff4",
+      "instructionsSha256": "bd82facae72052d5f21b105a2e4901cc09883f1d1a58308a70c3cea8fb4e1273",
+      "targetCandidateId": "header-parameter-transit-spec-r4",
+      "targetRevision": "r4"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** Specification (staged)  \n**Candidate:** `header-parameter-transit-spec-r4` / r4 — bound inputs: `.scratch/header-parameter-transit/spec.md` and `issues/01`–`04`  \n**Files reviewed:** 5 **Total issues:** 7\n\n### By Severity\nCRITICAL: 0 · HIGH: 2 · MEDIUM: 3 · LOW: 2\n\n### Issues\n\n**[HIGH] AC01-4 control asserts an impossible `initialize`**\nFile: spec.md §5 AC01-4 (and AC03-1 \"no second session\"); SDK `mcp/client.go:343-381`, `:514-520`\nConfidence: HIGH\nFor a peer at `2026-07-28`, `Client.Connect` completes via `server/discover` and never sends `initialize` (only the legacy fallback does). A modern stateless peer therefore records **0** initializes, so \"the peer sees exactly one initialize\" fails on both pre- and post-change builds, breaking AC01-4's \"control must already pass\" and AC02-4's control premise.\nFix: assert exactly one handshake (`server/discover`) for the run and zero `initialize`; express AC03-1's \"no second session\" the same way.\n\n**[HIGH] AC02-1 pagination fixture premise is false**\nFile: spec.md §5 AC02-1; SDK `mcp/features.go:31-35,77-98`, `mcp/server.go:985-987`\nConfidence: HIGH\n`tools/list` returns tools sorted by unique ID (tool name), not registration order. \"The header tool is registered last\" does not put it on page 3, so the \"exactly three list requests\" assertion is unsound and can fail a correct implementation.\nFix: require the header tool's name to sort after the other two (and say the transport orders by name), then keep the `PageSize:1` exact-count oracle.\n\n**[MEDIUM] Prepare-failure state contract contradicts `failureOutcome`**\nFile: spec.md §1(ii), §4 \"Failure behavior\"/I5; `internal/upstream/dedicated.go:435-459`\nConfidence: HIGH\n\"Any failure of that pass is `not_started`\" is false for deadline/cancel: `failureOutcome` maps `DeadlineExceeded`→`deadline_exceeded/unknown` and `Canceled`→`internal_error/unknown`. A timeout during the paginated pass (explicitly anticipated in UNKNOWN-3) violates I5.\nFix: state the deadline/cancel exception, or require prepare errors to be normalized to `not_started` before mapping.\n\n**[MEDIUM] Index/publication window is under-inclusive**\nFile: spec.md §4:89 (detection claim), R2, I2; `internal/upstream/dedicated.go:71-133`\nConfidence: HIGH\nThe index is swapped before catalog publication, while the previous snapshot is still served. A tool removed by the new discovery can remain published yet absent from the index for the window, yielding a body-only call and a safe 400. That contradicts the absolute \"cannot under-approximate a published header-bound tool\".\nFix: scope the claim to publication instant, or swap index and catalog as one snapshot.\n\n**[MEDIUM] R5 zero-definition-RPC clause has no oracle**\nFile: spec.md R5, AC03-1\nConfidence: MEDIUM\nNo fixture asserts a positive list TTL or counts `tools/list` RPCs after discovery; AC03-1 only asserts success and one session. The \"must perform no definition RPC\" requirement is unverified.\nFix: add a positive-TTL stateful fixture with a zero-list-RPC assertion.\n\n**[LOW] AC03-3 oracle checks two strings only**\nFile: spec.md §5 AC03-3\nConfidence: HIGH\nThe greps do not verify R7's stateless/stateful mechanism, operator action or cost.\nFix: add those checks or make the runbook inspection the explicit oracle.\n\n**[LOW] T1 allowed scope omits peer-response capture required by AC01-2**\nFile: spec.md §6 T1 \"Allowed scope\"\nConfidence: MEDIUM\nAC01-2 asserts the peer's header-mismatch response, but T1 lists request-only capture.\nFix: permit response capture (it is not prohibited).\n\n### Earlier properties\nNo regression in: stateless-only modern peer (`streamable.go:871-876`), legacy fallback/gate reachability (`client.go:343-381`, `upstream_test.go:153-154`), header coverage, paginated warm-cost statement, or baseline handling of the pre-existing restart test. All cited anchors verified (`dedicated.go:71,294,359`; `runtime.go:178,184,237,266,286`; `tools.go:700,780,789,804,1037,1051`; `log.go:160`; `envelope.go:92`; `core.go:248`; `serve_upstream_restart_test.go:29,52,155,195,220`; `serve_test.go:125,133`). T1–T4 write sets sit inside `env-1`. The r2 counting defect is partially fixed (scopes pinned), but the fixture-order premise above is a new instance.\n\n### Recommendation\nREQUEST CHANGES",
+  "invocationId": "cabfa234-48f9-458d-ac6e-33caa3850740",
+  "recordedAt": "2026-11-21T01:21:00.753Z"
+}

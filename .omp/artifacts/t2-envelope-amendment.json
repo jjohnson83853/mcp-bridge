@@ -1,0 +1,9 @@
+{
+  "taskId": "T2",
+  "paths": ["cmd/mcp-bridge/serve_header_params_test.go"],
+  "blockerIds": [],
+  "sourceId": "src-owner-authorization-t2-envelope",
+  "explicit": true,
+  "timedOut": false,
+  "automatic": false
+}

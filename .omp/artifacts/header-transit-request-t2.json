@@ -1,0 +1,26 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "header-parameter-transit",
+  "revision": "r6",
+  "requests": [
+    {
+      "name": "HeaderParamTransitFix",
+      "taskId": "T2",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/upstream/dedicated.go",
+          "internal/upstream/runtime.go",
+          "internal/upstream/header_params_test.go",
+          "internal/observe/log.go",
+          "internal/observe/envelope.go",
+          "internal/service/tools.go",
+          "cmd/mcp-bridge/serve_header_params_test.go"
+        ]
+      }
+    }
+  ]
+}

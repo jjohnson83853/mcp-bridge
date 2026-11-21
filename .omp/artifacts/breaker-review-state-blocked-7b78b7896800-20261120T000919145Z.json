@@ -1,0 +1,16 @@
+{
+  "complete": false,
+  "candidateId": "upstream-breaker-recovery-spec-r1",
+  "revision": "r1",
+  "stage": "code-reviewer",
+  "code": "E_COORDINATOR_EDIT_FORBIDDEN",
+  "blockedOperation": "Register read-only review tasks and bind canonical state to the actual planner artifact",
+  "canonicalStateChanged": false,
+  "codeReviewerLaunched": false,
+  "criticLaunched": false,
+  "priorDiagnosis": "Place targetCandidateId/targetRevision in the supported JSON workflowDispatch requests; active native task items do not expose those fields.",
+  "managedCodeSeed": ".omp/artifacts/breaker-managed-code-review-seed-a16cf54221d3-20261120T000854400Z.json",
+  "managedCriticSeed": ".omp/artifacts/breaker-managed-critic-seed-a16cf54221d3-20261120T000854400Z.json",
+  "requiredCapability": "Authorized execution-state writer; no gate/role/review waiver.",
+  "note": "Registry currently retains initial unbound descriptors; a supported managed request also requires matching managed taskId and requestSha256 descriptor bindings. Neither preflight nor launch of the managed correction has been claimed."
+}

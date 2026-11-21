@@ -1,0 +1,18 @@
+{
+  "complete": false,
+  "status": "blocked-unfiltered-suite-failure",
+  "command": "node --test workflow-policy/execution-review-sequence.test.mjs workflow-policy/execution-gate.test.ts",
+  "exitCode": 1,
+  "tests": 340,
+  "pass": 339,
+  "fail": 1,
+  "skipped": 0,
+  "agentsBudget": "PASS with owner-updated AGENTS.md; assertion retained",
+  "failure": "execution-runtime-smoke.test.mjs:478: specdd coordinator must not exceed 5,200 bytes (style budget, measured 6928)",
+  "evidence": "s04d-updated-agents-121b3b4c4be7-20261121T035338517269441Z.log",
+  "evidenceSha256": "121b3b4c4be727032b041de46c0bcb08fb6b24d0df2da2eef85d9f0c777c5426",
+  "classification": "Existing separate style-budget assertion; no unresolved causal diagnosis; outside the two authorized edits.",
+  "delivery": "No commit or push: required unfiltered command failed.",
+  "mutations": "No further source edits. Canonical state, T28, registries, denials and counters unchanged.",
+  "retry": "Two unsuccessful suite runs preserved; no further retry performed."
+}

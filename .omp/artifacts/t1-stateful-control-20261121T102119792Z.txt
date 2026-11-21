@@ -1,0 +1,3 @@
+$ go test ./cmd/mcp-bridge -run "^TestParameterHeaderStatefulControlIsAchievable$" -count=1
+exit code: 0
+ok  	github.com/jjohnson83853/mcp-bridge/cmd/mcp-bridge	0.037s

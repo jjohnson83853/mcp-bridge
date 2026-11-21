@@ -1056,6 +1056,8 @@ func dispatchMessage(code string) string {
 		return "no such tool in the published catalog"
 	case "unsupported_capability":
 		return "the upstream requested an unsupported interaction"
+	case "parameter_header_unsupported":
+		return "parameter headers are not supported by the upstream protocol"
 	default:
 		return "the upstream call did not complete"
 	}

@@ -1,0 +1,419 @@
+{
+  "schemaVersion": 2,
+  "feature": "upstream-breaker-recovery",
+  "revision": "r1",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-breaker-recovery/spec.md",
+    "sha256": "528841072510609494f96771f8a56deafc4f5089681bebcd99a176a57060128c",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r1",
+        "sha256": "ddc58a861052dcd415826e95e67a094c52596cd7f40bccfee4b2b24fa96d4c62"
+      },
+      "design": {
+        "revision": "r1",
+        "sha256": "13eaa816cdab0757621bdda4e8b4c09046c496b6de35d0bba0ac555d0982a2c9"
+      },
+      "tasks": {
+        "revision": "r1",
+        "sha256": "7a86e9055fb0537c21bdebc917c24baac914f91f66f7eb6f38edfc61bf8dd4ef"
+      },
+      "envelope": {
+        "revision": "r1",
+        "sha256": "ab532c793d64d5d3b1287b1010b3b36cd70a252477a469edde6a874112e6eadd"
+      }
+    }
+  },
+  "packet": {
+    "digest": "2794476137304aac7d08ca645d5bf5d287e633617b919dfbddae3e0680b88a2e",
+    "branches": [
+      {
+        "id": "upstream-breaker-recovery-r1",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T1"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r1",
+            "sha256": "ddc58a861052dcd415826e95e67a094c52596cd7f40bccfee4b2b24fa96d4c62"
+          },
+          "design": {
+            "revision": "r1",
+            "sha256": "13eaa816cdab0757621bdda4e8b4c09046c496b6de35d0bba0ac555d0982a2c9"
+          },
+          "tasks": {
+            "revision": "r1",
+            "sha256": "7a86e9055fb0537c21bdebc917c24baac914f91f66f7eb6f38edfc61bf8dd4ef"
+          },
+          "envelope": {
+            "revision": "r1",
+            "sha256": "ab532c793d64d5d3b1287b1010b3b36cd70a252477a469edde6a874112e6eadd"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "upstream-breaker-recovery-r1"
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Latched-open per-server circuit breaker regains reachable close path via non-executing discovery probe"
+    },
+    {
+      "id": "R2",
+      "summary": "Dedicated.Discover claims half-open probe via ServerClient.BeginProbe and completes once on discovery outcome"
+    },
+    {
+      "id": "R3",
+      "summary": "AdmitCall and CallTool do not claim, complete, or replay probes; tool calls stay rejected while open or probing"
+    },
+    {
+      "id": "R4",
+      "summary": "Probe reuses existing Discover acquisition verbatim (stateless:true opens fresh ephemeral connection)"
+    },
+    {
+      "id": "R5",
+      "summary": "Periodic refresh and SIGHUP/reload invoke same Discover close path without process restart"
+    },
+    {
+      "id": "R6",
+      "summary": "At most one probe in flight per server; concurrent discovery runs plain without mutating breaker"
+    },
+    {
+      "id": "R7",
+      "summary": "Observability reuses existing signals without new metric series, label, or custom event"
+    },
+    {
+      "id": "R8",
+      "summary": "Stateless probe boundary documented; stateful cached session limitation preserved for ticket 2"
+    }
+  ],
+  "authorization": null,
+  "reviews": null,
+  "sources": [
+    {
+      "id": "src-user-kickoff",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-breaker-recovery/backlog.md",
+        "sha256": "3d3642aabe4c34c2cde34f80319e4991a5314f30ee6c6d92bea82f12680b1ce5"
+      },
+      "locator": "user conversation message kickoff upstream-breaker-recovery backlog under RULES.md S14",
+      "recordedAt": "2026-11-19T22:30:00.000Z"
+    }
+  ],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "CR1",
+      "CT1",
+      "T1"
+    ],
+    "readPaths": [
+      ".scratch/upstream-breaker-recovery/spec.md",
+      ".scratch/upstream-breaker-recovery/issues/01-breaker-discovery-probe-recovery.md",
+      ".scratch/upstream-breaker-recovery/backlog.md",
+      ".scratch/upstream-breaker-recovery/incident-2026-11-14.md",
+      "docs/agents/domain.md",
+      "docs/agents/issue-tracker.md",
+      "internal/upstream/runtime.go",
+      "internal/upstream/runtime_test.go",
+      "internal/upstream/runtime_edge_test.go",
+      "internal/upstream/dedicated.go",
+      "internal/upstream/dedicated_test.go",
+      "internal/service/refresh.go",
+      "internal/service/reload.go",
+      "cmd/mcp-bridge/wiring.go",
+      "internal/observe/log.go",
+      "internal/observe/envelope.go",
+      "internal/observe/metrics.go",
+      ".omp/artifacts/upstream-breaker-recovery-planner-r1.md"
+    ],
+    "writePaths": [
+      "internal/upstream/dedicated.go",
+      "internal/upstream/dedicated_test.go",
+      "internal/upstream/breaker_probe_recovery_test.go"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "CR1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".omp/artifacts/upstream-breaker-recovery-planner-r1.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "CT1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".omp/artifacts/upstream-breaker-recovery-planner-r1.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "critic"
+      ]
+    },
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/upstream/dedicated.go",
+          "internal/upstream/dedicated_test.go",
+          "internal/upstream/breaker_probe_recovery_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC6",
+        "AC7",
+        "AC8",
+        "AC9",
+        "AC10",
+        "AC11",
+        "AC12"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC1",
+      "requirementIds": [
+        "R1",
+        "R2",
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2",
+      "requirementIds": [
+        "R1",
+        "R2",
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC3",
+      "requirementIds": [
+        "R1",
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC4",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC5",
+      "requirementIds": [
+        "R1",
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC6",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC7",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC8",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC9",
+      "requirementIds": [
+        "R2",
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC10",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC11",
+      "requirementIds": [
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC12",
+      "requirementIds": [
+        "R1",
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.superpowers/sdd/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}

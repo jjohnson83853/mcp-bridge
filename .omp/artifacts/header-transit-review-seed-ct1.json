@@ -1,0 +1,38 @@
+{
+  "intent": "Dispatch CritiqueHeaderSpecR1 (critic)",
+  "instructions": "Specification-mode staged review for feature `header-parameter-transit`, revision r1. Root /home/opencode/projects/default/mcp-bridge. Treat .scratch/header-parameter-transit/spec.md as a planner DRAFT, not approved authority or implementation. Bind exactly the registered reviewed inputs. Every finding needs severity, confidence, an exact file:line anchor and a surgical repair direction; HIGH and MEDIUM block, LOW is advisory. Do not edit files or author ACs. Run the installed spec-lint checks only if a shell surface is available; report the ticket-mirror heuristic as known noise, not a blocker. End with exactly one verdict heading and its verdict as the final block: CodeReviewer uses `### Recommendation` then APPROVE or REQUEST CHANGES; Critic uses `### Verdict` then PASS or REVISE.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "header-parameter-transit",
+    "revision": "r1",
+    "requests": [
+      {
+        "name": "CritiqueHeaderSpecR1",
+        "taskId": "CT1",
+        "agent": "critic",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/header-parameter-transit/spec.md",
+            ".scratch/header-parameter-transit/issues/01-header-parameter-wire-reproduction.md",
+            ".scratch/header-parameter-transit/issues/02-header-parameters-traverse-stateless-calls.md",
+            ".scratch/header-parameter-transit/issues/03-stateful-and-legacy-protocol-boundary.md",
+            ".scratch/header-parameter-transit/issues/04-deployed-github-verification.md"
+          ]
+        },
+        "targetCandidateId": "header-parameter-transit-spec-r1",
+        "targetRevision": "r1"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "CritiqueHeaderSpecR1",
+      "agent": "critic",
+      "solutionSpace": "Independent SpecDD/TDD gate review; no design or repair work.",
+      "task": "Independent SpecDD/TDD gate review of candidate header-parameter-transit-spec-r1 revision r1. Do not rely on any other review. Check ticket 01-04 checkbox fidelity to AC ids 1:1 with no merged, split, widened, weakened or dropped criterion; requirement falsifiability and AC observability; non-goals, rejected alternatives, envelope and task write sets mutually consistent; VERIFIED anchors true and UNKNOWN items carrying consequence plus resolver; highest-risk items specified enough for implementation without design improvisation; observability token registration in three closed registries without new events/fields/metrics; and every new branch covered to hold the >=90% gate. Verdict: ### Verdict with PASS or REVISE."
+    }
+  ]
+}

@@ -1,0 +1,522 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { test } from 'node:test';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { validateNativeCapture } from './execution-runtime-smoke.mjs';
+import * as runtimeApi from './execution-runtime-smoke.mjs';
+
+// Synthetic observation structure tests, NOT actual activation evidence.
+const EMIT = 'installed ExtensionRunner.emitToolCall';
+const NATIVE = 'installed native task wrapper.execute';
+const PARTIAL_AUTHORITY_CASES = ['authority-review-specification-null', 'authority-review-tasks-null', 'authority-receipt-explicit-false', 'authority-receipt-automatic-true', 'authority-receipt-timed-out-true'];
+const RETRY_LIMIT_CASES = ['shared-retry-attempt-1', 'shared-retry-attempt-2', 'shared-retry-attempt-3'];
+// Independent oracle for the exact denial codes the runtime validator must enforce.
+const GATE_DENIAL_EXPECTATIONS = [
+  { name: 'malformed', boundary: EMIT, code: 'E_DISPATCH_METADATA' },
+  { name: 'malformed', boundary: NATIVE, code: 'E_RETRY_NOT_AUTHORIZED' },
+  { name: 'mixed-batch', boundary: EMIT, code: 'E_TASK_NOT_FRONTIER' },
+  { name: 'mixed-batch', boundary: NATIVE, code: 'E_TASK_NOT_FRONTIER' },
+  { name: 'missing-metadata', boundary: EMIT, code: 'E_READONLY_NOT_EXEMPT' },
+];
+
+const managedScope = taskIds => ({ projectRoot: '/tmp/synthetic-project', feature: 'intake-demo', revision: 'rev-1', taskIds: Array.isArray(taskIds) ? taskIds : [taskIds] });
+const nativeScope = name => ({ nativeTasks: [{ agent: 'engineer', name }] });
+const denied = code => ({ code });
+
+
+function capture() {
+  const claims = [
+    { directory: '/agents', fileName: 'critic.md', path: '/agents/critic.md', claim: 'critic' },
+    { directory: '/agents', fileName: 'critic-override.md', path: '/agents/critic-override.md', claim: 'critic' },
+  ];
+  return {
+    passed: true,
+    providerRequests: 0,
+    syntheticTurns: 0,
+    children: [],
+    sessionId: 'synthetic-session',
+    engineerContainment: { effectiveDisabledAgents: ['engineer'] },
+    roleObservations: [
+      {
+        name: 'critic', source: 'user', filePath: '/agents/critic.md',
+        tools: ['read', 'grep', 'glob', 'find'], spawns: [], disable: false,
+        structured: null, output: null,
+        resolution: {
+          resolved: false, code: 'E_READONLY_AMBIGUOUS',
+          explanation: 'Two searched markdown declarations claim critic.',
+          inputs: {
+            candidate: true,
+            definitionCount: 1,
+            effectiveDefinition: { name: 'critic', filePath: '/agents/critic.md', tools: ['read', 'grep', 'glob', 'find'], spawns: [], disable: false },
+            searchedDirs: ['/agents'],
+            declarationReads: claims,
+          },
+        },
+      },
+      {
+        name: 'scout', source: 'user', filePath: '/agents/scout.md',
+        tools: ['read', 'find', 'grep', 'glob', 'web_search', 'yield'], spawns: [], disable: false,
+        structured: null, output: { properties: { summary: { type: 'string' } } },
+        resolution: {
+          resolved: true, tools: ['read', 'find', 'grep', 'glob', 'web_search', 'yield'],
+          explanation: 'One effective definition has only read-only tools and no child spawns.',
+          inputs: {
+            candidate: true,
+            definitionCount: 1,
+            effectiveDefinition: { name: 'scout', filePath: '/agents/scout.md', tools: ['read', 'find', 'grep', 'glob', 'web_search', 'yield'], spawns: [], disable: false },
+            searchedDirs: ['/agents'],
+            declarationReads: [{ directory: '/agents', fileName: 'scout.md', path: '/agents/scout.md', claim: 'scout' }],
+          },
+        },
+      },
+      {
+        name: 'planner', source: 'user', filePath: '/agents/planner.md',
+        tools: ['read', 'grep', 'glob', 'find', 'yield'], spawns: ['critic', 'code-reviewer', 'go-reviewer', 'engineer'], disable: false,
+        structured: true, output: { properties: { specification: { type: 'string' }, handoff: { type: 'string' } } },
+        resolution: {
+          resolved: false, code: 'E_READONLY_WRITE_CAPABLE',
+          explanation: 'The effective planner definition has child spawns.',
+          inputs: {
+            candidate: true,
+            definitionCount: 1,
+            effectiveDefinition: { name: 'planner', filePath: '/agents/planner.md', tools: ['read', 'grep', 'glob', 'find', 'yield'], spawns: ['critic', 'code-reviewer', 'go-reviewer', 'engineer'], disable: false },
+            searchedDirs: ['/agents'],
+            declarationReads: [{ directory: '/agents', fileName: 'planner.md', path: '/agents/planner.md', claim: 'planner' }],
+          },
+        },
+      },
+    ],
+    cases: [
+      { name: 'valid-synthetic-authority', boundary: EMIT, blocked: false, expected: false, scope: managedScope('impl02') },
+      { name: 'installed-plugin-role', boundary: EMIT, blocked: false, expected: false, agent: 'plugin-reviewer', scope: managedScope('probe-plugin-role') },
+      ...['malformed', 'mixed-batch'].flatMap(name => {
+        const scope = name === 'malformed' ? nativeScope('malformed-isolated') : managedScope(['impl02', 'UNKNOWN']);
+        return [
+          {
+            name, boundary: EMIT, blocked: true, expected: true,
+            ...denied(name === 'malformed' ? 'E_DISPATCH_METADATA' : 'E_TASK_NOT_FRONTIER'), scope,
+          },
+          {
+            name, boundary: NATIVE, blocked: true, expected: true,
+            ...denied(name === 'malformed' ? 'E_RETRY_NOT_AUTHORIZED' : 'E_TASK_NOT_FRONTIER'), scope,
+          },
+        ];
+      }),
+      { name: 'foreign-project', boundary: EMIT, blocked: true, expected: true, ...denied('E_STATE_SOURCE'), scope: { ...managedScope('impl02'), projectRoot: '/tmp/synthetic-project/foreign' } },
+      { name: 'missing-metadata', boundary: EMIT, blocked: true, expected: true, ...denied('E_READONLY_NOT_EXEMPT'), scope: nativeScope('missing-metadata') },
+      ...['subagent', 'subagent_send', 'subagent_resume'].map(device => ({
+        name: `alternate-${device}`, boundary: EMIT, blocked: true, expected: true,
+        ...denied('E_ALTERNATE_ROUTE'), scope: nativeScope(`alternate-${device}`),
+      })),
+      ...PARTIAL_AUTHORITY_CASES.flatMap((name, index) => [
+        { name: `${name}-engineer-read`, boundary: EMIT, blocked: true, expected: true, ...denied('E_READONLY_NOT_EXEMPT'), scope: managedScope(`partial-${index}-engineer`) },
+        { name: `${name}-engineer-read`, boundary: NATIVE, blocked: true, expected: true, ...denied('E_READONLY_NOT_EXEMPT'), scope: managedScope(`partial-${index}-engineer`) },
+        { name: `${name}-readonly-control`, boundary: EMIT, blocked: false, expected: false, agent: 'scout', scope: managedScope(`partial-${index}-control`) },
+      ]),
+      { name: 'pending-critic', boundary: EMIT, blocked: true, expected: true, agent: 'critic', code: 'E_READONLY_NOT_EXEMPT', scope: managedScope('pending-critic') },
+      { name: 'pending-scout', boundary: EMIT, blocked: false, expected: false, agent: 'scout', scope: managedScope('pending-scout') },
+      { name: 'pending-planner', boundary: EMIT, blocked: true, expected: true, agent: 'planner', code: 'E_READONLY_NOT_EXEMPT', scope: managedScope('pending-planner') },
+      ...RETRY_LIMIT_CASES.map((name, index) => ({
+        name, boundary: EMIT, blocked: true, expected: true,
+        ...denied(index === 0 ? 'E_DISPATCH_METADATA' : 'E_RETRY_NOT_AUTHORIZED'),
+        scope: nativeScope('deliberate-shared-retry-scope'),
+      })),
+      { name: 'missing-historical-marker', boundary: EMIT, blocked: true, expected: true, ...denied('E_PROJECT_GATE'), scope: managedScope('marker-probe') },
+      { name: 'read-control', observed: 'canonical requirement text' },
+      { name: 'configured-rewrite', observed: 'exact narrow ECC section replacement' },
+    ],
+  };
+}
+
+function scopeKey(entry) {
+  assert.ok(entry.scope, `${entry.name}: missing observed retry scope`);
+  return JSON.stringify(entry.scope);
+}
+
+test('capture validator requires every acceptance verdict, including actual native denials', () => {
+  const complete = capture();
+  validateNativeCapture(complete);
+  for (const omitted of complete.cases) {
+    assert.throws(
+      () => validateNativeCapture({ ...complete, cases: complete.cases.filter(item => item !== omitted) }),
+      undefined,
+      `omitted case must still be required: ${omitted.name}@${omitted.boundary}`,
+    );
+  }
+});
+
+test('capture validator rejects wrong gate denial codes at every named boundary', () => {
+  const complete = capture();
+  validateNativeCapture(complete);
+  for (const { name, boundary, code } of GATE_DENIAL_EXPECTATIONS) {
+    const wrongCode = code === 'E_DISPATCH_METADATA' ? 'E_STATE_SOURCE' : 'E_DISPATCH_METADATA';
+    const mutated = {
+      ...complete,
+      cases: complete.cases.map(item => item.name === name && item.boundary === boundary ? { ...item, code: wrongCode } : item),
+    };
+    assert.throws(
+      () => validateNativeCapture(mutated),
+      error => error.message.includes(`${name}@${boundary}: expected exact denial code ${code}`),
+      `${name}@${boundary}: wrong denial code must be rejected`,
+    );
+  }
+});
+
+test('capture fails for a child, provider attempt, reversed verdict, absent capture or preflight-only refusal', () => {
+  const reversed = name => ({ ...capture(), cases: capture().cases.map(item => item.name === name ? { ...item, blocked: !item.blocked } : item) });
+  for (const changed of [
+    undefined,
+    { ...capture(), children: ['UnexpectedChild'] },
+    { ...capture(), providerRequests: 1 },
+    { ...capture(), syntheticTurns: 1 },
+    { ...capture(), passed: false },
+    { ...capture(), sessionId: '' },
+    { ...capture(), engineerContainment: undefined },
+    reversed('mixed-batch'),
+    reversed('pending-scout'),
+    reversed('pending-critic'),
+    reversed('pending-planner'),
+    reversed('authority-receipt-explicit-false-engineer-read'),
+    reversed('authority-review-specification-null-readonly-control'),
+  ]) assert.throws(() => validateNativeCapture(changed));
+});
+
+test('capture rejects preflight-style denials without a workflow dispatch gate code', () => {
+  const complete = capture();
+  assert.throws(() => validateNativeCapture({ ...complete, cases: complete.cases.map(item => item.blocked && item.observed === undefined ? { ...item, code: undefined } : item) }));
+  assert.throws(() => validateNativeCapture({ ...complete, cases: complete.cases.map(item => item.name === 'malformed' && item.boundary === NATIVE ? { name: 'malformed', boundary: NATIVE, blocked: false, expected: true, observed: 'Cannot spawn "engineer". Disabled agents: engineer.' } : item) }));
+});
+
+test('capture pins the historical marker denial to the legacy project gate, never state source', () => {
+  const complete = capture();
+  assert.throws(() => validateNativeCapture({ ...complete, cases: complete.cases.map(item => item.name === 'missing-historical-marker' ? { ...item, code: 'E_STATE_SOURCE' } : item) }));
+});
+
+test('role verdicts match actual read-only resolution inputs and each pending case has an isolated task scope', () => {
+  const complete = capture();
+  validateNativeCapture(complete);
+  const roles = new Map(complete.roleObservations.map(role => [role.name, role]));
+  for (const roleName of ['critic', 'scout', 'planner']) {
+    const role = roles.get(roleName);
+    const verdict = complete.cases.find(item => item.name === `pending-${roleName}`);
+    assert.equal(verdict.expected, !role.resolution.resolved);
+    assert.equal(verdict.blocked, !role.resolution.resolved);
+    if (!role.resolution.resolved) assert.equal(verdict.code, 'E_READONLY_NOT_EXEMPT');
+  }
+  const pending = complete.cases.filter(item => item.name.startsWith('pending-'));
+  assert.equal(new Set(pending.map(scopeKey)).size, pending.length);
+  const critic = roles.get('critic');
+  assert.ok(critic.resolution.inputs.searchedDirs.length > 0);
+  assert.ok(critic.resolution.inputs.declarationReads.length > 1);
+  assert.match(critic.resolution.explanation, /declaration/i);
+
+  const duplicateScope = {
+    ...complete,
+    cases: complete.cases.map(item => item.name === 'pending-planner' ? { ...item, scope: complete.cases.find(candidate => candidate.name === 'pending-critic').scope } : item),
+  };
+  assert.throws(() => validateNativeCapture(duplicateScope));
+  const missingInputs = {
+    ...complete,
+    roleObservations: complete.roleObservations.map(role => role.name === 'critic' ? { ...role, resolution: { ...role.resolution, inputs: undefined } } : role),
+  };
+  assert.throws(() => validateNativeCapture(missingInputs));
+});
+
+test('retry-limit probes share one scope and reject unchanged requests after the first shape denial', () => {
+  const complete = capture();
+  validateNativeCapture(complete);
+  const retries = RETRY_LIMIT_CASES.map(name => complete.cases.find(item => item.name === name));
+  assert.equal(new Set(retries.map(scopeKey)).size, 1);
+  assert.deepEqual(retries.map(item => item.code), ['E_DISPATCH_METADATA', 'E_RETRY_NOT_AUTHORIZED', 'E_RETRY_NOT_AUTHORIZED']);
+  const repeatedShapeDenial = {
+    ...complete,
+    cases: complete.cases.map(item => item.name === RETRY_LIMIT_CASES[1] ? { ...item, code: 'E_DISPATCH_METADATA' } : item),
+  };
+  assert.throws(() => validateNativeCapture(repeatedShapeDenial));
+  const changed = {
+    ...complete,
+    cases: complete.cases.map(item => item.name === RETRY_LIMIT_CASES[2] ? { ...item, scope: nativeScope('not-shared') } : item),
+  };
+  assert.throws(() => validateNativeCapture(changed));
+});
+
+test('capture rejects missing critic resolution evidence and role verdicts disconnected from it', () => {
+  const complete = capture();
+  const unresolvedButAllowed = {
+    ...complete,
+    cases: complete.cases.map(item => item.name === 'pending-critic' ? { ...item, expected: false, blocked: false, code: undefined } : item),
+  };
+  assert.throws(() => validateNativeCapture(unresolvedButAllowed));
+  const unexplainedDenial = {
+    ...complete,
+    roleObservations: complete.roleObservations.map(role => role.name === 'critic' ? { ...role, resolution: { ...role.resolution, explanation: '' } } : role),
+  };
+  assert.throws(() => validateNativeCapture(unexplainedDenial));
+});
+
+test('capture enforces current role tools, spawn status and planner output contract', () => {
+  const complete = capture();
+  const withoutLsp = role => ({ ...capture(), roleObservations: capture().roleObservations.map(item => item.name === role ? { ...item, tools: [...item.tools ?? ['edit'], 'lsp'] } : item) });
+  assert.throws(() => validateNativeCapture(withoutLsp('scout')));
+  assert.throws(() => validateNativeCapture(withoutLsp('planner')));
+  assert.throws(() => validateNativeCapture({ ...complete, roleObservations: complete.roleObservations.map(item => item.name === 'scout' ? { ...item, resolution: { ...item.resolution, resolved: false, code: 'E_READONLY_WRITE_CAPABLE' } } : item) }));
+  assert.throws(() => validateNativeCapture({ ...complete, roleObservations: complete.roleObservations.map(item => item.name === 'planner' ? { ...item, structured: false } : item) }));
+  assert.throws(() => validateNativeCapture({ ...complete, roleObservations: complete.roleObservations.map(item => item.name === 'planner' ? { ...item, output: { properties: { specification: { type: 'string' } } } } : item) }));
+  assert.throws(() => validateNativeCapture({ ...complete, roleObservations: complete.roleObservations.map(item => item.name === 'planner' ? { ...item, tools: ['read', 'grep', 'glob', 'find', 'lsp', 'yield'] } : item) }));
+  assert.throws(() => validateNativeCapture({ ...complete, roleObservations: complete.roleObservations.map(item => item.name === 'planner' ? { ...item, spawns: [] } : item) }));
+  assert.throws(() => validateNativeCapture({ ...complete, roleObservations: complete.roleObservations.filter(item => item.name !== 'planner') }));
+});
+
+test('resolved spawn assertion accepts nullish and empty representations but rejects children', () => {
+  const withScoutSpawns = (spawns, absent = false) => {
+    const complete = capture();
+    return {
+      ...complete,
+      roleObservations: complete.roleObservations.map(role => {
+        if (role.name !== 'scout') return role;
+        const { spawns: _roleSpawns, ...roleWithoutSpawns } = role;
+        const { spawns: _definitionSpawns, ...definitionWithoutSpawns } = role.resolution.inputs.effectiveDefinition;
+        const effectiveDefinition = absent ? definitionWithoutSpawns : { ...definitionWithoutSpawns, spawns };
+        return {
+          ...(absent ? roleWithoutSpawns : { ...roleWithoutSpawns, spawns }),
+          resolution: {
+            ...role.resolution,
+            inputs: { ...role.resolution.inputs, effectiveDefinition },
+          },
+        };
+      }),
+    };
+  };
+
+  validateNativeCapture(withScoutSpawns(undefined, true));
+  validateNativeCapture(withScoutSpawns(null));
+  validateNativeCapture(withScoutSpawns([]));
+  assert.throws(
+    () => validateNativeCapture(withScoutSpawns(['engineer'])),
+    /scout: resolved role must not spawn children/,
+  );
+});
+
+
+test('fresh smoke overlay configures the real adapter while preserving configured extensions', () => {
+  const adapter = '/home/opencode/.omp/agent/workflow-policy/prompt-scope.ts';
+  const calls = [];
+  const spawn = (...args) => {
+    calls.push(args);
+    return { status: 0, stdout: JSON.stringify({ key: 'extensions', type: 'array', value: ['/normal/security.ts', adapter] }) };
+  };
+  assert.deepEqual(runtimeApi.configuredAdapterExtensions('/bin/omp', '/fixture', spawn), ['/normal/security.ts', adapter]);
+  assert.deepEqual(calls[0].slice(0, 2), ['/bin/omp', ['config', 'get', 'extensions', '--json']]);
+  assert.equal(calls[0][2].cwd, '/fixture');
+  for (const result of [{ status: 1, stdout: '' }, { status: 0, stdout: '{}' },
+    { status: 0, stdout: '{"value":[42]}' }, { status: 0, stdout: 'not-json' }]) {
+    assert.throws(() => runtimeApi.configuredAdapterExtensions('/bin/omp', '/fixture', () => result));
+  }
+  assert.deepEqual(runtimeApi.configuredAdapterExtensions('/bin/omp', '/fixture', () => ({
+    status: 0, stdout: '{"value":[]}',
+  })), [adapter]);
+});
+
+test('policy documents CLI emits a JSON failure payload to stdout and exits 1', () => {
+  const script = fileURLToPath(new URL('./execution-runtime-smoke.mjs', import.meta.url));
+  const result = spawnSync(process.execPath, [script, '--policy-documents', 'unexpected'], {
+    encoding: 'utf8',
+    timeout: 5000,
+  });
+
+  assert.equal(result.error, undefined, result.error?.message);
+  assert.equal(result.status, 1);
+  const payload = JSON.parse(result.stdout);
+  assert.deepEqual(Object.keys(payload).sort(), ['error', 'passed']);
+  assert.equal(payload.passed, false);
+  assert.match(payload.error, /^Usage: node execution-runtime-smoke\.mjs --policy-documents/);
+  assert.match(result.stderr, /Native smoke FAILED: Usage:/);
+});
+
+test('rule-prefix verifier rejects a bare script reference in an S rule fixture', () => {
+  assert.throws(
+    () => runtimeApi.verifyRuleScriptReferences('S01 AUTHORITY -> See execution-state.mjs check'),
+    /S01: script path must use workflow-policy\/: execution-state\.mjs/,
+  );
+});
+
+test('rule-prefix verifier rejects a bare script reference in a T rule fixture', () => {
+  assert.throws(
+    () => runtimeApi.verifyRuleScriptReferences('T01 TOOLS -> See receipt-validator.mjs check'),
+    /T01: script path must use workflow-policy\/: receipt-validator\.mjs/,
+  );
+});
+
+test('rule-prefix verifier checks all policy scripts and accepts absolute policy paths', () => {
+  const source = [
+    'S01 AUTHORITY -> workflow-policy/execution-state.mjs',
+    'S02 SCOPE -> /home/opencode/.omp/agent/workflow-policy/receipt-validator.mjs',
+    'S03 ROLES -> /home/opencode/.omp/agent/workflow-policy/execution-gate.ts',
+    'T01 TOOLS -> workflow-policy/prompt-scope.ts',
+  ].join('\n');
+  const { ruleScriptReferences } = runtimeApi.verifyRuleScriptReferences(source);
+
+  assert.deepEqual(ruleScriptReferences, {
+    S01: ['workflow-policy/execution-state.mjs'],
+    S02: ['/home/opencode/.omp/agent/workflow-policy/receipt-validator.mjs'],
+    S03: ['/home/opencode/.omp/agent/workflow-policy/execution-gate.ts'],
+    T01: ['workflow-policy/prompt-scope.ts'],
+  });
+  for (const [rule, script] of [['S04', 'execution-gate.ts'], ['T02', 'prompt-scope.ts']]) {
+    assert.throws(
+      () => runtimeApi.verifyRuleScriptReferences(`${rule} FIXTURE -> See ${script}`),
+      new RegExp(`${rule}: script path must use workflow-policy/: ${script.replace('.', '\\.')}`),
+    );
+  }
+});
+
+test('rule-prefix verifier rejects a relative script reference with an intervening subdirectory', () => {
+  assert.throws(
+    () => runtimeApi.verifyRuleScriptReferences('S04 FIXTURE -> See workflow-policy/sub/execution-state.mjs'),
+    /S04: script path must use workflow-policy\/: workflow-policy\/sub\/execution-state\.mjs/,
+  );
+});
+
+test('rule-prefix verifier rejects an absolute script reference with an intervening subdirectory', () => {
+  assert.throws(
+    () => runtimeApi.verifyRuleScriptReferences('S05 FIXTURE -> See /tmp/workflow-policy/other/execution-state.mjs'),
+    /S05: script path must use workflow-policy\/: \/tmp\/workflow-policy\/other\/execution-state\.mjs/,
+  );
+});
+
+test('recovery verifier rejects a move-only swap between shape and substantive codes', () => {
+  const shapeOnlyDenials = ['E_DISPATCH_METADATA', 'E_DISPATCH_MISMATCH'];
+  const substantiveDenials = ['E_RETRY_NOT_AUTHORIZED', 'E_REVIEW', 'E_ROLE_NOT_PERMITTED', 'E_TASK_NOT_FRONTIER'];
+  const swappedShape = [substantiveDenials[0], ...shapeOnlyDenials.slice(1)];
+  const swappedSubstantive = [shapeOnlyDenials[0], ...substantiveDenials.slice(1)];
+  const codes = [...swappedShape, ...swappedSubstantive];
+  const expectedCodes = [...shapeOnlyDenials, ...substantiveDenials];
+  const fixture = [
+    '## Denials and retries',
+    `Malformed envelopes are shape-only denials using ${swappedShape.map(code => `\`${code}\``).join(' and ')}.`,
+    '',
+    `Substantive denials (${swappedSubstantive.map(code => `\`${code}\``).join(', ')}) require updated owner authorization`,
+    'or completed prerequisite reviews before retry.',
+  ].join('\n');
+
+  assert.deepEqual([...new Set(codes)].sort(), expectedCodes.sort());
+  assert.throws(
+    () => runtimeApi.verifyRecoveryCodeClauses(fixture),
+    /E_DISPATCH_METADATA must appear only in the shape-only clause/,
+  );
+});
+
+
+test('recovery verifier rejects codes swapped across the shape and substantive clauses', () => {
+  const shapeOnlyDenials = ['E_DISPATCH_METADATA', 'E_DISPATCH_MISMATCH'];
+  const substantiveDenials = ['E_RETRY_NOT_AUTHORIZED', 'E_REVIEW', 'E_ROLE_NOT_PERMITTED', 'E_TASK_NOT_FRONTIER'];
+  const fixture = (shapeCodes, substantiveCodes) => [
+    '## Denials and retries',
+    `Malformed envelopes are shape-only denials using ${shapeCodes.map(code => `\`${code}\``).join(' and ')}.`,
+    '',
+    `Substantive denials (${substantiveCodes.map(code => `\`${code}\``).join(', ')}) require updated owner authorization`,
+    'or completed prerequisite reviews before retry.',
+  ].join('\n');
+
+  assert.doesNotThrow(() => runtimeApi.verifyRecoveryCodeClauses(fixture(shapeOnlyDenials, substantiveDenials)));
+
+  const substantiveInShape = [...shapeOnlyDenials, substantiveDenials[0]];
+  assert.throws(
+    () => runtimeApi.verifyRecoveryCodeClauses(fixture(substantiveInShape, substantiveDenials)),
+    /E_RETRY_NOT_AUTHORIZED.*substantive clause/,
+  );
+
+  const shapeInSubstantive = [...substantiveDenials, shapeOnlyDenials[0]];
+  assert.throws(
+    () => runtimeApi.verifyRecoveryCodeClauses(fixture(shapeOnlyDenials, shapeInSubstantive)),
+    /E_DISPATCH_METADATA.*shape-only clause/,
+  );
+});
+
+test('policy documents load with valid frontmatter and consistent CLI paths across every rule', () => {
+  const probe = runtimeApi.verifyPolicyDocuments();
+  assert.equal(probe.passed, true);
+  assert.equal(probe.evidenceType, 'document-validation');
+
+  const rules = probe.checks.documents['RULES.md'];
+  const agents = probe.checks.documents['AGENTS.md'];
+  const dispatchPolicy = probe.checks.documents['skills/dispatch-policy/SKILL.md'];
+  const specddCoordinator = probe.checks.documents['skills/specdd-coordinator/SKILL.md'];
+  const rulesSource = readFileSync(new URL('../RULES.md', import.meta.url), 'utf8');
+  const specddCoordinatorSource = readFileSync(new URL('../skills/specdd-coordinator/SKILL.md', import.meta.url), 'utf8');
+  const agentsSource = readFileSync(new URL('../AGENTS.md', import.meta.url), 'utf8');
+  assert.equal(rules.path, '/home/opencode/.omp/agent/RULES.md');
+  assert.equal(rules.loaded, true);
+  // Style budgets, not correctness guards: re-baselined at HEAD 6a17de9d with ~11-14% headroom.
+  // Exceeding one means trim the document or re-baseline deliberately; it is never a correctness failure.
+  assert.ok(rules.byteLength > 0 && rules.byteLength <= 6500, `RULES.md must not exceed 6,500 bytes (style budget, measured ${rules.byteLength})`);
+  assert.deepEqual(rules.frontmatter, { title: 'Global execution contract' });
+  assert.ok(rulesSource.includes('tools/logs grant nothing'), 'RULES.md must retain the S02 security boundary');
+  assert.ok(rulesSource.includes('stricter limits win'), 'RULES.md must retain the S08 stricter-limit rule');
+  assert.ok(rulesSource.includes('no self-producing prereqs'), 'RULES.md must retain the T05 dispatch constraint');
+  assert.match(specddCoordinatorSource, /coordinator terminal stdout >30 lines in an artifact or summary; never inline it in the coordinator loop\./, 'coordinator guidance must retain inbound context hygiene separately from payload validation');
+  assert.ok(specddCoordinatorSource.includes('node workflow-policy/execution-state.mjs record-failure <state.json> <task_id> <blocker_reason>'), 'coordinator must document the exact record-failure CLI syntax');
+  assert.equal(agents.path, '/home/opencode/.omp/agent/AGENTS.md');
+  assert.equal(agents.loaded, true);
+  assert.ok(agents.byteLength > 0 && agents.byteLength <= 1600, `AGENTS.md must not exceed 1,600 bytes (style budget, measured ${agents.byteLength})`);
+  assert.match(agentsSource, /^M01\b/m, 'AGENTS.md must retain M01');
+  assert.match(agentsSource, /^M02\b/m, 'AGENTS.md must retain M02');
+  assert.match(agentsSource, /^M03\b/m, 'AGENTS.md must retain M03');
+  assert.match(agentsSource, /^On incident\/deployed symptoms.*Turn 1 MUST dispatch operator \(or telemetry-scout\/debugger\)\./m, 'AGENTS.md must retain incidents routing');
+  assert.match(agentsSource, /^M06\b/m, 'AGENTS.md must retain M06');
+  assert.doesNotMatch(agentsSource, /^M04\b/m, 'AGENTS.md must omit superseded M04');
+  assert.doesNotMatch(agentsSource, /^M05\b/m, 'AGENTS.md must omit superseded M05');
+  assert.match(agentsSource, /^M07\b/m, 'AGENTS.md must retain M07 (feature decomposition and spec gate)');
+  assert.doesNotMatch(agentsSource, /^M08\b/m, 'AGENTS.md must omit superseded M08');
+  assert.equal(dispatchPolicy.path, '/home/opencode/.omp/agent/skills/dispatch-policy/SKILL.md');
+  assert.equal(dispatchPolicy.loaded, true);
+  assert.ok(dispatchPolicy.byteLength > 0 && dispatchPolicy.byteLength <= 2500, 'dispatch policy must not exceed 2,500 bytes');
+  assert.equal(dispatchPolicy.frontmatter.name, 'dispatch-policy');
+  assert.ok(dispatchPolicy.frontmatter.description);
+  assert.equal(specddCoordinator.path, '/home/opencode/.omp/agent/skills/specdd-coordinator/SKILL.md');
+  assert.equal(specddCoordinator.loaded, true);
+  assert.ok(specddCoordinator.byteLength > 0 && specddCoordinator.byteLength <= 5200, `specdd coordinator must not exceed 5,200 bytes (style budget, measured ${specddCoordinator.byteLength})`);
+  assert.equal(specddCoordinator.frontmatter.name, 'specdd-coordinator');
+  assert.ok(specddCoordinator.frontmatter.description);
+
+  const requiredSkillReferences = [
+    'workflow-policy/execution-state.mjs check-dispatch',
+    'workflow-policy/execution-state.mjs prepare-dispatch',
+    'workflow-policy/execution-state.mjs record-failure',
+    'workflow-policy/receipt-validator.mjs check-receipt',
+    'workflow-policy/receipt-validator.mjs synthesize',
+  ];
+  assert.deepEqual(probe.checks.cliReferences.skill, requiredSkillReferences);
+  assert.equal(probe.checks.cliReferences.synthesize, 'node workflow-policy/receipt-validator.mjs synthesize <task_id> [stdout_tail] [artifacts_dir]');
+  assert.deepEqual(probe.checks.recovery, {
+    shapeOnlyDenials: ['E_DISPATCH_METADATA', 'E_DISPATCH_MISMATCH'],
+    substantiveDenials: ['E_RETRY_NOT_AUTHORIZED', 'E_REVIEW', 'E_ROLE_NOT_PERMITTED', 'E_TASK_NOT_FRONTIER'],
+    preflights: [
+      'workflow-policy/execution-state.mjs prepare-dispatch',
+      'workflow-policy/execution-state.mjs check-dispatch',
+    ],
+    retryLimit: 1,
+    neverGeneralize: true,
+    prT3Reference: 'workflow-policy/legacy-pr-t3-transition.md',
+  });
+  assert.deepEqual(probe.checks.cliReferences.rules, {
+    T06: ['workflow-policy/execution-state.mjs'],
+    T08: ['workflow-policy/execution-state.mjs'],
+    T12: ['workflow-policy/receipt-validator.mjs'],
+  });
+  assert.deepEqual(probe.checks.cliReferences.ruleScripts, {
+    S08: ['workflow-policy/execution-state.mjs'],
+    S10: ['workflow-policy/execution-state.mjs'],
+    S13: ['workflow-policy/execution-state.mjs', 'workflow-policy/receipt-validator.mjs', 'workflow-policy/execution-gate.ts'],
+    T02: ['workflow-policy/execution-state.mjs'],
+    T05: ['workflow-policy/execution-state.mjs'],
+    T06: ['workflow-policy/execution-state.mjs'],
+    T08: ['workflow-policy/execution-state.mjs'],
+    T12: ['workflow-policy/receipt-validator.mjs'],
+    T13: ['workflow-policy/prompt-scope.ts'],
+  });
+
+  const freshProcessDocumentValidation = runtimeApi.verifyPolicyDocumentsInFreshProcess();
+  assert.deepEqual(freshProcessDocumentValidation, probe);
+});

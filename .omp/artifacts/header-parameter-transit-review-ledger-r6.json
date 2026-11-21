@@ -1,0 +1,49 @@
+{
+  "complete": false,
+  "status": "blocked-critic-revise-and-s15-stop",
+  "feature": "header-parameter-transit",
+  "revision": "r6",
+  "reviewRounds": [
+    {"revision": "r1", "stage": "baseline", "codeReviewer": "REQUEST CHANGES"},
+    {"revision": "r2", "stage": "plan-change", "codeReviewer": "REQUEST CHANGES"},
+    {"revision": "r4", "stage": "plan-change", "codeReviewer": "REQUEST CHANGES"},
+    {"revision": "r5", "stage": "plan-change", "codeReviewer": "REQUEST CHANGES"},
+    {"revision": "r6", "stage": "plan-change", "codeReviewer": "APPROVE", "critic": "REVISE"}
+  ],
+  "s15": {
+    "failedPlanChangeCycles": 4,
+    "result": "stop-submitting-plan-changes",
+    "evidence": "r2, r4, r5 failed CodeReviewer; r6 passed CodeReviewer but failed Critic REVISE"
+  },
+  "r6": {
+    "specSha": "3d4066066bb511f0c6fad8d09a99e9913759d09140509c0aa163bf3960a7d7da",
+    "packetDigest": "0e95493c71f53b003dc4a97f71f2870d01a0d3b43641f07073c0aa9f7fcb2535",
+    "codeReviewerObservation": ".omp/artifacts/review-header-parameter-transit-spec-r6-code-reviewer-96daff3f9232-20261121T042430993Z.json",
+    "criticObservation": ".omp/artifacts/review-header-parameter-transit-spec-r6-critic-a0225a5a0eba-20261121T042856113Z.json",
+    "codeReviewerResiduals": ["F1-startup lifecycle-hazard MEDIUM", "F1-over-inclusion statement-contradiction MEDIUM", "F3-new-anchors stale-citation LOW"],
+    "criticFindings": [
+      "C1 statement-contradiction HIGH",
+      "C2 lifecycle-hazard MEDIUM",
+      "C3 lifecycle-hazard HIGH",
+      "C4 statement-contradiction MEDIUM",
+      "C5 r-ac-coverage-gap MEDIUM",
+      "C6 r-ac-coverage-gap MEDIUM"
+    ]
+  },
+  "canonicalReviews": "record-reviews refused: E_REVIEW verified reviews are unavailable (Critic requires PASS)",
+  "ticket01": {
+    "id": "T1",
+    "dispatched": false,
+    "reasons": ["reviews not recorded", "packet.selectedBranchId null", "authorization null"]
+  },
+  "registrationLane": {
+    "used": "existing withReviewRegistryLock + atomic replace",
+    "candidate": "header-parameter-transit-spec-r6",
+    "descriptors": ["ReviewHeaderSpecR6 (CR1)", "CritiqueHeaderSpecR6 (CT1)"],
+    "historyPreserved": true,
+    "snapshots": [
+      ".omp/artifacts/hpt-spec-r5-preserved-4649575ab4a7.md",
+      ".omp/artifacts/hpt-state-r5-preserved-*.json"
+    ]
+  }
+}

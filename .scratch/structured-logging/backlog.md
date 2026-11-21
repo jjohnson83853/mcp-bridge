@@ -55,6 +55,23 @@ and the planner/reviewer seeds, so they need owner routing and are not part of t
 | 26 pipeline order | task | linter (seconds, free) → code-reviewer (semantic) → critic. Stops burning 7-minute reviewer runs on mechanical drift. |
 | 27 plan-arbitrator subagent | agent | A read-only `plan-arbitrator` subagent invoked when the S15 stop condition fires (four consecutive failed plan-change rounds, or no meaningfully different request left). Inputs: the round history (each round's request, verdict, findings), the current spec/tickets/state, and the reviewer's reports. Output: a bounded decision — (a) the minimal closure delta that ends the loop, (b) a severity triage separating blocking defects from advisory ones, or (c) a stop-and-escalate recommendation with the residual classes. Purpose: the coordinator authors each round from inside the loop and keeps re-opening the same defect classes (ticket-mirror drift, unasserted fields, stale citations); an independent arbiter with the full round history can see the pattern the coordinator cannot. Read-only, no edits, no dispatch authority. |
 
+## Harness ticket status (2026-11-11)
+
+Tickets 20–26 are implemented in `/home/opencode/.omp/agent/`; ticket 27 is deferred by owner decision.
+
+| Ticket | Status | Artifact |
+|---|---|---|
+| 20 pre-dispatch spec linter | done | `workflow-policy/spec-lint.mjs` |
+| 21 severity-gated verdict | done | `severityGate()` in `execution-review-sequence.mjs`; W09; `code-reviewer.md` |
+| 22 drop closure enumeration | done | W09D; `code-reviewer.md` closure discipline |
+| 23 pre-authorized closure | done | W09B |
+| 24 mechanical round cap | done | `roundCapIssues()` in `execution-review-sequence.mjs`; W09C |
+| 25 findings taxonomy feedback | done | `workflow-policy/review-findings-taxonomy.md`; `planner.md` |
+| 26 pipeline order | done | W09 step 0 (linter → code-reviewer → critic) |
+| 27 plan-arbitrator subagent | deferred | owner decision 2026-11-11 |
+
+Verification: `node --test workflow-policy/execution-review-sequence.test.mjs` → 57 pass, 0 fail; `spec-lint.mjs` runs against the r8 spec and reports the known T8 `blockedBy` drift, the `manifest_test.go:33-100` stale citation, and the AC07-9 ticket-mirror gap.
+
 **Open, not ticketed:** the narrow4b review residuals (round 6, packet `8a3bba8d…`) are still an
 owner decision — authorize `narrow5` for the R25 `level` clause plus the induced-failure wording,
 record them as deferred gaps and proceed to the critic, or stop r8. They are deliberately not

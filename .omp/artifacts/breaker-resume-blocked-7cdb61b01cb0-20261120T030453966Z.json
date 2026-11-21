@@ -1,0 +1,31 @@
+{
+  "complete": false,
+  "status": "blocked",
+  "feature": "upstream-breaker-recovery",
+  "taskId": "T1",
+  "currentCanonicalRevision": "r4",
+  "planner": {
+    "status": "completed",
+    "candidateRevision": "r5",
+    "artifact": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/breaker-planner-r5-412b6f9a6cd2-20261120T030413662Z.md",
+    "bytes": 70396,
+    "sha256": "412b6f9a6cd2bb600a7f22502a0b5b78f84008fdbc03d16f24df0a4743236138",
+    "independentlyReviewed": false
+  },
+  "missingPrerequisite": "Owner-authorized supported same-feature canonical state revision writer",
+  "blockedOperation": "Atomically install planner r5 spec and reconcile canonical spec/section/packet bindings while preserving state and review lineage",
+  "policyEvidence": {
+    "directCanonicalWrite": "execution-gate.ts:1234-1241 E_COORDINATOR_EDIT_FORBIDDEN",
+    "sameFeatureTransition": "execution-transition.mjs:272-283 noMutation",
+    "refresh": "execution-state.mjs:989-1000 evidence recertification only",
+    "amendment": "execution-amendment.mjs:82-121 task effects/blockers only; existing original authority and reviews required"
+  },
+  "implementation": {
+    "launched": false,
+    "sourceChanged": false,
+    "testsRun": false,
+    "committed": false,
+    "pushed": false
+  },
+  "clearingAction": "Authorize a supported revision-installation capability as separate harness maintenance, or supply an existing permitted writer operation; do not bypass the gate using shell writes or manual state replacement"
+}
