@@ -6,7 +6,7 @@ Index:
 
 | ID | Title | Severity | Status | Component |
 |---|---|---|---|---|
-| MB-001 | Header-bound tool parameters do not traverse the bridge | high | open | `internal/upstream` / upstream schema |
+| MB-001 | Header-bound tool parameters do not traverse the bridge | high | fixed (owner-attested; independent deployed verification not captured) | `internal/upstream` / upstream schema |
 | MB-002 | Catalog serves keyword-only search with no client-visible signal | medium | open | `internal/search` / embedding provider |
 | MB-003 | One upstream's failures pause the whole aggregated Tool server | high | open | client harness (Hermes) counter; bridge per-upstream breaker |
 
@@ -19,7 +19,7 @@ Catalog revision at observation: `f898198b13f7b27e4ddf951562109455aa032bc0020593
 ## MB-001 — Header-bound tool parameters do not traverse the bridge
 
 **Severity:** high
-**Status:** open
+**Status:** fixed (owner-attested; independent deployed verification not captured)
 **First observed:** 2026-11-18
 **Component:** `internal/upstream` call path; `github-mcp-server` upstream; bridge/upstream MCP protocol handshake
 
