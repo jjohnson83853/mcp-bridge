@@ -2,12 +2,16 @@
 
 **Type:** task
 
-**Status:** needs-triage
+**Status:** ready-for-agent (execution remains gated by independent reviews and owner authorization)
 
-**Blocked by:** None — can start after the planner rules on the recovery policy.
+**Blocked by:** None — spec authored as `.scratch/snapshot-recovery/spec.md` r3; owner confirmed the default-on quarantine policy 2026-11-21.
 
 Pre-spec backlog item: it records the incident and the required behavior. Acceptance criteria and
-design text are planner-owned and must not be written here.
+design text are planner-owned; the accepted criteria are mirrored below from
+`.scratch/snapshot-recovery/spec.md` (SNAPREC-SPEC-r3) and are not authored here.
+
+**Owner decision (2026-11-21):** `MCP_SNAPSHOT_QUARANTINE` defaults to ON (recovery enabled);
+`off` remains a fail-closed opt-out for manual-inspection deployments.
 
 ## Observed failure (deployed, 2026-11-16)
 
@@ -84,3 +88,17 @@ A snapshot the store refuses is **recoverable startup state**, not a fatal one:
 - Warning record names the reason and path; no `startup_failed` record is emitted for this case.
 - Read-only or unwritable state directory still fails startup, with a state/resource classification.
 - A valid snapshot is never renamed or overwritten by the recovery path.
+## Accepted acceptance criteria (mirror of spec r3)
+
+Mirror ids `AC-1`..`AC-6` are the ticket-local labels; the spec ids are authoritative.
+
+- **AC1-1** (mirror `AC-1`, R6): with a valid `snapshot.json` and `prompts.json`, the recovery call leaves both files byte-identical, creates no quarantine file, and emits no warning.
+- **AC1-2** (mirror `AC-2`, R9): each seeded rejection class yields its `failure_reason` — invalid JSON `corrupt_json`; checksum mismatch `checksum_mismatch`; unknown schema `unsupported_schema`; failed `Snapshot.Validate` `validation_failure`; unreadable regular file `read_error`.
+- **AC1-3** (mirror `AC-3`, R5): with 5 pre-existing quarantine files, one more quarantine leaves exactly 5 and removes the oldest.
+- **AC1-4** (mirror `AC-4`, R7/R2): with only `prompts.json` corrupt, a `prompts.corrupt-*.json` file carries the original bytes and `snapshot.json` is untouched.
+- **AC2-1** (mirror `AC-1`, R1/R2): with corrupt `snapshot.json` seeded, startup admission completes, a fresh valid snapshot is persisted, and the quarantine file's bytes equal the seeded bytes.
+- **AC2-2** (mirror `AC-2`, R4): exactly one stderr record `event=startup_snapshot_rejected`, level `warn`, outcome `degraded`, `error.code=snapshot_unavailable`, `failure_reason=corrupt_json`, `resource.path` equal to the quarantine path, and zero `startup_failed` records.
+- **AC2-3** (mirror `AC-3`, R5): a second run against the same state dir creates no new quarantine file and emits no new warning record.
+- **AC2-4** (mirror `AC-4`, R3): a directory at the `snapshot.json` path makes startup fail with one `startup_failed` record, `error.code=state_directory`, `error.kind=resource`, `resource.path` set; the directory remains untouched.
+- **AC2-5** (mirror `AC-5`, R3): corrupt snapshot in a read-only state directory makes startup fail with `code=state_directory` and leaves the corrupt bytes at the original path.
+- **AC2-6** (mirror `AC-6`, R8): with `MCP_SNAPSHOT_QUARANTINE=off` and a corrupt snapshot, no file is renamed, no quarantine family exists, and startup fails with today's semantics.
