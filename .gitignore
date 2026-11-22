@@ -42,3 +42,6 @@ go.work.sum
 
 # local tool scratch spill
 bashnew
+
+# harness result spill files (regenerated per large tool output; historical files stay tracked)
+.omp/artifacts/result-pith/call_*

@@ -1,0 +1,23 @@
+{
+  "baseSha64hex": "11fa8c5ac19f132486829f111852bcfebe0aaa0a604dcbdc57be6a48b4d7c378",
+  "taskId": "ENG1",
+  "evidence": [
+    {
+      "id": "ev-eng1-inspection",
+      "kind": "inspection",
+      "artifact": {
+        "path": ".omp/artifacts/result-spill-ignore/eng1-evidence.log"
+      },
+      "acceptanceIds": [
+        "AC1"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T02:14:09Z",
+      "producer": "engineer:ResultSpillIgnoreEng1",
+      "details": {
+        "rubric": "git check-ignore matches the probe path and the probe never appears in git status",
+        "observedOutcome": "check-ignore reported .gitignore:47 match; status listed only the intended .gitignore edit"
+      }
+    }
+  ]
+}

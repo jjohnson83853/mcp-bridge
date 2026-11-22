@@ -1,0 +1,26 @@
+Result-spill ignore verification
+
+Initial worktree check (before editing):
+$ git status --porcelain
+ M .omp/plans/evidence-continuity/transaction-journal.json
+ M .omp/plans/execution-state.json
+ M .omp/plans/snapshot-recovery/execution-state.json
+?? .omp/artifacts/result-spill-ignore/
+?? .omp/plans/result-spill-ignore/
+?? .scratch/result-spill-ignore/
+
+Probe verification (commands run in order):
+$ touch .omp/artifacts/result-pith/call_eng1_fc_tmp_probe.json
+(no output)
+$ git check-ignore -v .omp/artifacts/result-pith/call_eng1_fc_tmp_probe.json
+.gitignore:47:.omp/artifacts/result-pith/call_*	.omp/artifacts/result-pith/call_eng1_fc_tmp_probe.json
+$ git status --porcelain
+ M .gitignore
+ M .omp/plans/evidence-continuity/transaction-journal.json
+ M .omp/plans/execution-state.json
+ M .omp/plans/snapshot-recovery/execution-state.json
+?? .omp/artifacts/result-spill-ignore/
+?? .omp/plans/result-spill-ignore/
+?? .scratch/result-spill-ignore/
+$ rm .omp/artifacts/result-pith/call_eng1_fc_tmp_probe.json
+(no output)

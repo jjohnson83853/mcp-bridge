@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 2,
+  "feature": "result-spill-ignore",
+  "revision": "r1",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "authorizationId": "owner-maintenance-result-spill-ignore",
+  "envelopeId": "env-1",
+  "packetDigest": "5c4b3ea61a1dfb89cd4492dbfe687a25f5476870e5e09c2e7e1ba4a80adf91bf",
+  "selectedBranchId": "result-spill-ignore-r1"
+}

@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 2,
+  "feature": "result-spill-ignore",
+  "revision": "r1",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/result-spill-ignore/spec.md",
+    "sha256": "b75a0119f5f01e5d495ce4812de5cc82d6c148ecc37a4d82352156cb01a26e0b",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r1",
+        "sha256": "fd6e50cab808d9a5d2bb3c80033cda39733e78638051c83ea55c92d477b877a5"
+      },
+      "design": {
+        "revision": "r1",
+        "sha256": "c263ec107a364b1d759e0f4d6d6c8878b7190fd7f703c67294fe9a6e2902b70a"
+      },
+      "tasks": {
+        "revision": "r1",
+        "sha256": "35225d2de3b4fcc941fd4bdb190824b5bf0825ea78941f0ca4ef5463109b0e38"
+      },
+      "envelope": {
+        "revision": "r1",
+        "sha256": "5a9cf8770ba8f5ad537b16018f299c38e56e111b2cf948d12a0662a9dd8a59be"
+      }
+    }
+  },
+  "packet": {
+    "digest": "5c4b3ea61a1dfb89cd4492dbfe687a25f5476870e5e09c2e7e1ba4a80adf91bf",
+    "branches": [
+      {
+        "id": "result-spill-ignore-r1",
+        "answerIds": [],
+        "taskIds": [
+          "ENG1"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r1",
+            "sha256": "fd6e50cab808d9a5d2bb3c80033cda39733e78638051c83ea55c92d477b877a5"
+          },
+          "design": {
+            "revision": "r1",
+            "sha256": "c263ec107a364b1d759e0f4d6d6c8878b7190fd7f703c67294fe9a6e2902b70a"
+          },
+          "tasks": {
+            "revision": "r1",
+            "sha256": "35225d2de3b4fcc941fd4bdb190824b5bf0825ea78941f0ca4ef5463109b0e38"
+          },
+          "envelope": {
+            "revision": "r1",
+            "sha256": "5a9cf8770ba8f5ad537b16018f299c38e56e111b2cf948d12a0662a9dd8a59be"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "result-spill-ignore-r1"
+  },
+  "actors": {
+    "plannerId": "owner-maintenance",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Ignore harness result-spill files so regenerated spill cannot dirty the worktree"
+    },
+    {
+      "id": "R2",
+      "summary": "Tracked spill files remain tracked and unmodified"
+    },
+    {
+      "id": "R3",
+      "summary": "The ignore rule is the only production change"
+    }
+  ],
+  "authorization": {
+    "mode": "milestone",
+    "id": "owner-maintenance-result-spill-ignore",
+    "packetDigest": "5c4b3ea61a1dfb89cd4492dbfe687a25f5476870e5e09c2e7e1ba4a80adf91bf",
+    "selectedBranchId": "result-spill-ignore-r1",
+    "receipt": {
+      "sourceId": "src-owner-result-spill-ignore",
+      "recordedAt": "2026-11-22T02:10:23Z",
+      "response": {
+        "origin": "user",
+        "explicit": true,
+        "timedOut": false,
+        "automatic": false,
+        "packetDigest": "5c4b3ea61a1dfb89cd4492dbfe687a25f5476870e5e09c2e7e1ba4a80adf91bf",
+        "selectedBranchId": "result-spill-ignore-r1"
+      }
+    }
+  },
+  "reviews": {
+    "specification": {
+      "verdict": "waived",
+      "reason": "Owner maintenance designation for a one-line ignore rule; owner approved this packet digest directly.",
+      "receipt": {
+        "sourceId": "src-owner-result-spill-ignore",
+        "recordedAt": "2026-11-22T02:10:23Z",
+        "response": {
+          "origin": "user",
+          "explicit": true,
+          "timedOut": false,
+          "automatic": false,
+          "packetDigest": "5c4b3ea61a1dfb89cd4492dbfe687a25f5476870e5e09c2e7e1ba4a80adf91bf",
+          "selectedBranchId": "result-spill-ignore-r1"
+        }
+      }
+    },
+    "tasks": {
+      "verdict": "waived",
+      "reason": "Owner maintenance designation; task set is ENG1 on .gitignore only; owner approved this packet digest directly.",
+      "receipt": {
+        "sourceId": "src-owner-result-spill-ignore",
+        "recordedAt": "2026-11-22T02:10:23Z",
+        "response": {
+          "origin": "user",
+          "explicit": true,
+          "timedOut": false,
+          "automatic": false,
+          "packetDigest": "5c4b3ea61a1dfb89cd4492dbfe687a25f5476870e5e09c2e7e1ba4a80adf91bf",
+          "selectedBranchId": "result-spill-ignore-r1"
+        }
+      }
+    }
+  },
+  "sources": [
+    {
+      "id": "src-owner-result-spill-ignore",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/result-spill-ignore/owner-approval-v2.json",
+        "sha256": "aea1f56c55a2a0b0e016eccd3c459427873a2389dac8278adccb2920b5599019"
+      },
+      "locator": "ask answer: approve (corrected packet)",
+      "recordedAt": "2026-11-22T02:10:23Z"
+    }
+  ],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "ENG1"
+    ],
+    "readPaths": [
+      ".gitignore",
+      ".omp/artifacts/gitignore-result-pith.patch.md"
+    ],
+    "writePaths": [
+      ".gitignore"
+    ],
+    "allowedEffects": [
+      "read",
+      "write"
+    ],
+    "forbiddenEffects": [
+      "test",
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "ENG1",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          ".gitignore"
+        ]
+      },
+      "acceptanceIds": [
+        "AC1"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC1",
+      "requirementIds": [
+        "R1",
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "ENG1"
+      ],
+      "method": "inspection",
+      "requiredEvidenceKinds": [
+        "inspection"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/result-spill-ignore/GATE_OPEN.json",
+    "activationEvidenceIds": []
+  }
+}

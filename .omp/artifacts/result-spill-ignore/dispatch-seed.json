@@ -1,0 +1,32 @@
+{
+  "intent": "ENG1: ignore harness result-spill files in .gitignore",
+  "instructions": "Maintenance task result-spill-ignore r1 ENG1. Edit ONLY .gitignore. Append the exact three-line block from .scratch/result-spill-ignore/spec.md design section after the existing bashnew line: a comment line plus the pattern .omp/artifacts/result-pith/call_* The local .git/info/exclude block must NOT be edited. Then verify: touch .omp/artifacts/result-pith/call_eng1_fc_tmp_probe.json; git check-ignore -v for it must match; git status --porcelain must stay empty; rm the probe. Record command output to .omp/artifacts/result-spill-ignore/eng1-evidence.log. No other file changes; do not commit or push.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "result-spill-ignore",
+    "revision": "r1",
+    "requests": [
+      {
+        "name": "ResultSpillIgnoreEng1",
+        "taskId": "ENG1",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            ".gitignore"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ResultSpillIgnoreEng1",
+      "agent": "engineer",
+      "solutionSpace": "append one exact comment+pattern block to .gitignore, no other edits",
+      "task": "Bounded maintenance task. Target file: /home/opencode/projects/default/mcp-bridge/.gitignore. Append after the last line (bashnew):\n\n# harness result spill files (regenerated per large tool output; historical files stay tracked)\n.omp/artifacts/result-pith/call_*\n\nVerification: touch .omp/artifacts/result-pith/call_eng1_fc_tmp_probe.json; git check-ignore -v <that path>; confirm git status --porcelain prints nothing; rm the probe file. Save the exact commands and outputs to .omp/artifacts/result-spill-ignore/eng1-evidence.log. Do not modify any other file, do not commit, do not push, do not touch .git/info/exclude."
+    }
+  ]
+}

@@ -1,59 +1,64 @@
 {
   "schemaVersion": 2,
   "feature": "snapshot-recovery",
-  "revision": "r15",
+  "revision": "r30",
   "projectRoot": "/home/opencode/projects/default/mcp-bridge",
   "spec": {
     "path": "/home/opencode/projects/default/mcp-bridge/.scratch/snapshot-recovery/spec.md",
-    "sha256": "b859f4f2a1a2f1b94964cd7dd3c7e09d6be8a9e602afa213a2eb93a3dce62d0a",
+    "sha256": "33fdf021d3a88f16b7fde1eb0993041a402c2dc03d83732cb892683d9bfdebfc",
     "sectionBindings": {
       "requirements": {
-        "revision": "r15",
-        "sha256": "02f6aa64efd767b0b0696979809a0071e077e8c98c9815cc647e84d67bd288a8"
+        "revision": "r30",
+        "sha256": "6daf2a7aa9e983eae93ad3b1268d1995b66c223fcc601fa7aa34e57b924cb12c"
       },
       "design": {
-        "revision": "r15",
-        "sha256": "e35bb1e8e1a153bf707186b1cbf1f5cbfda5327115abd69bf7c83fe78fcefb3f"
+        "revision": "r30",
+        "sha256": "53b7498fe994192a4cb9b786b73af04adacd301212fe11b136290d161a6017a5"
       },
       "tasks": {
-        "revision": "r15",
-        "sha256": "fcf03f2023b67348d2f05e8d9debb8bcf3723bd311ea313a7e06c2f555b5eb3a"
+        "revision": "r30",
+        "sha256": "a290bc8357b0b42ede4a9446fc6d03fd67f6f5ec96e01a0a090773628e573240"
       },
       "envelope": {
-        "revision": "r15",
-        "sha256": "3a5b39d0147d2e46ae838fb779cd546b92216aa5d6ea4cdccb6e74236d520f00"
+        "revision": "r30",
+        "sha256": "eb5e423cd1fb165c855f99cee8363dfb0d87af35f8ccd313eb0c5b9269df44fa"
       }
     }
   },
   "packet": {
-    "digest": "a5d1150b42fc9ba4999783ae2a338b3c7ce21b88ebbe69605314f26c0ea6d411",
+    "digest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
     "branches": [
       {
-        "id": "snapshot-recovery-r15",
+        "id": "snapshot-recovery-r30",
         "answerIds": [],
-        "taskIds": [],
+        "taskIds": [
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
         "envelopeId": "env-1",
         "sectionBindings": {
           "requirements": {
-            "revision": "r15",
-            "sha256": "02f6aa64efd767b0b0696979809a0071e077e8c98c9815cc647e84d67bd288a8"
+            "revision": "r30",
+            "sha256": "6daf2a7aa9e983eae93ad3b1268d1995b66c223fcc601fa7aa34e57b924cb12c"
           },
           "design": {
-            "revision": "r15",
-            "sha256": "e35bb1e8e1a153bf707186b1cbf1f5cbfda5327115abd69bf7c83fe78fcefb3f"
+            "revision": "r30",
+            "sha256": "53b7498fe994192a4cb9b786b73af04adacd301212fe11b136290d161a6017a5"
           },
           "tasks": {
-            "revision": "r15",
-            "sha256": "fcf03f2023b67348d2f05e8d9debb8bcf3723bd311ea313a7e06c2f555b5eb3a"
+            "revision": "r30",
+            "sha256": "a290bc8357b0b42ede4a9446fc6d03fd67f6f5ec96e01a0a090773628e573240"
           },
           "envelope": {
-            "revision": "r15",
-            "sha256": "3a5b39d0147d2e46ae838fb779cd546b92216aa5d6ea4cdccb6e74236d520f00"
+            "revision": "r30",
+            "sha256": "eb5e423cd1fb165c855f99cee8363dfb0d87af35f8ccd313eb0c5b9269df44fa"
           }
         }
       }
     ],
-    "selectedBranchId": null
+    "selectedBranchId": "snapshot-recovery-r30"
   },
   "actors": {
     "plannerId": "planner",
@@ -99,19 +104,96 @@
       "summary": "Continue startup and self-heal. After recovery, startup proceeds with no restored catalog/prompt state, admission persists and publishes a fresh valid `snapshot.json`, the loop's async initial refresh republishes `prompts.json` (`internal/service/loop.go:172` `Trigger()`; admission skips `PersistPrompts`, `internal/service/reload.go:728`), and a second run against the same state directory is a no-op (no new quarantine file, no new record)."
     }
   ],
-  "authorization": null,
-  "reviews": null,
-  "sources": [],
+  "authorization": {
+    "mode": "bounded",
+    "id": "owner-bounded-snapshot-recovery-t1",
+    "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+    "selectedBranchId": "snapshot-recovery-r30",
+    "receipt": {
+      "sourceId": "src-owner-authorization-snapshot-recovery-t1",
+      "recordedAt": "2026-11-22T00:32:18.497Z",
+      "response": {
+        "origin": "user",
+        "explicit": true,
+        "timedOut": false,
+        "automatic": false,
+        "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+        "selectedBranchId": "snapshot-recovery-r30"
+      }
+    }
+  },
+  "reviews": {
+    "specification": {
+      "verdict": "pass",
+      "reviewerId": "code-reviewer",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "receipt": {
+        "sourceId": "review-specification-8ecf05449565db408121e5fff52e49261940ad62ff9e92bb9f92498a5c4460ff",
+        "recordedAt": "2026-11-22T00:40:25.004Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    },
+    "tasks": {
+      "verdict": "pass",
+      "reviewerId": "critic",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "receipt": {
+        "sourceId": "review-tasks-da6cdeb430eaead0cb2d74b8d65b9de4749832a0dbb9996651778fbc530d941b",
+        "recordedAt": "2026-11-22T00:44:12.366Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    }
+  },
+  "sources": [
+    {
+      "id": "src-owner-authorization-snapshot-recovery-t1",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/owner-authorization-snapshot-recovery-t1-20261121.md",
+        "sha256": "c0086c035da6190133fb02f7c6a94118d9dd64c1d13d55c255a3e8cf42725cb0"
+      },
+      "locator": "owner directive: select the reviewed branch and dispatch engineer for T1",
+      "recordedAt": "2026-11-22T00:32:18.497Z"
+    },
+    {
+      "id": "review-specification-8ecf05449565db408121e5fff52e49261940ad62ff9e92bb9f92498a5c4460ff",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/snapshot-recovery-fresh-plan/review-cr-r30-source-3e6f275c-0c2c-4cee-8ee7-d34200872768.json",
+        "sha256": "1b4a9ecaa989271df8d7837eca461b5f2604c9c40fb9e281f9e66b1851a863a8"
+      },
+      "locator": "specification review observation for snapshot-recovery-spec-r30@r30",
+      "recordedAt": "2026-11-22T00:40:25.004Z"
+    },
+    {
+      "id": "review-tasks-da6cdeb430eaead0cb2d74b8d65b9de4749832a0dbb9996651778fbc530d941b",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/snapshot-recovery-fresh-plan/review-ct-r30-source-7977666f-0663-4fbc-88e8-a4d0a847b4a7.json",
+        "sha256": "916af807629714653aaa30ef283ed3d37e48fbe49acd7de2d2d1bc2ef380a834"
+      },
+      "locator": "tasks review observation for snapshot-recovery-spec-r30@r30",
+      "recordedAt": "2026-11-22T00:44:12.366Z"
+    }
+  ],
   "decisions": [],
   "envelope": {
     "id": "env-1",
     "root": "/home/opencode/projects/default/mcp-bridge",
     "allowedTaskIds": [
+      "PLAN1",
       "CR1",
       "CT1",
       "T1",
       "T2",
-      "T3"
+      "T3",
+      "T4"
     ],
     "readPaths": [
       ".scratch/snapshot-recovery/spec.md",
@@ -154,7 +236,8 @@
       "internal/storage/store_edge_test.go"
     ],
     "allowedEffects": [
-      "read"
+      "read",
+      "write"
     ],
     "forbiddenEffects": [
       "network",
@@ -177,6 +260,22 @@
     }
   },
   "tasks": [
+    {
+      "id": "PLAN1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": []
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "planner"
+      ]
+    },
     {
       "id": "CR1",
       "stage": "research",
@@ -218,7 +317,7 @@
     {
       "id": "T1",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [],
       "requires": [],
       "effects": {
@@ -235,15 +334,15 @@
         "AC1-2",
         "AC1-3",
         "AC1-4",
-        "AC1-5",
-        "AC1-6",
-        "AC1-7",
-        "AC1-8",
-        "AC1-9",
-        "AC1-10",
-        "AC2-8"
+        "AC1-7"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-t1-AC1-1",
+        "ev-t1-AC1-2",
+        "ev-t1-AC1-3",
+        "ev-t1-AC1-4",
+        "ev-t1-AC1-7"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -251,25 +350,33 @@
     {
       "id": "T2",
       "stage": "implementation",
-      "status": "pending",
-      "blockedBy": [],
+      "status": "done",
+      "blockedBy": [
+        "T1"
+      ],
       "requires": [],
       "effects": {
         "kind": "write",
         "paths": [
-          "internal/observe/envelope.go",
-          "internal/observe/log.go",
-          "internal/observe/log_test.go",
-          "internal/observe/edge_test.go",
-          "docs/logging-contract.md",
-          "cmd/mcp-bridge/config_envelope_test.go"
+          "internal/storage/recovery.go",
+          "internal/storage/recovery_test.go",
+          "internal/storage/store_edge_test.go"
         ]
       },
       "acceptanceIds": [
+        "AC1-5",
         "AC1-6",
-        "AC2-2"
+        "AC1-8",
+        "AC1-9",
+        "AC1-10"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-t2-AC1-5",
+        "ev-t2-AC1-6",
+        "ev-t2-AC1-8",
+        "ev-t2-AC1-9",
+        "ev-t2-AC1-10"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -277,7 +384,7 @@
     {
       "id": "T3",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [
         "T1",
         "T2"
@@ -286,10 +393,42 @@
       "effects": {
         "kind": "write",
         "paths": [
+          "internal/storage/recovery.go",
+          "internal/storage/recovery_test.go",
+          "internal/observe/envelope.go",
+          "internal/observe/log.go",
+          "internal/observe/log_test.go",
+          "internal/observe/edge_test.go",
+          "docs/logging-contract.md",
+          "cmd/mcp-bridge/config_envelope_test.go"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [
+        "ev-t3-envelope"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T4",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [
+        "T1",
+        "T2",
+        "T3"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
           "cmd/mcp-bridge/serve.go",
           "cmd/mcp-bridge/snapshot_recovery_test.go",
           "cmd/mcp-bridge/serve_edge_test.go",
-          "cmd/mcp-bridge/startup_failure_test.go"
+          "cmd/mcp-bridge/startup_failure_test.go",
+          "internal/storage/recovery_test.go"
         ]
       },
       "acceptanceIds": [
@@ -303,7 +442,17 @@
         "AC2-8",
         "AC2-9"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-t4-AC2-1",
+        "ev-t4-AC2-2",
+        "ev-t4-AC2-3",
+        "ev-t4-AC2-4",
+        "ev-t4-AC2-5",
+        "ev-t4-AC2-6",
+        "ev-t4-AC2-7",
+        "ev-t4-AC2-8",
+        "ev-t4-AC2-9"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -370,7 +519,7 @@
         "R5"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T2"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -385,7 +534,6 @@
         "R8"
       ],
       "ownerTaskIds": [
-        "T1",
         "T2"
       ],
       "method": "test",
@@ -412,7 +560,7 @@
         "R5"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T2"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -426,7 +574,7 @@
         "R5"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T2"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -440,7 +588,7 @@
         "R6"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T2"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -454,7 +602,7 @@
         "R2"
       ],
       "ownerTaskIds": [
-        "T3"
+        "T4"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -468,8 +616,7 @@
         "R8"
       ],
       "ownerTaskIds": [
-        "T2",
-        "T3"
+        "T4"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -482,7 +629,7 @@
         "R9"
       ],
       "ownerTaskIds": [
-        "T3"
+        "T4"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -495,7 +642,7 @@
         "R3"
       ],
       "ownerTaskIds": [
-        "T3"
+        "T4"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -508,7 +655,7 @@
         "R3"
       ],
       "ownerTaskIds": [
-        "T3"
+        "T4"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -521,7 +668,7 @@
         "R7"
       ],
       "ownerTaskIds": [
-        "T3"
+        "T4"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -535,7 +682,7 @@
         "R4"
       ],
       "ownerTaskIds": [
-        "T3"
+        "T4"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -549,8 +696,7 @@
         "R2"
       ],
       "ownerTaskIds": [
-        "T1",
-        "T3"
+        "T4"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -564,7 +710,7 @@
         "R2"
       ],
       "ownerTaskIds": [
-        "T3"
+        "T4"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -572,7 +718,1567 @@
       ]
     }
   ],
-  "evidence": [],
+  "evidence": [
+    {
+      "id": "ev-t1-AC1-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-evidence-AC1-1.log",
+        "sha256": "d4c3b14034a42a07f37f5fc2f4c7f57d185b71b56bcb138879f77ac1970d1374"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC1-1"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:22:17.158Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/storage/ -run 'TestRecoverNoopValidAbsentAndSymlinkStates' -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "df227206e200231fed3b79460317548d9ef5736c21ea16a778145b31daabe606",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./internal/storage/",
+          "-run",
+          "TestRecoverNoopValidAbsentAndSymlinkStates",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "b792701baef45b5145d9adcbfecdaed0dea6ccf8d5e0d72ad1591796cb718b32"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store.go",
+            "sha256": "cedcbb68f9a65d1b00ded7169a49d01a5d05007e1a2f1a2835a879c0d825ddbf"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "9d86ef2d45c3b41254f2039d5716a79bfc6db62bbcf8345359457256a985e137"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "b792701baef45b5145d9adcbfecdaed0dea6ccf8d5e0d72ad1591796cb718b32"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store.go",
+            "sha256": "cedcbb68f9a65d1b00ded7169a49d01a5d05007e1a2f1a2835a879c0d825ddbf"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "9d86ef2d45c3b41254f2039d5716a79bfc6db62bbcf8345359457256a985e137"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t1-AC1-2",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-evidence-AC1-2.log",
+        "sha256": "18b5b5bf7089864c8a1e95ebd7ea3fec250a987f35d58c8f3daeea7c2709ff44"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC1-2"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:22:17.158Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/storage/ -run 'TestRecoverRejectedReasons' -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "df227206e200231fed3b79460317548d9ef5736c21ea16a778145b31daabe606",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./internal/storage/",
+          "-run",
+          "TestRecoverRejectedReasons",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "b792701baef45b5145d9adcbfecdaed0dea6ccf8d5e0d72ad1591796cb718b32"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store.go",
+            "sha256": "cedcbb68f9a65d1b00ded7169a49d01a5d05007e1a2f1a2835a879c0d825ddbf"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "9d86ef2d45c3b41254f2039d5716a79bfc6db62bbcf8345359457256a985e137"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "b792701baef45b5145d9adcbfecdaed0dea6ccf8d5e0d72ad1591796cb718b32"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store.go",
+            "sha256": "cedcbb68f9a65d1b00ded7169a49d01a5d05007e1a2f1a2835a879c0d825ddbf"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "9d86ef2d45c3b41254f2039d5716a79bfc6db62bbcf8345359457256a985e137"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t1-AC1-3",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-evidence-AC1-3.log",
+        "sha256": "4328ce5d615ff8635ea2a019b18c6d801ac834f35f444b9933a07b2f3d9a11de"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC1-3"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:22:17.158Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/storage/ -run 'TestRecoverRetention' -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "df227206e200231fed3b79460317548d9ef5736c21ea16a778145b31daabe606",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./internal/storage/",
+          "-run",
+          "TestRecoverRetention",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "b792701baef45b5145d9adcbfecdaed0dea6ccf8d5e0d72ad1591796cb718b32"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store.go",
+            "sha256": "cedcbb68f9a65d1b00ded7169a49d01a5d05007e1a2f1a2835a879c0d825ddbf"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "9d86ef2d45c3b41254f2039d5716a79bfc6db62bbcf8345359457256a985e137"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "b792701baef45b5145d9adcbfecdaed0dea6ccf8d5e0d72ad1591796cb718b32"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store.go",
+            "sha256": "cedcbb68f9a65d1b00ded7169a49d01a5d05007e1a2f1a2835a879c0d825ddbf"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "9d86ef2d45c3b41254f2039d5716a79bfc6db62bbcf8345359457256a985e137"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t1-AC1-4",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-evidence-AC1-4.log",
+        "sha256": "d7f08757320f93e47835b9ec207803a20879475ec133ff7d80a5562b36caa580"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC1-4"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:22:17.158Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/storage/ -run 'TestRecoverPromptsFamily' -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "df227206e200231fed3b79460317548d9ef5736c21ea16a778145b31daabe606",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./internal/storage/",
+          "-run",
+          "TestRecoverPromptsFamily",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "b792701baef45b5145d9adcbfecdaed0dea6ccf8d5e0d72ad1591796cb718b32"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store.go",
+            "sha256": "cedcbb68f9a65d1b00ded7169a49d01a5d05007e1a2f1a2835a879c0d825ddbf"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "9d86ef2d45c3b41254f2039d5716a79bfc6db62bbcf8345359457256a985e137"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "b792701baef45b5145d9adcbfecdaed0dea6ccf8d5e0d72ad1591796cb718b32"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store.go",
+            "sha256": "cedcbb68f9a65d1b00ded7169a49d01a5d05007e1a2f1a2835a879c0d825ddbf"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "9d86ef2d45c3b41254f2039d5716a79bfc6db62bbcf8345359457256a985e137"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t1-AC1-7",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-evidence-AC1-7.log",
+        "sha256": "26eb869dca199eb7cefc914d5b43909f1eb4bbb134e2e3748309d27c7e2c196b"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC1-7"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:22:17.158Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/storage/ -run 'TestRecoverDoesNotRetainWithoutCreatingQuarantine' -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "df227206e200231fed3b79460317548d9ef5736c21ea16a778145b31daabe606",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./internal/storage/",
+          "-run",
+          "TestRecoverDoesNotRetainWithoutCreatingQuarantine",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "b792701baef45b5145d9adcbfecdaed0dea6ccf8d5e0d72ad1591796cb718b32"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store.go",
+            "sha256": "cedcbb68f9a65d1b00ded7169a49d01a5d05007e1a2f1a2835a879c0d825ddbf"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "9d86ef2d45c3b41254f2039d5716a79bfc6db62bbcf8345359457256a985e137"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "b792701baef45b5145d9adcbfecdaed0dea6ccf8d5e0d72ad1591796cb718b32"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store.go",
+            "sha256": "cedcbb68f9a65d1b00ded7169a49d01a5d05007e1a2f1a2835a879c0d825ddbf"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "9d86ef2d45c3b41254f2039d5716a79bfc6db62bbcf8345359457256a985e137"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t2-AC1-5",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-evidence-AC1-5.log",
+        "sha256": "a0c67ac7c40f7a836d72b1896da3417b5db07a839a949ecb757f72d857b95e43"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC1-5"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:28:39.318Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/storage/ -run <bound T2 patterns> -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "46b3b9c8ac8fa9308bd279bf8724801d5ff154b1ba702c660bfc1cb30f5d2355",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./internal/storage/",
+          "-run",
+          "<bound",
+          "T2",
+          "patterns>",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "07f34f3fffb8d2238341e02820557706c5e2377cf1cf03b103e689aec8f2ee73"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "fb75a335cc36f20fdcfaa8b3614a046b90e814252d23dcbf4910792bf561bef5"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "07f34f3fffb8d2238341e02820557706c5e2377cf1cf03b103e689aec8f2ee73"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "fb75a335cc36f20fdcfaa8b3614a046b90e814252d23dcbf4910792bf561bef5"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t2-AC1-6",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-evidence-AC1-6.log",
+        "sha256": "81d0407394e475a5b562cc2f650f63002e40543a244d7fd0b6f522eef93b0f74"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC1-6"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:28:39.318Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/storage/ -run <bound T2 patterns> -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "46b3b9c8ac8fa9308bd279bf8724801d5ff154b1ba702c660bfc1cb30f5d2355",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./internal/storage/",
+          "-run",
+          "<bound",
+          "T2",
+          "patterns>",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "07f34f3fffb8d2238341e02820557706c5e2377cf1cf03b103e689aec8f2ee73"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "fb75a335cc36f20fdcfaa8b3614a046b90e814252d23dcbf4910792bf561bef5"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "07f34f3fffb8d2238341e02820557706c5e2377cf1cf03b103e689aec8f2ee73"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "fb75a335cc36f20fdcfaa8b3614a046b90e814252d23dcbf4910792bf561bef5"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t2-AC1-8",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-evidence-AC1-8.log",
+        "sha256": "a72c27401080704bdf60f08f07e17a4a580fd3f113e2ad1ef1dd81569f79a5fa"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC1-8"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:28:39.318Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/storage/ -run <bound T2 patterns> -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "46b3b9c8ac8fa9308bd279bf8724801d5ff154b1ba702c660bfc1cb30f5d2355",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./internal/storage/",
+          "-run",
+          "<bound",
+          "T2",
+          "patterns>",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "07f34f3fffb8d2238341e02820557706c5e2377cf1cf03b103e689aec8f2ee73"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "fb75a335cc36f20fdcfaa8b3614a046b90e814252d23dcbf4910792bf561bef5"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "07f34f3fffb8d2238341e02820557706c5e2377cf1cf03b103e689aec8f2ee73"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "fb75a335cc36f20fdcfaa8b3614a046b90e814252d23dcbf4910792bf561bef5"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t2-AC1-9",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-evidence-AC1-9.log",
+        "sha256": "166cb259668a2c54e33466114ad6f297c2476e53f62b27211bc0a90f8382cf14"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC1-9"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:28:39.318Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/storage/ -run <bound T2 patterns> -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "46b3b9c8ac8fa9308bd279bf8724801d5ff154b1ba702c660bfc1cb30f5d2355",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./internal/storage/",
+          "-run",
+          "<bound",
+          "T2",
+          "patterns>",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "07f34f3fffb8d2238341e02820557706c5e2377cf1cf03b103e689aec8f2ee73"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "fb75a335cc36f20fdcfaa8b3614a046b90e814252d23dcbf4910792bf561bef5"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "07f34f3fffb8d2238341e02820557706c5e2377cf1cf03b103e689aec8f2ee73"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "fb75a335cc36f20fdcfaa8b3614a046b90e814252d23dcbf4910792bf561bef5"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t2-AC1-10",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-evidence-AC1-10.log",
+        "sha256": "5b9da9006715a54745eea60f8839cc88c082531663543316eb97916a43e18d79"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC1-10"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:28:39.318Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/storage/ -run <bound T2 patterns> -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "46b3b9c8ac8fa9308bd279bf8724801d5ff154b1ba702c660bfc1cb30f5d2355",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./internal/storage/",
+          "-run",
+          "<bound",
+          "T2",
+          "patterns>",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "07f34f3fffb8d2238341e02820557706c5e2377cf1cf03b103e689aec8f2ee73"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "fb75a335cc36f20fdcfaa8b3614a046b90e814252d23dcbf4910792bf561bef5"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "07f34f3fffb8d2238341e02820557706c5e2377cf1cf03b103e689aec8f2ee73"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store_edge_test.go",
+            "sha256": "fb75a335cc36f20fdcfaa8b3614a046b90e814252d23dcbf4910792bf561bef5"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t3-envelope",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t3-evidence-envelope.log",
+        "sha256": "26622c609685d7168e8e0c6f85c3d892734709dd0de2553c7dee4d3cd9b16c0b"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T3"
+      ],
+      "acceptanceIds": [],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:42:04.835Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/observe/ -run 'TestEnvelopeFieldNames|TestLog' -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "ba3ccc2656573f59a16174aa095089d5996ab13c0b5062e427bd3cc68562e849",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./internal/observe/",
+          "-run",
+          "TestEnvelopeFieldNames|TestLog",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/config_envelope_test.go",
+            "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+            "sha256": "b465e01ef7918471182df9bd93aa528d1acf7763f2a64fffe608f64b5ba1dbd3"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/edge_test.go",
+            "sha256": "0b2efbcde7765af2fc087ea91670085204de39e4a3bc1f34b774096e61674bc3"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+            "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+            "sha256": "82d7e60e0190dc4b165cc922c4848f8d012a6733f96a02bc6acf266659ad5a96"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
+            "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "4343eeba3194accbfb428c0fc488f1edaf5688b5d0087600a1e9c32b22e023c8"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/config_envelope_test.go",
+            "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+            "sha256": "b465e01ef7918471182df9bd93aa528d1acf7763f2a64fffe608f64b5ba1dbd3"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/edge_test.go",
+            "sha256": "0b2efbcde7765af2fc087ea91670085204de39e4a3bc1f34b774096e61674bc3"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+            "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+            "sha256": "82d7e60e0190dc4b165cc922c4848f8d012a6733f96a02bc6acf266659ad5a96"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
+            "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery.go",
+            "sha256": "44e9d4affdfc2b279b71189ea24b9e912107988f5a8e52d1bf3a1005d1bde2ac"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "4343eeba3194accbfb428c0fc488f1edaf5688b5d0087600a1e9c32b22e023c8"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t4-AC2-1",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t4-evidence-AC2-1.log",
+        "sha256": "687a6ca59206fa1230ace42dba2955015d6cafe9ddbd7c26b1d682adc46ed3ee"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC2-1"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:55:59.683Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge/ ./internal/storage/ -run <bound AC2-1 patterns> -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "edcf85f7dd6cd0735ea7013ca31bc6d215e53764f877bea98e3e742a01fd7636",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./cmd/mcp-bridge/",
+          "./internal/storage/",
+          "-run",
+          "<bound",
+          "AC2-1",
+          "patterns>",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t4-AC2-2",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t4-evidence-AC2-2.log",
+        "sha256": "fbec83a5f225ca870260133eb215da578ce18ffcc49f56618c4567f2a3e5cc27"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC2-2"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:55:59.683Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge/ ./internal/storage/ -run <bound AC2-2 patterns> -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "edcf85f7dd6cd0735ea7013ca31bc6d215e53764f877bea98e3e742a01fd7636",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./cmd/mcp-bridge/",
+          "./internal/storage/",
+          "-run",
+          "<bound",
+          "AC2-2",
+          "patterns>",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t4-AC2-3",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t4-evidence-AC2-3.log",
+        "sha256": "8e0d969318e1745389084973ab7cc764fb091babb9e4b13e6168afe27b4eb4e4"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC2-3"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:55:59.683Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge/ ./internal/storage/ -run <bound AC2-3 patterns> -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "edcf85f7dd6cd0735ea7013ca31bc6d215e53764f877bea98e3e742a01fd7636",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./cmd/mcp-bridge/",
+          "./internal/storage/",
+          "-run",
+          "<bound",
+          "AC2-3",
+          "patterns>",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t4-AC2-4",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t4-evidence-AC2-4.log",
+        "sha256": "e19c88de82bdb996a7ed0913fd2acda5c919c8bae6011e17d9aa35873517d90c"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC2-4"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:55:59.683Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge/ ./internal/storage/ -run <bound AC2-4 patterns> -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "edcf85f7dd6cd0735ea7013ca31bc6d215e53764f877bea98e3e742a01fd7636",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./cmd/mcp-bridge/",
+          "./internal/storage/",
+          "-run",
+          "<bound",
+          "AC2-4",
+          "patterns>",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t4-AC2-5",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t4-evidence-AC2-5.log",
+        "sha256": "0cd1cbab3f60d01501d2ed4a1313321610bae78901564dad128b4392eb13c389"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC2-5"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:55:59.683Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge/ ./internal/storage/ -run <bound AC2-5 patterns> -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "edcf85f7dd6cd0735ea7013ca31bc6d215e53764f877bea98e3e742a01fd7636",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./cmd/mcp-bridge/",
+          "./internal/storage/",
+          "-run",
+          "<bound",
+          "AC2-5",
+          "patterns>",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t4-AC2-6",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t4-evidence-AC2-6.log",
+        "sha256": "d34c81354501602532f4e1048025113fe22a933f3af2da647c0f998bd507bbb0"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC2-6"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:55:59.683Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge/ ./internal/storage/ -run <bound AC2-6 patterns> -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "edcf85f7dd6cd0735ea7013ca31bc6d215e53764f877bea98e3e742a01fd7636",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./cmd/mcp-bridge/",
+          "./internal/storage/",
+          "-run",
+          "<bound",
+          "AC2-6",
+          "patterns>",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t4-AC2-7",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t4-evidence-AC2-7.log",
+        "sha256": "6d75327a5c5172af75a88b3640cce9f3067c91eb094bcb4973c920e2a55834c0"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC2-7"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:55:59.683Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge/ ./internal/storage/ -run <bound AC2-7 patterns> -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "edcf85f7dd6cd0735ea7013ca31bc6d215e53764f877bea98e3e742a01fd7636",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./cmd/mcp-bridge/",
+          "./internal/storage/",
+          "-run",
+          "<bound",
+          "AC2-7",
+          "patterns>",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t4-AC2-8",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t4-evidence-AC2-8.log",
+        "sha256": "23548c1903b003b32b7513859a5202eaa8eeab20b2ba371cbea501333d23dfda"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC2-8"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:55:59.683Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge/ ./internal/storage/ -run <bound AC2-8 patterns> -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "edcf85f7dd6cd0735ea7013ca31bc6d215e53764f877bea98e3e742a01fd7636",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./cmd/mcp-bridge/",
+          "./internal/storage/",
+          "-run",
+          "<bound",
+          "AC2-8",
+          "patterns>",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t4-AC2-9",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t4-evidence-AC2-9.log",
+        "sha256": "92acaf4c9f4be64b936354e1f746bd67921332226e50fabb42b14b7e860415df"
+      },
+      "feature": "snapshot-recovery",
+      "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+      "selectedBranchId": "snapshot-recovery-r30",
+      "taskIds": [
+        "T4"
+      ],
+      "acceptanceIds": [
+        "AC2-9"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:55:59.683Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge/ ./internal/storage/ -run <bound AC2-9 patterns> -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "edcf85f7dd6cd0735ea7013ca31bc6d215e53764f877bea98e3e742a01fd7636",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./cmd/mcp-bridge/",
+          "./internal/storage/",
+          "-run",
+          "<bound",
+          "AC2-9",
+          "patterns>",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_edge_test.go",
+            "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/snapshot_recovery_test.go",
+            "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+            "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/recovery_test.go",
+            "sha256": "aafefb3eac443966eb0896295de1bc5e15a4b0894beb7a8781f03635149eeaef"
+          }
+        ]
+      }
+    }
+  ],
   "blockers": [],
   "gate": {
     "markerPath": "/home/opencode/projects/default/mcp-bridge/.superpowers/sdd/GATE_OPEN",
