@@ -1,0 +1,85 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "snapshot-recovery-spec-r17",
+  "revision": "r17",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "dc306fe51743c273100cbb6423b3aab2dba80961ad2bdd1e33d192d9fc0f9c95"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR17CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "c75b0367fb34832df093e51d488b79e954654e201c94fecd109cc1ccd368c24d",
+      "targetCandidateId": "snapshot-recovery-spec-r17",
+      "targetRevision": "r17",
+      "taskSha256": "4fe0e16823b3237805bd7386a6b15441b71b933ba738c8a7a312beb019198644",
+      "instructionsSha256": "9dc2688f41681e3decf1d357cfee4b450602d0b8b421a084d819a7287ef569e7"
+    },
+    {
+      "name": "SnapshotRecoverySpecR17Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "38f507972571216165e05e2fe1dc7d81f4d9761a3822b9294c5958592a04398e",
+      "targetCandidateId": "snapshot-recovery-spec-r17",
+      "targetRevision": "r17",
+      "taskSha256": "15513631870de2499d8f1e23da4786df005e747af296a7b9db677c37091bef06",
+      "instructionsSha256": "9dc2688f41681e3decf1d357cfee4b450602d0b8b421a084d819a7287ef569e7"
+    }
+  ],
+  "output": "Spec ID: snapshot-recovery-spec-r17\nRevision: r17\nFindings by ID: C1, C2\n\nReferences below are to `.scratch/snapshot-recovery/spec.md` unless otherwise named.\n\n**Verified closures**\n- F1’s original A/B layouts are repaired: R2/R5, D10 and §4 populate protection before either family pass. AC1-3/AC1-10 require the protected `now-5s` target to survive, `now-4s` to be evicted, two recoveries and successful quarantine read-through. C6’s direct same-family case remains covered. The broader invariant still fails under C1.\n- F2’s §4 candidate-set defect is repaired: all unprotected pre-existing files are eligible, oldest-first, stopping at four survivors. A repair-introduced contradiction remains under C2.\n- F3–F5 are closed: `wiring.go:486-493` matches the source; §9.7 records ticket references r15/r7/r3; AC1-3/AC1-10 explicitly seed rejected target bytes.\n- CR15-01–05 remain textually closed: mirror lag, split AC1-6 ownership, corrected anchors, complete ErrorInfo shapes and two-excess eviction oracles. R/AC/T identifiers, the 14-file §6.1 envelope and task decomposition are unchanged.\n\n**C1 — HIGH / irreversible-deletion / confidence HIGH**\nAnchor: R2/R5 (`:16,19`), §4 (`:78`), AC1-10 (`:117`).\nOne `Readlink` plus lexical cleaning protects only the immediate target. Seed five conforming snapshot quarantine entries: newest q1 is a relative symlink to oldest q5, which contains corrupt bytes; `snapshot.json` points to q1. Recovery protects q1, then retention deletes unprotected q5. Both quarantine links dangle and the rejected backing bytes are irreversibly lost despite successful retention.\n\nThis is a new F1/C6-class instance, not recurrence of A/B. Quarantined symlinks are explicitly supported, so reachability needs no concurrent attacker. The r17 CodeReviewer mentions this but underrates its consequence; the reason for the earlier miss is unknown.\n\nMinimal amendment: specify protection of the complete backing chain, including resolution failures and compatibility with the retention bound; extend AC1-10 with this deterministic counterexample. Do not weaken R2 to pass it.\n\n**C2 — MEDIUM / statement-contradiction / confidence HIGH**\nAnchor: §8(2) (`:197`) versus R5/D10/§4.\nThe newly added assertion “at most the `QuarantineKeep−1` oldest … files are ever deleted” caps deletion at four. Nine pre-existing conforming regular files require five successful deletions to leave four plus this run’s file. Both promises cannot hold.\n\nMinimal amendment: remove the four-deletion cap and state that successful deletion count is the excess above four pre-existing survivors; cover this backlog within AC1-3. This regression was introduced by the F2 repair.\n\n**Coverage and limits**\nReviewed traceability, planned RED/GREEN, warning counts, reservation/rename ordering, ownership and §9 checkpoints. §7 documents scoped observability exceptions; collector delivery remains unverified. No implementation or tests were run, and SHA-256 comparison was unavailable through the effective tools. These are text-level findings, not runtime claims.\n\nT1’s technical clearance remains unresolved. No approvals are granted or gate records changed. Coordinator escalation to the configured non-OpenAI `spec_critic_escalated` remains requested but unavailable—a limit, not a verdict substitute. Owner confirmation remains required before irreversible retention implementation.\n\n### Verdict\nREVISE\n",
+  "invocationId": "b66ffe49-e045-4244-87dd-23eba50f108a"
+}

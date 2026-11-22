@@ -1,0 +1,36 @@
+{
+  "intent": "T2 recovery edge classes and protection implementation",
+  "instructions": "Implement T2 per approved snapshot-recovery spec r30; bounded files only; RED/GREEN; report commands and results.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r30",
+    "requests": [
+      {
+        "name": "SnapshotRecoveryT2Engineer",
+        "taskId": "T2",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/storage/recovery.go",
+            "internal/storage/recovery_test.go",
+            "internal/storage/store_edge_test.go"
+          ]
+        },
+        "targetCandidateId": "snapshot-recovery-spec-r30",
+        "targetRevision": "r30"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoveryT2Engineer",
+      "agent": "engineer",
+      "solutionSpace": "one fix layer: complete AC1-5,6,8,9,10 storage edge behavior and tests inside the fixed 3-file set; spec decides all behavior",
+      "task": "# Dispatch T2 — recovery edge classes and protection (engineer)\n\nFeature snapshot-recovery, revision r30. T1 is done. Scope: ONLY the three T2 files below. Do not edit other files; no external research; no network.\n\n## Files (your only write set)\n- internal/storage/recovery.go\n- internal/storage/recovery_test.go\n- internal/storage/store_edge_test.go\n\n## Read first\n- .scratch/snapshot-recovery/spec.md — R2, R5, R6, D10, D11, D12 and AC1-5, AC1-6, AC1-8, AC1-9, AC1-10; plus current recovery.go/recovery_test.go from T1.\n\n## Required behavior (ACs you now own)\n- AC1-5: unlink/listing failures are non-fatal, exactly one attempt per family of the selected excess candidate, bytes preserved, RetentionFailure names the unremoved file; no retry, no younger substitute.\n- AC1-8: prompts retention bound/tie-break mirrors snapshot family; non-Z offset and non-conforming foreign names untouched and not counted; cross-family snapshot names untouched by the prompts pass.\n- AC1-9: pruning never deletes this run's file; reservation collisions never overwrite; future-dated names bounded; two-excess multiplicity evicts exactly two in one pass.\n- AC1-10: read_error preserves bytes; symlink link entry moves, target survives retention (same- and cross-family); component-wise chain resolution, expansion-key containment, splice budget/depth caps, cycle vs finite-revisit discrimination, dangling/ELOOP re-seed ordering, subdirectory/alternating hops, configured-path move-through, mixed >4 carve-out, vacuous final-target modes.\n- AC1-6: both-families retention failure shape incl. resource.path state_directory, fixed message, exact envelope ErrorInfo equality, no cross-family unlink; if envelope emission belongs to T3, keep storage values ready and note it.\n\n## Tests (RED/GREEN, deterministic)\nExtend recovery_test.go/store_edge_test.go with focused tests per FAILS clause; fixed clock seam, fresh temp dirs, no sleeps/chmod/root. Keep existing tests green.\n\n## Verify (report exact commands+outputs)\n1. go build ./...\n2. go test ./internal/storage/ -run 'TestRecover' -count=1\n3. go test ./internal/storage/ -count=1\nEnd with INCOMPLETE if any owned AC is unimplemented or untested."
+    }
+  ]
+}

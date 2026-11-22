@@ -1,0 +1,85 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "snapshot-recovery-spec-r29",
+  "revision": "r29",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "33fdf021d3a88f16b7fde1eb0993041a402c2dc03d83732cb892683d9bfdebfc"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR29CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "f687f3b7cd1c4a3ba2d5ce3f7a1f737fad43ad4d12b05c82494291fdcf065e29",
+      "targetCandidateId": "snapshot-recovery-spec-r29",
+      "targetRevision": "r29",
+      "taskSha256": "e93ac62165a9451a08c64b5859c57193e17a94d8e97d12e8ad973374e4ffaf79",
+      "instructionsSha256": "098dcf9784f89b8fffd601abc14abdceeb33ea3c99c72626df2d27f4b0d194ac"
+    },
+    {
+      "name": "SnapshotRecoverySpecR29Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "5ff614889208515f5680188fc0a2ac126018044342874df1ff41a748d5787966",
+      "targetCandidateId": "snapshot-recovery-spec-r29",
+      "targetRevision": "r29",
+      "taskSha256": "fda02265a193d1b72cce9e7e1134629d686566d55796902ada29282805d19be9",
+      "instructionsSha256": "098dcf9784f89b8fffd601abc14abdceeb33ea3c99c72626df2d27f4b0d194ac"
+    }
+  ],
+  "output": "<task-result id=\"SnapshotRecoverySpecR29Critic\" agent=\"critic\" status=\"completed\" duration=\"1m40s\">\n\n<output>\nSpec ID: snapshot-recovery-spec-r29\nRevision: r29\nFindings by ID: none\n\n### Findings\nNo unresolved blocking findings or required amendments.\n\n**Independently verified closures** — anchors in `.scratch/snapshot-recovery/spec.md`:\n- **CR26-1 — MEDIUM, CLOSED:** §9.8 (`:228`) explicitly distinguishes unchanged write paths from T4’s owner-authorized addition at r25; consistent with §6.1 (`:188-189`).\n- **CR26-2 — LOW, CLOSED:** the decision ledger (`:56`) and D12 header (`:69`) both record the r26 final-target-path amendment.\n- **CR26-3 — LOW, CLOSED:** `:8`, `:69`, and `:83` scope the added regular-final-target path to ordinary (iii). Mutual (m-ii) requires a loop/stat-error chain, and (m-iii) continues matching moved link entries. Historical clauses remain explicitly round-scoped.\n\n**Regression coverage:** R1–R9, all 19 AC IDs, and T1–T4 remain unchanged; §6.1 retains exactly 14 write paths. No new package dependency or task-dependency edge is introduced. Compared the planner’s `round-17-delta.md`, r26/current state projections, task ownership and dependency clauses; registry section hashes also agree for requirements, tasks and envelope. Ordinary moved-final-target, mutual hard-linked-partner, both-moved and self-moved counterexamples remain covered by planned AC1-10/AC2-9/T4 oracles.\n\n**Authority remains unresolved:** §8 and §9.11–12 preserve the retention-unlink checkpoint, ordinary orphan-reconciliation confirmation, originally-dangling non-mutual carve-out and requested external escalation as OPEN. The recorded decomposition authorization grants specification revision only. Neither this verdict nor CodeReviewer’s observation supplies those missing confirmations or execution permission.\n\n**Coverage/limits:** Reviewed affected lifecycle, shared-state, contract, authority and repair invariants. §7’s existing logging/collection and metric/alert exceptions remain documented; no collector-delivery or alert behavior is claimed verified. Source spot-checks corroborate startup placement, unchanged overwrite guards and existing warning/fatal mappings. No files edited; no tests or commands executed.\n\nThe registry’s r29 candidate binds SHA-256 `33fdf021d3a88f16b7fde1eb0993041a402c2dc03d83732cb892683d9bfdebfc`; its document still self-identifies as r27/round 17. Registry r27–r29 hashes agree; hashes were not independently recomputed. This technical verdict concerns those registered closing bytes, not newly authored r29 text. No other task or approval is completed by it.\n\n### Verdict\nPASS\n",
+  "invocationId": "8105a8d4-1cb8-489b-ba0e-195cfc5de2a7"
+}

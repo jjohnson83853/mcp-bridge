@@ -1,0 +1,1 @@
+{"timestamp":"2026-11-21T15:42:59.356Z","level":"warning","service":"workflow-policy","environment":"local","version":"2","event":"dispatch_denied","message":"workflow contract prerequisites are unsatisfied","operationId":"6f6031b1-cfdf-4784-8d21-d8bc86dd0a57","error":{"code":"E_TASK_NOT_FRONTIER"}}

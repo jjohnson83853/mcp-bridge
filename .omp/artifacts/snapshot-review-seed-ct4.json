@@ -1,0 +1,35 @@
+{
+  "intent": "Critic snapshot-recovery specification r4",
+  "instructions": "Candidate: snapshot-recovery-spec-r4 @ r4. Author: planner. Review mode: specification only; no implementation exists.\n\nReviewed inputs (all candidate-bound and hashed):\n- .scratch/snapshot-recovery/spec.md\n- .scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md\n- .scratch/mcp-bridge-defects/backlog.md\n- docs/agents/domain.md\n- docs/agents/issue-tracker.md\n- docs/logging-contract.md\n- go.mod\n- internal/config/config.go\n- internal/observe/envelope.go\n- internal/observe/log.go\n- internal/observe/metrics.go\n- internal/service/loop.go\n- internal/service/reload.go\n- internal/storage/store.go\n- internal/storage/store_test.go\n- internal/storage/store_edge_test.go\n- internal/storage/snapshot_edge_test.go\n- cmd/mcp-bridge/runtime_edge_test.go\n- cmd/mcp-bridge/serve.go\n- cmd/mcp-bridge/startup_failure.go\n- cmd/mcp-bridge/wiring.go\n\nRead the r4 specification at .scratch/snapshot-recovery/spec.md (including the four specdd regions and the 6.1 ENVELOPE subsection), the ticket, backlog, docs/logging-contract.md, go.mod, and the referenced code anchors. The candidate boundary is the exact hashed bytes in the review registry; do not treat later edits as reviewed.\n\nThis is a read-only independent review. Do not modify files, run implementation tests, implement, dispatch, or claim approval. Treat the dispatch context wrapper as metadata; this task text is authoritative.\n\nRisk packet for both stages: (1) R8 MCP_SNAPSHOT_QUARANTINE=off semantics and the owner-confirmed default ON; (2) retention keep-5-newest per family and non-fatal prune failure; (3) failure_reason as an optional event-specific addition under AD13 with schema_version 1; (4) errors.Is(err, ErrCorrupt) preservation for existing callers; (5) fatal non-regular snapshot path, rename failure and directory-sync failure; (6) exactly one startup_snapshot_rejected warning per quarantined file and no startup_failed/internal_error for quarantinable conditions; (7) T1/T2/T3 file boundaries and the 6.1 envelope; (8) the r4 specdd markers and packet binding are required by the state contract.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r4",
+    "requests": [
+      {
+        "name": "SnapshotRecoverySpecR4Critic",
+        "taskId": "CT1",
+        "agent": "critic",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/snapshot-recovery/spec.md",
+            ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+          ]
+        },
+        "targetCandidateId": "snapshot-recovery-spec-r4",
+        "targetRevision": "r4"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecR4Critic",
+      "agent": "critic",
+      "task": "# Target\nIndependently gate the snapshot-recovery specification candidate snapshot-recovery-spec-r4@r4 as the SpecDD/TDD Critic. The CodeReviewer round for this exact candidate and input set is APPROVE; verify that boundary but do not treat it as closure evidence or narrow this review.\n\n# Required checks\n- Review R1-R9, AC1-1..AC2-6, T1-T3 and the 6.1 ENVELOPE against the ticket/user scope and non-goals; verify R to AC to T traceability, deterministic test oracles, negative/integration coverage, task dependencies and feasibility.\n- Apply W09E with the same risk packet: R8 opt-out/default, retention and irreversible prune, failure_reason under AD13, errors.Is preservation, fatal non-regular/rename/sync paths, exact warning count, and reviewer/authority boundaries.\n- Load skill://observability-contract and review the spec's section 7 coverage against AC/T IDs; missing decisive evidence or an unexplained gap is a finding.\n- Independently spot-check the highest-risk assumptions and supplied evidence; retrieve only missing facts narrowly. Do not invent findings or demand enterprise extras.\n\n# Output contract\nYour final response must contain exactly one \"### Verdict\" heading, followed on the next nonblank line by exactly PASS, REVISE or BLOCKED. Then include the lines \"Spec ID: SNAPREC-SPEC-r4\", \"Revision: r4\", and \"Findings by ID: <C1... or none>\", plus verified references, coverage and limits, and any exact amendments or missing evidence. Missing decisive evidence means BLOCKED; an unresolved correctness, safety, acceptance or execution defect means REVISE; PASS only when coverage suffices and no blocking finding remains. Keep the final response at most 3072 UTF-8 bytes. Do not modify files, dispatch, or claim execution permission.",
+      "solutionSpace": "Independent specification review of one fixed candidate; verdict plus evidence-backed findings; no implementation or design widening."
+    }
+  ]
+}

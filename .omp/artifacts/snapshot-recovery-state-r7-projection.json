@@ -1,0 +1,666 @@
+{
+  "schemaVersion": 2,
+  "feature": "snapshot-recovery",
+  "revision": "r7",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/snapshot-recovery/spec.md",
+    "sha256": "52a4f948418e5bc0af2ad63795a50bd60bff180854e103829f78150ce737446d",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r7",
+        "sha256": "b0a3cadbab348dbd0907bb4d47c2c6ecd81584cc8fcca49a173a391bca347c72"
+      },
+      "design": {
+        "revision": "r7",
+        "sha256": "990f5a75e88a56563cce2996c6272a896770d2bdcac56c9c9f519043dccefc92"
+      },
+      "tasks": {
+        "revision": "r7",
+        "sha256": "2050061d7b539b106e2e0b47cd8d7da44727494c5d77c1d0d910af55852ee980"
+      },
+      "envelope": {
+        "revision": "r7",
+        "sha256": "64860fd405bfec8ccae1f9bb363dc72c67c755ee117f10cd736f0a46e9dfadbb"
+      }
+    }
+  },
+  "packet": {
+    "digest": "88a33f89df840aa576cf3817ca05f4810c17f4d27941c2931e82e06754dae65a",
+    "selectedBranchId": "snapshot-recovery-r7",
+    "branches": [
+      {
+        "id": "snapshot-recovery-r4",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T1",
+          "T2",
+          "T3"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r4",
+            "sha256": "b100ed9566658a97e27a96a7ed8c58a07e79154b0c5eb4a7fce5e0acac6c43b6"
+          },
+          "design": {
+            "revision": "r4",
+            "sha256": "8bce1e06e3e7856bce40c5f063ce48bed9535f183e90057b45a64fecf4a46a8e"
+          },
+          "tasks": {
+            "revision": "r4",
+            "sha256": "6fa14b6342f8cc81231b0f4fc47959194b9a14df4c5068f1de68f9d750709663"
+          },
+          "envelope": {
+            "revision": "r4",
+            "sha256": "fb4dace7b4247eb20171725974a49ab7e2704b468cc0c0a317f34f5addbf13b8"
+          }
+        }
+      },
+      {
+        "id": "snapshot-recovery-r5",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T1",
+          "T2",
+          "T3"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r5",
+            "sha256": "42a01dce163d20e3730eeb509c64e045322d2b5b839f49c73ca615c80e4121ab"
+          },
+          "design": {
+            "revision": "r5",
+            "sha256": "fdbd47b2fd6c5a84a47c8ab70c2d7e64a3bb8549f7d3f0a7cffd1afe3fe2d9a0"
+          },
+          "tasks": {
+            "revision": "r5",
+            "sha256": "4ea848d5e27d7f67f174861ed6533a154834878ea1a0dd21d45a80273db9092c"
+          },
+          "envelope": {
+            "revision": "r5",
+            "sha256": "462b4d5ff87aee7acb4232ee8c6e816b79f46a098ac5706c4b0279f555fc4601"
+          }
+        }
+      },
+      {
+        "id": "snapshot-recovery-r6",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T1",
+          "T2",
+          "T3"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r6",
+            "sha256": "c834f5a9686ebca8fc26b0a32b35fbd07cf5c429f53b49a393d45b272c9e7648"
+          },
+          "design": {
+            "revision": "r6",
+            "sha256": "5a45f69864ff08792a2eba9c1ae406e2e148c3b57ad1e45c6f3c2fab1432f6a6"
+          },
+          "tasks": {
+            "revision": "r6",
+            "sha256": "edcf54af4a73a812326717fff6cfef40716e02f397b20158c4d027c26108e710"
+          },
+          "envelope": {
+            "revision": "r6",
+            "sha256": "6ebde5e8c4a29e366e7845abbb2957b3e1dd3af5f52133c9f6c1d4f8b3290f01"
+          }
+        }
+      },
+      {
+        "id": "snapshot-recovery-r7",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T1",
+          "T2",
+          "T3"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r7",
+            "sha256": "b0a3cadbab348dbd0907bb4d47c2c6ecd81584cc8fcca49a173a391bca347c72"
+          },
+          "design": {
+            "revision": "r7",
+            "sha256": "990f5a75e88a56563cce2996c6272a896770d2bdcac56c9c9f519043dccefc92"
+          },
+          "tasks": {
+            "revision": "r7",
+            "sha256": "2050061d7b539b106e2e0b47cd8d7da44727494c5d77c1d0d910af55852ee980"
+          },
+          "envelope": {
+            "revision": "r7",
+            "sha256": "64860fd405bfec8ccae1f9bb363dc72c67c755ee117f10cd736f0a46e9dfadbb"
+          }
+        }
+      }
+    ]
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Single recovery locus: a new Store recovery method executes once per process, after storage.Open acquires the writer lock and before startup admission (Loop.Start). It never runs in Reload, mid-run saves, or ensureReplaceable; ensureReplaceable is unchanged. [AMENDED r6: negative oracle AC1-7 added.]"
+    },
+    {
+      "id": "R2",
+      "summary": "Quarantinable class: any Load/LoadPrompts ErrCorrupt rejection (decode/envelope, trailing data, checksum mismatch, unsupported schema, failed Validate) and any read failure of a REGULAR file at the snapshot path are quarantinable: one atomic same-directory rename of the original file to a timestamped quarantine name before any fresh snapshot is published. Bytes are preserved exactly; no delete, truncate, or overwrite-first."
+    },
+    {
+      "id": "R3",
+      "summary": "Fatal class: a non-regular file at a snapshot path (directory, device, socket — a directory cannot follow the rename rule), quarantine rename failure, and post-rename directory-sync failure are fatal: startup exits failure with code state_directory, kind resource, remediation and resource.path per the existing stateDirectoryFailure record (cmd/mcp-bridge/startup_failure.go:26-33). [AMENDED r7: single writer — serve.go's recovery block calls emitRecoveryRecords for accumulated warnings, then RETURNS stateDirectoryFailure(store.Dir()) as the error; serve never calls writeStartupFailure. runContext (cmd/mcp-bridge/main.go:59-68) is the SOLE startup_failed writer: it errors.As the returned startupFailure and writes exactly one record. This preserves AC2-4/AC2-7 one-record semantics.] The typed record is the only output for the fatal condition itself: arbitrary Go error text is never a log field or free-text line (docs/logging-contract.md); the class, kind and configured-path attribution carry the diagnosis. [AMENDED r7: this exclusivity does not suppress R4 warnings for files already quarantined earlier in the same recovery pass — AC2-7 requires warning-then-fatal.] When no rename occurred, the file is untouched; a failed rename leaves the original bytes at the original path; a failed post-rename sync leaves the bytes at the quarantine path with the original absent. startup_failure.go is NOT edited."
+    },
+    {
+      "id": "R4",
+      "summary": "Typed warning: for each quarantined file exactly one structured record, event startup_snapshot_rejected, operation startup, level warn, outcome degraded, error.code snapshot_unavailable (closed AD13 mapping, docs/logging-contract.md:477), error.kind resource, error.retryable true, existing static remediation `verify the durable snapshot and storage permissions, then retry`, fixed message `startup snapshot unavailable`, resource.path = configured state directory (the resource object carries only configured path/listener/address attribution, docs/logging-contract.md:252-254, :338-340), plus two optional event-specific fields under the documented optional-addition rule (docs/logging-contract.md:499-512; schema_version stays 1): failure_reason with the finite value corrupt_json | checksum_mismatch | unsupported_schema | validation_failure | read_error, and quarantine_path = the quarantine file path. [AMENDED r6: emitted via observe.Entry{Fields} through Logger.Log (warn → stderr lane, log.go:117-133); emittability is guaranteed by the r6 T2 runtimeErrorInfo case — no `logging_write_failed` collapse, no `equivalent direct envelope build` fallback.]"
+    },
+    {
+      "id": "R5",
+      "summary": "Retention bound: at most 5 quarantine files per family (snapshot.corrupt-*.json, prompts.corrupt-*.json) COUNTING the file created by the current recovery. [AMENDED r7: after each successful rename, this run's file is excluded from prune candidates by exact path (a backward clock or equal timestamp can otherwise delete the just-preserved bytes, violating R2), the remaining PRE-EXISTING conforming names are ranked newest-first, and the oldest are unlinked beyond QuarantineKeep-1 — 5 pre-existing plus the new file leave exactly 5 files with the oldest pre-existing removed.] Ordering parses each name's timestamp strictly as RFC3339Nano UTC with a literal trailing `Z` (time.Parse; names matching a family glob whose timestamp is unparsable, lacks the `Z`, or carries a numeric offset, and any non-conforming directory entry, are never pruned and never counted toward the bound — foreign/operator files are never deleted). Prune failure is non-fatal and reported exactly once per AFFECTED FAMILY via a typed lifecycle record event snapshot_retention_failed, operation startup, level warn, outcome failure, error.code snapshot_unavailable, kind resource, retryable true, fixed message `quarantine retention failed`, plus quarantine_path naming the first unremoved file of that family (new AD13-table row added under the optional-addition rule; no schema_version bump). [AMENDED r6: plural `RetentionFailures` result.]"
+    },
+    {
+      "id": "R6",
+      "summary": "No-op on valid or absent snapshots: when Load/LoadPrompts succeeds or reports ErrNoSnapshot, recovery mutates nothing — no rename, no warning, no retention pass; a successfully loaded snapshot keeps its trusted state and the existing no-overwrite protection is untouched."
+    },
+    {
+      "id": "R7",
+      "summary": "Prompt-snapshot coverage: prompts.json receives identical quarantine behavior with prompts.corrupt-*.json names, the same retention bound, the same warning record shape (quarantine_path = the prompts quarantine path), and the same read_error/rename/sync handling. [AMENDED r6: AC1-8 and AC2-9 added as full prompts oracles.]"
+    },
+    {
+      "id": "R8",
+      "summary": "Operator opt-out: environment variable MCP_SNAPSHOT_QUARANTINE=off (case-insensitive comparison) disables recovery (fail-closed): no quarantine rename and no new recovery record (no startup_snapshot_rejected record carrying failure_reason/quarantine_path, no snapshot_retention_failed record). Today's wedge semantics otherwise hold: the Durable loader failure still emits the pre-existing structured startup_snapshot_rejected record (internal/service/loop.go:148-151 translated by cmd/mcp-bridge/wiring.go:485-492), the admission persist fails fatally, the startup_failed/internal_error record is emitted, and the process exits 1. Any other value, including unset, enables recovery. [OWNER-CONFIRMED 2026-11-21] default = enabled. [AMENDED r7: the enabling arm is pinned by an AC2-6 enabled/1 case.]"
+    },
+    {
+      "id": "R9",
+      "summary": "Machine-readable reasons: Load/LoadPrompts rejections gain errors.Is-compatible reason sentinels chained under ErrCorrupt, so every existing errors.Is(err, ErrCorrupt) caller and test is unaffected."
+    }
+  ],
+  "authorization": null,
+  "reviews": null,
+  "sources": [],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "CR1",
+      "CT1",
+      "T1",
+      "T2",
+      "T3"
+    ],
+    "readPaths": [
+      ".scratch/snapshot-recovery/spec.md",
+      ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      ".scratch/mcp-bridge-defects/backlog.md",
+      "docs/agents/domain.md",
+      "docs/agents/issue-tracker.md",
+      "docs/logging-contract.md",
+      "go.mod",
+      "internal/config/config.go",
+      "internal/observe/envelope.go",
+      "internal/observe/log.go",
+      "internal/observe/metrics.go",
+      "internal/service/loop.go",
+      "internal/service/reload.go",
+      "internal/storage/store.go",
+      "internal/storage/store_test.go",
+      "internal/storage/store_edge_test.go",
+      "internal/storage/snapshot_edge_test.go",
+      "cmd/mcp-bridge/runtime_edge_test.go",
+      "cmd/mcp-bridge/serve.go",
+      "cmd/mcp-bridge/startup_failure.go",
+      "cmd/mcp-bridge/wiring.go"
+    ],
+    "writePaths": [
+      "internal/storage/store.go",
+      "internal/storage/recovery.go",
+      "internal/storage/recovery_test.go",
+      "internal/storage/store_edge_test.go",
+      "cmd/mcp-bridge/serve.go",
+      "cmd/mcp-bridge/startup_failure.go",
+      "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "cmd/mcp-bridge/runtime_edge_test.go",
+      "docs/logging-contract.md"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "CR1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/snapshot-recovery/spec.md",
+          ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "CT1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/snapshot-recovery/spec.md",
+          ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "critic"
+      ]
+    },
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/storage/store.go",
+          "internal/storage/recovery.go",
+          "internal/storage/recovery_test.go",
+          "internal/storage/store_edge_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC1-1",
+        "AC1-2",
+        "AC1-3",
+        "AC1-4"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T2",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/snapshot_recovery_test.go",
+          "cmd/mcp-bridge/serve_edge_test.go",
+          "cmd/mcp-bridge/startup_failure_test.go",
+          "cmd/mcp-bridge/config_envelope_test.go",
+          "internal/observe/envelope.go",
+          "internal/observe/log.go",
+          "internal/observe/log_test.go",
+          "internal/observe/edge_test.go",
+          "docs/logging-contract.md"
+        ]
+      },
+      "acceptanceIds": [
+        "AC2-1",
+        "AC2-2",
+        "AC2-3",
+        "AC2-4",
+        "AC2-5",
+        "AC2-6"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T3",
+      "stage": "verification",
+      "status": "pending",
+      "blockedBy": [
+        "T1",
+        "T2"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "test",
+        "paths": []
+      },
+      "acceptanceIds": [
+        "AC1-1",
+        "AC1-2",
+        "AC1-3",
+        "AC1-4",
+        "AC2-1",
+        "AC2-2",
+        "AC2-3",
+        "AC2-4",
+        "AC2-5",
+        "AC2-6"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC1-1",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-2",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-3",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-4",
+      "requirementIds": [
+        "R7",
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-5",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-1",
+      "requirementIds": [
+        "R1",
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-2",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-3",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-4",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-5",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-6",
+      "requirementIds": [
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-7",
+      "requirementIds": [
+        "R3",
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-8",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-6",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T1",
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-7",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1",
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-8",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-9",
+      "requirementIds": [
+        "R2",
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-10",
+      "requirementIds": [
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-9",
+      "requirementIds": [
+        "R7",
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.superpowers/sdd/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}

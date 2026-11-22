@@ -1,0 +1,144 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r7",
+  "revision": "r7",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "52a4f948418e5bc0af2ad63795a50bd60bff180854e103829f78150ce737446d"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "62212b6bcbbf94693d359bf2a6aa7e85ad38fbe24a203dc57823ada323576b0d"
+    },
+    {
+      "path": ".scratch/mcp-bridge-defects/backlog.md",
+      "sha256": "ab9d2a062751c6324ba280729be61b2c923ed3fdbacc1ad7f662eb6668004bfb"
+    },
+    {
+      "path": "docs/agents/domain.md",
+      "sha256": "54d97f3bd91612a42d28b473463c37e8283fa86274aa77e9033528e0dbf039e7"
+    },
+    {
+      "path": "docs/agents/issue-tracker.md",
+      "sha256": "ed489dcd8b47b6dd0d7e45a9f5dcff9f6a238af59ffc8b12be295c083124c60d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "b6c9c1ebf752029d832b90f676145e0a9a0eb7fcd0c3fbfdf097cae28a4c6731"
+    },
+    {
+      "path": "internal/observe/edge_test.go",
+      "sha256": "4635cb74282703bf315efce482bf726080062aec5b538ed54068ad06961b4ae6"
+    },
+    {
+      "path": "internal/observe/metrics.go",
+      "sha256": "7c1e9e1393a74ad59625731059e4ae5f6e5d48a0fa05f70a4b0f858817a6570a"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/service/reload.go",
+      "sha256": "313a30b017bb1f5f120d8ed7b6b43a3c93b81e20a7b7e1ff3f75793d87a11a5d"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/store_test.go",
+      "sha256": "99e4715e92838dbe916fbee0abfb12b9b9a69ac46d700b0f156c07cb012e26a2"
+    },
+    {
+      "path": "internal/storage/store_edge_test.go",
+      "sha256": "6f04b1bf3cce55048407b4b1a2ef0198b1f45cea4bfcad0b8323e65a18b757c6"
+    },
+    {
+      "path": "internal/storage/snapshot_edge_test.go",
+      "sha256": "e601a352bccb74c1e0d0f103ea94681d0b331545b9880a5b237924a2bc71303b"
+    },
+    {
+      "path": "cmd/mcp-bridge/runtime_edge_test.go",
+      "sha256": "e659fc5ae767e1d26624a96a78f0af71eeb743fcdb415e21aa22c4bff04e0d57"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "178c08c5abc5f7c79d6a2694dbd6a7fd468d50fc1b2aa355111b792079ae4c02"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "4987c3ba79c7bafe94e0176e2365164e6f859b3c20f1c7fc15cae13a924ba457"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "7af279bea9fcb693ea65f149a84196d14ac1098d96e91f90ab7ff5b09d5e605a"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR7CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "01985b060ac890a951b116955cb4a650ab104efd49284e3ab23eff76a7b50213",
+      "targetCandidateId": "snapshot-recovery-spec-r7",
+      "targetRevision": "r7",
+      "taskSha256": "683108d98f2e129556f5b902e7c028b78713a1423252195ab13f44b947b2867f",
+      "instructionsSha256": "68b19e997ff9e94b530e815aca544cd10164a42e7b27cd4892d2782da90889d8"
+    },
+    {
+      "name": "SnapshotRecoverySpecR7Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "2e26d69b140930951c48e6b362217f9cffe16cc1742c216906fa17325ba2bd8e",
+      "targetCandidateId": "snapshot-recovery-spec-r7",
+      "targetRevision": "r7",
+      "taskSha256": "0fda61b87e236d14f776e92f7159a2852699a974b31d1c760301ac2ea84d69b6",
+      "instructionsSha256": "68b19e997ff9e94b530e815aca544cd10164a42e7b27cd4892d2782da90889d8"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** Specification only — candidate `snapshot-recovery-spec-r7@r7`; no implementation exists. **Files Reviewed:** 27 hashed inputs plus ~16 live anchors (`envelope.go`, `log.go`, `log_test.go`, `store.go`, `serve.go`, `main.go`, `wiring.go`, `startup_failure.go`, `loop.go`, `reload.go`, `refresh.go`, `config/command.go`, `config/config.go`, `logging_contract_test.go`, `log_manifest_test.go`, `docs/logging-contract.md`, r6 review artifact, r7 projection). **Review limits:** read-only; no `go test`, `git diff`, LSP, or state-tool execution; no unrun results claimed. **Total Issues:** 6 (CRITICAL 0, HIGH 0, MEDIUM 1, LOW 5).\n\n**r6 closure verified: all 10 findings closed as stated.** H1: `config_envelope_test.go` now in T2 (§6 line 73) and §6.1 read/write sets; pin 129→130 matches the live pin at `config_envelope_test.go:166-172`; `quarantine_path` after `publication_impact` is alphabetically correct in the live list (`envelope.go:668-670`) and in the docs union and `log_test.go` literal. H2: serve returns `stateDirectoryFailure(store.Dir())`; `startup_failure.go:26-33` returns a `startupFailure` value, `main.go:59-68` is the sole writer via `errors.As`. H3: `QuarantineKeep-1` arithmetic is consistent across R5, §4, §8, AC1-3, AC1-9. M1: Recovery appended at rename time. M2: AC1-8's offset literal is parseable RFC3339. All five LOWs closed (trigger named and `loop.go:170-180`/`reload.go:728` confirm the path; risk(4) corrected; ticket example conforming; AC2-6 arm 2; AC1-1 seeded no-prune oracle). Envelope unchanged: 9 R, 19 AC, 3 T, no new/renamed id; §6.1 matches §6 with only the approved `config_envelope_test.go` coverage edit; four specdd markers and r7 section bindings present.\n\n### By Severity\n- CRITICAL: 0\n- HIGH: 0\n- MEDIUM: 1 (blocking class)\n- LOW: 5\n\n### Issues\n\n**[MEDIUM][statement-contradiction] The documented `snapshot_retention_failed` remediation cannot be emitted by the specified code path**\nFile: `.scratch/snapshot-recovery/spec.md` §7 (line 89) and T2 docs edit (1) (§4, line 48); vs §4 envelope edit (a) and cmd wiring (line 47); `internal/observe/envelope.go:92-142`\nConfidence: HIGH\nIssue: The retention record is emitted with `Error = observe.RuntimeErrorInfo(\"snapshot_unavailable\")`, and `validErrorInfo` requires the entry's `ErrorInfo` to equal the canonical value for that code exactly (`envelope.go:136-142`). T2 fixes `snapshot_unavailable` to the R4 remediation `verify the durable snapshot and storage permissions, then retry`. §7 and the new AD13 row instead document `inspect the state directory; an old quarantine file could not be removed`. Only one of the two can be true: the emitted record carries the R4 text, so the AD13 table and §7 are wrong; or an implementer hand-builds the documented `ErrorInfo`, which `validErrorInfo` rejects, collapsing the record to `logging_write_failed` and failing AC1-5b. No test compares the AD13 remediation column to `RuntimeErrorInfo` (`logging_contract_test.go` checks only messages/operations/fields), so the gate would not catch it. This predates r7 (carried since r5) but remains unresolved in the reviewed candidate.\nFix: Set the new AD13 row and §7 remediation to the shared text `verify the durable snapshot and storage permissions, then retry` (no code, field, id or schema change), and add an `error.remediation` assertion to AC1-5b so the emitted value is pinned.\n\n**[LOW][r-ac-coverage-gap] R4's per-file quantifier is only exercised with one quarantined file**\nFile: `.scratch/snapshot-recovery/spec.md` R4 / AC2-2 / AC2-7 / AC2-9\nConfidence: MEDIUM\nIssue: No oracle seeds both `snapshot.json` and `prompts.json` corrupt in one pass and asserts exactly two `startup_snapshot_rejected` records with distinct `quarantine_path` values. AC2-7 exercises the accumulation loop with one `Recovery`; AC1-6b exercises the plural loop only for retention records. A dedupe/keying regression in `emitRecoveryRecords` could drop the second file's warning while every AC passes.\nFix: Add a both-corrupt subcase (no new id) asserting two R4 records discriminating the families by `quarantine_path`.\n\n**[LOW][editorial] §7 calls `quarantine_path` a \"state-directory-relative filename\"**\nFile: `.scratch/snapshot-recovery/spec.md` §7 (line 89) vs §4(c) (line 48) and AC2-2\nConfidence: HIGH\nIssue: §4(c) requires a non-empty **absolute** path with a `.json` suffix; AC2-2 asserts equality with the full quarantine path. §7's \"relative filename\" wording contradicts both. `config.Parse` resolves a relative `storage.directory` against the config file (`internal/config/config.go:380-381`), so the absolute requirement is satisfiable; only the prose is wrong.\nFix: Reword §7 to \"absolute quarantine file path inside the state directory\".\n\n**[LOW][editorial] Ticket mirror is stale for the r7 in-place amendments**\nFile: `.scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md:88-113`\nConfidence: HIGH\nIssue: The header says r7 corrects AC1-1, AC1-8, AC2-6 and AC2-9 only, while spec r7 also amended AC1-3, AC1-9, AC2-4 and AC2-7 in place. The mirrored AC1-9 text retains the pre-r7 ambiguous \"survivor count honors `QuarantineKeep` excluding this run's file\" phrasing and drops the off-by-one FAILS clause. Spec ids are declared authoritative, so this is advisory, but a ticket-only reader can infer the H3 off-by-one reading.\nFix: Re-mirror AC1-3/AC1-9 (and the amended-id list) from spec r7.\n\n**[LOW][ac-not-falsifiable] AC1-9's \"only older pre-existing conforming files were pruned\" is ambiguous**\nFile: `.scratch/snapshot-recovery/spec.md` AC1-9 (line 61)\nConfidence: MEDIUM\nIssue: The scenario seeds timestamps that \"equal and exceed `now`\", so a pruned pre-existing file need not be older than the new file; \"older\" can only mean ordered-oldest among pre-existing. The determinate assertion (`QuarantineKeep-1` pre-existing survivors) still makes the oracle decidable, but the FAILS text does not name the pruning set.\nFix: Replace with \"the 4 newest pre-existing conforming names survive; the oldest pre-existing name is removed\".\n\n**[LOW][editorial] AC2-5 does not exercise the rename-failure route it names**\nFile: `.scratch/snapshot-recovery/spec.md` AC2-5 (line 66) vs `cmd/mcp-bridge/serve.go:96-98`\nConfidence: MEDIUM\nIssue: With the state directory at `0o555`, `storage.Open` usually fails first at the `.writer.lock` create/open (already returning `stateDirectoryFailure` at `:96-98`), so the recovery rename is never attempted. The AC still passes (code `state_directory`, original bytes intact) but for the Open route, not the claimed rename class. AC2-8(b) does cover rename failure deterministically, so verification is not lost.\nFix: State that AC2-5 asserts the Open/state-directory route and that AC2-8(b) is the rename-class oracle.\n\n### Open Questions\n- If the distinct retention remediation is genuinely required, the only coherent route is a separate error code with its own `runtimeErrorInfo` entry — a closed-vocabulary widening requiring owner authorization. Confirm that the simpler shared-remediation fix is intended.\n\n### Positive Observations\n- Every r6 finding is closed by the reviewer's exact stated fix, with anchors verified against the live tree rather than restated.\n- The single-writer fatal route is type-coherent and closes the double-`startup_failed` hazard without touching `main.go`/`startup_failure.go`; AC2-4/AC2-7 pin exactly-one records.\n- `durableLoader`/`promptLoader` map `ErrNoSnapshot` to nil (`wiring.go:565-590`), so AC2-2's one-record oracle and AC2-6's field-less retained record are both achievable as written.\n- R9 preservation is sound: only `Load`/`LoadPrompts` wrapping changes, and existing callers assert only `errors.Is(err, ErrCorrupt)`.\n- AC1-1, AC1-3, AC1-8, AC1-9, AC2-6 arm 2 and AC2-9 are now falsifiable with determinate FAILS clauses; envelope and task boundaries are unchanged.\n\n### Recommendation\nAcknowledge the r6 closure and the clean envelope, but the AD13/§7 remediation contradiction is a blocking-class statement contradiction at high confidence and must be reconciled before implementation.\n\n### Recommendation\nREQUEST CHANGES"
+}

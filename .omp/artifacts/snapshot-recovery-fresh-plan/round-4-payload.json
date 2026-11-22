@@ -1,0 +1,12 @@
+{
+  "i": "Plan round 4: revise r14 to close critic C5 and CR LOWs",
+  "context": "{\"instructions\":\"Revise .scratch/snapshot-recovery/spec.md in place from r14 to r15. Read .omp/artifacts/snapshot-recovery-fresh-plan/ct-r14-raw.md (critic C5) and cr-r14-raw.md (six LOWs). Close each with exact text; do not change R/AC/T ids, the 6.1 ENVELOPE, or the task decomposition; report a blocker if a closure needs an id or envelope change. Review-only. Return the full spec and a change log.\",\"workflowDispatch\":{\"statePath\":\"/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json\",\"schemaVersion\":1,\"projectRoot\":\"/home/opencode/projects/default/mcp-bridge\",\"feature\":\"snapshot-recovery\",\"revision\":\"r15\",\"requests\":[{\"name\":\"SnapshotRecoverySpecRound4\",\"taskId\":\"PLAN1\",\"agent\":\"planner\",\"effects\":{\"kind\":\"read\",\"paths\":[]}}]}}",
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecRound4",
+      "agent": "planner",
+      "solutionSpace": "closure of C5 plus LOWs within a fixed id set; no new ids, no envelope change",
+      "task": "Close these in r15; no id/envelope changes; blocker if impossible.\n1 C5 HIGH retention-failure invariant: R5 promises <=5 retained and \"evict while more than four pre-existing remain\", while AC1-6 seeds five pre-existing files plus this run and makes unlink fail, requiring exactly one failure record per family. Reconcile: select the oldest excess candidates once, attempt each at most once, preserve this run's file, explicitly permit exceeding the bound when listing/unlink fails, and pin attempt counts and surviving bytes in AC1-5/AC1-6. Flag that the irreversible-deletion contract needs the affected owner's confirmation.\n2 LOW anchor: replace envelope.go:200-206 with envelope.go:136-141 (validErrorInfo) in all six occurrences (spec 3/4, AC1-6, 7, 9.10, T2 inputs).\n3 LOW: AC1-6 must assert resource.path equals the configured state directory.\n4 LOW: correct 9.7 to the actual ticket state (mirror heading says r14; header cites r7; no sha256); drop the re-sync instruction.\n5 LOW: add an R5 tie-break oracle (two conforming names sharing one parsed timestamp; assert name-ascending survivor).\n6 LOW: R2 must include entries whose stat fails with a recoverable stat error (e.g. ELOOP) in the quarantine set.\n7 LOW: AC1-6 emitter half is T3-owned but unlisted; add it to T3 deliverable or scope T2's AC1-6 claim to the envelope-level case.\nReturn the full nine-section spec and finding-to-text change log."
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "snapshot-recovery-spec-r19",
+  "revision": "r19",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "d93ae08cc93bbacc19bb152c078b1ef67856708817ce85a9beff410a695f2d00"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR19CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "d5aaf24d5b2dedef72fa13d32c92f89635b820554a16de7c51050a1b19b248ea",
+      "targetCandidateId": "snapshot-recovery-spec-r19",
+      "targetRevision": "r19",
+      "taskSha256": "bca3279fe09ed057c1fd2b40255e2cc8c193b1b13cecbda31c799d688e355d2a",
+      "instructionsSha256": "44b4eb5a04c1772f44145fe8b9571470fdcd34dc54d75dcef00e7663072e153b"
+    },
+    {
+      "name": "SnapshotRecoverySpecR19Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "58e3ddf6478badec6d78635a5399e29696401b648fbbe27e7233d1c40d7184fe",
+      "targetCandidateId": "snapshot-recovery-spec-r19",
+      "targetRevision": "r19",
+      "taskSha256": "d75dfea791ca9c6239062990e88e62113d1076611d1e24d662c849dd2930d0dc",
+      "instructionsSha256": "44b4eb5a04c1772f44145fe8b9571470fdcd34dc54d75dcef00e7663072e153b"
+    }
+  ],
+  "output": "Spec ID: snapshot-recovery-spec-r19 (document: SNAPREC-SPEC-r19)\nRevision: r19\nFindings by ID: C1, C7\n\nReferences to `spec.md` mean `.scratch/snapshot-recovery/spec.md`.\n\n**C1 — MAJOR/HIGH; statement-contradiction; confidence HIGH**\nAnchors: `spec.md:19,65,79,118` — R5, D11, chain walk, AC1-10.\n\nThe original F2 fixture is repaired, but lexical cleaning still permits backing-byte deletion. Seed five conforming quarantines q1–q5, q5 oldest and corrupt. Create real directories `/s/sub` and `/s/deep`, `/s/sub/alias → /s/deep`, and:\n`snapshot.json → sub/alias/../q5`\nHere q5 denotes its full conforming filename.\n\nFilesystem resolution reaches `/s/q5`. The specified `Clean(target)` instead produces `sub/q5`, absent. Protection misses the real q5; recovery moves the link, then retention deletes q5, leaving the quarantine dangling and destroying rejected bytes.\n\nThis is a new C1/F2-class instance, not reopening the original fixture. Earlier miss: unknown. Go’s `filepath` source explicitly distinguishes lexical cleaning from component-wise symlink resolution.\n\n**Minimal amendment:** resolve directory symlinks before interpreting subsequent `..` components; retain complete-chain protection. Add this composed alias/parent-hop fixture under AC1-10, asserting q5 preserved, q4 evicted and quarantine read-through successful.\n\n**C7 — MAJOR/HIGH; lifecycle-hazard; confidence HIGH**\nAnchors: `spec.md:118` (b-xB2), R9; `internal/service/reload.go:537-550,723-740`; `internal/storage/store.go:112-126`.\n\nThe new move-through oracle stops before an incompatible startup consequence. With corrupt regular `snapshot.json` and `prompts.json → snapshot.json`, snapshot recovery moves the target; prompts recovery intentionally leaves its newly dangling link untouched. Admission then publishes a fresh **catalog** at `snapshot.json`. The prompts link now resolves to that catalog. Initial refresh calls unchanged `SavePrompts`, whose no-overwrite guard rejects `LoadPrompts` of catalog bytes. Fresh prompt persistence remains blocked, contradicting R9’s self-healing promise and potentially producing repeated persistence warnings.\n\n**Minimal amendment:** reconcile newly orphaned configured links with self-healing inside startup recovery, distinguishing originally dangling links. Revise b-xB2 with affected-owner confirmation and add startup/refresh/second-run assertions; preserve no-overwrite protection. This consequence is exposed by r19’s explicit L2 fixture; earlier miss unknown.\n\n**Verified coverage**\n- F1: c4↔c5 are oldest, protected by entry identity/path; c3 alone is evicted.\n- Original F2 subdirectory/alternating layouts preserve q5 and evict q4.\n- L1 entry matching, L2 recovery counts, L3 six-survivor mixed carve-out and L4 vacuous modes are specified.\n- C6 direct/cross-family cases, CR15 pins, CR17/18 recorded fixtures, fixed IDs, 14-file envelope, task ownership and no-new-dependency constraint remain covered.\n- Reservation/fatal ordering, warning shapes and §7 observability exceptions are explicit.\n\nLimits: read-only specification assessment; no implementation/tests executed or SHA-256 recomputation available. Non-OpenAI escalation remains unavailable, not a verdict substitute. Owner deletion checkpoint remains open. T1/T3 technical clearance is unresolved; repairs require fresh candidate-bound reviews. No approvals or records changed.\n\n### Verdict\nREVISE\n",
+  "invocationId": "4ecf71ae-8879-4024-86d7-5c75fd0ad70e"
+}

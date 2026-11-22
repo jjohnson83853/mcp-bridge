@@ -1,0 +1,30 @@
+{
+  "intent": "Snapshot-recovery specification round 17 (r27)",
+  "instructions": "Round 17 (r27) closing revision for feature snapshot-recovery. Specification-only; no implementation exists. The three findings in the task are the bound r26 CodeReviewer output. Textual corrections only: no R/AC/T id add/remove/rename, no envelope path change, no new dependency. Do not edit files or run tests. Return numbered delta blocks with exact old/new text plus a short handoff.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r26",
+    "requests": [
+      {
+        "name": "SnapshotRecoveryRound17",
+        "taskId": "PLAN1",
+        "agent": "planner",
+        "effects": {
+          "kind": "read",
+          "paths": []
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoveryRound17",
+      "agent": "planner",
+      "task": "# Target\nRevise `.scratch/snapshot-recovery/spec.md` from r26 to r27 (round 17 closing revision). Close exactly the three CR26 findings; text only; no id, no envelope path change; do not edit files or run tests.\n\n# Required fixes\n1. CR26-1 (MEDIUM, `:228`): §9.8 opens `Envelope changes: none` while `allowedTaskIds` gained T4 at r25. Rewrite the headline and body to: Envelope: no write-path change — `allowedTaskIds` gained T4 at r25 by owner authorization; the 14-file write set is unchanged.\n2. CR26-2 (LOW, `:56`, `:83`): add the r26 decision-ledger amendment — at `:56` add `amended r26 (D12 — final target's cleaned path as a chain-entry path, CR25-5)`; at D12's header (`:83`) add `amended r26 — CR25-5`.\n3. CR26-3 (LOW, `:83`, and `:69`, `:8`): scope `ordinary (iii)/(m-iii)` to `ordinary (iii)` — the added final-target path is operative only for ordinary (iii); (m-iii) still matches moved link entries.\n\n# Housekeeping\nMove the title/Spec ID/Round header to r27 / round 17 and append a `### CHANGE LOG — r26 → r27` entry at the top of the newest-first change log. Keep all earlier history scoped.\n\n# Output\nReturn only numbered delta blocks:\n<<<BLOCK n>>>\n--- old ---\n<exact current text>\n--- new ---\n<replacement>\n<<<END>>>\nEach `old` must match the current file exactly once. Then a short handoff. Do not reprint the spec.",
+      "solutionSpace": "close three residual wording findings in a fixed spec; no id, no envelope change"
+    }
+  ]
+}

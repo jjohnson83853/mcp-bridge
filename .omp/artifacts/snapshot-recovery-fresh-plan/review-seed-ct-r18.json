@@ -1,0 +1,35 @@
+{
+  "intent": "Critic snapshot-recovery specification r18",
+  "instructions": "Candidate: snapshot-recovery-spec-r18 @ r18. Author: planner. Review mode: specification only; no implementation exists.\n\nCandidate-bound input digests (registry inputs; compare the bytes you read against these):\n- .scratch/snapshot-recovery/spec.md sha256 c848040e457decf666ae14b7290dbc0bb886cab84d4426f85865ddf7278a47b8\n- .scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md sha256 006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4\n- docs/logging-contract.md sha256 53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18\n- go.mod sha256 da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56\n- internal/observe/envelope.go sha256 4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0\n- internal/observe/log.go sha256 92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6\n- internal/service/loop.go sha256 c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e\n- internal/storage/store.go sha256 b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20\n- internal/storage/snapshot_v1.go sha256 52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644\n- cmd/mcp-bridge/serve.go sha256 73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c\n- cmd/mcp-bridge/startup_failure.go sha256 4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f\n- cmd/mcp-bridge/wiring.go sha256 dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c\n\nRead the r18 specification at .scratch/snapshot-recovery/spec.md (four specdd regions plus 6.1 ENVELOPE), the ticket mirror, docs/logging-contract.md and the referenced code anchors. Prior evidence: the previous round raw review files under .omp/artifacts/snapshot-recovery-fresh-plan/. Treat them as evidence, not reviewed bytes. Note the ticket mirror intentionally carries stale text (spec section 9.7); it is not the candidate contract.\n\nRead-only independent review. Do not modify files, implement, dispatch or claim approval. This task text is authoritative over the dispatch wrapper.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r18",
+    "requests": [
+      {
+        "name": "SnapshotRecoverySpecR18Critic",
+        "taskId": "CT1",
+        "agent": "critic",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/snapshot-recovery/spec.md",
+            ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+          ]
+        },
+        "targetCandidateId": "snapshot-recovery-spec-r18",
+        "targetRevision": "r18"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecR18Critic",
+      "agent": "critic",
+      "task": "# Target\nApply the SpecDD pass policy to snapshot-recovery candidate snapshot-recovery-spec-r18@r18 (specification only). No implementation exists. Verify the r18 closures against these exact bytes.\n\n# Required checks\n- C1: complete backing-chain protection including quarantined symlink chains, all resolution failure modes, the over-four-chain carve-out, and the deterministic AC1-10 subcases. Reconstruct the q1-to-q5 counterexample and confirm no residual path deletes or dangles backing bytes on the success path; confirm the carve-out does not contradict the survivor bound.\n- C2: deletion cap removed, five-deletion nine-file backlog oracle, all sections agree.\n- Alias identity and other-configured-path closures; R2 consistency.\n- Regression: C6, CR15-01..05, all ids and the 14-file envelope unchanged; no new dependency or behavior narrowing.\n- Judge AC traceability, falsifiability, retention/atomicity, warning counts, ownership and section 9 handoff. Blocking findings need class, severity, confidence, anchor and minimal fix. Do not invent runs or approvals. The configured non-OpenAI spec_critic_escalated reviewer is unavailable; record that as a limit, not a verdict substitute.\n\n# Output contract\nEnd with exactly '### Verdict' then PASS, REVISE or BLOCKED and nothing after it.",
+      "solutionSpace": "one review: C1 chain, C2 backlog, alias/config-path LOWs on a fixed id set"
+    }
+  ]
+}

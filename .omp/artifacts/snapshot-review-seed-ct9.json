@@ -1,0 +1,35 @@
+{
+  "intent": "Critic snapshot-recovery specification r9",
+  "instructions": "Candidate: snapshot-recovery-spec-r9 @ r9. Author: planner. Review mode: specification only; no implementation exists.\n\nReviewed inputs (all candidate-bound and hashed):\n- .scratch/snapshot-recovery/spec.md\n- .scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md\n- .scratch/mcp-bridge-defects/backlog.md\n- docs/agents/domain.md\n- docs/agents/issue-tracker.md\n- docs/logging-contract.md\n- go.mod\n- internal/config/config.go\n- internal/observe/envelope.go\n- internal/observe/log.go\n- internal/observe/log_test.go\n- internal/observe/edge_test.go\n- internal/observe/metrics.go\n- internal/service/loop.go\n- internal/service/reload.go\n- internal/storage/store.go\n- internal/storage/store_test.go\n- internal/storage/store_edge_test.go\n- internal/storage/snapshot_edge_test.go\n- cmd/mcp-bridge/runtime_edge_test.go\n- cmd/mcp-bridge/serve.go\n- cmd/mcp-bridge/serve_edge_test.go\n- cmd/mcp-bridge/startup_failure.go\n- cmd/mcp-bridge/startup_failure_test.go\n- cmd/mcp-bridge/logging_contract_test.go\n- cmd/mcp-bridge/wiring.go\n- cmd/mcp-bridge/config_envelope_test.go\n\nRead the r9 specification at .scratch/snapshot-recovery/spec.md (including the four specdd regions and the 6.1 ENVELOPE subsection), the ticket, backlog, docs/logging-contract.md, go.mod, and the referenced code anchors. The candidate boundary is the exact hashed bytes in the review registry; do not treat later edits as reviewed. The r8 CodeReviewer review is evidence at .omp/artifacts/snapshot-review-code-review-r8-20261121T150000Z.md (sha256 50f681438593aeeabb16a913667eb4872263f385843afa32131a81bbcb313f12); treat it as evidence, not as reviewed r9 bytes.\n\nThis is a read-only independent review. Do not modify files, run implementation tests, implement, dispatch, or claim approval. Treat the dispatch context wrapper as metadata; this task text is authoritative.\n\nRisk packet for both stages: (1) R8 MCP_SNAPSHOT_QUARANTINE=off semantics and default ON; (2) retention keep-5-newest per family, this-run exclusion and non-fatal prune failure; (3) failure_reason as an optional AD13 addition with schema_version 1; (4) errors.Is(err, ErrCorrupt) preservation; (5) single-writer startup fatal route; (6) exactly one startup_snapshot_rejected warning per quarantined file; (7) T1/T2/T3 file boundaries and the 6.1 envelope; (8) the r9 specdd markers and packet binding; (9) the r9 closure: deterministic O_EXCL reservation plus 1ns advance for quarantine naming, AC1-9(b) byte-identical collision, §8 unlink bound wording, ticket mirror AC1-5/AC1-9/AC2-2/AC2-5, §9 risk(3) seam oracles, schema-1 corrupt_json declaration.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r9",
+    "requests": [
+      {
+        "name": "SnapshotRecoverySpecR9Critic",
+        "taskId": "CT1",
+        "agent": "critic",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/snapshot-recovery/spec.md",
+            ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+          ]
+        },
+        "targetCandidateId": "snapshot-recovery-spec-r9",
+        "targetRevision": "r9"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecR9Critic",
+      "agent": "critic",
+      "task": "# Target\nIndependently gate snapshot-recovery specification candidate snapshot-recovery-spec-r9@r9 as the SpecDD/TDD Critic. The CodeReviewer round for this exact candidate and input set must be APPROVE before dispatch; verify that boundary but do not treat it as closure evidence.\n\n# Required checks\n- Review R1-R9, AC1-1..AC1-10, AC2-1..AC2-9, T1-T3 and 6.1 ENVELOPE against ticket scope and non-goals; verify R→AC→T traceability, deterministic oracles, coverage, dependencies and feasibility.\n- Verify the §9 ledger closes the exact r8 CodeReviewer findings; the r8 review is .omp/artifacts/snapshot-review-code-review-r8-20261121T150000Z.md (sha256 50f681438593aeeabb16a913667eb4872263f385843afa32131a81bbcb313f12).\n- Verify the owner envelope: no new/removed/renamed R/AC/T id; T1/T2/T3 boundaries; single-writer fatal route, four-location envelope insertion, QuarantineKeep-1 arithmetic, recovery-before-sync ordering, and deterministic non-overwriting quarantine naming preserve R1/R2/R4/R5/R7/R9.\n- Apply W09E with the risk packet: R8 opt-out/default, retention/irreversible prune, failure_reason under AD13, errors.Is preservation, fatal non-regular/rename/sync paths, exact warning count, reviewer/authority boundaries, schema-1 reason declaration.\n- Load skill://observability-contract and review section 7 against AC/T ids; missing decisive evidence is a finding. Spot-check the highest-risk assumptions narrowly.\n\n# Output contract\nYour final response must contain exactly one '### Verdict' heading, followed on the next nonblank line by exactly PASS, REVISE or BLOCKED. Then include 'Spec ID: SNAPREC-SPEC-r9', 'Revision: r9', and 'Findings by ID: <C1... or none>', plus verified references, coverage and limits, and exact amendments or missing evidence. Missing decisive evidence is BLOCKED; unresolved correctness/safety/acceptance/execution defect is REVISE; PASS only when coverage suffices and no blocking finding remains. At most 3072 UTF-8 bytes. Do not modify files, dispatch, or claim execution permission.",
+      "solutionSpace": "Independent specification review of one fixed candidate; verdict plus evidence-backed findings; no implementation or design widening."
+    }
+  ]
+}

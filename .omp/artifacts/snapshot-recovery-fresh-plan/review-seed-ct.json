@@ -1,0 +1,35 @@
+{
+  "intent": "Critic snapshot-recovery specification r27",
+  "instructions": "Candidate: snapshot-recovery-spec-r27 @ r27. Author: planner. Review mode: specification only; no implementation exists.\n\nReviewed inputs:\n- .scratch/snapshot-recovery/spec.md\n- .scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md\n- docs/logging-contract.md\n- go.mod\n- internal/observe/envelope.go\n- internal/observe/log.go\n- internal/service/loop.go\n- internal/storage/store.go\n- internal/storage/snapshot_v1.go\n- cmd/mcp-bridge/serve.go\n- cmd/mcp-bridge/startup_failure.go\n- cmd/mcp-bridge/wiring.go\n\nRead the r27 specification at .scratch/snapshot-recovery/spec.md, the ticket mirror, docs/logging-contract.md and the referenced code anchors. The candidate boundary is the exact hashed bytes in the registry. Read-only; do not edit files; do not run tests.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r27",
+    "requests": [
+      {
+        "name": "SnapshotRecoverySpecR27Critic",
+        "taskId": "CT1",
+        "agent": "critic",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/snapshot-recovery/spec.md",
+            ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+          ]
+        },
+        "targetCandidateId": "snapshot-recovery-spec-r27",
+        "targetRevision": "r27"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecR27Critic",
+      "agent": "critic",
+      "task": "# Target\nApply the SpecDD pass policy to snapshot-recovery candidate snapshot-recovery-spec-r27@r27 (specification only). This is the round-17 closing revision for CR26.\n\n# Required checks\n- Verify CR26-1 (the §9.8 envelope statement no longer contradicts §6.1's T4 task id), CR26-2 (the decision ledger and D12 header record the r26 amendment), and CR26-3 (the final-target path is scoped to ordinary (iii); (m-iii) still matches moved link entries; history stays round-scoped).\n- Confirm the closing revision adds no R/AC/T id, changes no envelope path, and introduces no dependency.\n- Keep every open item open and unclaimed (retention-unlink checkpoint, non-mutual originally-dangling carve-out, external escalation); reject implied approval, owner confirmation beyond the stated authorization, or executed-test claims.\nReturn Findings with severity and anchor, then a verdict heading:\n## Verdict: PASS, REVISE, or BLOCKED. Do not edit any file.",
+      "solutionSpace": "one verdict: closing-revision pass policy on a fixed id set"
+    }
+  ]
+}

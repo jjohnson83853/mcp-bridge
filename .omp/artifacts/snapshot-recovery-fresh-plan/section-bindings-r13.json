@@ -1,0 +1,18 @@
+{
+  "requirements": {
+    "revision": "r13",
+    "sha256": "b6ca030cd6be2eb6cbaac476d15660618b50e59117c3ce238b533daefda7bf3c"
+  },
+  "design": {
+    "revision": "r13",
+    "sha256": "da0f5eb1e4413ec4772d275418660fc0ed6857b54b0bd658e48242122e8f4cb0"
+  },
+  "tasks": {
+    "revision": "r13",
+    "sha256": "ebf0011ee33267f4922599adb4d3224d85302849418e57fff643ddc17f75e7ed"
+  },
+  "envelope": {
+    "revision": "r13",
+    "sha256": "3a5b39d0147d2e46ae838fb779cd546b92216aa5d6ea4cdccb6e74236d520f00"
+  }
+}

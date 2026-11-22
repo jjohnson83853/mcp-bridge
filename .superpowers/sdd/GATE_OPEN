@@ -1,10 +1,10 @@
 {
   "schemaVersion": 2,
-  "feature": "header-parameter-transit",
-  "revision": "r6",
+  "feature": "snapshot-recovery",
+  "revision": "r30",
   "projectRoot": "/home/opencode/projects/default/mcp-bridge",
-  "authorizationId": "owner-bounded-header-parameter-transit-t4",
+  "authorizationId": "owner-bounded-snapshot-recovery-t1",
   "envelopeId": "env-1",
-  "packetDigest": "0e95493c71f53b003dc4a97f71f2870d01a0d3b43641f07073c0aa9f7fcb2535",
-  "selectedBranchId": "header-parameter-transit-r6"
+  "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+  "selectedBranchId": "snapshot-recovery-r30"
 }

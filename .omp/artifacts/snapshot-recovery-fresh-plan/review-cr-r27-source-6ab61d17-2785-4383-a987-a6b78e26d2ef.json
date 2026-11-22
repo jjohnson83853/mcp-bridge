@@ -1,0 +1,85 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r27",
+  "revision": "r27",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "33fdf021d3a88f16b7fde1eb0993041a402c2dc03d83732cb892683d9bfdebfc"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR27CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "bbb4a99f03ad278b6db17f3691f3172e22ebd1dfaf3e4d50fe27e04ea24ab13a",
+      "targetCandidateId": "snapshot-recovery-spec-r27",
+      "targetRevision": "r27",
+      "taskSha256": "4bce9653a1967c977cb74706fe9321787409ec1340d3f99ba627f5b535958f52",
+      "instructionsSha256": "098dcf9784f89b8fffd601abc14abdceeb33ea3c99c72626df2d27f4b0d194ac"
+    },
+    {
+      "name": "SnapshotRecoverySpecR27Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "c9f55ac8b2f16db06ae6aac61b26024106a6d5b81b4f5ff5ae2967e7f982b242",
+      "targetCandidateId": "snapshot-recovery-spec-r27",
+      "targetRevision": "r27",
+      "taskSha256": "7d08c05bd97a10d137a98a53319c2d5152d3061adea4b731e1484ec8c746cc18",
+      "instructionsSha256": "098dcf9784f89b8fffd601abc14abdceeb33ea3c99c72626df2d27f4b0d194ac"
+    }
+  ],
+  "output": "<task-result id=\"SnapshotRecoverySpecR27CodeReview\" agent=\"code-reviewer\" status=\"completed\" duration=\"1m17s\">\n\n<output>\n## Code Review Summary\n\n**Mode:** Specification (no implementation exists)\n**Pass:** Initial — candidate `snapshot-recovery-spec-r27` @ `r27`, round-17 closing revision for CR26\n**Files Reviewed:** 13 (spec r27, ticket mirror, `docs/logging-contract.md`, `go.mod`, and the nine Go anchors)\n**Total Issues:** 0\n\n### Findings\n\nNone. No blocking-class, advisory-class or LOW defect found in the r27 delta.\n\n### CR26 closures independently verified\n\n- **CR26-1 — CLOSED IN TEXT** (`spec.md:228`). §9.8 headline/body now read \"**Envelope:** no write-path change — `allowedTaskIds` gained T4 at r25 by owner authorization; the 14-file write set is unchanged\", with T4 identified as a task id that adds no file. No *live* \"Envelope changes: none\" remains; the two surviving occurrences (`spec.md:8` item (1), `spec.md:248`) are quotations describing the r26 defect they fix. Confidence: HIGH.\n- **CR26-2 — CLOSED IN TEXT** (`spec.md:56`, `spec.md:69`). The §3 [AUTO-DECISION] ledger records `amended r26 (D12 — final target's cleaned path as a chain-entry path, CR25-5; no other decision amended)`; the D12 header records `amended r26 — CR25-5: the final target's cleaned path recorded as a chain-entry path, operative only for the ordinary (iii) moved-element match`. Confidence: HIGH.\n- **CR26-3 — CLOSED IN TEXT** (`spec.md:69`, `spec.md:83`, `spec.md:8`). All three sites carrying the r25 CR25-5 clause now scope the added final-target path to ordinary (iii) and state \"(m-iii) still matches moved link entries\". D12's (iii)/(m-iii) bodies are consistent: the final-target path is recorded only when the chain terminated at an existing regular final target, so a loop-class chain records none and (m-iii) is unaffected. The historical r25→r26 change-log entry (`spec.md:261`) retains its round-scoped \"ordinary (iii)/(m-iii)\" wording, as required. Confidence: HIGH.\n\n### Regression checks\n\n- **Id stability:** R1–R9, AC1-1…AC1-10, AC2-1…AC2-9, T1–T4 all present exactly once; case-sensitive scan finds no `T5`/`T6`/`AC1-11`/`AC2-10`/`AC3-`/`R10`.\n- **§6.1 envelope:** the declared 14-file write set equals the exact union of §6's four per-task Expected files; `allowedTaskIds` = `CR1, CT1, T1, T2, T3, T4`; no path added/removed.\n- **Section order:** §1→§9 with §6.1 and the r26→r27…r22→r23 change logs in the established order; unchanged.\n- **Contract consistency:** the r26 amendment is realized by the oracles that depend on it — AC1-10(b-xB2)/(b-xB3) match the moved regular final target via the recorded chain-entry path against the moved-entry key (other configured path); no D1–D12 or AC text contradicts the new scoping.\n- **No review/approval/test claim:** §1, §9.6 and every \"Unchanged\" block state no command was executed and every RED/GREEN is a planned oracle; no approval or owner confirmation is claimed beyond the recorded r25 decomposition authorization.\n- **Anchor spot-checks (unchanged by r27, still semantically accurate):** `store.go:84-126` (LoadPrompts branches, checksum sentinel, `SavePrompts` guard), `store.go:149-198`/`:295-306`, `reload.go:723-740` (`PersistPrompts` non-startup only; `internal_warning`/`prompt_persist`), `wiring.go:486-493`, `loop.go:144-151`/`:172`, `startup_failure.go:26-33`, `serve.go:96-99`, `log.go:270-275` (default `\"mcp-bridge event\"`), `envelope.go:136-141` (exact-equality `validErrorInfo`), `docs/logging-contract.md:607-614`, `go.mod` (`go 1.25.0`; `os.Link`/`syscall.Mkfifo` are std-lib).\n\n### Open Questions\n\nNone.\n\n### Review limits\n\n- This read-only toolset cannot compute SHA-256, so exact-byte identity of the reviewed spec against the registry hash is unverified — the same review-capability gap recorded as C2 in §9.19, not a spec defect.\n- No tests, lint or diagnostics were run (specification-mode review).\n- The ticket mirror still carries its acknowledged r15 body (§9.7/§5) — pre-existing and self-disclosed, not an r27 regression.\n\n### Positive Observations\n\n- The three corrections are atomic and scoped exactly to the bound findings; the r27 Round bullet names each fix without over-claiming.\n- Ledger→header symmetry for the D12 amendment is exact, and the distinction between \"recording\" (any existing regular final target) and \"operative\" (ordinary (iii) only) is preserved in every live clause.\n- Historical wording was deliberately left round-scoped rather than rewritten, keeping the revision ledger auditable.\n\n## Verdict: APPROVE\n</output>\n</task-result>\n",
+  "invocationId": "6ab61d17-2785-4383-a987-a6b78e26d2ef"
+}

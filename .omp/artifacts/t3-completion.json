@@ -1,0 +1,21 @@
+{
+  "baseSha64hex": "4a0d33de04611d8aea3f164285269d415a10ca031ade41b3f31d1650c891c9ce",
+  "taskId": "T3",
+  "evidence": [
+    {
+      "id": "ev-t3-envelope",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t3-evidence-envelope.log"
+      },
+      "acceptanceIds": [],
+      "outcome": "pass",
+      "observedAt": "2026-11-22T01:42:04.835Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/observe/ -run 'TestEnvelopeFieldNames|TestLog' -count=1",
+        "exitCode": 0
+      }
+    }
+  ]
+}

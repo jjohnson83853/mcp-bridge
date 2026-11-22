@@ -1,0 +1,85 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r22",
+  "revision": "r22",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "c7ee2a405461cc4fc3a7f12bec011eaa321f5393657fb538680bdd2186aef42f"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR22CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "c2f57c993ddaf6d79d81427544229bc595e704cac58b01d549a215d89d99de75",
+      "targetCandidateId": "snapshot-recovery-spec-r22",
+      "targetRevision": "r22",
+      "taskSha256": "b049036997cf96946dc49e54685a9581c30c65e537cf676cde1330559b9de762",
+      "instructionsSha256": "584619e99b2e845a17251a71b366e6e29f5257dba8ab4a80e536074bb6f16863"
+    },
+    {
+      "name": "SnapshotRecoverySpecR22Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "89cb0be684ee4fcf216404e3c455eca063759499377c8b5021ea717954aa301f",
+      "targetCandidateId": "snapshot-recovery-spec-r22",
+      "targetRevision": "r22",
+      "taskSha256": "572b1d1baa92e79404e873c81228b5c864975b682cc6c0391c34bbfc42cf3316",
+      "instructionsSha256": "584619e99b2e845a17251a71b366e6e29f5257dba8ab4a80e536074bb6f16863"
+    }
+  ],
+  "output": "## Code Review Summary\n**Mode:** specification; **pass:** repair (r22). Read-only; no implementation.\n**Files:** 12 candidate inputs + source anchors. **Issues:** 3 LOW (0 CRITICAL/HIGH/MEDIUM).\n**Limits:** no hashing/shell tool, so supplied SHA-256 exact-byte identity is unverified (C2 lane limit). §9.19's 11 non-spec digests match the r22 list; its spec digest is the r21 registration by design — no manifest inconsistency. No tests/spec-lint run.\n\n### Closure\n- **C1 CLOSED.** D11 :68, R5 :19, §4(3) :83 use an active-expansion stack: push a splice, pop on full target resolution; on-stack revisit = true cycle, popped revisit = finite re-splice. (b-realias) :122 reconstructs `snapshot.json→alias/../alias/../q5` (q5 protected, q4 evicted, link moved, read-through); (b-cycle) true ancestor cycle; (b-revisit) three-fold finite. No normative global visited-set test remains; the :122 \"already-visited\" wording is descriptive and the suite fails a global rule. Budget exact: 4096 splices/configured-path walk, own `Readlink` not a splice, `.`/empty/`..`/non-symlink uncounted; 4096-deep stack. All r21 termination classes and complete-chain protection retained.\n- **C3 CLOSED.** D12 :69 makes (iii) a moved-chain-element condition only; (b-xA2)/(b-xB2)/(b-xB3) consistent; no operative change.\n- **Regression OK.** R1–R9, AC1-1..10, AC2-1..9, T1–T3 unchanged; §6.1 same 14-file union (4+6+4); std-lib only (go 1.25.0); Load/Save/LoadPrompts/SavePrompts/ensureReplaceable, C6/CR15, C7 and §9.11 checkpoints unchanged; ticket mirror stale as documented (:7,:11,:91). Key anchors spot-verified (`store.go:104-106/185`, `envelope.go:103/136/244/575`, `log.go:228/275`, `wiring.go:486`, `startup_failure.go:26-33`).\n\n### Issues\n**[LOW][verification]** (b-budget) cannot distinguish budget termination from chain completion.\nFile: `.scratch/snapshot-recovery/spec.md:122`. Confidence: HIGH.\nk4098 is regular/non-conforming and k* are never candidates, so every stated observable is identical whether the walk trips or completes; \"BEFORE the chain ends\" has no FAILS clause. The counting rule itself is exact.\nFix: point k4097 at the oldest conforming seed (q5); completion would then protect q5 and fail the \"q5 evicted\" assertion.\n\n**[LOW][statement-precision]** D11 says the 4097-link chain \"trips the budget first\", then \"whichever bound the implementation checks first\".\nFile: `.scratch/snapshot-recovery/spec.md:68`. Confidence: HIGH. Both 4096 bounds trip at the same 4097th attempt; the AC accepts either class. Fix: state either bound may report at the 4097th attempt.\n\n**[LOW][scope]** R9's refresher/second-run no-op is unconditional, but D12 (i) exempts loop-class links: a mutual `snapshot.json↔prompts.json` pair leaves the prompts link unreconciled; it resolves to the republished catalog (SavePrompts refuses) and run 2 quarantines it as `corrupt_json` with a new record.\nFile: `.scratch/snapshot-recovery/spec.md:23,69`. Confidence: HIGH (trace); scope rests on the open §9.11 (i) checkpoint.\nFix: scope R9 to paths absent post-pass or reconciled; align §9.11's \"already dangling\" wording with D12's loop/escape/directory list. Pre-existing r20, not r22-introduced; no id/envelope change.\n\n### Positive Observations\nOutcome-based oracles (bytes, survivor sets, stream order); exact splice counting; C1 fixtures pin both the fix and the true-cycle guard.\n\n### Recommendation\nAPPROVE\n",
+  "invocationId": "cb481030-d7ea-4ee6-a30c-e8db7a848d26"
+}

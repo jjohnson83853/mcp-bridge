@@ -1,0 +1,209 @@
+{
+  "binding": {
+    "candidateId": "snapshot-recovery-spec-r9",
+    "reviewerId": "code-reviewer",
+    "authorIds": [
+      "planner"
+    ],
+    "inputs": [
+      {
+        "path": ".scratch/snapshot-recovery/spec.md",
+        "sha256": "ddd13aa89f26e96437c12827eeafeb378f431d4e0318f0c2b4cdeff409dce1fc"
+      },
+      {
+        "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+        "sha256": "8b6b8b61c054b766f4eeee5cf3e481fc5a50e8e75656ce161904889661ba4dd6"
+      },
+      {
+        "path": ".scratch/mcp-bridge-defects/backlog.md",
+        "sha256": "ab9d2a062751c6324ba280729be61b2c923ed3fdbacc1ad7f662eb6668004bfb"
+      },
+      {
+        "path": "docs/agents/domain.md",
+        "sha256": "54d97f3bd91612a42d28b473463c37e8283fa86274aa77e9033528e0dbf039e7"
+      },
+      {
+        "path": "docs/agents/issue-tracker.md",
+        "sha256": "ed489dcd8b47b6dd0d7e45a9f5dcff9f6a238af59ffc8b12be295c083124c60d"
+      },
+      {
+        "path": "docs/logging-contract.md",
+        "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+      },
+      {
+        "path": "go.mod",
+        "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+      },
+      {
+        "path": "internal/config/config.go",
+        "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+      },
+      {
+        "path": "internal/observe/envelope.go",
+        "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+      },
+      {
+        "path": "internal/observe/log.go",
+        "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+      },
+      {
+        "path": "internal/observe/log_test.go",
+        "sha256": "b6c9c1ebf752029d832b90f676145e0a9a0eb7fcd0c3fbfdf097cae28a4c6731"
+      },
+      {
+        "path": "internal/observe/edge_test.go",
+        "sha256": "4635cb74282703bf315efce482bf726080062aec5b538ed54068ad06961b4ae6"
+      },
+      {
+        "path": "internal/observe/metrics.go",
+        "sha256": "7c1e9e1393a74ad59625731059e4ae5f6e5d48a0fa05f70a4b0f858817a6570a"
+      },
+      {
+        "path": "internal/service/loop.go",
+        "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+      },
+      {
+        "path": "internal/service/reload.go",
+        "sha256": "313a30b017bb1f5f120d8ed7b6b43a3c93b81e20a7b7e1ff3f75793d87a11a5d"
+      },
+      {
+        "path": "internal/storage/store.go",
+        "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+      },
+      {
+        "path": "internal/storage/store_test.go",
+        "sha256": "99e4715e92838dbe916fbee0abfb12b9b9a69ac46d700b0f156c07cb012e26a2"
+      },
+      {
+        "path": "internal/storage/store_edge_test.go",
+        "sha256": "6f04b1bf3cce55048407b4b1a2ef0198b1f45cea4bfcad0b8323e65a18b757c6"
+      },
+      {
+        "path": "internal/storage/snapshot_edge_test.go",
+        "sha256": "e601a352bccb74c1e0d0f103ea94681d0b331545b9880a5b237924a2bc71303b"
+      },
+      {
+        "path": "cmd/mcp-bridge/runtime_edge_test.go",
+        "sha256": "e659fc5ae767e1d26624a96a78f0af71eeb743fcdb415e21aa22c4bff04e0d57"
+      },
+      {
+        "path": "cmd/mcp-bridge/serve.go",
+        "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+      },
+      {
+        "path": "cmd/mcp-bridge/serve_edge_test.go",
+        "sha256": "178c08c5abc5f7c79d6a2694dbd6a7fd468d50fc1b2aa355111b792079ae4c02"
+      },
+      {
+        "path": "cmd/mcp-bridge/startup_failure.go",
+        "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+      },
+      {
+        "path": "cmd/mcp-bridge/startup_failure_test.go",
+        "sha256": "4987c3ba79c7bafe94e0176e2365164e6f859b3c20f1c7fc15cae13a924ba457"
+      },
+      {
+        "path": "cmd/mcp-bridge/logging_contract_test.go",
+        "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+      },
+      {
+        "path": "cmd/mcp-bridge/wiring.go",
+        "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+      },
+      {
+        "path": "cmd/mcp-bridge/config_envelope_test.go",
+        "sha256": "7af279bea9fcb693ea65f149a84196d14ac1098d96e91f90ab7ff5b09d5e605a"
+      }
+    ],
+    "dispatches": [
+      {
+        "name": "SnapshotRecoverySpecR9CodeReview",
+        "agent": "code-reviewer",
+        "reviewerId": "code-reviewer",
+        "taskId": "CR1",
+        "requestSha256": "90c7c8dfee89d777e7174c7c4f0e1948725179a376ec8aeec4280b70c85124a7",
+        "targetCandidateId": "snapshot-recovery-spec-r9",
+        "targetRevision": "r9",
+        "taskSha256": "8ff94f1ed7c6ed5f91973d2d1b656b12db76b511b6091e5ce55cb38b48858fcc",
+        "instructionsSha256": "2a5aad413aa1d853db56acd3e56366363551d3cdc250fa1bac5a30bd7b94f73b"
+      },
+      {
+        "name": "SnapshotRecoverySpecR9Critic",
+        "agent": "critic",
+        "reviewerId": "critic",
+        "taskId": "CT1",
+        "requestSha256": "60855ff1925400a655545b26bd062133357f8964927ba2131d2df685f2fd9de3",
+        "targetCandidateId": "snapshot-recovery-spec-r9",
+        "targetRevision": "r9",
+        "taskSha256": "815d3cbd12dfab0ccfa41d81d4d7fb89a66e8bc3cb1c695f1628780dbae26fcc",
+        "instructionsSha256": "2a5aad413aa1d853db56acd3e56366363551d3cdc250fa1bac5a30bd7b94f73b"
+      }
+    ],
+    "verdict": "REQUEST CHANGES",
+    "findings": [
+      {
+        "id": "CR9-1",
+        "class": "r-ac-coverage-gap",
+        "severity": "MEDIUM",
+        "title": "Reservation-exhaustion fatal has no oracle.",
+        "anchor": "",
+        "fix": "add AC2-8(c), no new id — fixed clock, pre-seed 4096 conforming names at now+0..now+4095ns plus corrupt snapshot with known bytes; assert `errors.Is(err, ErrSnapshotUnrecoverable)`, empty `Recoveries`, original bytes intact, family count 4096; add the T3 schedule."
+      },
+      {
+        "id": "CR9-2",
+        "class": "lifecycle-hazard",
+        "severity": "MEDIUM",
+        "title": "Lstat-first fatal contradicts R6 for a symlinked-but-valid snapshot.",
+        "anchor": "",
+        "fix": "state the \"regular file\" precondition in R6/R3/step 1 and add a symlink subcase to AC2-4 (no new id), or use Stat and admit symlinked regular targets."
+      },
+      {
+        "id": "CR9-3",
+        "class": "statement-contradiction",
+        "severity": "LOW",
+        "title": "§3 r9 AUTO-DECISION arithmetic is wrong.** \"4096-advance loop (≈41 days of 1ns collisions)\" — 4096 attempts × 1ns ≈ 4.1µs, so \"practically unexhaustable\" is false and 4096 empty pre-created names force the fatal. Fix: correct the estimate; either raise the bound or record reachability as accepted and oracled (Issue 1).",
+        "anchor": "",
+        "fix": ""
+      },
+      {
+        "id": "CR9-4",
+        "class": "ticket-mirror-drift",
+        "severity": "LOW",
+        "title": "§10 says the r9 delta is \"pending application\", but ticket:91/93/99/103/106/109 already carry r9 text, so its REPLACE sources (e.g. \"mirror of spec r8\") no longer exist; ticket:96 omits the r9 schema-1 declaration though ticket:93 claims r9 amended AC1-2; ticket:103 omits AC1-9(b)(iv).** Fix: record the r9 delta APPLIED with byte-equality verification and complete those two mirror lines.",
+        "anchor": "",
+        "fix": ""
+      },
+      {
+        "id": "CR9-5",
+        "class": "stale-citation",
+        "severity": "LOW",
+        "title": "store.go anchors are stale.** Load is 149-195 (cited 124-167); schema-2 checksum producer is 184-186 (cited \"152-155\", which lands in probe/switch); legacy wrap 164-169; default 187-189; Validate 190-192; ensureReplaceable 295-306. §4's normative \"sole producer at 152-155\" mispoints. Fix: re-derive the anchors.",
+        "anchor": "",
+        "fix": ""
+      },
+      {
+        "id": "CR9-6",
+        "class": "binding-gap",
+        "severity": "LOW",
+        "title": "`snapshot_v1.go:135/:150` is decisive evidence for the schema-1 declaration but is absent from §6.1 read paths and the packet's reviewed inputs.** Fix: add it as a read path or mark the citation planner-only (no write-set change).",
+        "anchor": "snapshot_v1.go:135/:150",
+        "fix": ""
+      }
+    ],
+    "format": "installed",
+    "source": {
+      "path": ".omp/artifacts/review-snapshot-recovery-spec-r9-code-reviewer-20261121T141135Z.json",
+      "sha256": "d202081d408cba756648f29edf11109591d3cbda4cd6342a20cd5d2c5d20b26f"
+    },
+    "recordedAt": "2026-11-21T14:11:35.892Z"
+  },
+  "runBinding": {
+    "candidateId": "snapshot-recovery-spec-r9",
+    "invocationId": "10dd463c-90ee-4722-a1b0-bda4747f8917",
+    "fingerprint": "b1f0988cea2929a6027a92d75337b8d7d8d98429bee979551e1ecb3ee207fd2b",
+    "reviewerId": "code-reviewer",
+    "agent": "code-reviewer",
+    "revision": "r9"
+  },
+  "status": "succeeded"
+}

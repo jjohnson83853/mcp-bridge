@@ -1,0 +1,229 @@
+{
+  "binding": {
+    "candidateId": "snapshot-recovery-spec-r10",
+    "reviewerId": "code-reviewer",
+    "authorIds": [
+      "planner"
+    ],
+    "inputs": [
+      {
+        "path": ".scratch/snapshot-recovery/spec.md",
+        "sha256": "a67ddead52d3294e43b9b0dbf94ccc3914a5a434bcf7ad49a6587689fee6fd45"
+      },
+      {
+        "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+        "sha256": "923ec735590cc05e6c66daa57520d0ad2ed017016bf435d9834fc1f06138047d"
+      },
+      {
+        "path": ".scratch/mcp-bridge-defects/backlog.md",
+        "sha256": "ab9d2a062751c6324ba280729be61b2c923ed3fdbacc1ad7f662eb6668004bfb"
+      },
+      {
+        "path": "docs/agents/domain.md",
+        "sha256": "54d97f3bd91612a42d28b473463c37e8283fa86274aa77e9033528e0dbf039e7"
+      },
+      {
+        "path": "docs/agents/issue-tracker.md",
+        "sha256": "ed489dcd8b47b6dd0d7e45a9f5dcff9f6a238af59ffc8b12be295c083124c60d"
+      },
+      {
+        "path": "docs/logging-contract.md",
+        "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+      },
+      {
+        "path": "go.mod",
+        "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+      },
+      {
+        "path": "internal/config/config.go",
+        "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+      },
+      {
+        "path": "internal/observe/envelope.go",
+        "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+      },
+      {
+        "path": "internal/observe/log.go",
+        "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+      },
+      {
+        "path": "internal/observe/log_test.go",
+        "sha256": "b6c9c1ebf752029d832b90f676145e0a9a0eb7fcd0c3fbfdf097cae28a4c6731"
+      },
+      {
+        "path": "internal/observe/edge_test.go",
+        "sha256": "4635cb74282703bf315efce482bf726080062aec5b538ed54068ad06961b4ae6"
+      },
+      {
+        "path": "internal/observe/metrics.go",
+        "sha256": "7c1e9e1393a74ad59625731059e4ae5f6e5d48a0fa05f70a4b0f858817a6570a"
+      },
+      {
+        "path": "internal/service/loop.go",
+        "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+      },
+      {
+        "path": "internal/service/reload.go",
+        "sha256": "313a30b017bb1f5f120d8ed7b6b43a3c93b81e20a7b7e1ff3f75793d87a11a5d"
+      },
+      {
+        "path": "internal/storage/store.go",
+        "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+      },
+      {
+        "path": "internal/storage/snapshot_v1.go",
+        "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+      },
+      {
+        "path": "internal/storage/store_test.go",
+        "sha256": "99e4715e92838dbe916fbee0abfb12b9b9a69ac46d700b0f156c07cb012e26a2"
+      },
+      {
+        "path": "internal/storage/store_edge_test.go",
+        "sha256": "6f04b1bf3cce55048407b4b1a2ef0198b1f45cea4bfcad0b8323e65a18b757c6"
+      },
+      {
+        "path": "internal/storage/snapshot_edge_test.go",
+        "sha256": "e601a352bccb74c1e0d0f103ea94681d0b331545b9880a5b237924a2bc71303b"
+      },
+      {
+        "path": "cmd/mcp-bridge/runtime_edge_test.go",
+        "sha256": "e659fc5ae767e1d26624a96a78f0af71eeb743fcdb415e21aa22c4bff04e0d57"
+      },
+      {
+        "path": "cmd/mcp-bridge/serve.go",
+        "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+      },
+      {
+        "path": "cmd/mcp-bridge/serve_edge_test.go",
+        "sha256": "178c08c5abc5f7c79d6a2694dbd6a7fd468d50fc1b2aa355111b792079ae4c02"
+      },
+      {
+        "path": "cmd/mcp-bridge/startup_failure.go",
+        "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+      },
+      {
+        "path": "cmd/mcp-bridge/startup_failure_test.go",
+        "sha256": "4987c3ba79c7bafe94e0176e2365164e6f859b3c20f1c7fc15cae13a924ba457"
+      },
+      {
+        "path": "cmd/mcp-bridge/logging_contract_test.go",
+        "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+      },
+      {
+        "path": "cmd/mcp-bridge/wiring.go",
+        "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+      },
+      {
+        "path": "cmd/mcp-bridge/config_envelope_test.go",
+        "sha256": "7af279bea9fcb693ea65f149a84196d14ac1098d96e91f90ab7ff5b09d5e605a"
+      }
+    ],
+    "dispatches": [
+      {
+        "name": "SnapshotRecoverySpecR10CodeReview",
+        "agent": "code-reviewer",
+        "reviewerId": "code-reviewer",
+        "taskId": "CR1",
+        "requestSha256": "fceab00b894d6cb0568478cc807e1c321b6ef3aaebe37a8b0c34c837a1beab14",
+        "targetCandidateId": "snapshot-recovery-spec-r10",
+        "targetRevision": "r10",
+        "taskSha256": "f9538e8381deeeff763155dad0d8c25c5e56d99cd1810050b185ca646522ecdc",
+        "instructionsSha256": "e62534f3d8913e347a6d7aa027150f509f6341180d02931bd5a72069591d4aac"
+      },
+      {
+        "name": "SnapshotRecoverySpecR10Critic",
+        "agent": "critic",
+        "reviewerId": "critic",
+        "taskId": "CT1",
+        "requestSha256": "90eb0531519564e261b23a5191d7c7fba78d91dc73ced7b600b7f128198ad903",
+        "targetCandidateId": "snapshot-recovery-spec-r10",
+        "targetRevision": "r10",
+        "taskSha256": "191d84251645a031f76255aec20a05e184c43fa3e74ef2fd6923efcec50f99a6",
+        "instructionsSha256": "e62534f3d8913e347a6d7aa027150f509f6341180d02931bd5a72069591d4aac"
+      }
+    ],
+    "verdict": "REQUEST CHANGES",
+    "findings": [
+      {
+        "id": "CR10-1",
+        "class": "r-ac-coverage-gap",
+        "severity": "MEDIUM",
+        "title": "The r10 symlink decision tree is admitted but only its two convenient branches are oracled.",
+        "anchor": "",
+        "fix": "add in-place subcases (no new id): AC1-10 gains “corrupt symlinked regular snapshot” (one Recovery, link entry moved, target bytes exactly preserved at the target path, configured path absent); AC1-1 gains “broken symlink” (zero recoveries, link entry untouched, no quarantine/prune)."
+      },
+      {
+        "id": "CR10-2",
+        "class": "statement-contradiction",
+        "severity": "MEDIUM",
+        "title": "§4 step 1 has no branch for an `os.Stat` error other than `ErrNotExist`, while §4 step 2 assumes regularity was proven.",
+        "anchor": "os.Stat",
+        "fix": "amend R3/§4 step 1 in place: any `os.Stat` error other than `fs.ErrNotExist` is fatal wrapping `ErrSnapshotUnrecoverable` with the path (same `state_directory` route); extend AC2-4's harness with a symlink-loop subcase (no new id) asserting one `startup_failed/state_directory` record and an untouched link."
+      },
+      {
+        "id": "CR10-3",
+        "class": "r-ac-coverage-gap",
+        "severity": "MEDIUM",
+        "title": "The reservation's non-`EEXIST` failure is unclassified and unoracled on the never-overwrite path.",
+        "anchor": "EEXIST",
+        "fix": "state in §4 step 3 and R3 in place that any reservation error other than an already-exists error is fatal wrapping `ErrSnapshotUnrecoverable`, with the original untouched and no rename; extend AC2-8(b) (no new id) with a reservation-error seam asserting fatal + original bytes + no quarantine file + empty result."
+      },
+      {
+        "id": "CR10-4",
+        "class": "r-ac-coverage-gap",
+        "severity": "LOW",
+        "title": "R7's “same read_error/rename/sync handling” for prompts has no prompts oracle.",
+        "anchor": "",
+        "fix": "extend AC1-10 with a prompts read_error subcase and state that AC2-8(a)/(b) execute for both families (or add a prompts seam case), no new id."
+      },
+      {
+        "id": "CR10-5",
+        "class": "r-ac-coverage-gap",
+        "severity": "LOW",
+        "title": "AC2-6 arm 1 does not assert R8's “no `snapshot_retention_failed` record”.",
+        "anchor": "snapshot_retention_failed",
+        "fix": "add “zero `snapshot_retention_failed` records” to AC2-6 arm 1's verify list."
+      },
+      {
+        "id": "CR10-6",
+        "class": "r-ac-coverage-gap",
+        "severity": "LOW",
+        "title": "A retention directory-listing failure is unclassified and has no representable retention record.",
+        "anchor": "",
+        "fix": "define listing failure as non-fatal for that family with a deterministic `quarantine_path` (e.g., this run's just-created file) or as fatal; add it to AC1-5's injected-seam matrix."
+      },
+      {
+        "id": "CR10-7",
+        "class": "stale-citation",
+        "severity": "LOW",
+        "title": "`addEnvelopeFields` is cited as `envelope.go:244-423`; the function actually spans 244-475.",
+        "anchor": "addEnvelopeFields",
+        "fix": "cite `envelope.go:244-475`, with the default at `:471-472`."
+      },
+      {
+        "id": "CR10-8",
+        "class": "ticket-mirror-drift",
+        "severity": "LOW",
+        "title": "§10's “pending” status and §3's ticket:91 description are stale; the mirror itself is complete.",
+        "anchor": "",
+        "fix": "record the r10 delta APPLIED with byte-equality verification of the seven lines and mark “none pending”, or restate the REPLACE blocks as already-applied targets; correct §3's line-91 description."
+      }
+    ],
+    "format": "installed",
+    "source": {
+      "path": ".omp/artifacts/review-snapshot-recovery-spec-r10-code-reviewer-20261121T144157Z.json",
+      "sha256": "c9a64e96944a802e78d1e65ad88f9efec549096d855ac6784a4b09fd1a4cdabf"
+    },
+    "recordedAt": "2026-11-21T14:41:57.008Z"
+  },
+  "runBinding": {
+    "candidateId": "snapshot-recovery-spec-r10",
+    "invocationId": "7455ec91-a551-4701-a118-ce125b9a86f6",
+    "fingerprint": "90e1325d7d4d9277237e3a350d50341066baf984505c581723eb2c4421ab6344",
+    "reviewerId": "code-reviewer",
+    "agent": "code-reviewer",
+    "revision": "r10"
+  },
+  "status": "succeeded"
+}

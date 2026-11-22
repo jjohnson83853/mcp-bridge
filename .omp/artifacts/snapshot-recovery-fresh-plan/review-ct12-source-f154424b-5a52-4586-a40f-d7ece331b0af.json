@@ -1,0 +1,125 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "snapshot-recovery-spec-r12",
+  "revision": "r12",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "f02066c8a6758c867f88e31bffaede42b905db916468cf620380aee63f580d36"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "6f624ec16c663a818e9e46c7927cc28fec77a65d7d5028e896bb8f34d31ee00e"
+    },
+    {
+      "path": ".scratch/mcp-bridge-defects/backlog.md",
+      "sha256": "ab9d2a062751c6324ba280729be61b2c923ed3fdbacc1ad7f662eb6668004bfb"
+    },
+    {
+      "path": "docs/agents/domain.md",
+      "sha256": "54d97f3bd91612a42d28b473463c37e8283fa86274aa77e9033528e0dbf039e7"
+    },
+    {
+      "path": "docs/agents/issue-tracker.md",
+      "sha256": "ed489dcd8b47b6dd0d7e45a9f5dcff9f6a238af59ffc8b12be295c083124c60d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/observe/metrics.go",
+      "sha256": "7c1e9e1393a74ad59625731059e4ae5f6e5d48a0fa05f70a4b0f858817a6570a"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/service/reload.go",
+      "sha256": "313a30b017bb1f5f120d8ed7b6b43a3c93b81e20a7b7e1ff3f75793d87a11a5d"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/store_test.go",
+      "sha256": "99e4715e92838dbe916fbee0abfb12b9b9a69ac46d700b0f156c07cb012e26a2"
+    },
+    {
+      "path": "internal/storage/store_edge_test.go",
+      "sha256": "6f04b1bf3cce55048407b4b1a2ef0198b1f45cea4bfcad0b8323e65a18b757c6"
+    },
+    {
+      "path": "internal/storage/snapshot_edge_test.go",
+      "sha256": "e601a352bccb74c1e0d0f103ea94681d0b331545b9880a5b237924a2bc71303b"
+    },
+    {
+      "path": "cmd/mcp-bridge/runtime_edge_test.go",
+      "sha256": "e659fc5ae767e1d26624a96a78f0af71eeb743fcdb415e21aa22c4bff04e0d57"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "4987c3ba79c7bafe94e0176e2365164e6f859b3c20f1c7fc15cae13a924ba457"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR12CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "7eafbf190d48c7d555bfb0d7d5b041daa74a0ba0338519c4020a25e55cbea1e7",
+      "targetCandidateId": "snapshot-recovery-spec-r12",
+      "targetRevision": "r12",
+      "taskSha256": "3b641280603acedec6db39a55e5f001c64c8c61bd5fd8b7cd381d518bcfebe50",
+      "instructionsSha256": "0ce7c88f12fc61fca949f86667a2e02656ba5f882fb436346ffd6c99efff9d63"
+    },
+    {
+      "name": "SnapshotRecoverySpecR12Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "6dc5d6149a87d58932c5dfd514cf2e65aaeb3657d57f997cde1573d2942117cd",
+      "targetCandidateId": "snapshot-recovery-spec-r12",
+      "targetRevision": "r12",
+      "taskSha256": "1e26f3ec60933a6884e5892328ec6eabd0775cbe4956f7a73cbcd8b1c9215da6",
+      "instructionsSha256": "0ce7c88f12fc61fca949f86667a2e02656ba5f882fb436346ffd6c99efff9d63"
+    }
+  ],
+  "output": "Spec ID: SNAPREC-SPEC-r12\nRevision: r12\nFindings by ID: C1, C2, C3, C4\n\n```json\n{\n  \"verdict\": \"REVISE\",\n  \"rationale\": \"High-confidence specification defects remain. Verified: all 9 requirement, 19 AC and 5 envelope task identifiers are retained; T1/T2/T3's file union matches §6.1 and the supplied planner file envelope. Named seams, mixed-fatal warning ordering, disabled-startup wedge and both-family fatal fixtures are specified, not executed.\",\n  \"blocking_findings\": [\n    {\n      \"id\": \"C1\",\n      \"severity\": \"HIGH\",\n      \"location\": \"spec.md:52,74; R3/D5\",\n      \"statement\": \"The bootstrap mapping discards the real fatal cause, contradicting D5's preservation mechanism and the ticket's diagnostic requirement. Preserve the cause through serve's returned error and specify an observable, finite fatal classification with an AC; otherwise obtain affected-owner confirmation of the semantic change.\",\n      \"evidence\": \"startup_failure.go:12-33 has no cause/Unwrap; §4 returns stateDirectoryFailure(path) alone. main.go:56-66 emits that classification without the recovery error. Independently verifies SR12-01.\"\n    },\n    {\n      \"id\": \"C2\",\n      \"severity\": \"HIGH\",\n      \"location\": \"spec.md:69; R3; AC2-4\",\n      \"statement\": \"Successful Stat of a FIFO, socket, device or symlink to one has no defined branch. Reading a FIFO can wedge bootstrap indefinitely. Define non-regular handling before reading and add deterministic no-read/fatal-or-recovery assertions for both families within existing ACs.\",\n      \"evidence\": \"§4 enumerates absence, directories, stat errors and regular files only; existing reads use os.ReadFile (store.go:85,150). Ticket Q2 explicitly includes non-files. Independently verifies SR12-02.\"\n    },\n    {\n      \"id\": \"C3\",\n      \"severity\": \"HIGH\",\n      \"location\": \"spec.md:20,99; R6/AC1-2\",\n      \"statement\": \"The catalog-specific taxonomy does not resolve prompts checksum and unsupported-schema classification. Specify per-family mappings and exercise them in the seeded-class table without changing LoadPrompts behavior.\",\n      \"evidence\": \"PromptSchemaVersion is 1 (snapshot.go:111); LoadPrompts validates before its independent checksum rejection (store.go:101-106). R6 reserves checksum_mismatch exclusively for catalog schema 2, while AC1-2 seeds only snapshot.json. AC2-9 covers malformed prompts JSON, not these branches.\"\n    },\n    {\n      \"id\": \"C4\",\n      \"severity\": \"HIGH\",\n      \"location\": \"spec.md:179-180; §7\",\n      \"statement\": \"Existing alert coverage is asserted without supporting evidence. Supply verified matching behavior tied to AC/T, or document a justified exception explicitly acknowledging unalerted recovery/retention events.\",\n      \"evidence\": \"The documented warn query filters config_reload_rejected; the error query filters config_validation_failed/pin_ceiling (logging-contract.md:607-614). Neither matches these events. Listed ACs verify emission, not alert behavior.\"\n    }\n  ],\n  \"nonblocking_recommendations\": [\n    \"Pin bounded integration deadlines and retention behavior with future-dated seeds.\",\n    \"Refresh stale anchors: runtimeErrorInfo starts at envelope.go:103; addEnvelopeFields at :244. Correct §9.7: the ticket already mirrors r12.\"\n  ],\n  \"limitations\": \"Read-only source review; no tests or hashes executed. Digest identity relies on supplied bindings. No approvals granted. Repairs require fresh candidate-bound reviews; escalate unresolved diagnostic-contract disagreement to the configured non-OpenAI critic.\"\n}\n```\n\n### Verdict\nREVISE\n",
+  "invocationId": "f154424b-5a52-4586-a40f-d7ece331b0af"
+}

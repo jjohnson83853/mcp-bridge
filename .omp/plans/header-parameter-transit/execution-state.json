@@ -1,59 +1,93 @@
 {
   "schemaVersion": 2,
   "feature": "header-parameter-transit",
-  "revision": "r1",
+  "revision": "r6",
   "projectRoot": "/home/opencode/projects/default/mcp-bridge",
   "spec": {
     "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/spec.md",
-    "sha256": "8054d28f24cdf82475a27df8c0ad3e73ed5bf36da91db299be709e2e147b8347",
+    "sha256": "3d4066066bb511f0c6fad8d09a99e9913759d09140509c0aa163bf3960a7d7da",
     "sectionBindings": {
       "requirements": {
-        "revision": "r1",
-        "sha256": "bfe887f463c29bafb2def4cb540cac596154837a12345a51ff9bec107f283485"
+        "revision": "r6",
+        "sha256": "e7053f2f6ee7ea1421e10408a9b5df1af79a887ea53d469ba3931bb8eb2ac80a"
       },
       "design": {
-        "revision": "r1",
-        "sha256": "c130a545793320e90e358acdd68f282be7b7a65946a4166abafafa308d151d36"
+        "revision": "r6",
+        "sha256": "d8628f4f0a7551724a7cd8be9c33b07a24ea15358fbb6e12cb64f001c6d3eeb7"
       },
       "tasks": {
-        "revision": "r1",
-        "sha256": "0b99550993000324e14bd8cb8b3f2d208c78ea92221b65b834e0e202a760211c"
+        "revision": "r6",
+        "sha256": "683b67e267e95e6f599b4b26d8b9c7c3685f66744bbe8ecca37579e6bb98dd3f"
       },
       "envelope": {
-        "revision": "r1",
-        "sha256": "03c1a8fee1756886c2cb6f4698f21945d03bea3b11dff2d8a5c9aeade143109a"
+        "revision": "r6",
+        "sha256": "b2d25e8219bf144408771ce648e9e617adb4dea0701a7eee06c549a744fc3e1f"
       }
     }
   },
   "packet": {
-    "digest": "a2a363801ddeaacc8a4a886b0688dc5d4800799dec7c858fcc032dd8d5b8f57c",
-    "selectedBranchId": null,
+    "digest": "0e95493c71f53b003dc4a97f71f2870d01a0d3b43641f07073c0aa9f7fcb2535",
+    "selectedBranchId": "header-parameter-transit-r6",
     "branches": [
       {
-        "id": "header-parameter-transit-r1",
+        "id": "header-parameter-transit-r5",
         "answerIds": [],
         "taskIds": [
           "CR1",
           "CT1",
-          "T1"
+          "T1",
+          "T2",
+          "T3",
+          "T4"
         ],
         "envelopeId": "env-1",
         "sectionBindings": {
           "requirements": {
-            "revision": "r1",
-            "sha256": "bfe887f463c29bafb2def4cb540cac596154837a12345a51ff9bec107f283485"
+            "revision": "r5",
+            "sha256": "e10e12b2491d7b2c2785be8588ddf1de0cb5dbe138d1148b280b5b37b651c26b"
           },
           "design": {
-            "revision": "r1",
-            "sha256": "c130a545793320e90e358acdd68f282be7b7a65946a4166abafafa308d151d36"
+            "revision": "r5",
+            "sha256": "a343d840acc08b3cd616ac55de24dc67c2dd6862feddd4854551bf186ecf06d4"
           },
           "tasks": {
-            "revision": "r1",
-            "sha256": "0b99550993000324e14bd8cb8b3f2d208c78ea92221b65b834e0e202a760211c"
+            "revision": "r5",
+            "sha256": "e58aa100be420a25f4d71f3175a098b1416f1c2eb37c1772a80f68053579509b"
           },
           "envelope": {
-            "revision": "r1",
-            "sha256": "03c1a8fee1756886c2cb6f4698f21945d03bea3b11dff2d8a5c9aeade143109a"
+            "revision": "r5",
+            "sha256": "793dc3c5951de85a2056febd23249e9002d631b0b8a347d41f0e8902ceac5de8"
+          }
+        }
+      },
+      {
+        "id": "header-parameter-transit-r6",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r6",
+            "sha256": "e7053f2f6ee7ea1421e10408a9b5df1af79a887ea53d469ba3931bb8eb2ac80a"
+          },
+          "design": {
+            "revision": "r6",
+            "sha256": "d8628f4f0a7551724a7cd8be9c33b07a24ea15358fbb6e12cb64f001c6d3eeb7"
+          },
+          "tasks": {
+            "revision": "r6",
+            "sha256": "683b67e267e95e6f599b4b26d8b9c7c3685f66744bbe8ecca37579e6bb98dd3f"
+          },
+          "envelope": {
+            "revision": "r6",
+            "sha256": "b2d25e8219bf144408771ce648e9e617adb4dea0701a7eee06c549a744fc3e1f"
           }
         }
       }
@@ -72,7 +106,7 @@
     },
     {
       "id": "R2",
-      "summary": "The SDK is the only emitter; the bridge only ensures the execution session holds the tool definition"
+      "summary": "The SDK is the only emitter; the bridge ensures the execution session holds the tool definition"
     },
     {
       "id": "R3",
@@ -84,7 +118,7 @@
     },
     {
       "id": "R5",
-      "summary": "Explicit stateful mode succeeds using discovery's cached definitions"
+      "summary": "Explicit stateful mode succeeds using cached definitions, refetching only when the TTL requires it"
     },
     {
       "id": "R6",
@@ -92,7 +126,7 @@
     },
     {
       "id": "R7",
-      "summary": "The protocol boundary and operator handling are documented"
+      "summary": "The protocol boundary, operator handling and definition-pass cost are documented"
     },
     {
       "id": "R8",
@@ -111,98 +145,162 @@
       "summary": "Stateless restart resilience is preserved"
     }
   ],
-  "authorization": null,
-  "reviews": null,
+  "authorization": {
+    "mode": "bounded",
+    "id": "owner-bounded-header-parameter-transit-t4",
+    "packetDigest": "0e95493c71f53b003dc4a97f71f2870d01a0d3b43641f07073c0aa9f7fcb2535",
+    "selectedBranchId": "header-parameter-transit-r6",
+    "receipt": {
+      "sourceId": "src-owner-authorization-t4",
+      "recordedAt": "2026-11-21T11:27:32.603Z",
+      "response": {
+        "origin": "user",
+        "explicit": true,
+        "timedOut": false,
+        "automatic": false,
+        "packetDigest": "0e95493c71f53b003dc4a97f71f2870d01a0d3b43641f07073c0aa9f7fcb2535",
+        "selectedBranchId": "header-parameter-transit-r6"
+      }
+    }
+  },
+  "reviews": {
+    "specification": {
+      "verdict": "waived",
+      "reason": "Owner accepted r6 residuals: CodeReviewer r6 APPROVE with three residual findings and Critic r6 REVISE with C1-C6 (C1/C3 HIGH). No passing Critic verdict exists; owner explicitly directed proceeding for T1.",
+      "receipt": {
+        "sourceId": "src-owner-authorization-t1",
+        "recordedAt": "2026-11-21T10:10:22.213Z",
+        "response": {
+          "origin": "user",
+          "explicit": true,
+          "timedOut": false,
+          "automatic": false,
+          "packetDigest": "0e95493c71f53b003dc4a97f71f2870d01a0d3b43641f07073c0aa9f7fcb2535",
+          "selectedBranchId": "header-parameter-transit-r6"
+        }
+      }
+    },
+    "tasks": {
+      "verdict": "waived",
+      "reason": "Owner accepted r6 residuals: CodeReviewer r6 APPROVE with three residual findings and Critic r6 REVISE with C1-C6 (C1/C3 HIGH). No passing Critic verdict exists; owner explicitly directed proceeding for T1.",
+      "receipt": {
+        "sourceId": "src-owner-authorization-t1",
+        "recordedAt": "2026-11-21T10:10:22.213Z",
+        "response": {
+          "origin": "user",
+          "explicit": true,
+          "timedOut": false,
+          "automatic": false,
+          "packetDigest": "0e95493c71f53b003dc4a97f71f2870d01a0d3b43641f07073c0aa9f7fcb2535",
+          "selectedBranchId": "header-parameter-transit-r6"
+        }
+      }
+    }
+  },
   "sources": [
     {
       "id": "src-spec-r1",
       "kind": "repository",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/spec.md",
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/execution-state-r1-spec-8054d28f24cd.md",
         "sha256": "8054d28f24cdf82475a27df8c0ad3e73ed5bf36da91db299be709e2e147b8347"
       },
-      "locator": "planner specification r1 for header-parameter-transit",
+      "locator": "planner specification r1 for header-parameter-transit (superseded by r2, r3 and r4; retained as historical evidence)",
       "recordedAt": "2026-11-20T00:00:00.000Z"
     },
     {
-      "id": "src-backlog",
-      "kind": "repository",
+      "id": "src-owner-authorization-t1",
+      "kind": "user-message",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/mcp-bridge-defects/backlog.md",
-        "sha256": "53fd26de180ebb88379df6b2f0d7d57cfda069c78da08e7e189811963e06d97c"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/owner-authorization-header-transit-ticket01-20261121.md",
+        "sha256": "ed45765db3dad1deba02529580a3bedfca2ea8737e765b23e08353b2ec0b854a"
       },
-      "locator": "MB-001 defect record selected as the first ticket",
-      "recordedAt": "2026-11-20T00:00:00.000Z"
+      "locator": "owner directive: accept the residuals and authorize ticket 01",
+      "recordedAt": "2026-11-21T10:10:22.213Z"
     },
     {
-      "id": "src-ticket-01",
-      "kind": "repository",
+      "id": "src-owner-authorization-t2",
+      "kind": "user-message",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/01-header-parameter-wire-reproduction.md",
-        "sha256": "e8f309ceffb0c6b22517751ffa72afd2fbb13e8303fff5966ede64d2fd23d930"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/owner-authorization-header-transit-ticket02-20261121.md",
+        "sha256": "d3662f34b9f4f00882a3ad41b6a36161224ac37d71f0ddd74d808138b1a637f5"
       },
-      "locator": "ticket 01 acceptance criteria",
-      "recordedAt": "2026-11-20T00:00:00.000Z"
+      "locator": "owner directive: authorize ticket 02 and dispatch it",
+      "recordedAt": "2026-11-21T10:23:07.874Z"
     },
     {
-      "id": "src-ticket-02",
-      "kind": "repository",
+      "id": "src-owner-authorization-t2-envelope",
+      "kind": "user-message",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/02-header-parameters-traverse-stateless-calls.md",
-        "sha256": "256b597cddd3b3abd3277d7bf120d8dcbfba890e2db4a5888d0b1eef09ab5fc4"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/owner-authorization-header-transit-t2-envelope-20261121.md",
+        "sha256": "01c616d8259a78eccbf056763006e7a7309855f6550b26f7e79a79cdf5ff8beb"
       },
-      "locator": "ticket 02 acceptance criteria",
-      "recordedAt": "2026-11-20T00:00:00.000Z"
+      "locator": "owner directive: authorize ticket 02 (required restart oracle path)",
+      "recordedAt": "2026-11-21T10:24:06.605Z"
     },
     {
-      "id": "src-ticket-03",
-      "kind": "repository",
+      "id": "src-owner-authorization-t3",
+      "kind": "user-message",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/03-stateful-and-legacy-protocol-boundary.md",
-        "sha256": "c70bdcfddf693716e98f51b9d3c7b471a08f7cbda80ad22a6bb142ec046206c7"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/owner-authorization-header-transit-ticket03-20261121.md",
+        "sha256": "c3852af75a29d61ad1f1f237b878efb932f41f636c609fd4e934a29d1cc3d6bc"
       },
-      "locator": "ticket 03 acceptance criteria",
-      "recordedAt": "2026-11-20T00:00:00.000Z"
+      "locator": "owner directive: authorize ticket 03 and dispatch it",
+      "recordedAt": "2026-11-21T10:57:00.445Z"
     },
     {
-      "id": "src-ticket-04",
-      "kind": "repository",
+      "id": "src-owner-authorization-t4",
+      "kind": "user-message",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/header-parameter-transit/issues/04-deployed-github-verification.md",
-        "sha256": "8782d491d2f2f010c50c21ec04332c4f2f21193cbfb7a0e1adaecdd446db5823"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/owner-authorization-header-transit-ticket04-20261121.md",
+        "sha256": "60767cd2d92b5748cf1e5841bc097de6e90de5ecf6e44290e229a662c210ebbd"
       },
-      "locator": "ticket 04 acceptance criteria",
-      "recordedAt": "2026-11-20T00:00:00.000Z"
-    },
-    {
-      "id": "src-domain",
-      "kind": "repository",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/docs/agents/domain.md",
-        "sha256": "54d97f3bd91612a42d28b473463c37e8283fa86274aa77e9033528e0dbf039e7"
-      },
-      "locator": "domain conventions",
-      "recordedAt": "2026-11-20T00:00:00.000Z"
-    },
-    {
-      "id": "src-issue-tracker",
-      "kind": "repository",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/docs/agents/issue-tracker.md",
-        "sha256": "ed489dcd8b47b6dd0d7e45a9f5dcff9f6a238af59ffc8b12be295c083124c60d"
-      },
-      "locator": "ticket conventions",
-      "recordedAt": "2026-11-20T00:00:00.000Z"
+      "locator": "owner directives: authorize ticket 04 and dispatch it; owner-metadata-exception",
+      "recordedAt": "2026-11-21T11:27:32.603Z"
     }
   ],
-  "decisions": [],
+  "decisions": [
+    {
+      "id": "owner-amendment:T2:40f875bad752eda92de1c857638b45637ef0b46936bf0a0238bc60b2235621ab",
+      "inputDigest": "4d3cc4ccbb6778ac0831572e6b43508c3a4ef07a6b6c14a25a96dcf243c962ab",
+      "kind": "owner",
+      "status": "resolved",
+      "question": "Approve these named effects and resolve the listed execution blockers?",
+      "answer": "Owner explicitly directed this task amendment and retry.",
+      "rationale": "explicit-owner-amendment",
+      "sourceIds": [
+        "src-owner-authorization-t2-envelope"
+      ],
+      "affects": [
+        "T2"
+      ]
+    },
+    {
+      "id": "owner-metadata-exception:T4:ad03e7d8ca2a3437887237c211b32181e296b1c15f2c948722272768c61ca137",
+      "kind": "owner",
+      "status": "resolved",
+      "question": "Correct T4 agent role and read path so the owner-authorized deployed verification can be dispatched?",
+      "answer": "Owner selected the one-time metadata exception: T4 agentRoles [operator], runbook added to envelope.readPaths.",
+      "rationale": "Installed authorize amendment accepts only write/test tasks and transition refuses same-feature replacement; owner explicitly authorized this bounded metadata correction.",
+      "sourceIds": [
+        "src-owner-authorization-t4"
+      ],
+      "affects": [
+        "T4"
+      ],
+      "inputDigest": "c90dd4ebb0d8c7df46d388bff8e47855c8356b4147a1b44053a91c0ff001740c"
+    }
+  ],
   "envelope": {
     "id": "env-1",
     "root": "/home/opencode/projects/default/mcp-bridge",
     "allowedTaskIds": [
       "CR1",
       "CT1",
-      "T1"
+      "T1",
+      "T2",
+      "T3",
+      "T4"
     ],
     "readPaths": [
       ".scratch/header-parameter-transit/spec.md",
@@ -214,19 +312,24 @@
       "docs/agents/domain.md",
       "docs/agents/issue-tracker.md",
       "docs/logging-contract.md",
+      "go.mod",
       "internal/config/config.go",
       "internal/core/core.go",
       "internal/observe/envelope.go",
       "internal/observe/log.go",
+      "internal/observe/metrics.go",
       "internal/service/direct_execution.go",
       "internal/service/tools.go",
       "internal/upstream/client.go",
       "internal/upstream/dedicated.go",
       "internal/upstream/dedicated_test.go",
       "internal/upstream/runtime.go",
+      "internal/upstream/upstream_test.go",
       "cmd/mcp-bridge/logging_contract_test.go",
+      "cmd/mcp-bridge/serve_test.go",
       "cmd/mcp-bridge/serve_upstream_restart_test.go",
-      "cmd/mcp-bridge/wiring.go"
+      "cmd/mcp-bridge/wiring.go",
+      "docs/runbooks/header-parameters.md"
     ],
     "writePaths": [
       "internal/upstream/dedicated.go",
@@ -312,7 +415,7 @@
     {
       "id": "T1",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [],
       "requires": [],
       "effects": {
@@ -329,7 +432,11 @@
         "AC01-4",
         "AC01-5"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-t1-red-20261121T102119792Z",
+        "ev-t1-stateful-20261121T102119792Z",
+        "ev-t1-mechanism-20261121T102119792Z"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -337,7 +444,7 @@
     {
       "id": "T2",
       "stage": "implementation",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [
         "T1"
       ],
@@ -347,10 +454,11 @@
         "paths": [
           "internal/upstream/dedicated.go",
           "internal/upstream/runtime.go",
+          "internal/upstream/header_params_test.go",
           "internal/observe/log.go",
           "internal/observe/envelope.go",
           "internal/service/tools.go",
-          "internal/upstream/header_params_test.go"
+          "cmd/mcp-bridge/serve_header_params_test.go"
         ]
       },
       "acceptanceIds": [
@@ -363,7 +471,11 @@
         "AC03-2",
         "AC03-4"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-t2-upstream-oracle-20261121T105014Z",
+        "ev-t2-bridge-oracle-20261121T105014Z",
+        "ev-t2-red-pair-20261121T105014Z"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -371,7 +483,7 @@
     {
       "id": "T3",
       "stage": "verification",
-      "status": "pending",
+      "status": "done",
       "blockedBy": [
         "T2"
       ],
@@ -386,7 +498,9 @@
       "acceptanceIds": [
         "AC03-3"
       ],
-      "evidenceIds": [],
+      "evidenceIds": [
+        "ev-t3-doc-checks-20261121T105821Z"
+      ],
       "agentRoles": [
         "engineer"
       ]
@@ -396,13 +510,14 @@
       "stage": "external",
       "status": "pending",
       "blockedBy": [
-        "T2",
         "T3"
       ],
       "requires": [],
       "effects": {
         "kind": "read",
-        "paths": []
+        "paths": [
+          "docs/runbooks/header-parameters.md"
+        ]
       },
       "acceptanceIds": [
         "AC04-1",
@@ -411,7 +526,9 @@
         "AC04-4"
       ],
       "evidenceIds": [],
-      "agentRoles": []
+      "agentRoles": [
+        "operator"
+      ]
     }
   ],
   "capabilities": [],
@@ -485,7 +602,8 @@
       "id": "AC02-1",
       "requirementIds": [
         "R1",
-        "R2"
+        "R2",
+        "R4"
       ],
       "ownerTaskIds": [
         "T2"
@@ -655,7 +773,513 @@
       ]
     }
   ],
-  "evidence": [],
+  "evidence": [
+    {
+      "id": "ev-t1-red-20261121T102119792Z",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-red-wire-facts-20261121T102119792Z.txt",
+        "sha256": "eacbdc1ae64ea5b0a564d39123cfda4e1c7963f295401e764b067cef0625a6db"
+      },
+      "feature": "header-parameter-transit",
+      "packetDigest": "0e95493c71f53b003dc4a97f71f2870d01a0d3b43641f07073c0aa9f7fcb2535",
+      "selectedBranchId": "header-parameter-transit-r6",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC01-1",
+        "AC01-2",
+        "AC01-3"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-21T10:21:21.269Z",
+      "producer": "engineer",
+      "details": {
+        "command": "bash -c 'set +e; out=$(go test ./cmd/mcp-bridge -run \"^TestParameterHeaderTransitWireFacts$\" -count=1 2>&1); code=$?; printf \"%s\\n\" \"$out\"; if [ \"$code\" -eq 1 ] && printf \"%s\\n\" \"$out\" | grep -q \"missing parameter headers\"; then printf \"expected-RED verified: test exit %s\\n\" \"$code\"; else printf \"expected-RED check failed: exit %s\\n\" \"$code\"; exit 1; fi'",
+        "exitCode": 0
+      },
+      "contractAnchor": "9137b85e72430a1e12cd1b6f9615bc04533294467c7171185cf76392651fd7ea",
+      "executionInput": {
+        "argv": [
+          "bash",
+          "-c",
+          "set +e; out=$(go test ./cmd/mcp-bridge -run \"^TestParameterHeaderTransitWireFacts$\" -count=1 2>&1); code=$?; printf \"%s\\n\" \"$out\"; if [ \"$code\" -eq 1 ] && printf \"%s\\n\" \"$out\" | grep -q \"missing parameter headers\"; then printf \"expected-RED verified: test exit %s\\n\" \"$code\"; else printf \"expected-RED check failed: exit %s\\n\" \"$code\"; exit 1; fi"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_header_params_test.go",
+            "sha256": "518f55ab3b112cb6e0b53d619bab438d3682e135de3095e8288e7e92618d7b39"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/header_params_test.go",
+            "sha256": "65253b646037fdbbd16358252c9d805eefda4328a6585fad2ac56cc6d40bb68e"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_header_params_test.go",
+            "sha256": "518f55ab3b112cb6e0b53d619bab438d3682e135de3095e8288e7e92618d7b39"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/header_params_test.go",
+            "sha256": "65253b646037fdbbd16358252c9d805eefda4328a6585fad2ac56cc6d40bb68e"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t1-stateful-20261121T102119792Z",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-stateful-control-20261121T102119792Z.txt",
+        "sha256": "ee59098f53bab0c9830b3afccecd487d30dd626f57f9485d2dba28874c2442a5"
+      },
+      "feature": "header-parameter-transit",
+      "packetDigest": "0e95493c71f53b003dc4a97f71f2870d01a0d3b43641f07073c0aa9f7fcb2535",
+      "selectedBranchId": "header-parameter-transit-r6",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC01-4"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-21T10:21:21.269Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run \"^TestParameterHeaderStatefulControlIsAchievable$\" -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "9137b85e72430a1e12cd1b6f9615bc04533294467c7171185cf76392651fd7ea",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./cmd/mcp-bridge",
+          "-run",
+          "^TestParameterHeaderStatefulControlIsAchievable$",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_header_params_test.go",
+            "sha256": "518f55ab3b112cb6e0b53d619bab438d3682e135de3095e8288e7e92618d7b39"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/header_params_test.go",
+            "sha256": "65253b646037fdbbd16358252c9d805eefda4328a6585fad2ac56cc6d40bb68e"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_header_params_test.go",
+            "sha256": "518f55ab3b112cb6e0b53d619bab438d3682e135de3095e8288e7e92618d7b39"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/header_params_test.go",
+            "sha256": "65253b646037fdbbd16358252c9d805eefda4328a6585fad2ac56cc6d40bb68e"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t1-mechanism-20261121T102119792Z",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-mechanism-attribution-20261121T102119792Z.md",
+        "sha256": "5b492aee0ea51c65b55c7855802753156fed4168c56cdabd4370659b7f94e162"
+      },
+      "feature": "header-parameter-transit",
+      "packetDigest": "0e95493c71f53b003dc4a97f71f2870d01a0d3b43641f07073c0aa9f7fcb2535",
+      "selectedBranchId": "header-parameter-transit-r6",
+      "taskIds": [
+        "T1"
+      ],
+      "acceptanceIds": [
+        "AC01-5"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-21T10:21:21.269Z",
+      "producer": "engineer",
+      "details": {
+        "rubric": "Per-mode mechanism attribution backed by recorded wire facts; inferences labelled",
+        "observedOutcome": "default-stateless missing header emission/cache; stateful control proves protocol carries headers; insufficient protocol version excluded"
+      },
+      "contractAnchor": "9137b85e72430a1e12cd1b6f9615bc04533294467c7171185cf76392651fd7ea",
+      "executionInput": {
+        "argv": [],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_header_params_test.go",
+            "sha256": "518f55ab3b112cb6e0b53d619bab438d3682e135de3095e8288e7e92618d7b39"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/header_params_test.go",
+            "sha256": "65253b646037fdbbd16358252c9d805eefda4328a6585fad2ac56cc6d40bb68e"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_header_params_test.go",
+            "sha256": "518f55ab3b112cb6e0b53d619bab438d3682e135de3095e8288e7e92618d7b39"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/header_params_test.go",
+            "sha256": "65253b646037fdbbd16358252c9d805eefda4328a6585fad2ac56cc6d40bb68e"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t2-upstream-oracle-20261121T105014Z",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t2-upstream-oracle-20261121T104812Z.txt",
+        "sha256": "f39e432a5bb9e9fbcf974e172a72f65747cfb7310fd665fde4dd9e4fb84a4b29"
+      },
+      "feature": "header-parameter-transit",
+      "packetDigest": "0e95493c71f53b003dc4a97f71f2870d01a0d3b43641f07073c0aa9f7fcb2535",
+      "selectedBranchId": "header-parameter-transit-r6",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC02-1",
+        "AC02-2",
+        "AC02-5",
+        "AC03-1"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-21T10:50:16.000Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/upstream -run '^(TestDedicatedParamHeadersReachPeerInStatelessMode|TestBodyOnlyControlAddsNoExtraListCall|TestStatefulParamHeadersReuseDiscoveryCache|TestParamHeaderFailurePathsUseSafeCodes)$' -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "dc48e75b71f37ec2775bf77fb06af2f370f6ac54723562e6c0733c2bee2b80a9",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./internal/upstream",
+          "-run",
+          "^(TestDedicatedParamHeadersReachPeerInStatelessMode|TestBodyOnlyControlAddsNoExtraListCall|TestStatefulParamHeadersReuseDiscoveryCache|TestParamHeaderFailurePathsUseSafeCodes)$",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_header_params_test.go",
+            "sha256": "37b38d497f6be8bed1490e55cf861c1ba6da05569de955e3ae150e154091b137"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+            "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+            "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+            "sha256": "a2fc976285ebae717a0d1283cd67406bcc699b63ce9023fe418fbc3628642172"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated.go",
+            "sha256": "d46a317c04e06a61efa5ffe737d570aae7de2becacff44337f6eb939f1e722ad"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/header_params_test.go",
+            "sha256": "19ec65dc63268e82a2889daf5d1a98017e6fa71750ad4d7ad23d05341c9e13e3"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/runtime.go",
+            "sha256": "efa5543bafc7e9d7a86f7b87fde4d990aa2b4ab68891ea951900e44e923a05ab"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_header_params_test.go",
+            "sha256": "37b38d497f6be8bed1490e55cf861c1ba6da05569de955e3ae150e154091b137"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+            "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+            "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+            "sha256": "a2fc976285ebae717a0d1283cd67406bcc699b63ce9023fe418fbc3628642172"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated.go",
+            "sha256": "d46a317c04e06a61efa5ffe737d570aae7de2becacff44337f6eb939f1e722ad"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/header_params_test.go",
+            "sha256": "19ec65dc63268e82a2889daf5d1a98017e6fa71750ad4d7ad23d05341c9e13e3"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/runtime.go",
+            "sha256": "efa5543bafc7e9d7a86f7b87fde4d990aa2b4ab68891ea951900e44e923a05ab"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t2-bridge-oracle-20261121T105014Z",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t2-bridge-oracle-20261121T104812Z.txt",
+        "sha256": "b3e00e2d23dfb7c2dc26aa800925c90075392fa5cf5c22dde205c8f6acdea516"
+      },
+      "feature": "header-parameter-transit",
+      "packetDigest": "0e95493c71f53b003dc4a97f71f2870d01a0d3b43641f07073c0aa9f7fcb2535",
+      "selectedBranchId": "header-parameter-transit-r6",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC02-3",
+        "AC03-2",
+        "AC03-4"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-21T10:50:16.000Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./cmd/mcp-bridge -run '^(TestParameterHeaderTransitWireFacts|TestParameterHeaderStatefulControlIsAchievable|TestParameterHeaderRestartSurvivesInStatelessMode|TestLegacyParamHeaderCallFailsWithNamedCode)$' -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "dc48e75b71f37ec2775bf77fb06af2f370f6ac54723562e6c0733c2bee2b80a9",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./cmd/mcp-bridge",
+          "-run",
+          "^(TestParameterHeaderTransitWireFacts|TestParameterHeaderStatefulControlIsAchievable|TestParameterHeaderRestartSurvivesInStatelessMode|TestLegacyParamHeaderCallFailsWithNamedCode)$",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_header_params_test.go",
+            "sha256": "37b38d497f6be8bed1490e55cf861c1ba6da05569de955e3ae150e154091b137"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+            "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+            "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+            "sha256": "a2fc976285ebae717a0d1283cd67406bcc699b63ce9023fe418fbc3628642172"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated.go",
+            "sha256": "d46a317c04e06a61efa5ffe737d570aae7de2becacff44337f6eb939f1e722ad"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/header_params_test.go",
+            "sha256": "19ec65dc63268e82a2889daf5d1a98017e6fa71750ad4d7ad23d05341c9e13e3"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/runtime.go",
+            "sha256": "efa5543bafc7e9d7a86f7b87fde4d990aa2b4ab68891ea951900e44e923a05ab"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_header_params_test.go",
+            "sha256": "37b38d497f6be8bed1490e55cf861c1ba6da05569de955e3ae150e154091b137"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+            "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+            "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+            "sha256": "a2fc976285ebae717a0d1283cd67406bcc699b63ce9023fe418fbc3628642172"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated.go",
+            "sha256": "d46a317c04e06a61efa5ffe737d570aae7de2becacff44337f6eb939f1e722ad"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/header_params_test.go",
+            "sha256": "19ec65dc63268e82a2889daf5d1a98017e6fa71750ad4d7ad23d05341c9e13e3"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/runtime.go",
+            "sha256": "efa5543bafc7e9d7a86f7b87fde4d990aa2b4ab68891ea951900e44e923a05ab"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t2-red-pair-20261121T105014Z",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t2-red-pair-20261121T105014Z.txt",
+        "sha256": "5c68cf34c1494d841736b1200b991bf9a492add4435462cb36aeb7dc40397125"
+      },
+      "feature": "header-parameter-transit",
+      "packetDigest": "0e95493c71f53b003dc4a97f71f2870d01a0d3b43641f07073c0aa9f7fcb2535",
+      "selectedBranchId": "header-parameter-transit-r6",
+      "taskIds": [
+        "T2"
+      ],
+      "acceptanceIds": [
+        "AC02-4"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-21T10:50:16.000Z",
+      "producer": "engineer",
+      "details": {
+        "command": "bash .omp/artifacts/t2-red-wrapper.sh",
+        "exitCode": 0
+      },
+      "contractAnchor": "dc48e75b71f37ec2775bf77fb06af2f370f6ac54723562e6c0733c2bee2b80a9",
+      "executionInput": {
+        "argv": [
+          "bash",
+          ".omp/artifacts/t2-red-wrapper.sh"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_header_params_test.go",
+            "sha256": "37b38d497f6be8bed1490e55cf861c1ba6da05569de955e3ae150e154091b137"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+            "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+            "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+            "sha256": "a2fc976285ebae717a0d1283cd67406bcc699b63ce9023fe418fbc3628642172"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated.go",
+            "sha256": "d46a317c04e06a61efa5ffe737d570aae7de2becacff44337f6eb939f1e722ad"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/header_params_test.go",
+            "sha256": "19ec65dc63268e82a2889daf5d1a98017e6fa71750ad4d7ad23d05341c9e13e3"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/runtime.go",
+            "sha256": "efa5543bafc7e9d7a86f7b87fde4d990aa2b4ab68891ea951900e44e923a05ab"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_header_params_test.go",
+            "sha256": "37b38d497f6be8bed1490e55cf861c1ba6da05569de955e3ae150e154091b137"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+            "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+            "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+            "sha256": "a2fc976285ebae717a0d1283cd67406bcc699b63ce9023fe418fbc3628642172"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/dedicated.go",
+            "sha256": "d46a317c04e06a61efa5ffe737d570aae7de2becacff44337f6eb939f1e722ad"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/header_params_test.go",
+            "sha256": "19ec65dc63268e82a2889daf5d1a98017e6fa71750ad4d7ad23d05341c9e13e3"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/upstream/runtime.go",
+            "sha256": "efa5543bafc7e9d7a86f7b87fde4d990aa2b4ab68891ea951900e44e923a05ab"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-t3-doc-checks-20261121T105821Z",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t3-doc-checks-20261121T105821Z.txt",
+        "sha256": "2fc7e8ce70e0c4878db71aeb35caf3f8750d59bb89ee02582b4e1e50ce2d28f1"
+      },
+      "feature": "header-parameter-transit",
+      "packetDigest": "0e95493c71f53b003dc4a97f71f2870d01a0d3b43641f07073c0aa9f7fcb2535",
+      "selectedBranchId": "header-parameter-transit-r6",
+      "taskIds": [
+        "T3"
+      ],
+      "acceptanceIds": [
+        "AC03-3"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-21T10:58:31.000Z",
+      "producer": "engineer",
+      "details": {
+        "rubric": "AC03-3: four exact runbook headings, header-carrying versions, stateless/stateful mechanisms, named legacy failure with operator action, definition-pass cost, and the token in the logging-contract classification table",
+        "observedOutcome": "all six greps exit 0; runbook content covers R7 under the exact headings; logging row matches RuntimeErrorInfo classification and remediation; TestLoggingContract exits 0"
+      },
+      "contractAnchor": "1c958beb89484951edd4720c57e20a2705addc16ec707e2ed1ef63af8af7cb68",
+      "executionInput": {
+        "argv": [],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+            "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/runbooks/header-parameters.md",
+            "sha256": "ee72d16223a6b27ff48a3e2217fd8842abadfeb4287ab9025c21e5be3cd3e8dd"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+            "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/runbooks/header-parameters.md",
+            "sha256": "ee72d16223a6b27ff48a3e2217fd8842abadfeb4287ab9025c21e5be3cd3e8dd"
+          }
+        ]
+      }
+    }
+  ],
   "blockers": [],
   "gate": {
     "markerPath": "/home/opencode/projects/default/mcp-bridge/.superpowers/sdd/GATE_OPEN",

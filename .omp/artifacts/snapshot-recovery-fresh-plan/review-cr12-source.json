@@ -1,0 +1,125 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r12",
+  "revision": "r12",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "f02066c8a6758c867f88e31bffaede42b905db916468cf620380aee63f580d36"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "6f624ec16c663a818e9e46c7927cc28fec77a65d7d5028e896bb8f34d31ee00e"
+    },
+    {
+      "path": ".scratch/mcp-bridge-defects/backlog.md",
+      "sha256": "ab9d2a062751c6324ba280729be61b2c923ed3fdbacc1ad7f662eb6668004bfb"
+    },
+    {
+      "path": "docs/agents/domain.md",
+      "sha256": "54d97f3bd91612a42d28b473463c37e8283fa86274aa77e9033528e0dbf039e7"
+    },
+    {
+      "path": "docs/agents/issue-tracker.md",
+      "sha256": "ed489dcd8b47b6dd0d7e45a9f5dcff9f6a238af59ffc8b12be295c083124c60d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/observe/metrics.go",
+      "sha256": "7c1e9e1393a74ad59625731059e4ae5f6e5d48a0fa05f70a4b0f858817a6570a"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/service/reload.go",
+      "sha256": "313a30b017bb1f5f120d8ed7b6b43a3c93b81e20a7b7e1ff3f75793d87a11a5d"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/store_test.go",
+      "sha256": "99e4715e92838dbe916fbee0abfb12b9b9a69ac46d700b0f156c07cb012e26a2"
+    },
+    {
+      "path": "internal/storage/store_edge_test.go",
+      "sha256": "6f04b1bf3cce55048407b4b1a2ef0198b1f45cea4bfcad0b8323e65a18b757c6"
+    },
+    {
+      "path": "internal/storage/snapshot_edge_test.go",
+      "sha256": "e601a352bccb74c1e0d0f103ea94681d0b331545b9880a5b237924a2bc71303b"
+    },
+    {
+      "path": "cmd/mcp-bridge/runtime_edge_test.go",
+      "sha256": "e659fc5ae767e1d26624a96a78f0af71eeb743fcdb415e21aa22c4bff04e0d57"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "4987c3ba79c7bafe94e0176e2365164e6f859b3c20f1c7fc15cae13a924ba457"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR12CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "7eafbf190d48c7d555bfb0d7d5b041daa74a0ba0338519c4020a25e55cbea1e7",
+      "targetCandidateId": "snapshot-recovery-spec-r12",
+      "targetRevision": "r12",
+      "taskSha256": "3b641280603acedec6db39a55e5f001c64c8c61bd5fd8b7cd381d518bcfebe50",
+      "instructionsSha256": "0ce7c88f12fc61fca949f86667a2e02656ba5f882fb436346ffd6c99efff9d63"
+    },
+    {
+      "name": "SnapshotRecoverySpecR12Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "6dc5d6149a87d58932c5dfd514cf2e65aaeb3657d57f997cde1573d2942117cd",
+      "targetCandidateId": "snapshot-recovery-spec-r12",
+      "targetRevision": "r12",
+      "taskSha256": "1e26f3ec60933a6884e5892328ec6eabd0775cbe4956f7a73cbcd8b1c9215da6",
+      "instructionsSha256": "0ce7c88f12fc61fca949f86667a2e02656ba5f882fb436346ffd6c99efff9d63"
+    }
+  ],
+  "output": "```json\n{\"verdict\":\"REQUEST CHANGES\",\"approved_aspects\":[\"R1-R9 each carry at least one AC; every AC names requirement ids; all 19 AC ids are assigned to T1/T3.\",\"6.1 write set exactly equals the 14-file union of T1/T2/T3 Expected files; no task writes outside it. T1/T2 independent, T3 depends on both, matching the ledger.\",\"config_envelope_test.go pin change is inside T2's expected files; logging_contract_test.go exclusion is stated as T2's blocked condition, not a silent widening.\",\"Verified anchors: envelopeFieldNames has exactly 129 entries with quarantine_path's sorted slot correctly between publication_impact and refresh_id; addEnvelopeFields fails closed on unknown keys (envelope.go default:return false), so the new field is mandatory in both union and admission; runtimeErrorInfo indeed lacks snapshot_unavailable and state_directory; store.go:185 is the only schema-2 checksum sentinel, matching R6's schema-1/checksum split; startup_failure.go:26-33 yields code=state_directory/kind=resource/resource.path.\",\"Seams are named and unexported (stat, readFile, reserve, rename, remove, readDir, syncDir, now); FAILS clauses are concrete counterexamples; AC2-5's root-skipped lane is acceptable because AC2-8 supplies deterministic seam oracles for the rename classes.\"],\"findings\":[{\"id\":\"SR12-01\",\"severity\":\"HIGH\",\"confidence\":\"HIGH\",\"location\":\"spec §4 (D5, serve wiring) vs cmd/mcp-bridge/startup_failure.go:26-33 and cmd/mcp-bridge/main.go:56-61\",\"statement\":\"R3/D5 claim the real cause is preserved 'on the returned error', but the designed call site returns stateDirectoryFailure(path), which has no cause field and no Unwrap; runContext writes only that struct, and R4 forbids raw text in records. The fatal cause (rename vs sync vs reservation exhaustion vs ENOSPC) is therefore unobservable, so the ticket's 'real error preserved in logs' requirement is unmet and D5's stated mechanism does not exist.\",\"evidence\":\"startupFailure is a value struct with event/code/kind/remediation/message/resource only (no wrapped error); spec §4 pseudocode: `return stateDirectoryFailure(settings.StorageDirectory)`; main.go errors.As(&failure) writes that value once. No AC asserts any cause visibility for AC2-4/AC2-7/AC2-8.\"},{\"id\":\"SR12-02\",\"severity\":\"HIGH\",\"confidence\":\"HIGH\",\"location\":\"spec §4 per-family steps (1)-(2); ticket Q2\",\"statement\":\"The stat branch enumerates ErrNotExist, directory, other stat error, and regular file, but defines no outcome for an entry that is not absent, not a directory, and not a regular file (FIFO, socket, device, or a symlink to one). The engineer must invent classification, and the natural read step blocks indefinitely on a FIFO or reads unboundedly from a device, hanging startup before the loop exists.\",\"evidence\":\"store.go:150 uses os.ReadFile, which blocks opening a FIFO for read; spec §4 has no else branch and no AC/AC2-4 subcase seeds a non-regular entry, although ticket Q2 explicitly asks whether 'snapshot.json being a non-file' is fatal.\"},{\"id\":\"SR12-03\",\"severity\":\"MEDIUM\",\"confidence\":\"HIGH\",\"location\":\"spec R6; AC1-2; AC1-4; internal/storage/store.go:105-107\",\"statement\":\"R6 says checksum_mismatch is produced only by the schema-2 checksum sentinel, yet LoadPrompts has an independent checksum sentinel with no schema version ('prompt checksum mismatch'). No AC asserts a Reason for any prompts-family rejection (AC1-4 checks Family/bytes only), so the prompts checksum class is unclassified and R6 is self-contradictory for the second family.\",\"evidence\":\"store.go:105-107 returns ErrCorrupt:'prompt checksum mismatch' outside any schema switch; AC1-2 seeds snapshot.json only; AC1-4 and AC1-10(c) never assert Reason for prompts rejections.\"},{\"id\":\"SR12-04\",\"severity\":\"MEDIUM\",\"confidence\":\"HIGH\",\"location\":\"spec R5; §4 retention; AC1-3; AC1-8; AC1-9(a)\",\"statement\":\"R5 promises at most QuarantineKeep(5) retained, while §4 also always retains this run's file; if pre-existing names carry timestamps >= this run's parsed timestamp (clock skew or hand-placed names the parser accepts), the result is 6 files, violating R5. AC1-3/AC1-8 additionally never fix the 5 seeds' timestamps relative to the fixed clock, yet assert the survivor set is 'this run's plus the 4 newest pre-existing', so the oracle depends on an unstated seed ordering (AC1-9(a) is the only AC that fixes now-1ns..now-5ns).\",\"evidence\":\"R5 'at most QuarantineKeep (5) newest conforming files'; §4 'retain QuarantineKeep newest with this run's file always retained'; AC1-3/AC1-8 seed five conforming files with no timestamp base; AC1-9(a) contrasts by pinning now-1ns..now-5ns.\"},{\"id\":\"SR12-05\",\"severity\":\"MEDIUM\",\"confidence\":\"MEDIUM\",\"location\":\"spec AC2-1; AC2-9; §9 item 4\",\"statement\":\"Both startup oracles poll for asynchronously produced files ('bounded poll', 'bounded deadline') but specify no numeric deadline, and AC2-9 defines deadline expiry as FAIL while depending on the refresher's async initial refresh. The scheduling is not pinned (Trigger coalescing/interval), so the test's pass/fail boundary is engineer-chosen and flake-prone; the spec itself flags the deadline choice as unreviewed.\",\"evidence\":\"AC2-9: 'polls with a bounded deadline ... deadline expiry is a FAIL'; AC2-1: 'poll until Load succeeds'; §9.4: 'flake risk — review the deadline choice'; loop.go:172 only calls Trigger(), while persistence occurs later on a reload-mode admission (reload.go:728).\"}],\"open_questions\":[\"LOW: D3 says 'the affected path rides the existing resource.path', but R4 and AC2-2 fix resource.path to the configured state directory. AC2-2 should be treated as authoritative; D3's wording invites a conflicting implementation.\",\"LOW: §9.7 claims the ticket mirror still carries r11 wording and must be re-synced, but the mirror header and AC text already state 'mirror of spec r12' with the r12 AC body. The entry is stale and could trigger a needless re-sync.\",\"LOW: R8's 'snapshot_retention_failed gets a fixed message' has no AC, and eventMessage's default 'mcp-bridge event' would let omission pass every listed oracle, leaving this R8 clause unverified.\",\"LOW: AC2-8 is delivered by T1 (storage-level tests in recovery_test.go) yet T3's deliverable claims AC2-1..AC2-9, giving the same AC two owners with no separate verification lane.\"],\"limitations\":\"Read-only specification review of the supplied bytes only; no implementation exists and no command was executed (no go test, spec-lint, or coverage). No shell/hash tool was available, so the stated spec sha256 was not recomputed and identity rests on the supplied digest. AC2-9's refresher timing and Trigger coalescing were assessed from source and spec text, not executed. Later edits are outside this review.\"}\n```\n\n### Recommendation\nREQUEST CHANGES\n",
+  "invocationId": "9442bf59-4dea-4c72-9ac1-74546f61d32f"
+}

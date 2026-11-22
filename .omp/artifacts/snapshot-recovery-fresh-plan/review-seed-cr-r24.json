@@ -1,0 +1,35 @@
+{
+  "intent": "CR r24: verify F1-F6 closure and regression safety",
+  "instructions": "Candidate: snapshot-recovery-spec-r24 @ r24. Author: planner. Review mode: specification only; no implementation exists.\n\nCandidate-bound input digests (registry inputs; compare the bytes you read against these):\n- .scratch/snapshot-recovery/spec.md sha256 382dac82a08289694048cdc201870086349cf5260e25e31335b8e60f00c79f1e\n- .scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md sha256 006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4\n- docs/logging-contract.md sha256 53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18\n- go.mod sha256 da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56\n- internal/observe/envelope.go sha256 4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0\n- internal/observe/log.go sha256 92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6\n- internal/service/loop.go sha256 c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e\n- internal/storage/store.go sha256 b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20\n- internal/storage/snapshot_v1.go sha256 52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644\n- cmd/mcp-bridge/serve.go sha256 73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c\n- cmd/mcp-bridge/startup_failure.go sha256 4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f\n- cmd/mcp-bridge/wiring.go sha256 dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c\n\nRead the r24 specification at .scratch/snapshot-recovery/spec.md (four specdd regions plus 6.1 ENVELOPE), the ticket mirror, docs/logging-contract.md and the referenced code anchors. Prior evidence: the previous round raw review files under .omp/artifacts/snapshot-recovery-fresh-plan/. Treat them as evidence, not reviewed bytes. Note the ticket mirror intentionally carries stale text (spec section 9.7); it is not the candidate contract.\n\nRead-only independent review. Do not modify files, implement, dispatch or claim approval. This task text is authoritative over the dispatch wrapper.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r24",
+    "requests": [
+      {
+        "name": "SnapshotRecoverySpecR24CodeReview",
+        "taskId": "CR1",
+        "agent": "code-reviewer",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/snapshot-recovery/spec.md",
+            ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+          ]
+        },
+        "targetCandidateId": "snapshot-recovery-spec-r24",
+        "targetRevision": "r24"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecR24CodeReview",
+      "agent": "code-reviewer",
+      "task": "Review the r24 snapshot-recovery specification candidate (specification-only; no implementation exists).\n\nThe candidate revises r23 to close the six CR23 findings. Verify the four specdd regions R1-R9, EVIDENCE/UNCERTAINTY (D1-D12), DESIGN, AC1-1..AC1-10 + AC2-1..AC2-9, and the 6.1 ENVELOPE (14 files); the ticket mirror is intentionally stale (section 9.7).\n\nClosure under review (CR23, compare with cr-r23-raw.md):\n- F1 HIGH: the reconciliation predicate no longer admits a merely absent configured entry; a reconciliation requires the entry to still exist post-passes as a symlink, and AC1-10(b-xA2) fires no reconciliation. Verify the deletion of \"or is absent\" is complete and that absence becomes a recorded no-op, not a silent pass.\n- F2 MEDIUM: the moved-entry guard applies to the mutual class as well; a pair where both entries moved this run fires zero reconciliations, one moved entry leaves only the partner eligible, and every reconciliation path requires a live symlink. Verify at-most-one-reconciliation, records ordering/counts, R3 fatal discipline and second-run no-op remain consistent.\n- F3 LOW: the reconciled quarantine's preserved link text is asserted (Readlink), plus a seeded mutual retention variant. Verify the oracles are executable definitions.\n- F4 LOW: D11 defines the containing-directory context as the directory's lstat identity (device+inode) with path tie-break/fallback, and names the alias misrouting.\n- F5 LOW: AC1-1(d) cites (m-ii)+(m-iii).\n- F6 LOW: no \"non-mutal\" occurrence remains.\n\nCheck for regressions: id/envelope unchanged, no contradiction with R1-R9, D1-D12 or the ACs, no false owner-confirmation/review/approval/test-execution claim, no new dependency beyond std-lib, and C4's earlier closure still intact.\n\nReturn Findings as a Markdown list, each with severity (CRITICAL/HIGH/MEDIUM/LOW), file:line anchor and confidence, and a one-line recommended fix, followed by a verdict heading on its own line:\n## Verdict: APPROVE, REQUEST CHANGES, or BLOCKED. Do not edit any file.",
+      "solutionSpace": "semantic correction of reconciliation eligibility (presence + moved-entry guard) and its oracles within a fixed id set; no new ids, no envelope change"
+    }
+  ]
+}

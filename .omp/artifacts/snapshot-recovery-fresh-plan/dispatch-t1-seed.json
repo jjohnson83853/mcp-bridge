@@ -1,0 +1,37 @@
+{
+  "intent": "T1 storage-level snapshot recovery implementation",
+  "instructions": "Implement T1 per approved snapshot-recovery spec r30; bounded files only; RED/GREEN; report commands and results.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r30",
+    "requests": [
+      {
+        "name": "SnapshotRecoveryT1Engineer",
+        "taskId": "T1",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/storage/recovery.go",
+            "internal/storage/recovery_test.go",
+            "internal/storage/store.go",
+            "internal/storage/store_edge_test.go"
+          ]
+        },
+        "targetCandidateId": "snapshot-recovery-spec-r30",
+        "targetRevision": "r30"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoveryT1Engineer",
+      "task": "# Dispatch T1 — storage-level snapshot recovery (engineer)\n\nFeature snapshot-recovery, revision r30, approved plan. Scope: ONLY the four T1 files below. Implement to the reviewed specification; do not research external APIs, do not edit other files, no network.\n\n## Files (your only write set)\n- internal/storage/recovery.go (new)\n- internal/storage/recovery_test.go (new)\n- internal/storage/store.go (edit)\n- internal/storage/store_edge_test.go (edit)\n\n## Read first\n- .scratch/snapshot-recovery/spec.md — sections R1, R2, R5, R6, D1–D12, AC1-1..AC1-4, AC1-7 and the §6.1 envelope; read the current internal/storage/store.go, snapshot_v1.go, internal/config/config.go, internal/observe/log.go.\n- AC1-1..AC1-4, AC1-7 are yours to make pass, end to end.\n\n## Required behavior (from spec; spec text wins on conflict)\n- New startup recovery entry point in internal/storage that, per family (snapshot, prompts), stats the configured path behind a test seam: absent (incl. dangling symlink) => zero recoveries, no mutation; directory or other non-regular mode => typed fatal ErrSnapshotUnrecoverable (never open/read/rename); rejected regular file => quarantine exactly once by os.Rename into the same state dir, preserving bytes.\n- Quarantine naming/reservation: <family>.corrupt-<RFC3339Nano UTC Z>.json; reserve each candidate with O_CREATE|O_EXCL first; fs.ErrExist advances the candidate (not fatal); any other create error, rename failure, or exhaustion of 4096 candidates is fatal; only a successful reservation is renamed over (never overwrite).\n- Reason taxonomy per seeded class and family exactly as spec (corrupt_json, checksum_mismatch, unsupported_schema, validation_failure, read_error via injected read seam; schema-1 decoding failures map to corrupt_json; prompts checksum sentinel behavior preserved).\n- Retention per family only, after a run that created a quarantine file: keep this run's file unconditionally plus newest pre-existing up to QuarantineKeep (5) total; tie-break and pinned/over-protection rules, foreign-family and cross-family names untouched, symlink-target/alias protection per spec.\n- Run-level pre-pass: protected-set population and orphaned link / mutual-loop reconciliation per D11/D12 (component-wise chain resolution, original-configured-path + pre-move entry identity keying); do not include recovery inside ensureReplaceable; retention only when a file was created.\n- No retention pass in the zero-recovery path.\n\n## Tests (RED/GREEN, deterministic)\nAdd focused tests in recovery_test.go and extend store_edge_test.go covering AC1-1 (a-d), AC1-2 classes for both families, AC1-3 retention bound/tie-break/foreign/protection, AC1-4 prompts-only, and AC1-7 no-mutation/no-retention-when-no-creation. Fixed clock seam, fresh temp dirs, no chmod/root dependencies, no sleeps. Keep existing tests passing.\n\n## Verify (report exact commands+outputs)\n1. go build ./...\n2. go test ./internal/storage/ -run 'TestRecover' -count=1\n3. go test ./internal/storage/ -count=1\nAny failing pre-existing test must be reported, not hidden. End with INCOMPLETE if any AC is unimplemented.",
+      "agent": "engineer",
+      "solutionSpace": "one fix: green-field recovery API plus mutations in the fixed 4-file set; behavior fully specified by r30 spec AC1-1..4,7; no design choice left open"
+    }
+  ]
+}

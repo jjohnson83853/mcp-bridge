@@ -1,0 +1,89 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "snapshot-recovery-spec-r30",
+  "revision": "r30",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "33fdf021d3a88f16b7fde1eb0993041a402c2dc03d83732cb892683d9bfdebfc"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/store_edge_test.go",
+      "sha256": "6f04b1bf3cce55048407b4b1a2ef0198b1f45cea4bfcad0b8323e65a18b757c6"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "b6c9c1ebf752029d832b90f676145e0a9a0eb7fcd0c3fbfdf097cae28a4c6731"
+    },
+    {
+      "path": "internal/observe/edge_test.go",
+      "sha256": "4635cb74282703bf315efce482bf726080062aec5b538ed54068ad06961b4ae6"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "7af279bea9fcb693ea65f149a84196d14ac1098d96e91f90ab7ff5b09d5e605a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "178c08c5abc5f7c79d6a2694dbd6a7fd468d50fc1b2aa355111b792079ae4c02"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "4987c3ba79c7bafe94e0176e2365164e6f859b3c20f1c7fc15cae13a924ba457"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR30CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "9331ae60df86ccc7d1b292704bebd6acd87335f2c55ce7ccd779242bd696a95f",
+      "targetCandidateId": "snapshot-recovery-spec-r30",
+      "targetRevision": "r30",
+      "taskSha256": "be4ffb44850be5a015ee100b6e7c38c5291fa9052494b1934ccb92e3ba665146",
+      "instructionsSha256": "6f2770adcf973955f6164ff444a797e5131a342b8f5a38b96458ef10b5fa1897"
+    },
+    {
+      "name": "SnapshotRecoverySpecR30Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "985e170d0b44f55f38d3aa15e0277448e9ddb96e6c7a0f0bffdf40d936799d9b",
+      "targetCandidateId": "snapshot-recovery-spec-r30",
+      "targetRevision": "r30",
+      "taskSha256": "3db38ad63ad4b6df11594b8bb065a701eb9af2c4774d5ed2aa3ac1216502a847",
+      "instructionsSha256": "6f2770adcf973955f6164ff444a797e5131a342b8f5a38b96458ef10b5fa1897"
+    }
+  ],
+  "output": "<task-result id=\"SnapshotRecoverySpecR30Critic-2\" agent=\"critic\" status=\"completed\" duration=\"1m40s\">\n\n<output>\nSpec ID: snapshot-recovery-spec-r30\nRevision: r30\nFindings by ID: C1\n\n### Findings\n- **C1 — MINOR, high confidence:** `.scratch/snapshot-recovery/spec.md:1,5,8,245` still identifies r27/round 17, whereas the registry identifies r30/round 19. This is lineage-label drift, not a behavioral defect. Minimal amendment: record the registration-only revision mapping in the coordinator ledger without changing the reviewed bytes.\n\n### Verified closures\nAnchors below refer to `.scratch/snapshot-recovery/spec.md`.\n- **CR26-1 closed:** `:228` distinguishes unchanged write paths from T4’s owner-authorized addition at r25; consistent with §6.1 (`:183-195`).\n- **CR26-2 closed:** `:56` records the r26 D12 amendment; D12’s header (`:69`) names CR25-5 and the final-target-path addition.\n- **CR26-3 closed:** `:8,69,83` restrict that addition to ordinary (iii). Mutual (m-ii) requires the loop/stat-error class; (m-iii) continues matching moved link entries. The older contrary attribution at `:261` remains explicitly historical.\n- R1–R9, the 19 AC IDs, T1–T4, the 14-file write envelope and task dependencies remain unchanged; no external dependency is introduced. Registry r29/r30 entries also record the same spec digest.\n\n### Coverage and limits\nIndependently checked the ordinary/mutual distinction, live-entry and moved-entry guards, hard-linked partner-versus-self case, ownership/dependencies, planned negative/restart oracles, and observability exceptions. Source spot-checks confirm the unchanged no-overwrite guards and exact envelope-error admission. §7 documents collection boundaries and the unalerted consequence; collector delivery is not verified.\n\nRetention-unlink authorization, ordinary reconciliation/originally-dangling non-mutual checkpoints, and the requested external escalated review remain **OPEN and unclaimed** (`§8; §9.11–13`). Coordinator escalation remains required; this review does not replace it.\n\nNo files changed or tests executed. RED/GREEN remains planned evidence only. Digests were read from the registry, not independently recomputed. No tasks or approvals are newly invalidated. PASS is technical only and grants no implementation permission or additional owner confirmation.\n\n### Verdict\nPASS\n",
+  "invocationId": "7977666f-0663-4fbc-88e8-a4d0a847b4a7"
+}

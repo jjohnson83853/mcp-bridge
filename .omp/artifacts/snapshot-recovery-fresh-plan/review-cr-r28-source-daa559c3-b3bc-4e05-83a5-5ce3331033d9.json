@@ -1,0 +1,85 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r28",
+  "revision": "r28",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "33fdf021d3a88f16b7fde1eb0993041a402c2dc03d83732cb892683d9bfdebfc"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR28CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "91c5bdf3f0980c328f8e117fb30a741f54468e6be395024538d54065544a5b6c",
+      "targetCandidateId": "snapshot-recovery-spec-r28",
+      "targetRevision": "r28",
+      "taskSha256": "a6854334b9ba76ab6734d31739f71afac403ffc01b07e03e03838c5bbb0c20e6",
+      "instructionsSha256": "098dcf9784f89b8fffd601abc14abdceeb33ea3c99c72626df2d27f4b0d194ac"
+    },
+    {
+      "name": "SnapshotRecoverySpecR28Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "56bba33974d0778c6570112d3a4d3905d70ac1ef34d19cff867db67a537a287c",
+      "targetCandidateId": "snapshot-recovery-spec-r28",
+      "targetRevision": "r28",
+      "taskSha256": "f9a8d89adab0405739f393f8a42490fb499e1e31f23825c574a6733c88533478",
+      "instructionsSha256": "098dcf9784f89b8fffd601abc14abdceeb33ea3c99c72626df2d27f4b0d194ac"
+    }
+  ],
+  "output": "<task-result id=\"SnapshotRecoverySpecR28CodeReview\" agent=\"code-reviewer\" status=\"completed\" duration=\"1m17s\">\n\n<output>\n## Code Review Summary\n\n**Mode:** Specification (no implementation exists). **Candidate:** `snapshot-recovery-spec-r28` @ r28 — registry spec sha256 `33fdf021…`, identical bytes to the r27 projection's spec hash.\n**Files Reviewed:** 12 (spec, ticket 01 mirror, `docs/logging-contract.md`, `go.mod`, and 8 Go anchors).\n**Total Issues:** 1 LOW.\n\n### Closure evidence\n- **CR26-1 — CLOSED.** `spec.md:228` (§9.8) now reads \"**Envelope:** no write-path change — `allowedTaskIds` gained T4 at r25 by owner authorization; the 14-file write set is unchanged\"; its body restates no R/AC id add/remove/rename and \"T4 … adds no file\", consistent with `:111` (§5) and `:183-195` (§6.1). No live \"Envelope changes: none\" — the literal survives only as the quoted fixed defect in the r27 round bullet (`:8`) and the change log (`:248`), both historical.\n- **CR26-2 — CLOSED.** `spec.md:56` ledger: \"amended r26 (D12 — final target's cleaned path as a chain-entry path, CR25-5; no other decision amended)\"; `:69` D12 header: \"amended r26 — CR25-5 … operative only for the ordinary (iii) moved-element match\".\n- **CR26-3 — CLOSED.** Scoped to ordinary (iii) at all three live sites (`:8`, `:69`, `:83`), each stating \"(m-iii) still matches moved link entries\". Semantically sound: (m-ii) requires the loop/stat-error class, which records no existing regular final target, so the added path cannot feed (m-iii). The r25→r26 CR25-5 entry keeps round-scoped \"(iii)/(m-iii)\" (`:261`).\n- **Regressions.** Only R1–R9, AC1-1..AC1-10, AC2-1..AC2-9, T1–T4 exist; §6.1 is exactly the 14 paths and equals the per-task Expected-files union; section order (1–9 incl. 6.1, then change logs) unchanged; no D1–D12/AC contradiction found (AC1-10(b-xB2)/(b-xB3) depend on the ordinary-(iii) match); §9.6 and `:253`/`:265` claim no executed check.\n\n### Issues\n**[LOW][editorial]** `spec.md:228` — §9.8's no-new-file parenthetical enumerates \"all r20/r21/r22/r23/r24/r25 oracles\" but omits r26/r27, which likewise add no oracle.\n**Confidence:** HIGH\n**Fix:** Append \"and the r26/r27 textual corrections add no oracle and no file\" to that parenthetical.\n\n### Review limits\n- Candidate identity: the registry binds r28 to the same sha256 as the r27 projection; the persisted document self-identifies as r27/round 17. Approval attaches to those exact bytes, not to a new r28 text.\n- No shell/Git/SHA tool, so digest equality was not recomputed (recorded C2 capability gap); reviewed content, not hashes.\n- No tests or commands run (specification mode). Ticket 01 remains the r15 mirror (documented §9.7) and is not evidence against the candidate.\n\n### Positive Observations\n- Every CR26 fix names its live site, making each closure independently checkable.\n- The (m-iii) scoping derives from the class predicate rather than a bolted-on exception.\n\n### Recommendation\nAPPROVE\n</output>\n</task-result>\n",
+  "invocationId": "daa559c3-b3bc-4e05-83a5-5ce3331033d9"
+}

@@ -1,0 +1,30 @@
+{
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r13",
+    "requests": [
+      {
+        "name": "SnapshotRecoverySpecRound2",
+        "taskId": "PLAN1",
+        "agent": "planner",
+        "effects": {
+          "kind": "read",
+          "paths": []
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecRound2",
+      "agent": "planner",
+      "solutionSpace": "defect-driven revision within a fixed id set; no new ids, no envelope change",
+      "task": "Author r13 by editing the r12 spec in place. Required closures, each with exact spec text or a documented justified exception (no id changes, no envelope widening):\n\n1. C1 / SR12-01 (HIGH): stateDirectoryFailure(state dir) currently returns context.DeadlineExceeded/Observe-only mapping and drops the real fatal cause; D5 and ticket diagnostics require preserving it. Design a within-serve.go mechanism (e.g. build a typed error carrying the cause and a preservation route) that keeps cause text/type reachable in the fatal route, without editing read-only files.\n2. C2 / SR12-02 (HIGH): define the branch for a successful Stat of a non-regular object: FIFO, socket, device, directory? (dir handled), symlink to one. Reading a FIFO may block; specify classification (fatal_at_startup vs read_error_without_deletion) per family, plus open flags (O_NONBLOCK? no-follow) and tests that never block.\n3. C3 / SR12-03 (MEDIUM): the prompts-family checksum path (internal/storage/store.go:105-107) yields its own checksum error, but R6 assigns checksum_mismatch only to the schema-2 sentinel. Specify per-family taxonomy mapping for prompts: checksum mismatch -> fatal_at_startup, unsupported/missing schema -> read-only (no deletion), or an explicitly documented exception.\n4. SR12-04 (MEDIUM): retention bound QuarantineKeep(5) plus always-keep-this-run can exceed 5 with future-dated pre-existing names. Pin the ordering/eviction rule and a deterministic test with future-dated seeds.\n5. SR12-05 / C2-oracle (MEDIUM): startup oracles poll with 'bounded deadline' but no numeric deadline. Specify numeric deadline/timeout values and the poll interval (e.g. deadline 5s, interval 25ms).\n6. C4 / HIGH: alert coverage asserted without evidence. Either cite VERIFIED existing matching behavior anchored to a specific file/line and AC, or record an explicit owner-facing exception; do not invent alerts.\n7. Reviewer notes: refresh stale anchors (runtimeErrorInfo starts envelope.go:103; addEnvelopeFields atlas :244) and correct §9.7 ticket wording to match AC text.\n\nKeep: exact R/AC/T ids, 6.1 ENVELOPE file list, mbtest-only executor, hover: optional users, D5/D3, fault-star config, D9 asymmetric convert, path labels. If any closure requires a new requirement/AC/task id or a wider file envelope, STOP and report a blocker instead of editing. Return the full revised spec plus a short change log mapping each finding to its closing text."
+    }
+  ],
+  "intent": "Author r13 revising r12 to close recorded review findings",
+  "instructions": "Author the round-2 revision (r13) of the trusted snapshot self-recovery specification. Revise the reviewed r12 candidate at .scratch/snapshot-recovery/spec.md in place: close the eight recorded findings without changing R1-R9, AC1-1..AC2-9, T1-T3 ids, the envelope file envelope, or the task decomposition. Inputs to read: .scratch/snapshot-recovery/spec.md (r12, sha256 f02066c8...); .scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md (ticket mirrors r12 §5); .omp/artifacts/snapshot-recovery-fresh-plan/cr-r12-raw.md and ct-r12-raw.md (review findings, verbatim)."
+}

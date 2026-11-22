@@ -1,0 +1,85 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r17",
+  "revision": "r17",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "dc306fe51743c273100cbb6423b3aab2dba80961ad2bdd1e33d192d9fc0f9c95"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR17CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "c75b0367fb34832df093e51d488b79e954654e201c94fecd109cc1ccd368c24d",
+      "targetCandidateId": "snapshot-recovery-spec-r17",
+      "targetRevision": "r17",
+      "taskSha256": "4fe0e16823b3237805bd7386a6b15441b71b933ba738c8a7a312beb019198644",
+      "instructionsSha256": "9dc2688f41681e3decf1d357cfee4b450602d0b8b421a084d819a7287ef569e7"
+    },
+    {
+      "name": "SnapshotRecoverySpecR17Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "38f507972571216165e05e2fe1dc7d81f4d9761a3822b9294c5958592a04398e",
+      "targetCandidateId": "snapshot-recovery-spec-r17",
+      "targetRevision": "r17",
+      "taskSha256": "15513631870de2499d8f1e23da4786df005e747af296a7b9db677c37091bef06",
+      "instructionsSha256": "9dc2688f41681e3decf1d357cfee4b450602d0b8b421a084d819a7287ef569e7"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** specification; candidate `snapshot-recovery-spec-r17@r17`; no implementation. Reviewed spec.md (requirements, design, ACs, §6.1), ticket mirror, `docs/logging-contract.md:607-614`, and code anchors. Registry SHA-256 comparison is not executable with the effective read-only toolset (no hash/shell) — review limit.\n\n### Closure of r16 findings\n- **F1 CLOSED.** R2:16, R5:19, D10:64, §4:78, §7:186, §8:197, AC1-3:110, AC1-10:117 agree: one run-level set, populated before pass 1 from `lstat`/`Readlink`/`Clean` at both configured paths, consulted by both passes. Reconstructed **A** (snapshot→oldest prompts seed): prompts pass skips it, unlinks `now-4s`, prompts total 5, quarantine read-through works. **B** (prompts→oldest snapshot seed, snapshot first): snapshot pass skips it, unlinks `now-4s`, then prompts link still resolves and moves; totals 5/1. No residual unlink/dangle on either layout.\n- **F2 CLOSED.** §4:78 candidates = all unprotected pre-existing conforming files, oldest-first, attempted until exactly four pre-existing survive; R5:19, D10:64, §8:197, AC1-3:110 agree; protected file holds a surviving slot; AC1-3's five-seed layout evicts `now-4s`, total 5; AC1-9:116(a2) two-excess evicts two, total 5.\n- **F3 CLOSED.** Every live candidate-spec citation is `wiring.go:486-493`; code confirms `case` :486, remediation :492, `}` :493, `:494` next case. Only the non-contractual r15 ticket mirror (:110) retains `486-491`.\n- **F4 CLOSED.** §9.7:209 records heading r15 (`:91`), header r7 (`:7`), and line 11 `SNAPREC-SPEC-r3`; ticket lines 7/11 verified.\n- **F5 CLOSED.** AC1-3:110 and AC1-10:117 (b-prot, b-xA/B) state the seeded target is store-rejected corrupt, so the link entry is what recovery moves.\n- **Regression OK.** R/AC/T ids unchanged; §6.1:171 = 14 files = T1:134 (4) + T2 (6) + T3 (4); no new dependency (`go.mod` unchanged, std-lib); Load/Save/LoadPrompts/SavePrompts/ensureReplaceable behavior preserved (R1, D7, AC1-7; `store.go:85-110,149-198,295-306`); C6 same-family retained (AC1-3:110, AC1-10:117).\n\n### Advisory LOWs\n- **[LOW][coverage] One-hop protection.** `Readlink` protects the immediate target, not a chain. If a moved link's target is itself a pre-existing conforming quarantine symlink (the feature creates these at AC1-10(b)), retention can evict the ultimate conforming file: the moved link dangles and its backing bytes are deleted on the success path. R5:19, §4:78. Confidence: HIGH mechanism, MEDIUM reachability. Fix: resolve the chain (`EvalSymlinks`) or state the one-hop limit and narrow \"resolved backing evidence\".\n- **[LOW][statement precision] Alias identity.** The set is lexical path strings; an alternate spelling of the same state directory (absolute alias or symlinked component) cannot match a listing candidate, so the same deletion/dangle consequence is reachable. R5:19, §4:78 (\"path identities only\"). Confidence: MEDIUM. Fix: compare file identity, or document the alias limit.\n- **[LOW][statement precision] Other configured path as target.** A link target equal to the other family's configured path is moved by that family's recovery; the moved/configured link dangles (bytes survive at that quarantine). R2:16's \"never touched\" is broader than the retention-only rule; §4:78 addresses candidacy only. Confidence: HIGH. Fix: narrow R2's wording or name the interaction.\n\n### Positive\nThe vacuous-edge table, A/B same-pass ordering assertions, explicit survivor counts, and F5 seeding are coherent, bounded, and testable.\n\n### Limits\nSpecification mode; no tests exist or were run; no Git/LSP/hash capability; §9.12/§9.13 escalated critic and irreversible-deletion owner checkpoint remain open (admission is separate).\n\n### Recommendation\nAPPROVE\n",
+  "invocationId": "2e53b960-3445-4be9-80eb-7b15d49bc10d"
+}

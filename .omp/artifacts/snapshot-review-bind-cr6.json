@@ -1,0 +1,237 @@
+{
+  "binding": {
+    "candidateId": "snapshot-recovery-spec-r6",
+    "reviewerId": "code-reviewer",
+    "authorIds": [
+      "planner"
+    ],
+    "inputs": [
+      {
+        "path": ".scratch/snapshot-recovery/spec.md",
+        "sha256": "4893f06510234270a8316752b3ca20b148f4599ec36a6e45539018eb3c153f93"
+      },
+      {
+        "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+        "sha256": "d1c0f35296aedc3eb9fb9e6a65e4ce9eafe146b4dd12da41e66bc90200abf6e0"
+      },
+      {
+        "path": ".scratch/mcp-bridge-defects/backlog.md",
+        "sha256": "ab9d2a062751c6324ba280729be61b2c923ed3fdbacc1ad7f662eb6668004bfb"
+      },
+      {
+        "path": "docs/agents/domain.md",
+        "sha256": "54d97f3bd91612a42d28b473463c37e8283fa86274aa77e9033528e0dbf039e7"
+      },
+      {
+        "path": "docs/agents/issue-tracker.md",
+        "sha256": "ed489dcd8b47b6dd0d7e45a9f5dcff9f6a238af59ffc8b12be295c083124c60d"
+      },
+      {
+        "path": "docs/logging-contract.md",
+        "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+      },
+      {
+        "path": "go.mod",
+        "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+      },
+      {
+        "path": "internal/config/config.go",
+        "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+      },
+      {
+        "path": "internal/observe/envelope.go",
+        "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+      },
+      {
+        "path": "internal/observe/log.go",
+        "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+      },
+      {
+        "path": "internal/observe/log_test.go",
+        "sha256": "b6c9c1ebf752029d832b90f676145e0a9a0eb7fcd0c3fbfdf097cae28a4c6731"
+      },
+      {
+        "path": "internal/observe/edge_test.go",
+        "sha256": "4635cb74282703bf315efce482bf726080062aec5b538ed54068ad06961b4ae6"
+      },
+      {
+        "path": "internal/observe/metrics.go",
+        "sha256": "7c1e9e1393a74ad59625731059e4ae5f6e5d48a0fa05f70a4b0f858817a6570a"
+      },
+      {
+        "path": "internal/service/loop.go",
+        "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+      },
+      {
+        "path": "internal/service/reload.go",
+        "sha256": "313a30b017bb1f5f120d8ed7b6b43a3c93b81e20a7b7e1ff3f75793d87a11a5d"
+      },
+      {
+        "path": "internal/storage/store.go",
+        "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+      },
+      {
+        "path": "internal/storage/store_test.go",
+        "sha256": "99e4715e92838dbe916fbee0abfb12b9b9a69ac46d700b0f156c07cb012e26a2"
+      },
+      {
+        "path": "internal/storage/store_edge_test.go",
+        "sha256": "6f04b1bf3cce55048407b4b1a2ef0198b1f45cea4bfcad0b8323e65a18b757c6"
+      },
+      {
+        "path": "internal/storage/snapshot_edge_test.go",
+        "sha256": "e601a352bccb74c1e0d0f103ea94681d0b331545b9880a5b237924a2bc71303b"
+      },
+      {
+        "path": "cmd/mcp-bridge/runtime_edge_test.go",
+        "sha256": "e659fc5ae767e1d26624a96a78f0af71eeb743fcdb415e21aa22c4bff04e0d57"
+      },
+      {
+        "path": "cmd/mcp-bridge/serve.go",
+        "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+      },
+      {
+        "path": "cmd/mcp-bridge/serve_edge_test.go",
+        "sha256": "178c08c5abc5f7c79d6a2694dbd6a7fd468d50fc1b2aa355111b792079ae4c02"
+      },
+      {
+        "path": "cmd/mcp-bridge/startup_failure.go",
+        "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+      },
+      {
+        "path": "cmd/mcp-bridge/startup_failure_test.go",
+        "sha256": "4987c3ba79c7bafe94e0176e2365164e6f859b3c20f1c7fc15cae13a924ba457"
+      },
+      {
+        "path": "cmd/mcp-bridge/logging_contract_test.go",
+        "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+      },
+      {
+        "path": "cmd/mcp-bridge/wiring.go",
+        "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+      }
+    ],
+    "dispatches": [
+      {
+        "name": "SnapshotRecoverySpecR6CodeReview",
+        "agent": "code-reviewer",
+        "reviewerId": "code-reviewer",
+        "taskId": "CR1",
+        "requestSha256": "4e7a058c9464b25e4f0ee6d9ef332ec0e5083a037d398b82165297ace199a494",
+        "targetCandidateId": "snapshot-recovery-spec-r6",
+        "targetRevision": "r6",
+        "taskSha256": "a4b220195cc0530aa0d31d50da89ee87a312c488c96da0a883af3a141cee80d4",
+        "instructionsSha256": "651e5d413a12c5e81f6c7349138acca3d064a2a8778dbd999305fbef2f2cbeeb"
+      },
+      {
+        "name": "SnapshotRecoverySpecR6Critic",
+        "agent": "critic",
+        "reviewerId": "critic",
+        "taskId": "CT1",
+        "requestSha256": "c6ef544f404584df386f4af53b88a91d9812f16007fe7bfc0e818c6ac6e4b743",
+        "targetCandidateId": "snapshot-recovery-spec-r6",
+        "targetRevision": "r6",
+        "taskSha256": "cf9b1c821da390e4fc5ce08d17c0c615a6b6888a3fc5a277dee0515b7a93d010",
+        "instructionsSha256": "651e5d413a12c5e81f6c7349138acca3d064a2a8778dbd999305fbef2f2cbeeb"
+      }
+    ],
+    "verdict": "REQUEST CHANGES",
+    "findings": [
+      {
+        "id": "CR6-1",
+        "class": "statement-contradiction",
+        "severity": "HIGH",
+        "title": "T2 omits `cmd/mcp-bridge/config_envelope_test.go`, which pins `len(EnvelopeFieldNames())==129` and sortedness (`:168-172`). `quarantine_path` makes 130, and insertion \"after `protocol_version`\" (`envelope.go:667`; next entry is `publication_impact`) is unsorted, so T3's full-suite gate cannot pass inside the §6.1 envelope. Fix: add that file to T2/§6.1, set 130, and insert after `publication_impact` in `envelope.go`, the docs union, and the `log_test.go` literal.",
+        "anchor": "cmd/mcp-bridge/config_envelope_test.go",
+        "fix": "add that file to T2/§6.1, set 130, and insert after `publication_impact` in `envelope.go`, the docs union, and the `log_test.go` literal."
+      },
+      {
+        "id": "CR6-2",
+        "class": "statement-contradiction",
+        "severity": "HIGH",
+        "title": "Double `startup_failed`. §4/T2 call `writeStartupFailure(stderr, stateDirectoryFailure(store.Dir()))` in serve and return the error; `runContext` also writes every returned error (`main.go:59-68`). AC2-4/AC2-7 \"one record\" therefore fails: duplicate `state_directory`, or `state_directory` plus fallback `internal_error` when the raw fatal is returned. Fix: serve emits accumulated warnings only and returns `stateDirectoryFailure(store.Dir())`; main remains the sole writer.",
+        "anchor": "startup_failed",
+        "fix": "serve emits accumulated warnings only and returns `stateDirectoryFailure(store.Dir())`; main remains the sole writer."
+      },
+      {
+        "id": "CR6-3",
+        "class": "statement-contradiction",
+        "severity": "HIGH",
+        "title": "Prune off-by-one. §4 step 4 excludes this run's file, then unlinks beyond `QuarantineKeep` among the remainder, leaving 6 when 5 pre-exist. R5 (≤5 per family) and AC1-3/AC1-9 require 5 survivors with the oldest removed. Fix: unlink beyond `QuarantineKeep-1` after exclusion.",
+        "anchor": "QuarantineKeep",
+        "fix": "unlink beyond `QuarantineKeep-1` after exclusion."
+      },
+      {
+        "id": "CR6-4",
+        "class": "statement-contradiction",
+        "severity": "MEDIUM",
+        "title": "§4 step 3 records the `Recovery` only after `syncDirectory` succeeds, but AC2-8(a) requires the result to carry it on a post-rename sync fatal, and R4 requires one warning per quarantined file. Fix: append the Recovery immediately after rename success, before sync.",
+        "anchor": "Recovery",
+        "fix": "append the Recovery immediately after rename success, before sync."
+      },
+      {
+        "id": "CR6-5",
+        "class": "ac-not-falsifiable",
+        "severity": "MEDIUM",
+        "title": "AC1-8's \"offset form\" `prompts.corrupt-20261121T120000+02:00.json` is not RFC3339 either (missing separators), so plain `time.Parse` also treats it as foreign; the literal-`Z` rule is unpinned. Fix: `prompts.corrupt-2026-11-21T12:00:00+02:00.json`.",
+        "anchor": "prompts.corrupt-20261121T120000+02:00.json",
+        "fix": "`prompts.corrupt-2026-11-21T12:00:00+02:00.json`."
+      },
+      {
+        "id": "CR6-6",
+        "class": "ac-not-falsifiable",
+        "severity": "LOW",
+        "title": "AC2-9's \"next prompt save\" has no named trigger; startup admission skips `PersistPrompts` (`reload.go:728`), leaving only the async initial refresh (`loop.go:172`). Name/poll it or assert persistence at service level.",
+        "anchor": "PersistPrompts",
+        "fix": ""
+      },
+      {
+        "id": "CR6-7",
+        "class": "editorial",
+        "severity": "LOW",
+        "title": "§9 risk(4) says the retained AC2-6 record \"collapses to `logging_write_failed`\"; §3 correctly shows wiring.go:485-492 writes via `observe.WriteJSONLine`, not `buildEnvelope`. Correct the note.",
+        "anchor": "logging_write_failed",
+        "fix": ""
+      },
+      {
+        "id": "CR6-8",
+        "class": "editorial",
+        "severity": "LOW",
+        "title": "Ticket example `snapshot.corrupt-20261116T230448Z.json` is not RFC3339Nano-`Z` under R5 and would never be pruned; stale and misleading.",
+        "anchor": "snapshot.corrupt-20261116T230448Z.json",
+        "fix": ""
+      },
+      {
+        "id": "CR6-9",
+        "class": "r-ac-coverage-gap",
+        "severity": "LOW",
+        "title": "R8's \"any other value enables recovery\" is untested; AC2-6 covers only `off`/`OFF`. Add one `enabled`/`1` case.",
+        "anchor": "off",
+        "fix": ""
+      },
+      {
+        "id": "CR6-10",
+        "class": "ac-not-falsifiable",
+        "severity": "LOW",
+        "title": "AC1-1's absent subcase \"performs no retention pass\" is unobservable unless >`QuarantineKeep` conforming files are seeded; seed and assert unchanged, or drop the clause.",
+        "anchor": "QuarantineKeep",
+        "fix": ""
+      }
+    ],
+    "format": "installed",
+    "source": {
+      "path": ".omp/artifacts/review-snapshot-recovery-spec-r6-code-reviewer-20261121T132208Z.json",
+      "sha256": "c5bc00969b60438be7f9d7fe9af103ca53667320d4a165336707e9e340352687"
+    },
+    "recordedAt": "2026-11-21T13:22:08.351Z"
+  },
+  "runBinding": {
+    "candidateId": "snapshot-recovery-spec-r6",
+    "invocationId": "95f5a238-f7e7-4fa1-8de4-df9224a11afa",
+    "fingerprint": "034d6b3464da1fb97500b876c235c5e157126bacbd81c4a2ae4f48ee50ec8d49",
+    "reviewerId": "code-reviewer",
+    "agent": "code-reviewer",
+    "revision": "r6"
+  },
+  "status": "succeeded"
+}

@@ -1,0 +1,18 @@
+{
+  "requirements": {
+    "revision": "r14",
+    "sha256": "8f5caf1770d8d54189fde65a9dc7444b63c80c1730b8a9376b8310af439b8811"
+  },
+  "design": {
+    "revision": "r14",
+    "sha256": "cfb0e5d90137dec57bc22b984ff2a85206a93c192755496354f0186ea0a98c6a"
+  },
+  "tasks": {
+    "revision": "r14",
+    "sha256": "c6578bbd8249dd504d419f3919b4c2924aeb21ae47a73f0b6c0291147a2bff78"
+  },
+  "envelope": {
+    "revision": "r14",
+    "sha256": "3a5b39d0147d2e46ae838fb779cd546b92216aa5d6ea4cdccb6e74236d520f00"
+  }
+}

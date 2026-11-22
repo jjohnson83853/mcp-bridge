@@ -1,0 +1,35 @@
+{
+  "intent": "Review snapshot-recovery specification r13",
+  "instructions": "Candidate: snapshot-recovery-spec-r13 @ r13. Author: planner. Review mode: specification only; no implementation exists.\n\nReviewed inputs (all candidate-bound and hashed):\n- .scratch/snapshot-recovery/spec.md\n- .scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md\n- .scratch/mcp-bridge-defects/backlog.md\n- docs/agents/domain.md\n- docs/agents/issue-tracker.md\n- docs/logging-contract.md\n- go.mod\n- internal/config/config.go\n- internal/observe/envelope.go\n- internal/observe/log.go\n- internal/observe/log_test.go\n- internal/observe/edge_test.go\n- internal/observe/metrics.go\n- internal/service/loop.go\n- internal/service/reload.go\n- internal/storage/store.go\n- internal/storage/snapshot_v1.go\n- internal/storage/store_test.go\n- internal/storage/store_edge_test.go\n- internal/storage/snapshot_edge_test.go\n- cmd/mcp-bridge/runtime_edge_test.go\n- cmd/mcp-bridge/serve.go\n- cmd/mcp-bridge/serve_edge_test.go\n- cmd/mcp-bridge/startup_failure.go\n- cmd/mcp-bridge/startup_failure_test.go\n- cmd/mcp-bridge/logging_contract_test.go\n- cmd/mcp-bridge/wiring.go\n- cmd/mcp-bridge/config_envelope_test.go\n\nRead the r13 specification at .scratch/snapshot-recovery/spec.md (including the four specdd regions and the 6.1 ENVELOPE subsection), the ticket mirror, backlog, docs/logging-contract.md, go.mod, and the referenced code anchors. The candidate boundary is the exact hashed bytes in the review registry; do not treat later edits as reviewed.\n\nPrior evidence: the r12 CodeReviewer round was REQUEST CHANGES (SR12-01..05) and the r12 Critic was REVISE (C1..C4), artifacts .omp/artifacts/snapshot-recovery-fresh-plan/cr-r12-raw.md and ct-r12-raw.md; treat them as evidence, not as reviewed r13 bytes. r13 claims to close all of them in place with no R/AC/T id or envelope change.\n\nThis is a read-only independent review. Do not modify files, run implementation tests, implement, dispatch, or claim approval. Treat the dispatch context wrapper as metadata; this task text is authoritative.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r13",
+    "requests": [
+      {
+        "name": "SnapshotRecoverySpecR13CodeReview",
+        "taskId": "CR1",
+        "agent": "code-reviewer",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/snapshot-recovery/spec.md",
+            ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+          ]
+        },
+        "targetCandidateId": "snapshot-recovery-spec-r13",
+        "targetRevision": "r13"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecR13CodeReview",
+      "agent": "code-reviewer",
+      "task": "# Target\nIndependently review snapshot-recovery specification candidate snapshot-recovery-spec-r13@r13 in specification mode. No implementation exists. The r12 review requested changes; verify r13 actually closes the nine recorded findings and introduces no new blocking defect.\n\n# Required checks\n- C1/SR12-01: the fatal path must preserve the real cause. Verify R3 and section 4 describe an unexported serve.go error type carrying the classification plus the original cause, that main.go:56-66 errors.As/Is behavior still matches, and that startup_failure.go stays outside the envelope; AC2-4 and AC2-8(a) assert cause preservation. Flag any claim that code outside the 14-file envelope must change.\n- C2/SR12-02: a successful Stat of a FIFO, socket, device or symlink to one must be defined: never opened, never read, never renamed; specify per-family classification and a no-block oracle (syscall.Mkfifo subcase, completion inside the deadline).\n- C3/SR12-03: prompts-family taxonomy mapping must be per family: decode/trailing corrupt_json, Validate validation_failure, checksum sentinel store.go:103-107 checksum_mismatch, and unsupported_schema not producible by prompts (PromptSchemaVersion). Verify the cited anchors match the code.\n- SR12-04: retention must pin total <= QuarantineKeep including future-dated pre-existing names, with deterministic ordering and a future-dated test.\n- SR12-05: startup oracles must carry numeric deadlines and intervals (5s / 25ms) consistent with AC2-1 and AC2-9.\n- C4: alert coverage must be a verified exception with cited queries (logging-contract.md:607-614) or an explicit non-goal; no unverified alert-behavior claim in R7/ACs.\n- Reviewer notes: anchors envelope.go:103 (runtimeErrorInfo) and :244 (addEnvelopeFields) refreshed; section 9.7 corrected.\n- Trace R1-R9 to AC1-1..AC1-10, AC2-1..AC2-9 and T1-T3; check missing boundary, precedence, state-transition, warning-count coverage.\n- Verify the owner envelope is unchanged: no new/removed/renamed R/AC/T id; T1/T2/T3 file sets only approved paths; 6.1 ENVELOPE matches section 6.\n- Apply W09E. Report every finding with class, severity, confidence, exact anchor, consequence and minimal fix. Do not claim unrun tests, git diff or LSP diagnostics.\n\n# Output contract\nUse the installed CodeReviewer format: Summary, Files Reviewed, By Severity, Issues, Open Questions, Positive Observations, then exactly '### Recommendation' followed by APPROVE or REQUEST CHANGES and nothing after it. APPROVE only if no blocking-class finding remains at high confidence. Do not modify any file.",
+      "solutionSpace": "one review: revise request on a fixed id set; new defects open"
+    }
+  ]
+}

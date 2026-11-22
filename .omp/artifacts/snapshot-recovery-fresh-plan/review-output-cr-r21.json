@@ -1,0 +1,72 @@
+{
+  "text": "<task-result id=\"SnapshotRecoverySpecR21CodeReview\" agent=\"code-reviewer\" status=\"completed\" duration=\"1m32s\">\n\n<output>\n## Code Review Summary\n\n**Mode:** specification (repair pass), `snapshot-recovery-spec-r21@r21`; no implementation. **Limits:** no hash/shell tool, so the supplied SHA-256 digests were not recomputed; no tests or spec-lint run; the ticket mirror is excluded as contract (stale by instruction); prior-round raw reviews used as evidence only.\n\n### Closure\n- **M1 CLOSED.** `spec.md:16` (R2) drops \"non-conforming\" from the reconciliation exclusion, states both configured paths are eligible orphan targets by definition, and uses **NOT reconciled** while keeping only dangling untouched by the passes (loop/read-through moves and directory fatal restated). `spec.md:69` (D12): (ii) admits configured-path final targets, (iii) is the moved-element gate, (iv) requires the post-pass symlink entry plus `ErrNotExist`. `spec.md:83` (§4(3)): non-conforming is \"a protection/retention class only — never a reconciliation-eligibility exclusion\". Re-ran `(b-xB2)/(b-xB3)` (`:122`): both fire — (ii) passes (pre-pass chain ended at the existing regular `snapshot.json`/`prompts.json`), (iii) passes (moved by the other family's pass), (iv) passes (link still a symlink, `Stat` → `ENOENT`). **No condition vacuous:** (iii) still excludes never-moved targets; (ii) still excludes loop/escape/directory pre-pass classes (e.g. a cycle routed through the other configured path, where pass 2 moves it but the pre-pass class is cycle); (iv) is what excludes `(b-xA2)`.\n- **L1 CLOSED.** `spec.md:122` (`b-xA2`): \"(iii) PASSES … the failure is condition (iv)\".\n- **L2 REJECTION ACCEPTED.** Raw `internal/storage/store.go`: `:104` `ChecksumValue` call, `:105` guard, `:106` sentinel return, `:108` `promptTrusted`, `:185` catalog sentinel. §3/R6/AC1-2 anchors (`:104-106`, `:95-99`, `:101-102`) are correct; the r20 reviewer's `:103-105` was off by one.\n- **A1–A4 CLOSED.** `(b-budget)`/`(b-mid)` seeded oracles at `:122`; `(b-xB-res)` post-reconciliation retention with 5 pre-existing seeds at `:122`; AC1-3 alias case (`:115`) now uses entry identity, no lexical-inequality wording; D12 (`:69`) names post-rename directory-sync failure and delegates to R3.\n- **Regression OK.** R1–R9, AC1-1..10, AC2-1..9, T1–T3 unchanged; §6.1 is the same 14-file union (T1 4 + T2 6 + T3 4, `:141-146`); std-lib only, no `go.mod` change; Load/Save/LoadPrompts/SavePrompts/ensureReplaceable unchanged (R1/§4/T1 prohibitions); C6/CR15-02 retained; D11 component resolver retained; §9.11/§8(2) owner checkpoints still OPEN and unclaimed.\n\n### Findings\n**[LOW][statement-precision]** D12's rationale overgeneralizes (iii).\nFile: `.scratch/snapshot-recovery/spec.md:69`. Confidence: HIGH.\nText says a chain ending at \"any other non-quarantine-named regular target still fails (iii)\". Counterexample: `snapshot.json`(link) → `prompts.json`(link) → `keeper.json` (non-conforming regular); the prompts pass moves `prompts.json`, so (iii) passes and reconciliation is in fact correct (the chain was severed by this run). Operative (i)–(iv) are sound and no pinned oracle depends on this gloss, so consequence is limited to an implementer possibly adding a name-based extra gate.\nFix: state that such a chain fails (iii) only when no chain element other than the configured link moved — §9 item 17 (`:224`) already states it correctly.\n\n### Advisory\n**[LOW][editorial]** `(b-budget)` visited-set boundary.\nFile: `.scratch/snapshot-recovery/spec.md:122`. Confidence: LOW.\nThe fixture claims `k1..k4096` are recorded after a 4097-link chain; the exact boundary depends on whether the configured link's own splice counts against the 4096 budget. No FAILS clause asserts that set (the `k*` entries are vacuous protection), so this is non-blocking. Fix: state the budget counting rule or drop the boundary claim.\n\n### Positive\nOracles are outcome-based (bytes, survivor/deletion counts, stream order) rather than mechanism-based; reconciliation result order is pinned; over-trigger is ruled out observably by `(b-xA2)`'s (iv) and by `(b-vac)`.\n\n### Recommendation\nAPPROVE\n</output>\n</task-result>",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [
+      {
+        "index": 0,
+        "id": "SnapshotRecoverySpecR21CodeReview",
+        "agent": "code-reviewer",
+        "agentSource": "user",
+        "task": "Complete assignment thoroughly:\n\n# Target\nReview snapshot-recovery specification candidate snapshot-recovery-spec-r21@r21 in specification mode. No implementation exists. The r20 code review returned REQUEST CHANGES with one MEDIUM, two LOW, and advisory LOWs.\n\n# Required checks\n- M1 closure: reconciliation exclusion lists in R2, D12(ii) and section 4(3) no longer exclude non-conforming final targets; the two configured family paths are stated eligible orphan targets by definition; \"NOT reconciled\" replaces \"NOT moved\" where the two differ; the protection-side non-conforming walk class is retained only for retention candidacy. Re-run the b-xB2/b-xB3 logic: condition (ii) must pass for a configured target moved by the other pass, and reconciliation must fire. Confirm no condition is now vacuous.\n- L1: (b-xA2) cites condition (iv), not (iii).\n- L2: the planner rejected the checksum-attribution LOW with evidence (store.go ChecksumValue :104, guard :105, sentinel return :106). Independently check the raw source and either accept the rejection or re-raise with exact lines; do not rely on the prior reviewer's assertion.\n- A1-A4: seeded oracles for the 4096-component budget and mid-path not-a-directory; post-reconciliation retention fixture with pre-existing seeds; AC1-3 alias-identity wording uses entry identity, not lexical inequality; D12 fatal list names post-rename directory-sync failure or explicitly delegates to R3.\n- Regression: no R/AC/T id change; 14-file envelope and per-task sets unchanged; no new dependency; Load/Save/LoadPrompts/SavePrompts/ensureReplaceable unchanged; C6/CR15 closures retained; C1 component resolver and D12 owner checkpoints remain as accepted at r20.\n- Advisory LOWs separately. Do not propose a new id or envelope widening.\n\n# Output contract\nReport severity (CRITICAL/HIGH/MEDIUM/LOW), file:line anchor and confidence per finding. End with exactly '### Recommendation' then APPROVE or REQUEST CHANGES.",
+        "assignment": "# Target\nReview snapshot-recovery specification candidate snapshot-recovery-spec-r21@r21 in specification mode. No implementation exists. The r20 code review returned REQUEST CHANGES with one MEDIUM, two LOW, and advisory LOWs.\n\n# Required checks\n- M1 closure: reconciliation exclusion lists in R2, D12(ii) and section 4(3) no longer exclude non-conforming final targets; the two configured family paths are stated eligible orphan targets by definition; \"NOT reconciled\" replaces \"NOT moved\" where the two differ; the protection-side non-conforming walk class is retained only for retention candidacy. Re-run the b-xB2/b-xB3 logic: condition (ii) must pass for a configured target moved by the other pass, and reconciliation must fire. Confirm no condition is now vacuous.\n- L1: (b-xA2) cites condition (iv), not (iii).\n- L2: the planner rejected the checksum-attribution LOW with evidence (store.go ChecksumValue :104, guard :105, sentinel return :106). Independently check the raw source and either accept the rejection or re-raise with exact lines; do not rely on the prior reviewer's assertion.\n- A1-A4: seeded oracles for the 4096-component budget and mid-path not-a-directory; post-reconciliation retention fixture with pre-existing seeds; AC1-3 alias-identity wording uses entry identity, not lexical inequality; D12 fatal list names post-rename directory-sync failure or explicitly delegates to R3.\n- Regression: no R/AC/T id change; 14-file envelope and per-task sets unchanged; no new dependency; Load/Save/LoadPrompts/SavePrompts/ensureReplaceable unchanged; C6/CR15 closures retained; C1 component resolver and D12 owner checkpoints remain as accepted at r20.\n- Advisory LOWs separately. Do not propose a new id or envelope widening.\n\n# Output contract\nReport severity (CRITICAL/HIGH/MEDIUM/LOW), file:line anchor and confidence per finding. End with exactly '### Recommendation' then APPROVE or REQUEST CHANGES.",
+        "lastIntent": "Reading D11 raw",
+        "exitCode": 0,
+        "output": "## Code Review Summary\n\n**Mode:** specification (repair pass), `snapshot-recovery-spec-r21@r21`; no implementation. **Limits:** no hash/shell tool, so the supplied SHA-256 digests were not recomputed; no tests or spec-lint run; the ticket mirror is excluded as contract (stale by instruction); prior-round raw reviews used as evidence only.\n\n### Closure\n- **M1 CLOSED.** `spec.md:16` (R2) drops \"non-conforming\" from the reconciliation exclusion, states both configured paths are eligible orphan targets by definition, and uses **NOT reconciled** while keeping only dangling untouched by the passes (loop/read-through moves and directory fatal restated). `spec.md:69` (D12): (ii) admits configured-path final targets, (iii) is the moved-element gate, (iv) requires the post-pass symlink entry plus `ErrNotExist`. `spec.md:83` (§4(3)): non-conforming is \"a protection/retention class only — never a reconciliation-eligibility exclusion\". Re-ran `(b-xB2)/(b-xB3)` (`:122`): both fire — (ii) passes (pre-pass chain ended at the existing regular `snapshot.json`/`prompts.json`), (iii) passes (moved by the other family's pass), (iv) passes (link still a symlink, `Stat` → `ENOENT`). **No condition vacuous:** (iii) still excludes never-moved targets; (ii) still excludes loop/escape/directory pre-pass classes (e.g. a cycle routed through the other configured path, where pass 2 moves it but the pre-pass class is cycle); (iv) is what excludes `(b-xA2)`.\n- **L1 CLOSED.** `spec.md:122` (`b-xA2`): \"(iii) PASSES … the failure is condition (iv)\".\n- **L2 REJECTION ACCEPTED.** Raw `internal/storage/store.go`: `:104` `ChecksumValue` call, `:105` guard, `:106` sentinel return, `:108` `promptTrusted`, `:185` catalog sentinel. §3/R6/AC1-2 anchors (`:104-106`, `:95-99`, `:101-102`) are correct; the r20 reviewer's `:103-105` was off by one.\n- **A1–A4 CLOSED.** `(b-budget)`/`(b-mid)` seeded oracles at `:122`; `(b-xB-res)` post-reconciliation retention with 5 pre-existing seeds at `:122`; AC1-3 alias case (`:115`) now uses entry identity, no lexical-inequality wording; D12 (`:69`) names post-rename directory-sync failure and delegates to R3.\n- **Regression OK.** R1–R9, AC1-1..10, AC2-1..9, T1–T3 unchanged; §6.1 is the same 14-file union (T1 4 + T2 6 + T3 4, `:141-146`); std-lib only, no `go.mod` change; Load/Save/LoadPrompts/SavePrompts/ensureReplaceable unchanged (R1/§4/T1 prohibitions); C6/CR15-02 retained; D11 component resolver retained; §9.11/§8(2) owner checkpoints still OPEN and unclaimed.\n\n### Findings\n**[LOW][statement-precision]** D12's rationale overgeneralizes (iii).\nFile: `.scratch/snapshot-recovery/spec.md:69`. Confidence: HIGH.\nText says a chain ending at \"any other non-quarantine-named regular target still fails (iii)\". Counterexample: `snapshot.json`(link) → `prompts.json`(link) → `keeper.json` (non-conforming regular); the prompts pass moves `prompts.json`, so (iii) passes and reconciliation is in fact correct (the chain was severed by this run). Operative (i)–(iv) are sound and no pinned oracle depends on this gloss, so consequence is limited to an implementer possibly adding a name-based extra gate.\nFix: state that such a chain fails (iii) only when no chain element other than the configured link moved — §9 item 17 (`:224`) already states it correctly.\n\n### Advisory\n**[LOW][editorial]** `(b-budget)` visited-set boundary.\nFile: `.scratch/snapshot-recovery/spec.md:122`. Confidence: LOW.\nThe fixture claims `k1..k4096` are recorded after a 4097-link chain; the exact boundary depends on whether the configured link's own splice counts against the 4096 budget. No FAILS clause asserts that set (the `k*` entries are vacuous protection), so this is non-blocking. Fix: state the budget counting rule or drop the boundary claim.\n\n### Positive\nOracles are outcome-based (bytes, survivor/deletion counts, stream order) rather than mechanism-based; reconciliation result order is pinned; over-trigger is ruled out observably by `(b-xA2)`'s (iv) and by `(b-vac)`.\n\n### Recommendation\nAPPROVE",
+        "stderr": "",
+        "truncated": false,
+        "durationMs": 92526,
+        "tokens": 95440,
+        "requests": 11,
+        "contextTokens": 103850,
+        "contextWindow": 1048576,
+        "modelOverride": [
+          "openrouter/deepseek/deepseek-v4.1-flash-1017:high"
+        ],
+        "resolvedModel": "openrouter/deepseek/deepseek-v4.1-flash-1017:high",
+        "resolvedModelIdentity": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+        "resolvedThinkingLevel": "high",
+        "aborted": false,
+        "usage": {
+          "input": 74681,
+          "output": 20759,
+          "cacheRead": 706304,
+          "cacheWrite": 0,
+          "totalTokens": 801744,
+          "reasoningTokens": 17901,
+          "cost": {
+            "input": 0.002688516,
+            "output": 0.0103795,
+            "cacheRead": 0.00706304,
+            "cacheWrite": 0,
+            "total": 0.020131055999999994
+          }
+        },
+        "outputPath": "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-21T18-17-21-887Z_01a1ff53-c2df-74e3-bb3d-25260e912ac3/SnapshotRecoverySpecR21CodeReview.md",
+        "outputMeta": {
+          "lineCount": 27,
+          "charCount": 4021
+        }
+      }
+    ],
+    "totalDurationMs": 92536,
+    "usage": {
+      "input": 74681,
+      "output": 20759,
+      "cacheRead": 706304,
+      "cacheWrite": 0,
+      "totalTokens": 801744,
+      "reasoningTokens": 17901,
+      "cost": {
+        "input": 0.002688516,
+        "output": 0.0103795,
+        "cacheRead": 0.00706304,
+        "cacheWrite": 0,
+        "total": 0.020131055999999994
+      }
+    },
+    "outputPaths": [
+      "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-21T18-17-21-887Z_01a1ff53-c2df-74e3-bb3d-25260e912ac3/SnapshotRecoverySpecR21CodeReview.md"
+    ]
+  }
+}

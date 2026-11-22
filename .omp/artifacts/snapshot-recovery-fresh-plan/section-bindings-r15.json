@@ -1,0 +1,18 @@
+{
+  "requirements": {
+    "revision": "r15",
+    "sha256": "02f6aa64efd767b0b0696979809a0071e077e8c98c9815cc647e84d67bd288a8"
+  },
+  "design": {
+    "revision": "r15",
+    "sha256": "e35bb1e8e1a153bf707186b1cbf1f5cbfda5327115abd69bf7c83fe78fcefb3f"
+  },
+  "tasks": {
+    "revision": "r15",
+    "sha256": "fcf03f2023b67348d2f05e8d9debb8bcf3723bd311ea313a7e06c2f555b5eb3a"
+  },
+  "envelope": {
+    "revision": "r15",
+    "sha256": "3a5b39d0147d2e46ae838fb779cd546b92216aa5d6ea4cdccb6e74236d520f00"
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r13",
+  "revision": "r13",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "2b2b05d63ed61b4acf6f358e2e853426709ec85f22a26949d4a00a2c3a93c50b"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "c941e4f9608daa813abc478ed2b4cbdc63b97cf921064c7834cf0792b47e8f9e"
+    },
+    {
+      "path": ".scratch/mcp-bridge-defects/backlog.md",
+      "sha256": "ab9d2a062751c6324ba280729be61b2c923ed3fdbacc1ad7f662eb6668004bfb"
+    },
+    {
+      "path": "docs/agents/domain.md",
+      "sha256": "54d97f3bd91612a42d28b473463c37e8283fa86274aa77e9033528e0dbf039e7"
+    },
+    {
+      "path": "docs/agents/issue-tracker.md",
+      "sha256": "ed489dcd8b47b6dd0d7e45a9f5dcff9f6a238af59ffc8b12be295c083124c60d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "b6c9c1ebf752029d832b90f676145e0a9a0eb7fcd0c3fbfdf097cae28a4c6731"
+    },
+    {
+      "path": "internal/observe/edge_test.go",
+      "sha256": "4635cb74282703bf315efce482bf726080062aec5b538ed54068ad06961b4ae6"
+    },
+    {
+      "path": "internal/observe/metrics.go",
+      "sha256": "7c1e9e1393a74ad59625731059e4ae5f6e5d48a0fa05f70a4b0f858817a6570a"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/service/reload.go",
+      "sha256": "313a30b017bb1f5f120d8ed7b6b43a3c93b81e20a7b7e1ff3f75793d87a11a5d"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "internal/storage/store_test.go",
+      "sha256": "99e4715e92838dbe916fbee0abfb12b9b9a69ac46d700b0f156c07cb012e26a2"
+    },
+    {
+      "path": "internal/storage/store_edge_test.go",
+      "sha256": "6f04b1bf3cce55048407b4b1a2ef0198b1f45cea4bfcad0b8323e65a18b757c6"
+    },
+    {
+      "path": "internal/storage/snapshot_edge_test.go",
+      "sha256": "e601a352bccb74c1e0d0f103ea94681d0b331545b9880a5b237924a2bc71303b"
+    },
+    {
+      "path": "cmd/mcp-bridge/runtime_edge_test.go",
+      "sha256": "e659fc5ae767e1d26624a96a78f0af71eeb743fcdb415e21aa22c4bff04e0d57"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "178c08c5abc5f7c79d6a2694dbd6a7fd468d50fc1b2aa355111b792079ae4c02"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "4987c3ba79c7bafe94e0176e2365164e6f859b3c20f1c7fc15cae13a924ba457"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "7af279bea9fcb693ea65f149a84196d14ac1098d96e91f90ab7ff5b09d5e605a"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR13CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "41ec1a396ff279b2666bd08cfca5b673f62a48cc6a44a1d350c54f7fbcbcc71c",
+      "targetCandidateId": "snapshot-recovery-spec-r13",
+      "targetRevision": "r13",
+      "taskSha256": "a0e7cd5f93c1f5d99fd25a75f57644a0dd0d9b7bc0e31624edc1132f93291dd8",
+      "instructionsSha256": "4ba4ba0f39a3f653a701709c36eec7f045823496ead979efe195085f5c73e029"
+    },
+    {
+      "name": "SnapshotRecoverySpecR13Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "6ed4c70492896368c0c08e8123bd23ad8a552a0603174e54cf09a39ad77147db",
+      "targetCandidateId": "snapshot-recovery-spec-r13",
+      "targetRevision": "r13",
+      "taskSha256": "ff5d58b605207175894e6b9ac1753b7ebe910bcba122eb7dd0232aa4014b1a6c",
+      "instructionsSha256": "4ba4ba0f39a3f653a701709c36eec7f045823496ead979efe195085f5c73e029"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Files Reviewed:** 27 candidate-bound inputs (spec, ticket, backlog, domain/issue-tracker docs, logging contract, go.mod, 20 code/test anchors).\n**Mode/pass:** specification only, initial (r13). **Total Issues:** 9 (0 CRITICAL / 2 HIGH / 4 MEDIUM / 3 LOW).\n\n**Closure evidence (all nine r12 findings closed):** SR12-01/C1 — R3/§4 define the unexported `serve.go` wrapper; `main.go:57` `errors.As` unchanged; `startup_failure.go` untouched; AC2-4/AC2-8a assert `errors.Is`/`errors.As`. SR12-02/C2 — R3/§4 fatal before any open/read; AC2-4 FIFO/symlink-dir/loop; AC2-8d both families. SR12-03/C3 — R6/AC1-2 match `store.go:93-106`; `snapshot.go:140` rejects foreign prompt schema; `unsupported_schema` not producible. SR12-04 — R5 + AC1-9c. SR12-05 — AC2-1/2-9 5s/25ms. C4 — §7 explicit exception; `docs/logging-contract.md:607-614` verified. D3 and AC2-8 ownership also closed.\n\n### By Severity\n- CRITICAL: 0\n- HIGH: 2\n- MEDIUM: 4\n- LOW: 3\n\n### Issues\n\n**[HIGH][statement-contradiction][Conf: HIGH] Retention parse is family-agnostic (§4 step (3))**\nThe regex `^(snapshot|prompts)\\.corrupt-...` admits both families, while R5 bounds retention **per family**; no family filter is stated. A snapshot pass can count/unlink `prompts.corrupt-*` (irreversible evidence loss). AC1-3/1-8 seed one family; AC1-6 does not pin ≥5 seeds/family. Fix: parse `<family>\\.corrupt-...`, declare other-family names foreign, and add an explicit both-families prune/no-cross-delete oracle. (Pre-existing in r11/r12, not introduced by r13.)\n\n**[HIGH][statement-contradiction][Conf: HIGH] Reservation collision vs fatal create failure (R3, §4(2))**\n\"Reservation-create failure ⇒ fatal\" conflicts with AC1-9(b), which requires an existing name to advance to `now+1ns`; only AC2-8(c) exhaustion is fatal. The `fs.ErrExist`-vs-other distinction is missing. A literal implementation aborts on the first collision and fails AC1-9(b). Fix: `fs.ErrExist` advances one candidate; any other create error is fatal; 4096 exhausted fatal; state this in AC2-8(b-res).\n\n**[MEDIUM][statement-contradiction][Conf: HIGH] R7 vs AC2-6 arm 1**\nR7 forbids \"no recovery or retention record of any kind\" when disabled; AC2-6 requires exactly one retained Durable-loader `startup_snapshot_rejected`. Fix: scope R7 to records produced by the recovery/retention path.\n\n**[MEDIUM][missing-state-transition][Conf: HIGH] First-family fatal + second-family corrupt undefined**\nD2/§4 and AC2-7 cover only recoverable-first/fatal-second. If the snapshot is fatal (FIFO/directory) and prompts is corrupt, whether prompts is quarantined after the fatal is unspecified. Fix: specify stop-on-first-fatal (recommended) or accumulate, and add the oracle.\n\n**[MEDIUM][unverified-contract][Conf: HIGH] Retention record shape not oracled**\nAC1-6 asserts only message/paths. R4's `warn`/`startup`/`failure`, `error.code=state_directory`, `kind=resource`, `retryable=false`, and canonical remediation are unverified; `validErrorInfo` (`envelope.go:200-206`) requires exact equality. Fix: assert the full record shape in AC1-6 and pin the message/remediation text.\n\n**[MEDIUM][traceability][Conf: MEDIUM] T2 lacks the producer anchors for \"existing remediation\"**\n§4 reuses \"existing remediation\" for `snapshot_unavailable`/`state_directory`, but T2's inputs omit `wiring.go:486-491` and `startup_failure.go:26-33`, and the strings are unquoted. Risk: on-arm/off-arm classification drift. Fix: quote both strings or add the read-only anchors.\n\n**[LOW][provenance][Conf: HIGH] §9.7 is stale**\nIt claims the ticket header cites r12/sha256 `f020...` and needs re-sync; the supplied ticket's AC heading says \"mirror of spec r13\" and its header cites r7, with no sha256. Fix: state the actual ticket state.\n\n**[LOW][verifiability][Conf: HIGH] No-block FIFO oracle and fixed message**\nAC2-8(d)'s \"test's own deadline\" is not numeric; AC2-4's 5s poll cannot interrupt a blocking open unless the call runs in a goroutine+select. AC1-6's \"equal to the constant\" pins no literal (default `\"mcp-bridge event\"`, `log.go:270-275`). Fix: pin a numeric deadline/mechanism and the message literal (e.g. `\"quarantine retention failed\"`).\n\n**[LOW][coverage][Conf: HIGH] R8 vocabulary and R1 negatives partially unoracled**\nOnly `corrupt_json` is emitted at the envelope layer (AC2-2/2-9); the other four `failure_reason` values are tested only at the storage `Reason` layer (AC1-2). AC1-7 omits `LoadPrompts`/`SavePrompts` never-quarantine assertions. Fix: table-drive all five admission cases and add the prompts negatives.\n\n### Open Questions\n[LOW] R5/§4 \"until exactly `QuarantineKeep−1` pre-existing remain\" is unsatisfiable with fewer than four pre-existing files; say \"evict while more than four remain\". [LOW] AC2-6 does not exercise the empty-string env value that D4 says enables recovery.\n\n### Positive Observations\n- The non-regular branch is checked before any open/read; FIFO/device/socket/symlink-to-one are fatal and untouched (AC2-4/2-8d).\n- The cause wrapper preserves `errors.As`/`errors.Is` without touching `main.go`, `startup_failure.go`, or `wiring.go`; no cause text enters a record field.\n- Prompts taxonomy matches the real walk; future-dated retention and numeric deadlines close SR12-04/05; C4 is an honest, verified exception.\n- Envelope 129→130 and the `quarantine_path` slot are verified; `logging_contract_test.go:114` needs no out-of-envelope edit because T2 updates both the docs union and the envelope array.\n\n### Recommendation\nREQUEST CHANGES\n",
+  "invocationId": "e9ceadc6-3d0c-434e-9e31-9da962f78442"
+}

@@ -1,0 +1,35 @@
+{
+  "intent": "Review snapshot-recovery specification r16",
+  "instructions": "Candidate: snapshot-recovery-spec-r16 @ r16. Author: planner. Review mode: specification only; no implementation exists.\n\nReviewed inputs:\n- .scratch/snapshot-recovery/spec.md\n- .scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md\n- docs/logging-contract.md\n- go.mod\n- internal/observe/envelope.go\n- internal/observe/log.go\n- internal/service/loop.go\n- internal/storage/store.go\n- internal/storage/snapshot_v1.go\n- cmd/mcp-bridge/serve.go\n- cmd/mcp-bridge/startup_failure.go\n- cmd/mcp-bridge/wiring.go\n\nRead the r16 specification at .scratch/snapshot-recovery/spec.md (four specdd regions plus 6.1 ENVELOPE), the ticket mirror, docs/logging-contract.md and the referenced code anchors. The candidate boundary is the exact hashed bytes in the registry. Prior evidence: .omp/artifacts/snapshot-recovery-fresh-plan/cr-r15-raw.md (APPROVE with 5 LOW) and ct-r15-raw.md (REVISE C6). Treat them as evidence, not reviewed bytes. Note the ticket mirror intentionally still carries r15 text (spec section 9.7); it is not the candidate contract.\n\nRead-only independent review. Do not modify files, implement, dispatch or claim approval. This task text is authoritative over the dispatch wrapper.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r16",
+    "requests": [
+      {
+        "name": "SnapshotRecoverySpecR16CodeReview",
+        "taskId": "CR1",
+        "agent": "code-reviewer",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/snapshot-recovery/spec.md",
+            ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+          ]
+        },
+        "targetCandidateId": "snapshot-recovery-spec-r16",
+        "targetRevision": "r16"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecR16CodeReview",
+      "agent": "code-reviewer",
+      "task": "# Target\nReview snapshot-recovery specification candidate snapshot-recovery-spec-r16@r16 in specification mode. No implementation exists. The bound r15 CodeReviewer review was APPROVE with 5 LOW (cr-r15-raw.md); the bound r15 Critic review was REVISE on C6 (ct-r15-raw.md). Verify this r16 revision closes them.\n\n# Required checks\n- Verify C6 closure with exact text: R2's moved-symlink target preservation versus R5 retention. Confirm the protection semantics are complete and non-contradictory: which candidate is excluded, how relative-link resolution and same-family pre-existing targets are handled, whether the successful-path bound is still exactly QuarantineKeep, how oldest-first ordering proceeds past the protected candidate, and what AC1-3/AC1-10(b-prot) assert (target bytes preserved, quarantine read-through, explicit survivor counts). Look for a new counterexample that deletes or dangles the backing evidence, or that lets the protected target make the bound exceed five on the success path.\n- Verify CR15-01 ticket-mirror account matches the observed ticket (heading r15, body r15, header r7, no sha256) and does not conflict with section 9.7's stated lag.\n- Verify CR15-02: T1 is scoped to AC1-1..AC1-5, AC1-7..AC1-10, AC1-6 storage half, AC2-8; T3 owns AC1-6's cmd half; no dual ownership remains on paper and the split matches the files each task may write.\n- Verify CR15-03: wiring.go:486-494 and log.go:227-276 citations are correct and consistent everywhere they appear.\n- Verify CR15-04: AC2-2 includes the four-field snapshot_unavailable ErrorInfo shape case and T2 pins it; validErrorInfo exact-equality admission makes a wrong remediation fail.\n- Verify CR15-05: the new 6-seed/two-excess subcases under AC1-3 and AC1-9 assert two evictions in one pass with total five, and the third unlink is an over-deletion failure.\n- Regression: R1-R9, AC1-1..AC1-10, AC2-1..AC2-9, T1-T3 ids unchanged; section 6.1 write set equals the 14-file envelope and the per-task write sets; no new dependency or observable change to Load/Save/LoadPrompts/SavePrompts/ensureReplaceable.\n- Confirm the review is against these exact bytes; report any low advisory separately from blocking findings. Do not propose a new id or envelope widening.\n\n# Output contract\nReport severity (CRITICAL/HIGH/MEDIUM/LOW), file:line anchor and confidence per finding. End with exactly '### Recommendation' then APPROVE or REQUEST CHANGES.",
+      "solutionSpace": "one review: C6/LOW closure plus regression on a fixed id set"
+    }
+  ]
+}

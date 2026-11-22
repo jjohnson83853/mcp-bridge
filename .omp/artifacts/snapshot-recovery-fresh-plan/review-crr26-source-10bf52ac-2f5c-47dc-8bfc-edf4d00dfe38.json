@@ -1,0 +1,85 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r26",
+  "revision": "r26",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "effa998f8958eebf2e383fa35f9ed1dac67ea8225d270848d3967a7a9850af22"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR26CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "d0866523933fe6b136d9308fe03039ba1d20eb9145087ae59a285adb8a309517",
+      "targetCandidateId": "snapshot-recovery-spec-r26",
+      "targetRevision": "r26",
+      "taskSha256": "b04fc3ded9110f19ef1c74fc0ea0aec1e240a63a6eb65974f58b1101d2be14d2",
+      "instructionsSha256": "a7cb48fc50935c681168d7c6c808b7f960def50b8f688ea380e2502ab67b3e65"
+    },
+    {
+      "name": "SnapshotRecoverySpecR26Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "41d615668dcebdf134405dea6be73317f9a99500914af99a7a67dfa8693eac3b",
+      "targetCandidateId": "snapshot-recovery-spec-r26",
+      "targetRevision": "r26",
+      "taskSha256": "c1689c517ee2f89cd0afefe1028ec6b85004397f25d6d5691a5728ae71491457",
+      "instructionsSha256": "a7cb48fc50935c681168d7c6c808b7f960def50b8f688ea380e2502ab67b3e65"
+    }
+  ],
+  "output": "<task-result id=\"SnapshotRecoverySpecR26CodeReview\" agent=\"code-reviewer\" status=\"completed\" duration=\"3m24s\">\n\n<output>\n## Code Review Summary\nSpecification mode, repair pass (r26). Candidate `snapshot-recovery-spec-r26`@r26. Read-only; no tests run; SHA-256 not recomputed (identity accepted from registry/state). **Files Reviewed:** spec + 3 evidence/auth artifacts + canonical state. **Issues:** 3 (MEDIUM 1, LOW 2).\n\n### Issues\n- **[MEDIUM][HIGH] CR26-1 — residual false no-change claim; reopens CR25-2.** `spec.md:228`. Confidence HIGH. §9.8 still opens \"Envelope changes: none\" while `env-1.allowedTaskIds` gained T4 at r25 (`:188`) and the same sentence discloses it. §5 `:111` is correctly restated, so CR25-2 is only partly closed and §9.8 contradicts §6.1. Fix: \"Envelope: no write-path change — `allowedTaskIds` gained T4 at r25 by owner authorization; the 14-file write set is unchanged.\"\n- **[LOW][HIGH] CR26-2 — decision-ledger amendment history stale.** `spec.md:56`, `:83`. Confidence HIGH. D12's body carries \"(r26, CR25-5: ... final target's CLEANED PATH recorded as a chain-entry path)\" but the `[AUTO-DECISION]` ledger ends at \"amended this round (r25...)\" and D12's header stops at r25; the change log records it (`:252`), the ledger does not. Fix: add \"amended r26 (D12 — final target's cleaned path as a chain-entry path, CR25-5)\" at `:56` and \"amended r26 — CR25-5\" at `:83`.\n- **[LOW][MEDIUM] CR26-3 — \"(m-iii)\" over-attribution.** `spec.md:83` (also `:69`, `:8`). Confidence MEDIUM. The clause says the added path lets \"ordinary (iii)/(m-iii)\" match a moved regular final target, but (m-ii) requires a loop/stat-error chain, which has no existing regular final target; the addition is operative only for ordinary (iii) (AC1-10(b-xB2)/(b-xB3)). Fix: scope to \"ordinary (iii)\"; (m-iii) still matches moved link entries.\n\n### Closure evidence\nCR25-1 closed (`:8` r24 record explicitly scoped; r26 change list self-consistent; r25 changes in the r24→r25 log `:258`). CR25-2 partial (`:111` fixed; `:228` body fixed, headline survives). CR25-3 closed (`:137`/`:156`/`:166`; state assigns AC1-10 to T2, `execution-state.json:481-488`). CR25-4 closed (`:90` \"after T3\"; only \"after T2\" is the non-normative quotation `:251`). CR25-5 closed (`:83`/`:69` record the final target's cleaned path; `:122` oracles align; CR26-3 is wording only). CR25-6 closed (`:5`/`:8`/`:258` scope r16 to authoring; state is r26). CR25-7 closed (`:8`/`:30`/`:135`/`:260` cite the seed's `ownerAuthorization` and label the artifact a proposal; verified).\n\n### Regressions\nNo R/AC/T id added/removed/renamed; §6.1 is exactly the same 14 files (`:189`, matches §6 Expected files); section order unchanged; std-lib only (`go.mod` unchanged; `syscall.Mkfifo`/`os.Link`); no D1–D12/AC contradiction beyond CR26-2/3; no review/approval/test claim (`:6`, `:8`, `:226`, `:256`); historical rounds preserved and scoped.\n\n### Positive Observations\nOwnership matches canonical state (AC1-10 `ownerTaskIds: [\"T2\"]`); CR25-5 is propagated consistently; authorization citations verified against the seed and the artifact's \"draft proposal, not authorized\" Status.\n\n## Verdict: REQUEST CHANGES\n</output>\n</task-result>\n",
+  "invocationId": "10bf52ac-2f5c-47dc-8bfc-edf4d00dfe38"
+}

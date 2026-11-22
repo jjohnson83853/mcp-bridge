@@ -1,0 +1,37 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "snapshot-recovery",
+  "revision": "r12",
+  "requests": [
+    {
+      "name": "SnapshotRecoverySpecR12CodeReview",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/snapshot-recovery/spec.md",
+          ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+        ]
+      },
+      "targetCandidateId": "snapshot-recovery-spec-r12",
+      "targetRevision": "r12"
+    },
+    {
+      "name": "SnapshotRecoverySpecR12Critic",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/snapshot-recovery/spec.md",
+          ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+        ]
+      },
+      "targetCandidateId": "snapshot-recovery-spec-r12",
+      "targetRevision": "r12"
+    }
+  ]
+}

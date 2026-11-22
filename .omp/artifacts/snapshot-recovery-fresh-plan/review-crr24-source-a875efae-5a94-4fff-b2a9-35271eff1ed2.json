@@ -1,0 +1,85 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r24",
+  "revision": "r24",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "382dac82a08289694048cdc201870086349cf5260e25e31335b8e60f00c79f1e"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR24CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "bd4757d345c73c3f29866f7442cc523914b6f5a5355e7f6c9209c7f30ceb3200",
+      "targetCandidateId": "snapshot-recovery-spec-r24",
+      "targetRevision": "r24",
+      "taskSha256": "2cb554abeae86b5913bcdd79ad4528b2e358ce7aa3ec5d1ace1923480931a30c",
+      "instructionsSha256": "038a709cc7a198da48935122de3e9334a6859625484c296caba83fe3e8535c63"
+    },
+    {
+      "name": "SnapshotRecoverySpecR24Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "99aafbcf6933ecae09eaf5e554e07a02a126bd5d760050fdc0acfed6c4db6958",
+      "targetCandidateId": "snapshot-recovery-spec-r24",
+      "targetRevision": "r24",
+      "taskSha256": "5a737f68f0ad90534f447d7ef6b7565bf56a22a4ba035c2a3d07963b7c65deb5",
+      "instructionsSha256": "038a709cc7a198da48935122de3e9334a6859625484c296caba83fe3e8535c63"
+    }
+  ],
+  "output": "## Code Review — SNAPREC-SPEC-r24 (specification mode; repair pass closing CR23 F1–F6)\n\n**Findings**\n\n- **[LOW][editorial]** `spec.md:228` (confidence HIGH) — §9.21's review-target text says \"zero `orphaned_label` records\"; that reason value does not exist (R6's closed set has `orphaned_link`), so the reviewer checklist names a non-existent token. Fix: replace `orphaned_label` with `orphaned_link`.\n- **[LOW][statement-precision]** `spec.md:122` AC1-10(b-dangle) (confidence MEDIUM) — the mutual no-fire on a pre-pass dangling chain cites only (m-iii); the deciding condition is (m-ii) (chain must be loop/stat-error class), the same omission CR23-F5 corrected in AC1-1(d). Fix: cite \"(m-ii)+(m-iii)\".\n\n**Closure evidence**\n\n- **F1 CLOSED.** §4(3), R2, R6, D12(m-iv), §8(2) now require the configured entry to still exist post-passes as a live `lstat` symlink and `Stat` `ErrNotExist`; every residual \"or is absent\" hit is historical narration or an explicitly rejected alternative (grep-verified). Absence is stated as a no-op (no fatal, no record, no mutation), and AC1-10(b-xA2) now pins exactly two `Recovery` entries with (iii) passing and (iv) failing — no third reconciliation, no `ENOENT` fatal.\n- **F2 CLOSED.** D12 applies the same moved-entry guard to the mutual class and states the counting rule (≤1 reconciliation/run; partner alone; ZERO when both configured entries moved). AC2-9's both-moved variant asserts two `read_error` records, zero `orphaned_link`, zero `startup_failed`, fresh publishes, and second-run no-op; R3 fatal discipline for reconciliation failures is unchanged and unreachable there.\n- **F3 CLOSED.** AC2-9's orphaned-link and mutual subcases add `Readlink(<quarantine>) == \"snapshot.json\"` (no target read), and the seeded mutual-class retention variant asserts exactly one eviction (`now-5s`) and 5 surviving prompts-family files — both are executable fixtures with explicit FAILS clauses.\n- **F4 CLOSED.** D11 pins the key context to the containing directory's own `lstat` identity (device+inode), path spelling as tie-break/fallback, and names the path-string alias misrouting as harmless/unoracled; C4's (b-hardalias)/(b-hardalias2)/(b-hardcycle) reasoning remains coherent under the identity key.\n- **F5 CLOSED** (AC1-1(d) cites (m-ii)+(m-iii)). **F6 CLOSED** — no `non-mutal` remains.\n\n**Regression checks:** ids R1–R9, D1–D12, AC1-1..AC1-10, AC2-1..AC2-9, T1–T3 unchanged; §6.1 union is the same 14 files (4+6+4, no new write path); std-lib only (`os.Lstat`/`Readlink`/`Link`, `syscall.Mkfifo`; `go.mod` go 1.25.0, no new require); spot-verified anchors `store.go:104/112/124/149/295`, `wiring.go:486`, `startup_failure.go:26-33`, `envelope.go:103/136/244/575`, `log.go:228`, `snapshot.go:111`, `logging-contract.md:607/609/614`; mutual-link direction confirmed in `round-12-seed.json` and no confirmation claimed beyond it (§8(2), §9.11 keep retention-unlink and the non-mutual carve-out OPEN); no review, approval, or test-execution claim.\n\n**Review limits:** no hashing tool — supplied SHA-256 identity unverified (same capability gap as C2). No tests run (no implementation). Supplied `spec-lint-r24.out` shows the same 20 pre-existing mirror-drift/shared-oracle findings as r23 — no new lint finding.\n\n## Verdict: APPROVE\n\n### Recommendation\nAPPROVE\n",
+  "invocationId": "a875efae-5a94-4fff-b2a9-35271eff1ed2"
+}

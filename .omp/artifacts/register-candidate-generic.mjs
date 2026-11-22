@@ -1,0 +1,32 @@
+import { readFileSync, writeFileSync, renameSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import path from 'node:path';
+import { withReviewRegistryLock } from '/home/opencode/.omp/agent/workflow-policy/execution-review-sequence.mjs';
+import { canonicalJson, sha } from '/home/opencode/.omp/agent/workflow-policy/execution-contract-binding.mjs';
+
+const [rev, crTaskPath, ctTaskPath, intentCR, intentCT, solutionSpace] = process.argv.slice(2);
+if (!/^r\d+$/.test(rev ?? '')) throw new Error('rev');
+const root = '/home/opencode/projects/default/mcp-bridge';
+const statePath = path.join(root, '.omp/plans/execution-state.json');
+const registryPath = path.join(root, '.omp/plans/review-sequence.json');
+const candidateId = 'snapshot-recovery-spec-' + rev;
+const specPath = '.scratch/snapshot-recovery/spec.md';
+const ticketPath = '.scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md';
+const inputPaths = [specPath, ticketPath, 'docs/logging-contract.md', 'go.mod', 'internal/observe/envelope.go', 'internal/observe/log.go', 'internal/service/loop.go', 'internal/storage/store.go', 'internal/storage/snapshot_v1.go', 'cmd/mcp-bridge/serve.go', 'cmd/mcp-bridge/startup_failure.go', 'cmd/mcp-bridge/wiring.go'];
+const inputs = inputPaths.map(rel => ({ path: rel, sha256: sha(readFileSync(path.join(root, rel))) }));
+const hashLines = inputs.map(i => '- ' + i.path + ' sha256 ' + i.sha256).join('\n');
+const sharedInstructions = 'Candidate: ' + candidateId + ' @ ' + rev + '. Author: planner. Review mode: specification only; no implementation exists.\n\nCandidate-bound input digests (registry inputs; compare the bytes you read against these):\n' + hashLines + '\n\nRead the ' + rev + ' specification at ' + specPath + ' (four specdd regions plus 6.1 ENVELOPE), the ticket mirror, docs/logging-contract.md and the referenced code anchors. Prior evidence: the previous round raw review files under .omp/artifacts/snapshot-recovery-fresh-plan/. Treat them as evidence, not reviewed bytes. Note the ticket mirror intentionally carries stale text (spec section 9.7); it is not the candidate contract.\n\nRead-only independent review. Do not modify files, implement, dispatch or claim approval. This task text is authoritative over the dispatch wrapper.';
+const effects = { kind: 'read', paths: [specPath, ticketPath] };
+const request = (name, taskId, agent) => ({ name, taskId, agent, effects, targetCandidateId: candidateId, targetRevision: rev });
+const crTask = readFileSync(path.join(root, crTaskPath), 'utf8').trimEnd();
+const ctTask = readFileSync(path.join(root, ctTaskPath), 'utf8').trimEnd();
+const makeSeed = (intent, req, task) => ({ intent, instructions: sharedInstructions, workflowDispatch: { statePath, schemaVersion: 1, projectRoot: root, feature: 'snapshot-recovery', revision: rev, requests: [req] }, tasks: [{ name: req.name, agent: req.agent, task, solutionSpace }] });
+const crReq = request('SnapshotRecoverySpec' + rev.toUpperCase() + 'CodeReview', 'CR1', 'code-reviewer');
+const ctReq = request('SnapshotRecoverySpec' + rev.toUpperCase() + 'Critic', 'CT1', 'critic');
+const crSeed = makeSeed(intentCR, crReq, crTask);
+const ctSeed = makeSeed(intentCT, ctReq, ctTask);
+const descriptor = seed => { const req = seed.workflowDispatch.requests[0]; return { name: req.name, agent: req.agent, reviewerId: req.agent, taskId: req.taskId, requestSha256: sha(canonicalJson(req)), targetCandidateId: req.targetCandidateId, targetRevision: req.targetRevision, taskSha256: sha(seed.tasks[0].task), instructionsSha256: sha(seed.instructions) }; };
+const candidate = { id: candidateId, revision: rev, authorIds: ['planner'], maxRounds: 8, inputs, targetRevision: rev, dispatches: [descriptor(crSeed), descriptor(ctSeed)] };
+const result = withReviewRegistryLock(registryPath, {}, { readFileSync, writeFileSync, renameSync }, () => { const registry = JSON.parse(readFileSync(registryPath, 'utf8')); if (registry.schemaVersion !== 1 || !Array.isArray(registry.candidates)) throw new Error('registry shape'); const existing = registry.candidates.find(item => item.id === candidateId); if (existing) { const rounds = (registry.reviewHistory ?? []).filter(r => r.candidateId === candidateId); if (existing.codeReview || rounds.length) throw new Error('already reviewed'); } registry.candidates = registry.candidates.filter(item => item.id !== candidateId).concat([candidate]); const temp = registryPath + '.' + randomUUID() + '.tmp'; writeFileSync(temp, JSON.stringify(registry, null, 2) + '\n'); renameSync(temp, registryPath); return { ok: true, candidate: candidateId, inputs: inputs.length }; });
+for (const [name, seed] of [['cr', crSeed], ['ct', ctSeed]]) { writeFileSync(path.join(root, '.omp/artifacts/snapshot-recovery-fresh-plan/review-seed-' + name + '-' + rev + '.json'), JSON.stringify(seed, null, 2) + '\n'); writeFileSync(path.join(root, '.omp/artifacts/snapshot-recovery-fresh-plan/review-request-' + name + '-' + rev + '.json'), JSON.stringify(seed.workflowDispatch, null, 2) + '\n'); }
+console.log(JSON.stringify({ result, specSha: sha(readFileSync(path.join(root, specPath))), cr: candidate.dispatches[0], ct: candidate.dispatches[1] }, null, 2));

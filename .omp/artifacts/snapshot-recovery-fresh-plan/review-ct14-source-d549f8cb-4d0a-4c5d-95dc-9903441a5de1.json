@@ -1,0 +1,85 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "snapshot-recovery-spec-r15",
+  "revision": "r15",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "b859f4f2a1a2f1b94964cd7dd3c7e09d6be8a9e602afa213a2eb93a3dce62d0a"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR15CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "c81c36521f11faeaf97ca9584b71de500811198a17111ad834a7b4c5c11dd90b",
+      "targetCandidateId": "snapshot-recovery-spec-r15",
+      "targetRevision": "r15",
+      "taskSha256": "68f75e6323b5048af5d4e9e130e583dc3de3e17f80a9c4d075d8c569f119e8e8",
+      "instructionsSha256": "042288e38373cbd4c73bf3840a51077ddab8f8f89916e1e9aa5c7a25449e0186"
+    },
+    {
+      "name": "SnapshotRecoverySpecR15Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "9bd06b2716cf20d2ed52b9874e2257e6ead15d77388085bcd57509f0f264c35c",
+      "targetCandidateId": "snapshot-recovery-spec-r15",
+      "targetRevision": "r15",
+      "taskSha256": "371b3d392e6df7aa9242b978e9f474eed622e1c6dee22ac5cd054c51b42ad381",
+      "instructionsSha256": "042288e38373cbd4c73bf3840a51077ddab8f8f89916e1e9aa5c7a25449e0186"
+    }
+  ],
+  "output": "Spec ID: SNAPREC-SPEC-r15\nRevision: r15\nCandidate: snapshot-recovery-spec-r15@r15\nFindings by ID: C6\n\n**C6 — HIGH / statement-contradiction / confidence HIGH**\n\nAnchors: `.scratch/snapshot-recovery/spec.md:16,19,77,116` — R2, R5, quarantine/retention algorithm, AC1-10.\n\nR2 promises preservation of a moved symlink’s target; R5 protects only this run’s quarantine **name**, not its backing bytes.\n\nConcrete counterexample:\n- Seed five conforming snapshot quarantines, with corrupt regular file `snapshot.corrupt-<oldest>.json` oldest.\n- Make `snapshot.json` a relative symlink to that file.\n- Recovery moves the link to this run’s quarantine name.\n- Retention then unlinks the oldest pre-existing file—the link’s target.\n\nThe specified successful pass returns with a dangling quarantine link and deletes the rejected bytes. No concurrent writer or injected failure is needed. This contradicts R2 and AC1-10’s target-preservation/read-through oracle.\n\n**Minimal amendment:** reconcile retention with symlink-backed evidence preservation: protect the backing evidence, explicitly resolve the resulting bound/order semantics, and add this fixture under existing AC1-3/AC1-10 with target-byte and quarantine-readability assertions. Do not weaken preservation merely to satisfy retention tests. Request coordinator escalation to configured non-OpenAI `spec_critic_escalated` for this irreversible-deletion interaction.\n\nThis is a new symlink/retention interaction, not C5 reopening. Reason for the earlier miss is unknown.\n\n**Verified r14 closures**\n- C5’s original failure-path contradiction is closed: R5/D10/§4/AC1-5/AC1-6 specify finite attempts, first-failure termination, zero-attempt listing failure, permitted excess retention, exact failure counts and surviving bytes.\n- Corrected `validErrorInfo` anchor matches `internal/observe/envelope.go:136-141`.\n- AC1-6 now pins `resource.path`; AC1-3 specifies the timestamp tie-break; R2 explicitly includes stat-error entries.\n- Not all six advisory closures are complete: §9.7 still describes an r14 ticket, but the supplied mirror is r15; T1 still claims AC1-6 wholesale despite T2/T3’s split. These match CR15-01/02 and remain advisory.\n\n**Coverage and limits**\nR1–R9 have AC coverage; task write sets match the 14-file envelope. Reservation, fatal ordering, warning counts, classifier compatibility and startup/refresher publication were assessed against referenced source. §7 documents the collector boundary and unalerted-event consequence, consistent with `docs/logging-contract.md:580-614`.\n\nC6 leaves T1 and dependent T3 technically unresolved. §9’s owner checkpoint remains required. Repairs require fresh candidate-bound reviews; historical observations remain unchanged.\n\nRead-only specification assessment: no implementation, commands, runtime results, hash recomputation or execution approval claimed. Registry identity relies on supplied bindings.\n\n### Verdict\nREVISE\n",
+  "invocationId": "d549f8cb-4d0a-4c5d-95dc-9903441a5de1"
+}

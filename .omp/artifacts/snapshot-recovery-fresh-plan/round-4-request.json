@@ -1,0 +1,18 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "snapshot-recovery",
+  "revision": "r15",
+  "requests": [
+    {
+      "name": "SnapshotRecoverySpecRound4",
+      "taskId": "PLAN1",
+      "agent": "planner",
+      "effects": {
+        "kind": "read",
+        "paths": []
+      }
+    }
+  ]
+}

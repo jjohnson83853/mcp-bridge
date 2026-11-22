@@ -1,0 +1,12 @@
+{
+  "i": "Critic snapshot-recovery specification r14",
+  "context": "{\"instructions\":\"Candidate: snapshot-recovery-spec-r15 @ r15. Author: planner. Review mode: specification only; no implementation exists.\\n\\nReviewed inputs:\\n- .scratch/snapshot-recovery/spec.md\\n- .scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md\\n- docs/logging-contract.md\\n- go.mod\\n- internal/observe/envelope.go\\n- internal/observe/log.go\\n- internal/service/loop.go\\n- internal/storage/store.go\\n- internal/storage/snapshot_v1.go\\n- cmd/mcp-bridge/serve.go\\n- cmd/mcp-bridge/startup_failure.go\\n- cmd/mcp-bridge/wiring.go\\n\\nRead the r15 specification at .scratch/snapshot-recovery/spec.md (four specdd regions plus 6.1 ENVELOPE), the ticket mirror, docs/logging-contract.md and the referenced code anchors. The candidate boundary is the exact hashed bytes in the registry. Prior evidence: .omp/artifacts/snapshot-recovery-fresh-plan/cr-r14-raw.md (APPROVE with 6 LOW; prior critic REVISE C5). Treat it as evidence, not reviewed bytes.\\n\\nRead-only independent review. Do not modify files, implement, dispatch or claim approval. This task text is authoritative over the dispatch wrapper.\",\"workflowDispatch\":{\"statePath\":\"/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json\",\"schemaVersion\":1,\"projectRoot\":\"/home/opencode/projects/default/mcp-bridge\",\"feature\":\"snapshot-recovery\",\"revision\":\"r15\",\"requests\":[{\"name\":\"SnapshotRecoverySpecR15Critic\",\"taskId\":\"CT1\",\"agent\":\"critic\",\"effects\":{\"kind\":\"read\",\"paths\":[\".scratch/snapshot-recovery/spec.md\",\".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md\"]},\"targetCandidateId\":\"snapshot-recovery-spec-r15\",\"targetRevision\":\"r15\"}]}}",
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecR15Critic",
+      "agent": "critic",
+      "task": "# Target\nApply the SpecDD pass policy to snapshot-recovery candidate snapshot-recovery-spec-r15@r15 (specification only).\n\n# Required checks\n- Verify the r14 findings are closed with evidence-backed text, not assertions.\n- Judge AC traceability, envelope containment, retention/atomicity invariants, warning counts and section 9 handoff.\n- Blocking findings need class, severity, confidence, anchor and minimal fix. Do not invent runs or approvals.\n\n# Output contract\nEnd with exactly '### Verdict' then PASS, REVISE or BLOCKED and nothing after it.",
+      "solutionSpace": "one verdict: pass policy on a fixed id set"
+    }
+  ]
+}

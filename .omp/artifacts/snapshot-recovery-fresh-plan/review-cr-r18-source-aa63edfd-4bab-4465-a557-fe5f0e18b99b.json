@@ -1,0 +1,85 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r18",
+  "revision": "r18",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "c848040e457decf666ae14b7290dbc0bb886cab84d4426f85865ddf7278a47b8"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR18CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "59f517e54128922e311413e9b2641e0874dcdd375d7fc771393cb6a2bfcda1c0",
+      "targetCandidateId": "snapshot-recovery-spec-r18",
+      "targetRevision": "r18",
+      "taskSha256": "c285a62f8a321124d7198af5f00f6ba5ebe84453f93adcdaac291f851be14e4d",
+      "instructionsSha256": "12c52f1cf374464ccf68d7a76e30afc175e6f5af12ac6b18468b6270637fa3a2"
+    },
+    {
+      "name": "SnapshotRecoverySpecR18Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "e31e4e5fdea0091f70a967c409049a818a47868d3869599d2ed1bb1925e9f129",
+      "targetCandidateId": "snapshot-recovery-spec-r18",
+      "targetRevision": "r18",
+      "taskSha256": "17a5d767e691eb7e991e55a7e99747a6e8a45f0918123fa31208b5d5a431c3ef",
+      "instructionsSha256": "12c52f1cf374464ccf68d7a76e30afc175e6f5af12ac6b18468b6270637fa3a2"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** specification; candidate `snapshot-recovery-spec-r18@r18`; no implementation.\n**Files Reviewed:** 6 source anchors + spec/ticket/docs. **Issues:** 6 (2 MEDIUM, 4 LOW).\n**Limits:** registry SHA-256 comparison not executable (no hash/shell); no tests exist or were run; collector delivery out of scope.\n\n### Closure of r17 (independently verified)\n- **C1 CLOSED** for the recorded counterexample. R2:16, R5:19, D10:64, §4:78, §8:197 populate one run-level set from both configured paths before pass 1. AC1-10(b-chain):117 realizes q1..q5 with q1→q5, `snapshot.json`→q1: q1(lstat)+q5(Stat) protected, q4 unlinked, survivors = this run's moved link + q1,q2,q3,q5 = 5, q5 bytes intact, read-through moved→q1→q5; the moved entry is the link itself (no canonicalization). (b-chain2) pins s1,s2,s5 and evicts s4.\n- **C2 CLOSED.** No cap in R5/D10/§4(3)/§8(2); nine-file backlog = exactly five deletions, four pre-existing survivors + this run's file; bound on survivors only. All five agree.\n- **Alias identity CLOSED:** dev+inode on both sides with lexical fallback (R2/R5/D10/§4/§8); AC1-3 alias subcase. **Move-through** named in R2/R5/§4/§8, owning family reports only, R2 narrowed to \"never unlinked … by retention\".\n- **Regression OK:** R1–R9/AC1-1..10/AC2-1..9/T1–T3 unchanged; §6.1 = 14 files = T1(4)+T2(6)+T3(4); `go.mod` unchanged (std-lib `os.SameFile`/`Mkfifo`); Load/Save/LoadPrompts/SavePrompts/ensureReplaceable preserved (R1/D7/AC1-7); C6 same-family retained (AC1-3, AC1-10 b-prot).\n- Dangling and alias modes terminate harmlessly; ELOOP/cycle does not (F1); non-conforming/directory targets are vacuous but unoracled (L4).\n\n### Findings\n**F1 [MEDIUM][statement-contradiction]** Stat-failing protected links cannot match. R5:19, §4:78 store intermediate links by `lstat` identity, but candidacy compares the candidate's `Stat` identity, falling back lexically only \"when its `Stat` fails\"; a cycle entry's `Stat` fails `ELOOP` and no fallback path was recorded for it, so c1/c2 are unprotected — contradicting R5's \"visited entries still protected\" and AC1-10(b-eloop):117 (\"skips BOTH cycle entries as protected\"). Confidence HIGH (text); consequence is dangling/evidence loss, not rejected bytes. The oracle is insensitive (one eviction always lands on c5). Fix: record every visited link entry's cleaned path as a fallback (or match by entry identity) and re-seed the cycle as the oldest entries.\n\n**F2 [MEDIUM][correctness, residual C1-class deletion]** Relative targets are joined \"onto the state directory (the entry's containing directory)\" (R5:19, §4:78). That held for r17's single hop but not for intermediate links. `/s/snapshot.json`→`sub/l1`; `/s/sub/l1`→`../snapshot.corrupt-q5.json`: correct target is `/s/snapshot.corrupt-q5.json`, but the stated join yields an out-of-directory path → vacuous protection → q5 evicted, moved link dangles, only rejected bytes lost. Confidence HIGH (text); reachability needs a subdirectory link, which §4(3) explicitly admits into the walk. Fix: join on `filepath.Dir` of the link just read. Repair-induced.\n\n**L1 [LOW][coverage]** Candidate `Stat`-identity matching over-protects any conforming symlink resolving into a protected target, so the success path can exceed `QuarantineKeep`, contradicting R5:19's ordinary-case bound. Fix: match by entry identity.\n\n**L2 [LOW][coverage]** The configured-path move-through (R2:16, §4:78, §8:197) has no AC oracle; b-xA/b-xB use conforming targets.\n\n**L3 [LOW][completeness]** The >4-protected carve-out is stated, bounded and consistent across R5/D10/§4/§8, but no AC exercises it; in the mixed case exhaustion deletes every unprotected pre-existing file though the bound cannot be restored — §8(2) and the §9.11:213 owner flag omit that breadth.\n\n**L4 [LOW][coverage]** \"Non-conforming final target\" and \"directory final target\" modes have no oracle (mechanically vacuous).\n\n### Positive\nThe vacuous-edge table, explicit survivor/deletion arithmetic, F5 seeding, and same-pass ordering assertions are coherent and testable.\n\n### Recommendation\nREQUEST CHANGES\n",
+  "invocationId": "aa63edfd-4bab-4465-a557-fe5f0e18b99b"
+}

@@ -1,0 +1,85 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r25",
+  "revision": "r25",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "bfb95c6f45bdcfcbe4b997c6826e1d89d5b6394057c4ffed32841c41f13e5ba1"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR25CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "85a5d4ae6ba201d0ed2ef2534c631a9b415d02c25d5d415c4085ae1af9d1a949",
+      "targetCandidateId": "snapshot-recovery-spec-r25",
+      "targetRevision": "r25",
+      "taskSha256": "33572f0475038dfbd933a4acda4a91030b893e906f209f526ad21fcad5f7fc3c",
+      "instructionsSha256": "472fb37ef428dbe700f2cfb8c4874adaaea22d63d2ca7a57b825d0cd1642505a"
+    },
+    {
+      "name": "SnapshotRecoverySpecR25Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "3e699eac5c2dbb898af57c12212242c2264c15114c434e9fff59e6050c312d40",
+      "targetCandidateId": "snapshot-recovery-spec-r25",
+      "targetRevision": "r25",
+      "taskSha256": "f1668d4bd305cd45770e9c3af990131e7b0a773d2e2f0736ee63982bab3f2e40",
+      "instructionsSha256": "472fb37ef428dbe700f2cfb8c4874adaaea22d63d2ca7a57b825d0cd1642505a"
+    }
+  ],
+  "output": "<task-result id=\"SnapshotRecoverySpecR25CodeReview-2\" agent=\"code-reviewer\" status=\"completed\" duration=\"3m25s\">\n\n<output>\nSpecification mode, initial pass. Candidate `snapshot-recovery-spec-r25`@r25; read-only, no tests run; SHA-256 not recomputable with this toolset (identity accepted from the `bfb95c…` registry/state binding).\n\n- **[MEDIUM][HIGH]** `.scratch/snapshot-recovery/spec.md:8` — The r25 Round bullet absorbed the r24 text (\"…advisory only (§9). with **no change to any R/AC/T id … or the task decomposition**: F1…F6\"), contradicting its own item (1) (decomposition changed, T4 added) and leaving prior-round findings unscoped. Fix: remove/split the merged r24 paragraph.\n- **[MEDIUM][HIGH]** `spec.md:228` (also `:111`) — §9.8's \"no R/AC/T id added, removed, or renamed\" and §5's \"(no envelope change)\" are false: §6.1 adds T4 to `allowedTaskIds`; §9.22 scopes only 9.9–9.21, so 9.8 is live. Fix: \"no R/AC id changed; T4 added by owner authorization; the 14-file write set is unchanged\".\n- **[MEDIUM][HIGH]** `spec.md:137`, `:156`, `:166` — the mapping claims each R/AC id is owned by exactly one task, but AC1-10 is assigned to T2 (base + subcases) and again to T3 ((b-xA)…(b-dangle)). The subcase partition is complete and non-overlapping; the exactly-one-id claim is not. Fix: give AC1-10 one owner and cross-reference T3's subcase oracles (or restate ownership per subcase).\n- **[LOW][HIGH]** `spec.md:90` — \"`runtimeErrorInfo(\"state_directory\")` returns after T2\" is a stale pre-r25 task id (envelope vocabulary is T3; cf. §3:35, §7:207), contradicting the change log's claim that live stale task references were re-pointed. Fix: s/after T2/after T3/.\n- **[LOW][MEDIUM]** `spec.md:69`, `:83` — the pre-pass record pins link entries' identity+path and the final target's identity only, while ordinary (iii)/(m-iii) path matching must match a moved regular final target (AC1-10(b-xB2)/(b-xB3)); a literal reading leaves (iii) undecidable there. Fix: record the final target's cleaned path as a chain-entry path.\n- **[LOW][HIGH]** `spec.md:4`, `:8` — \"canonical execution state remains r16\" is contradicted by observed `.omp/plans/execution-state.json` (feature snapshot-recovery, revision r25, spec sha256 `bfb95c…`); true at dispatch, stale after registration. Fix: scope it to the authoring dispatch.\n- **[LOW][HIGH]** `spec.md:8`, `:135`, `:248` vs `.omp/artifacts/snapshot-recovery-ticket-decomposition-r25.md:3` — authorization is said to be \"recorded in\" an artifact whose Status is \"draft proposal, not authorized\" (its mapping also omits AC1-5..AC1-9 and sets `resource.path`=quarantine path, contrary to D3/AC2-2); the owner record is `round-15-seed.json.ownerAuthorization`. Fix: cite the seed; treat the artifact as a proposal.\n\n**Checks passed:** CT24-C5 re-key consistent (R2/§4 contract/§4(3)/alternatives/§8(2)/T3/§7/§9) with D10/D11 untouched (D12 only amended); AC2-9 hard-linked variant executable-in-spec (layout, `Readlink`, `SavePrompts` acceptance, restart no-op, 1/0/0 counting); CT24-C8 applied, §9.6 intact; CR24 LOWs applied with the old token retained only as quotation; §6.1 union exactly the same 14 files; std-lib only; no R/AC id renumbering; no review/approval/test claim. C4 and CR23 F1–F6 closures intact.\n\n## Verdict: REQUEST CHANGES\n</output>\n</task-result>\n",
+  "invocationId": "891acc00-2e0d-4828-a9a6-0966dca45018"
+}

@@ -1,0 +1,85 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r16",
+  "revision": "r16",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "379fba05cf22eece653142783b0a3e8b262b0d4648cb6359037acdf85240a8ce"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR16CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "095d856f0738a3f0f90e214819f1b2c1eeca9e7c4adf351c7eb9adfec5388f46",
+      "targetCandidateId": "snapshot-recovery-spec-r16",
+      "targetRevision": "r16",
+      "taskSha256": "9a7aed1a89877a9e17c28dd17c54f343cb15e39507bdfd71ad19d740fb87075d",
+      "instructionsSha256": "6f3e6f35b01bd53a54ba3c7f1fc898d29968ff3023c074e3a06398321701ad60"
+    },
+    {
+      "name": "SnapshotRecoverySpecR16Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "0ab6d5c5767890641580f097b11875c59fec351535164e6fe1bd4e57e96a0d96",
+      "targetCandidateId": "snapshot-recovery-spec-r16",
+      "targetRevision": "r16",
+      "taskSha256": "e6a42ef26da2f7fa02dae2210541a276a86617bf3a9aefdb1e915b6e7fcd8486",
+      "instructionsSha256": "6f3e6f35b01bd53a54ba3c7f1fc898d29968ff3023c074e3a06398321701ad60"
+    }
+  ],
+  "output": "## Code Review Summary\nMode: specification; candidate `snapshot-recovery-spec-r16@r16`. Reviewed bytes: `.scratch/snapshot-recovery/spec.md` as read this session. No registry digest was supplied → hash identity unverified (limit). Issues: 1 HIGH, 1 MEDIUM, 3 LOW.\n\n### Closure\n- **C6 same-family: CLOSED** — R2:16 / R5:19 / D10:64 / §4:78 / §8:198 / AC1-3:110 / AC1-10:117 agree: resolved target excluded, oldest-first skips to the next-oldest unprotected, bound stays 5 (protected file holds a slot), target bytes + read-through + survivor counts pinned (`now-4s` unlinked). Cross-family scope gap → F1.\n- **CR15-01 CLOSED**: ticket:91 heading/body r15 (tie-break, C5/D10 pins, `resource.path`), ticket:7 r7 header, no sha256; §9.7:211 lag consistent.\n- **CR15-02 CLOSED**: T1:139 (AC1-1..5,7..10; AC1-6 storage half; AC2-8), T3:159 (AC1-6 cmd half; AC2-1..7,9), T2:151 (AC1-6 envelope half); disjoint files; §6.1:171 14 = 4+6+4.\n- **CR15-03 CLOSED**: wiring.go:486 case / :492 remediation, log.go:228 func / :275 default; consistent at every citation; r15 stale values appear only as history.\n- **CR15-04 CLOSED**: AC2-2:119 four-field shape; T2:148 RED pins both `ErrorInfo` shapes; envelope.go:136-141 exact equality.\n- **CR15-05 CLOSED**: AC1-3:110, AC1-9:116(a2): 6 seeds → two evictions, total 5, third unlink = FAIL.\n- **Regression OK**: all R/AC/T ids intact; no new dependency; Load/Save/LoadPrompts/SavePrompts/ensureReplaceable unchanged.\n\n### Issues\n**[HIGH][irreversible-deletion] Cross-family symlink target is unprotected**\nspec.md:16,19,78,198 | Confidence HIGH\nR2/§8 promise any symlinked target is never touched; R5/§4 protect only inside the moved family's pass and assume a foreign target \"was never a candidate\". (A) `snapshot.json`→pre-existing `prompts.corrupt-X`, both families corrupt: the snapshot pass protects nothing (foreign); the prompts pass evicts X oldest-first → `snapshot.corrupt-<now>.json` dangles and the rejected bytes are gone on the success path. (B) `prompts.json`→`snapshot.corrupt-X` beyond the newest four: the snapshot pass (runs first) unlinks X before the prompts family is examined → link dangles, `Stat` ⇒ `ErrNotExist` ⇒ silent no-recovery. AC1-3/AC1-8/AC1-10 pin same-family targets only.\nFix: run-level protected-target set consulted by both passes (including the unmoved link when the other family runs first); add a cross-family AC subcase.\n\n**[MEDIUM][statement-contradiction] §4(3) candidate set contradicts R5/AC1-3**\nspec.md:78 vs 19,110 | Confidence HIGH\nCandidates are \"pre-existing files beyond the 4 newest slots\", then minus the protected file: with 5 seeds and the protected oldest (AC1-3's own layout) the set is empty → no eviction → 6 retained, contradicting R5 (\"protected file occupies one of the four slots\") and AC1-3 (`now-4s` unlinked, total 5). The same sentence's \"until exactly four pre-existing remain\" and §8:198 state the correct rule.\nFix: define candidates as all unprotected pre-existing files, oldest-first, attempted until four pre-existing survive.\n\n### Low advisories\n- [LOW] `wiring.go:486-494`: `:494` is the next `case`; the block is 486-493 (`:486`/`:492` exact).\n- [LOW] §9.7 omits ticket:11's second stale reference `SNAPREC-SPEC-r3` (heading r15, header r7); mirror is non-contractual.\n- [LOW] AC1-3 symlink subcase and AC1-10(b-prot) never state the seeded target must be rejected; \"exactly one Recovery\" only implies it.\n\n### Limits\nNo digest supplied; specification mode, no implementation/tests exist and none were run; §9.12's escalated critic and irreversible-deletion owner checkpoint remain open (admission is separate).\n\n### Recommendation\nREQUEST CHANGES\n",
+  "invocationId": "5ad25208-da23-430c-9394-f25b6fab09ae"
+}

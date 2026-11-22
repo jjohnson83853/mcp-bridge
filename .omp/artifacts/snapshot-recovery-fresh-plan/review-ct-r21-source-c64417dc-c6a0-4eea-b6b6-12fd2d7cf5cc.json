@@ -1,0 +1,85 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "snapshot-recovery-spec-r21",
+  "revision": "r21",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "b0bd9f3dbd37aff52652f5b0f7efe3acf2b6e073c6bffb45bd05ee53120a152f"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR21CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "b144a24febf755e999fc55bf7278e5d891160d7f680d046d51fa9858a958ba37",
+      "targetCandidateId": "snapshot-recovery-spec-r21",
+      "targetRevision": "r21",
+      "taskSha256": "ad0d5134bbfed923713803a8ba04041b222a1a5b0cca92323f0d94c491d6b532",
+      "instructionsSha256": "f192e533cfc2d68c3a884f8cd178cd551d74a6eb54dc9a51438eaf846ee2f9cf"
+    },
+    {
+      "name": "SnapshotRecoverySpecR21Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "1696b9193e5af0b99991dc09bc4cc997015409f04d1b1e01959a6909cc6de7c9",
+      "targetCandidateId": "snapshot-recovery-spec-r21",
+      "targetRevision": "r21",
+      "taskSha256": "96e09a50706f8c33153145e269bf75a7c4a693c10ab3fc2c5830cc8233b1b341",
+      "instructionsSha256": "f192e533cfc2d68c3a884f8cd178cd551d74a6eb54dc9a51438eaf846ee2f9cf"
+    }
+  ],
+  "output": "Spec ID: snapshot-recovery-spec-r21\nRevision: r21\nFindings by ID: C1, C2, C3\n\n**C1 — MAJOR; resolver/protection correctness; HIGH confidence.**\nAnchor: `.scratch/snapshot-recovery/spec.md:68,83,122` (D11, §4(3), AC1-10). The unconditional “identity revisit ⇒ cycle” rule rejects finite paths that traverse the same directory symlink twice.\n\nCounterexample: seed five conforming snapshot quarantines, oldest `q5` containing rejected bytes; create directory `deep`, link `alias → deep`, and `snapshot.json → alias/../alias/../q5`. Filesystem resolution reaches `<state>/q5`. The specified pre-pass instead stops at the second `alias` identity, never protecting `q5`. Recovery moves the configured link, then retention deletes `q5`, destroying its backing evidence.\n\nThis is a **new C1-class instance**, not failure of the repaired parent-hop fixture; the earlier miss’s reason is unknown. Minimal amendment: distinguish cyclic resolution from finite repeated traversal using resolution state or correctly scoped expansion tracking, retaining the budget. Add an AC1-10 fixture asserting `q5` survives, `q4` is evicted, and quarantine read-through preserves bytes. T1’s complete-chain protection closure is not established.\n\n**C2 — BLOCKING evidence gap; candidate binding; HIGH confidence.**\nThe assignment requires comparing all twelve inputs against supplied SHA-256 digests. Read tools expose content but no computed digest; available-tool searches found no authorized local hashing/execution capability. Consequently, exact-byte identity remains unverified. Provide independently computed, candidate-bound digest evidence or a read-only hashing capability. This review cannot establish exact-input approval.\n\n**C3 — MINOR; statement precision; HIGH confidence.**\nAnchor: `spec.md:69`, D12’s assertion that every other non-quarantine-named final target fails condition (iii). A chain through the other configured symlink can lose that intermediate entry to recovery while ending at `keeper.json`; (iii) then passes. Amend to “fails (iii) when no other chain element moved.” Operative conditions need not change.\n\n**Verified coverage**\n- M1’s operative exclusion corrections work: configured targets qualify; b-xB2/b-xB3 satisfy detection; non-conforming retention classification remains separate.\n- L1 correctly cites (iv). L2 rejection is supported by `store.go:104–106`, independently confirmed with numbered grep.\n- A1/A2 fixtures are present; A3 wording and A4 fatal-list amendment are present. Budget boundary counting remains imprecise.\n- R→AC→T mapping, fixed IDs, 14-file union, no-new-dependency constraint, C6/CR15 protections, warning counts, ownership split and §9 mirror warning remain specified. §7 documents collection/alert exceptions and their consequences.\n\nBoth owner checkpoints remain **OPEN and unclaimed**. The unavailable non-OpenAI `spec_critic_escalated` reviewer remains an escalation limit, not a substitute verdict. No implementation, tests, mutations or execution permission claimed. Textual correctness requires C1 repair; exact-byte certification additionally lacks C2 evidence.\n\n### Verdict\nBLOCKED\n",
+  "invocationId": "c64417dc-c6a0-4eea-b6b6-12fd2d7cf5cc"
+}

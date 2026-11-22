@@ -1,0 +1,85 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r21",
+  "revision": "r21",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "b0bd9f3dbd37aff52652f5b0f7efe3acf2b6e073c6bffb45bd05ee53120a152f"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR21CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "b144a24febf755e999fc55bf7278e5d891160d7f680d046d51fa9858a958ba37",
+      "targetCandidateId": "snapshot-recovery-spec-r21",
+      "targetRevision": "r21",
+      "taskSha256": "ad0d5134bbfed923713803a8ba04041b222a1a5b0cca92323f0d94c491d6b532",
+      "instructionsSha256": "f192e533cfc2d68c3a884f8cd178cd551d74a6eb54dc9a51438eaf846ee2f9cf"
+    },
+    {
+      "name": "SnapshotRecoverySpecR21Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "1696b9193e5af0b99991dc09bc4cc997015409f04d1b1e01959a6909cc6de7c9",
+      "targetCandidateId": "snapshot-recovery-spec-r21",
+      "targetRevision": "r21",
+      "taskSha256": "96e09a50706f8c33153145e269bf75a7c4a693c10ab3fc2c5830cc8233b1b341",
+      "instructionsSha256": "f192e533cfc2d68c3a884f8cd178cd551d74a6eb54dc9a51438eaf846ee2f9cf"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** specification (repair pass), `snapshot-recovery-spec-r21@r21`; no implementation. **Limits:** no hash/shell tool, so the supplied SHA-256 digests were not recomputed; no tests or spec-lint run; the ticket mirror is excluded as contract (stale by instruction); prior-round raw reviews used as evidence only.\n\n### Closure\n- **M1 CLOSED.** `spec.md:16` (R2) drops \"non-conforming\" from the reconciliation exclusion, states both configured paths are eligible orphan targets by definition, and uses **NOT reconciled** while keeping only dangling untouched by the passes (loop/read-through moves and directory fatal restated). `spec.md:69` (D12): (ii) admits configured-path final targets, (iii) is the moved-element gate, (iv) requires the post-pass symlink entry plus `ErrNotExist`. `spec.md:83` (§4(3)): non-conforming is \"a protection/retention class only — never a reconciliation-eligibility exclusion\". Re-ran `(b-xB2)/(b-xB3)` (`:122`): both fire — (ii) passes (pre-pass chain ended at the existing regular `snapshot.json`/`prompts.json`), (iii) passes (moved by the other family's pass), (iv) passes (link still a symlink, `Stat` → `ENOENT`). **No condition vacuous:** (iii) still excludes never-moved targets; (ii) still excludes loop/escape/directory pre-pass classes (e.g. a cycle routed through the other configured path, where pass 2 moves it but the pre-pass class is cycle); (iv) is what excludes `(b-xA2)`.\n- **L1 CLOSED.** `spec.md:122` (`b-xA2`): \"(iii) PASSES … the failure is condition (iv)\".\n- **L2 REJECTION ACCEPTED.** Raw `internal/storage/store.go`: `:104` `ChecksumValue` call, `:105` guard, `:106` sentinel return, `:108` `promptTrusted`, `:185` catalog sentinel. §3/R6/AC1-2 anchors (`:104-106`, `:95-99`, `:101-102`) are correct; the r20 reviewer's `:103-105` was off by one.\n- **A1–A4 CLOSED.** `(b-budget)`/`(b-mid)` seeded oracles at `:122`; `(b-xB-res)` post-reconciliation retention with 5 pre-existing seeds at `:122`; AC1-3 alias case (`:115`) now uses entry identity, no lexical-inequality wording; D12 (`:69`) names post-rename directory-sync failure and delegates to R3.\n- **Regression OK.** R1–R9, AC1-1..10, AC2-1..9, T1–T3 unchanged; §6.1 is the same 14-file union (T1 4 + T2 6 + T3 4, `:141-146`); std-lib only, no `go.mod` change; Load/Save/LoadPrompts/SavePrompts/ensureReplaceable unchanged (R1/§4/T1 prohibitions); C6/CR15-02 retained; D11 component resolver retained; §9.11/§8(2) owner checkpoints still OPEN and unclaimed.\n\n### Findings\n**[LOW][statement-precision]** D12's rationale overgeneralizes (iii).\nFile: `.scratch/snapshot-recovery/spec.md:69`. Confidence: HIGH.\nText says a chain ending at \"any other non-quarantine-named regular target still fails (iii)\". Counterexample: `snapshot.json`(link) → `prompts.json`(link) → `keeper.json` (non-conforming regular); the prompts pass moves `prompts.json`, so (iii) passes and reconciliation is in fact correct (the chain was severed by this run). Operative (i)–(iv) are sound and no pinned oracle depends on this gloss, so consequence is limited to an implementer possibly adding a name-based extra gate.\nFix: state that such a chain fails (iii) only when no chain element other than the configured link moved — §9 item 17 (`:224`) already states it correctly.\n\n### Advisory\n**[LOW][editorial]** `(b-budget)` visited-set boundary.\nFile: `.scratch/snapshot-recovery/spec.md:122`. Confidence: LOW.\nThe fixture claims `k1..k4096` are recorded after a 4097-link chain; the exact boundary depends on whether the configured link's own splice counts against the 4096 budget. No FAILS clause asserts that set (the `k*` entries are vacuous protection), so this is non-blocking. Fix: state the budget counting rule or drop the boundary claim.\n\n### Positive\nOracles are outcome-based (bytes, survivor/deletion counts, stream order) rather than mechanism-based; reconciliation result order is pinned; over-trigger is ruled out observably by `(b-xA2)`'s (iv) and by `(b-vac)`.\n\n### Recommendation\nAPPROVE\n",
+  "invocationId": "09ffbd18-b470-4ba8-8513-757673666ed7"
+}

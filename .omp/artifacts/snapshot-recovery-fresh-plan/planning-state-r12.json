@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 2,
+  "feature": "snapshot-recovery",
+  "revision": "r12",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/snapshot-recovery/spec.md",
+    "sha256": "2bbec7da1cff6b39561221c54c8cb2b3a47cb1846abdd46431de39e439e70fdc",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r11",
+        "sha256": "30757832717fe3cb118ad975b7cef9bfc25fb364268ae099810f8662669ac00b"
+      },
+      "design": {
+        "revision": "r11",
+        "sha256": "dc62fa624ebff510e74e9823626e4a51476c1cefeb35970de614aa4e27501237"
+      },
+      "tasks": {
+        "revision": "r11",
+        "sha256": "b818819a39bc4e3316e0044ffca9ab3aa1e0185b3984a308024fda365106c809"
+      },
+      "envelope": {
+        "revision": "r11",
+        "sha256": "4ae76b25b39e4433476262986f35d406f3fb264e06c17647b4c995844302a6f3"
+      }
+    }
+  },
+  "packet": {
+    "digest": "f840ecd1ea23ea196f648916331ac5e2f1479474fee677a6c63074156708cf2a",
+    "branches": [
+      {
+        "id": "snapshot-recovery-r12-planning",
+        "answerIds": [],
+        "taskIds": [],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r11",
+            "sha256": "30757832717fe3cb118ad975b7cef9bfc25fb364268ae099810f8662669ac00b"
+          },
+          "design": {
+            "revision": "r11",
+            "sha256": "dc62fa624ebff510e74e9823626e4a51476c1cefeb35970de614aa4e27501237"
+          },
+          "tasks": {
+            "revision": "r11",
+            "sha256": "b818819a39bc4e3316e0044ffca9ab3aa1e0185b3984a308024fda365106c809"
+          },
+          "envelope": {
+            "revision": "r11",
+            "sha256": "4ae76b25b39e4433476262986f35d406f3fb264e06c17647b4c995844302a6f3"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": null
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Single recovery locus: a new Store recovery method executes once per process, after storage.Open acquires the writer lock and before startup admission (Loop.Start). It never runs in Reload, mid-run saves, or ensureReplaceable; ensureReplaceable is unchanged. [AMENDED r6: negative oracle AC1-7 added.]"
+    },
+    {
+      "id": "R2",
+      "summary": "Quarantinable class: any Load/LoadPrompts ErrCorrupt rejection (decode/envelope, trailing data, checksum mismatch, unsupported schema, failed Validate) and any read failure of a REGULAR file at the snapshot path are quarantinable: one atomic same-directory rename of the original file to a timestamped quarantine name before any fresh snapshot is published. Bytes are preserved exactly; no delete, truncate, or overwrite-first. [AMENDED r9 — never-overwrite naming] The rename NEVER overwrites an existing file: the candidate quarantine name is reserved before the rename (§4 step 3: O_EXCL reservation; an occupied candidate advances the timestamp exactly 1ns and re-reserves until free, bounded, exhaustion fatal with the original untouched), so the rename can only ever replace the empty file this process just reserved — a byte-identical or any pre-existing quarantine name can never absorb the quarantined bytes; both files survive at distinct paths (pinned by AC1-9(b))."
+    },
+    {
+      "id": "R3",
+      "summary": "Fatal class: [AMENDED r10 — resolved-target precondition] regularity is judged on the os.Stat-RESOLVED target, preserving today's read behavior: a symlink to a regular file is never fatal and never quarantined as such; a broken symlink is the absent case, not the fatal case. A file whose resolved mode is NOT regular at a snapshot path (directory, device, socket, fifo — including a symlink that resolves to such a target; a directory cannot follow the rename rule), quarantine rename failure, and post-rename directory-sync failure are fatal: startup exits failure with code state_directory, kind resource, remediation and resource.path per the existing stateDirectoryFailure record (cmd/mcp-bridge/startup_failure.go:26-33). [AMENDED r11 — complete Stat and reservation fatals] any os.Stat error OTHER THAN fs.ErrNotExist at a snapshot path (symlink loop/ELOOP, EACCES, EIO — an error carrying no FileInfo, so the resolved-mode check cannot run and §4 step 2's read precondition is false) is fatal wrapping ErrSnapshotUnrecoverable with the path, on the same state_directory route; and any quarantine-candidate RESERVATION error other than an already-exists error (§4 step 3: e.g. EACCES, ENOSPC, EMFILE, EROFS) is fatal wrapping ErrSnapshotUnrecoverable with the original untouched and NO rename attempted (no quarantine file, no reservation residue). [AMENDED r7: single writer — serve.go's recovery block calls emitRecoveryRecords for accumulated warnings, then RETURNS stateDirectoryFailure(store.Dir()) as the error; serve never calls writeStartupFailure. runContext (cmd/mcp-bridge/main.go:59-68) is the SOLE startup_failed writer: it errors.As the returned startupFailure and writes exactly one record. This preserves AC2-4/AC2-7 one-record semantics.] [AMENDED r9: the §4 step 3 reservation-exhaustion fatal joins this class via ErrSnapshotUnrecoverable; no new error code — the record is the existing state_directory shape.] The typed record is the only output for the fatal condition itself: arbitrary Go error text is never a log field or free-text line (docs/logging-contract.md); the class, kind and configured-path attribution carry the diagnosis. [AMENDED r7: this exclusivity does not suppress R4 warnings for files already quarantined earlier in the same recovery pass — AC2-7 requires warning-then-fatal.] When no rename occurred, the file is untouched; a failed rename leaves the original bytes at the original path; a failed post-rename sync leaves the bytes at the quarantine path with the original absent. startup_failure.go is NOT edited."
+    },
+    {
+      "id": "R4",
+      "summary": "Typed warning: for each quarantined file exactly one structured record, event startup_snapshot_rejected, operation startup, level warn, outcome degraded, error.code snapshot_unavailable (closed AD13 mapping, docs/logging-contract.md:477), error.kind resource, error.retryable true, existing static remediation `verify the durable snapshot and storage permissions, then retry`, fixed message `startup snapshot unavailable`, resource.path = configured state directory (the resource object carries only configured path/listener/address attribution, docs/logging-contract.md:252-254, :338-340), plus two optional event-specific fields under the documented optional-addition rule (docs/logging-contract.md:499-512; schema_version stays 1): failure_reason with the finite value corrupt_json | checksum_mismatch | unsupported_schema | validation_failure | read_error, and quarantine_path = the quarantine file path. [AMENDED r9: corrupt_json also covers every schema-1 legacy-branch failure — see §4 step 2; the finite value set is unchanged.] [AMENDED r6: emitted via observe.Entry{Fields} through Logger.Log (warn → stderr lane, log.go:117-133); emittability guaranteed by the r6 T2 runtimeErrorInfo case — no logging_write_failed collapse.]"
+    },
+    {
+      "id": "R5",
+      "summary": "Retention bound: at most 5 quarantine files per family (snapshot.corrupt-*.json, prompts.corrupt-*.json) COUNTING the file created by the current recovery. [AMENDED r7: after each successful rename, this run's file is excluded from prune candidates by exact path (a backward clock or equal timestamp can otherwise delete the just-preserved bytes, violating R2), the remaining PRE-EXISTING conforming names are ranked newest-first, and the oldest are unlinked beyond QuarantineKeep-1 — 5 pre-existing plus the new file leave exactly 5 files with the oldest pre-existing removed.] Ordering parses each name's timestamp strictly as RFC3339Nano UTC with a literal trailing `Z` (time.Parse; names matching a family glob whose timestamp is unparsable, lacks the `Z`, or carries a numeric offset, and any non-conforming directory entry, are never pruned and never counted toward the bound — foreign/operator files are never deleted). [AMENDED r9 note: a +1ns-advanced reservation timestamp still satisfies the RFC3339Nano-Z grammar and is ranked normally; this-run exclusion by exact path is unchanged.] Prune failure is non-fatal and reported exactly once per AFFECTED FAMILY via a typed lifecycle record event snapshot_retention_failed, operation startup, level warn, outcome failure, error.code snapshot_unavailable, kind resource, retryable true, fixed message `quarantine retention failed`, plus quarantine_path naming the first unremoved file of that family (new AD13-table row added under the optional-addition rule; no schema_version bump). [AMENDED r6: plural RetentionFailures result.] [AMENDED r8: the record's remediation is the SHARED snapshot_unavailable text `verify the durable snapshot and storage permissions, then retry` — validErrorInfo's field-equality (envelope.go:136-142) makes any separately documented remediation unemittable; no distinct remediation text, error code, or field exists for this event.] [AMENDED r11 — listing-failure reporting] a family's directory-LISTING failure is likewise non-fatal and reported exactly once for that family via the same snapshot_retention_failed record, with quarantine_path = the quarantine file this run just created for that family — a deterministic, validator-representable absolute .json quarantine path (no unremoved file exists to name when nothing was listed); recovery is never silent (§8)."
+    },
+    {
+      "id": "R6",
+      "summary": "No-op on valid or absent snapshots: [AMENDED r10 — Stat-based precondition] existence and regularity are evaluated with os.Stat (symlink-following), so a symlink to a regular file is treated EXACTLY as that regular file and today's start-up behavior for symlinked snapshots is preserved; a broken symlink surfaces as os.ErrNotExist and is the absent case. When Load/LoadPrompts succeeds or reports ErrNoSnapshot, recovery mutates nothing — no rename, no warning, no retention pass; a successfully loaded snapshot keeps its trusted state and the existing no-overwrite protection is untouched."
+    },
+    {
+      "id": "R7",
+      "summary": "Prompt-snapshot coverage: prompts.json receives identical quarantine behavior with prompts.corrupt-*.json names, the same retention bound, the same warning record shape (quarantine_path = the prompts quarantine path), and the same read_error/rename/sync handling. [AMENDED r6: AC1-8 and AC2-9 added as full prompts oracles.] [AMENDED r9: identical never-overwrite naming per R2/§4 step 3.] [AMENDED r11: the read_error/rename/sync identity is oracled for prompts by AC1-10's prompts subcase and AC2-8(a)/(b) executing for both families.]"
+    },
+    {
+      "id": "R8",
+      "summary": "Operator opt-out: environment variable MCP_SNAPSHOT_QUARANTINE=off (case-insensitive comparison) disables recovery (fail-closed): no quarantine rename and no new recovery record (no startup_snapshot_rejected record carrying failure_reason/quarantine_path, no snapshot_retention_failed record). Today's wedge semantics otherwise hold: the Durable loader failure still emits the pre-existing structured startup_snapshot_rejected record (internal/service/loop.go:148-151 translated by cmd/mcp-bridge/wiring.go:485-492), the admission persist fails fatally, the startup_failed/internal_error record is emitted, and the process exits 1. Any other value, including unset, enables recovery. [OWNER-CONFIRMED 2026-11-21] default = enabled. [AMENDED r7: the enabling arm is pinned by an AC2-6 enabled/1 case.]"
+    },
+    {
+      "id": "R9",
+      "summary": "Machine-readable reasons: Load/LoadPrompts rejections gain errors.Is-compatible reason sentinels chained under ErrCorrupt, so every existing errors.Is(err, ErrCorrupt) caller and test is unaffected. [AMENDED r9: the schema-1 legacy branch has no sentinel of its own; its failures are wrapped under ErrSnapshotDecode at the Load/LoadPrompts call site (reason corrupt_json), so R9's errors.Is compatibility is preserved without editing snapshot_v1.go.]"
+    }
+  ],
+  "authorization": null,
+  "reviews": null,
+  "sources": [],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "PLAN1"
+    ],
+    "readPaths": [
+      ".scratch/snapshot-recovery/spec.md",
+      ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      ".scratch/mcp-bridge-defects/backlog.md",
+      "docs/agents/domain.md",
+      "docs/agents/issue-tracker.md",
+      "docs/logging-contract.md",
+      "go.mod",
+      "internal/config/config.go",
+      "internal/observe/envelope.go",
+      "internal/observe/log.go",
+      "internal/observe/metrics.go",
+      "internal/service/loop.go",
+      "internal/service/reload.go",
+      "internal/storage/store.go",
+      "internal/storage/store_test.go",
+      "internal/storage/store_edge_test.go",
+      "internal/storage/snapshot_edge_test.go",
+      "cmd/mcp-bridge/runtime_edge_test.go",
+      "cmd/mcp-bridge/serve.go",
+      "cmd/mcp-bridge/startup_failure.go",
+      "cmd/mcp-bridge/wiring.go"
+    ],
+    "writePaths": [
+      "internal/storage/store.go",
+      "internal/storage/recovery.go",
+      "internal/storage/recovery_test.go",
+      "internal/storage/store_edge_test.go",
+      "cmd/mcp-bridge/serve.go",
+      "cmd/mcp-bridge/startup_failure.go",
+      "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "cmd/mcp-bridge/runtime_edge_test.go",
+      "docs/logging-contract.md"
+    ],
+    "allowedEffects": [
+      "read"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "PLAN1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": []
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "planner"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.superpowers/sdd/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}

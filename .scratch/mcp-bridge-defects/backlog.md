@@ -9,8 +9,15 @@ Index:
 | MB-001 | Header-bound tool parameters do not traverse the bridge | high | fixed (owner-attested; independent deployed verification not captured) | `internal/upstream` / upstream schema |
 | MB-002 | Catalog serves keyword-only search with no client-visible signal | medium | open | `internal/search` / embedding provider |
 | MB-003 | One upstream's failures pause the whole aggregated Tool server | high | open | client harness (Hermes) counter; bridge per-upstream breaker |
+| MB-004 | Embedding timeout bounds the whole pass, so semantic search cannot activate on a large catalog | high | open | `cmd/mcp-bridge` embedder; `internal/search/provider`; `internal/config/bounds` |
+| MB-005 | A failed embedding pass is completely silent | high | open | `internal/service/embedding`; catalog observability |
+| MB-006 | One unreachable upstream blocks config reloads and degrades every refresh | high | open | `internal/service/reload`; `internal/config` servers schema |
+| MB-007 | Invalid config crash-loops the gateway instead of falling back | high | open | `cmd/mcp-bridge` startup; `internal/config` validation |
+| MB-008 | Second instance `mcp-bridge-network` is in a permanent restart loop | medium | open | deployment (`mcp-bridge-network` container) |
+| MB-009 | `storage.directory: ./data` resolves against the config file, not the process CWD | low | open | `internal/config` storage resolution; startup observability |
 
-Observation window: 2026-11-18 ~11:35–11:42 EST / 16:35–16:42 UTC, through the bridge's own Tool MCP server.
+Observation window (MB-001–MB-003): 2026-11-18 ~11:35–11:42 EST / 16:35–16:42 UTC, through the bridge's own Tool MCP server.
+Observation window (MB-004–MB-009): 2026-11-21 18:30–19:35 EST / 23:30–00:35 UTC, live container `mcp-bridge` on `192.168.50.61` (`registry.bullprog.com:5000/mcp-bridge:latest`, config bind `/srv/mcp-grafana/mcp-bridge-config -> /app/configs`, state under `/app/configs/data`). Live telemetry and filesystem claims below were **not re-read at ticket time**; every code reference was re-verified in this worktree.
 Live container: `mcp-bridge` (`cedc9b05…`, image `registry.bullprog.com:5000/mcp-bridge:latest`, created 2026-11-17T21:50Z).
 Catalog revision at observation: `f898198b13f7b27e4ddf951562109455aa032bc00205935f738094647af51e80`.
 
@@ -67,6 +74,8 @@ Every upstream tool whose schema marks parameters `x-mcp-header` fails through n
 ---
 
 ## MB-002 — Catalog serves keyword-only search with no client-visible signal
+
+**Cross-reference:** MB-004 — a pass-wide embedding timeout makes semantic search unactivatable on this catalog size; this ticket covers the missing client-visible signal.
 
 **Severity:** medium
 **Status:** open
@@ -164,3 +173,254 @@ After five failed upstream calls, unrelated calls including `describe_tool` were
 ### Blast radius
 
 While paused, every tool on the aggregated `Tool` server is unavailable to that client, including tools from healthy upstreams and bridge-native `describe_tool`/`search_tools`. One flaky upstream can therefore stall unrelated work for every client instance that shares the same Hermes server connection. The bridge remains up; other clients and the per-upstream breaker are unaffected.
+
+---
+
+## MB-004 — Embedding timeout bounds the whole pass, so semantic search cannot activate on a large catalog
+
+**Severity:** high
+**Status:** open
+**First observed:** 2026-11-21 (observation window above)
+**Component:** `cmd/mcp-bridge` embedder; `internal/search/provider`; `internal/config/bounds`
+
+### Symptom (verbatim)
+
+- Snapshot at `/app/configs/data/snapshot.json` (1.68 MB): `tools=974`, `embeddings=null`.
+- Every `search_tools` response returns `"mode":"keyword"`, `"degraded_reasons":["vectors_absent"]`.
+
+Live snapshot and responses **not re-read at ticket time**; reported from the observation window.
+
+### Reproduction
+
+1. Load a catalog of ~974 documents with `embedding.max_concurrency: 2` and `embedding.batch_size: 32`.
+2. Trigger a refresh with no reusable vectors (`embeddings` empty/null).
+3. Observe that the provider receives one deadline for the entire missing-vector pass.
+4. Measure pass wall time; it exceeds the deadline on a large catalog.
+5. Try `embedding.timeout: "120s"`: config validation rejects it (`duration_range`, shape `above_maximum`).
+
+### Evidence
+
+- `cmd/mcp-bridge/wiring.go:264-275` — `embedder()` creates **one** `context.WithTimeout(context.Background(), settings.Timeout)` and passes it to `provider.Embed(ctx, inputs)` for every missing document.
+- `internal/search/provider.go:120-153` — `openAIProvider.Embed` fans all batches out under that single ctx at `p.concurrency` (sample `max_concurrency: 2`, `configs/config.example.yaml:62`); any batch error cancels the rest.
+- `internal/config/config.go:655` — `embedding` allows `timeout max_concurrency batch_size max_response_bytes`; there is no separate pass/request budget.
+- `internal/config/bounds.go:168-186` — a key literally named `timeout` is capped at 30s in every section (this is the rule that hits `embedding.timeout`); additionally any key whose name contains `search`/`embed` is capped at 30s. Rejection: `code=duration_range`, `property=range`, `shape=above_maximum`. `key.Value` is the leaf key, so the substring rule does **not** by itself explain `embedding.timeout`; the literal-`timeout` branch does.
+- `internal/search/search.go:392-407` — zero valid vectors ⇒ `ModeKeyword` + `reasonVectorsAbsent`.
+- `internal/service/embedding.go:23-26` — a failed/timed-out pass returns the snapshot unchanged.
+- **Unverified at ticket time:** the live `snapshot.json` counts, the 10× `config_validation_failed` rows, and the claimed `config.yaml:46` line.
+
+### Hypothesis (testable)
+
+Wall time of one pass ≈ `ceil(documents / batch_size / max_concurrency)` round trips × request latency. At 974 documents and batch size 32 that is ≥31 batches at concurrency 2; any per-request latency above roughly 1s exceeds the hard-capped 30s pass deadline. The canceled pass then falls back to the reuse-only snapshot, so `embeddings` stays null and search can never enter hybrid mode.
+
+### Acceptance
+
+- Split `embedding.request_timeout` (1s..30s, per HTTP request) from `embedding.pass_timeout` (1s..10m, default ~5m).
+- Keep `embedding.timeout` as a one-schema-version alias for `request_timeout`.
+- Stop the `bounds.go` substring/literal-`timeout` heuristics from applying to the explicit pass budget.
+- Fake-provider test: 40 × 50ms batches succeed at `pass_timeout=5s` and fail with a typed, loggable error at 1s.
+- Config test: accepts 300s, rejects 11m.
+- 974-document stub run yields a non-null `embeddings` array and `mode="hybrid"`.
+- No ranking/RRF/weight changes.
+
+---
+
+## MB-005 — A failed embedding pass is completely silent
+
+**Severity:** high
+**Status:** open
+**First observed:** 2026-11-21 (observation window above)
+**Component:** `internal/service/embedding`; catalog observability
+
+### Symptom (verbatim)
+
+- `fillVectors()` returns the snapshot unchanged when `deps.Embed` errors or returns zero rows: no event, no counter.
+- Search reports only the downstream `"degraded_reasons":["vectors_absent"]`, which cannot distinguish provider failure, empty response, or stale model digest.
+- Hours of live logs contain zero embedding-related events while vectors are absent.
+
+### Reproduction
+
+1. Point `embedding.base_url` at a provider that returns an error (or an empty `data` array).
+2. Trigger a refresh and let the pass fail.
+3. Call `search_tools` and inspect `degraded_reasons`.
+4. Search bridge logs for any per-pass embedding outcome — none exists.
+
+### Evidence
+
+- `internal/service/embedding.go:18-27` — on `err != nil || len(embedded) == 0` the function silently returns the input snapshot.
+- `internal/search/search.go:392-407` — the only surfaced signal is the downstream `vectors_absent` reason.
+- No `embedding_pass_*` event exists anywhere (`grep -r 'embedding_pass' internal cmd` → 0); refresh lifecycle events are `catalog_refresh_started` / `catalog_refresh_completed` / `catalog_refresh_failed` (`internal/service/refresh.go:234,305,341`), allowlisted in `internal/observe/log.go:258-264`.
+- The degraded reason vocabulary is finite in `internal/search/search.go:293-300`; adding a sharper reason requires extending it.
+- **Unverified at ticket time:** the live zero-event log scan.
+
+### Hypothesis (testable)
+
+The embedding outcome is discarded at the `fillVectors` boundary because the build path treats vectors as an optional enrichment. A zero-row response is indistinguishable from a reuse-only pass, so operators cannot see provider failure, dimension mismatch, or model-digest churn.
+
+### Acceptance
+
+- Emit `embedding_pass_completed` / `embedding_pass_failed` once per pass with `documents_missing`, `batches`, `reused_from_store`, `embedded`, `duration_ms`, `model`, `model_revision`, `dimensions`, and a typed error on failure — following the existing `catalog_refresh_*` envelope.
+- Carry the outcome into the published generation and the ops payload.
+- Sharpen the degraded reason (e.g. `embed_pass_timeout`) while keeping the keyword fallback.
+- A zero-vector response is a reported failure, never silent.
+- No `api_key`, base URL credential, or full vector appears in the serialized event.
+
+---
+
+## MB-006 — One unreachable upstream blocks config reloads and degrades every refresh
+
+**Severity:** high
+**Status:** open
+**First observed:** 2026-11-21 (observation window above)
+**Component:** `internal/service/reload`; `internal/config` servers schema
+
+### Symptom (verbatim)
+
+- 42× `upstream_discovery_failed` in one process lifetime: `legal` `dns_lookup_failed`, `mcp-netutils` `connect_failed`, `irs-taxpayer` `tools_list_failed` (that server runs and is healthy).
+- 14× `catalog_refresh_failed` with `"publication_impact":"degraded_published"` and zero `catalog_refresh_completed`.
+- The reload path rejects the whole candidate on any discovery failure, so SIGHUP cannot apply a config change while a single entry is broken; the only remedy is a container restart.
+
+### Reproduction
+
+1. Configure ≥2 servers where one is unreachable (bad DNS or closed port).
+2. SIGHUP a valid change to another server.
+3. Observe `config_reload_rejected` / preserved generation; the change does not apply.
+4. Compare a periodic refresh pass: it publishes degraded state but logs the same `catalog_refresh_failed` event.
+
+### Evidence
+
+- `internal/service/reload.go:331-334` — build-mode contract: “a reload validates the whole membership and rejects the candidate on any failure, a refresh keeps every server's last known good catalog when its own discovery fails.”
+- `internal/service/reload.go:475-496` — `Runtime.Reload` documents “On any failure it returns an error and leaves the published generation … exactly as they were.”
+- `internal/service/refresh.go:44-47` — refresh intentionally degrades per server instead of rejecting.
+- `internal/upstream/dedicated.go:238-247` — emits `upstream_discovery_failed` with `failure_stage` / `failure_reason` / scheduled `next_attempt_ms`.
+- `internal/config/config.go:658` — allowed server keys are `id endpoint prompts_disabled credentials limits tool_metadata stateless`; there is no `optional`.
+- `internal/service/refresh.go:270-272` — a discovery failure on a published pass is logged as `catalog_refresh_failed` with `publication_impact="degraded_published"`; the same event name is used for `candidate_rejected`. The observed 14×/0-completed pair is therefore consistent with published-but-degraded passes and does **not** by itself prove reload rejection; the reload contract above does. The conflated event name is part of this ticket.
+- **Unverified at ticket time:** the live counts and per-server reasons.
+
+### Hypothesis (testable)
+
+Reload admission has no per-server tolerance: one discovery error anywhere fails the build. Because refresh uses the same event name for both a rejected candidate and a degraded publish, operators see a uniform failure stream and cannot tell which passes actually published.
+
+### Acceptance
+
+- Opt-in `servers[].optional` (default false; no behavior change for existing configs) that degrades that server instead of failing the pass.
+- Reload tolerates optional-server failures and logs the skipped ids.
+- Per-server status/reason/last-success stays visible to clients.
+- Discovery retry/backoff unchanged.
+- (a) Optional server failing ⇒ refresh completes and publishes with that backend marked unavailable; (b) non-optional failing ⇒ today's behavior; (c) reload with an optional failure publishes; (d) event names skipped ids in a bounded list.
+
+---
+
+## MB-007 — Invalid config crash-loops the gateway instead of falling back
+
+**Severity:** high
+**Status:** open
+**First observed:** 2026-11-21 (observation window above)
+**Component:** `cmd/mcp-bridge` startup; `internal/config` validation
+
+### Symptom (verbatim)
+
+- `embedding.timeout: "120s"` produced 10× `config_validation_failed` (`duration_range`, `shape=above_maximum`, `/app/configs/config.yaml` line 46).
+- The container entered a `restart: always` loop (`status "restarting"`, `RestartCount` climbing), taking down every MCP tool the bridge fronts (portainer, grafana, ssh, second-brain, rag) because the bridge is the only path its own operators have.
+
+### Reproduction
+
+1. Set an out-of-range value (e.g. `embedding.timeout: "120s"`) in the active config.
+2. Start the process under `restart: always`.
+3. Observe one `config_validation_failed` per start, exit 1, then a restart cycle; no fallback config is served.
+
+### Evidence
+
+- `cmd/mcp-bridge/main.go:56-68` — `serve` error carrying `*config.Diagnostics` ⇒ `writeConfigValidationFailure`, return 1. There is no fallback path.
+- `cmd/mcp-bridge/diagnostics_envelope.go:20` — `config_validation_failed` envelope vocabulary.
+- `cmd/mcp-bridge/startup_failure.go:18-70` — `startup_failed` variants cover state dir, JWKS, embedding provider, tool surface, catalog loop, listener bind; no config-degraded fallback variant.
+- `grep -r 'MCP_STRICT_CONFIG\|last-known-good.*config\|config_degraded' cmd internal` → 0 matches; “last known good” exists only for the catalog generation (`internal/service/refresh.go:34,184`; `internal/service/reload.go:628`).
+- **Unverified at ticket time:** the live `config_validation_failed` count and restart counters.
+
+### Hypothesis (testable)
+
+Startup treats a config validation error as terminal and the container supervisor retries forever. A previously validated copy of the config, if retained, could serve the last-known-good generation until the operator fixes the file.
+
+### Acceptance
+
+- Invalid active config + validated fallback ⇒ serves, emits `config_degraded` naming file/line/property, never accepts the invalid value silently.
+- Explicit strict mode `MCP_STRICT_CONFIG=true` always fails closed (today's behavior).
+- Persist last-known-good on every successful load **without** overwriting the operator's file.
+- Invalid with no fallback ⇒ `startup_failed`.
+- If the exit path is kept, capped exponential backoff plus a `startup_failed` event naming the property.
+- No secret written into the fallback file.
+
+---
+
+## MB-008 — Second instance `mcp-bridge-network` is in a permanent restart loop
+
+**Severity:** medium
+**Status:** open
+**First observed:** 2026-11-21 (observation window above)
+**Component:** deployment (`mcp-bridge-network` container)
+
+### Symptom (verbatim)
+
+- Container `mcp-bridge-network`, same image, its own config `/app/configs/config-network.yaml` (bind `/srv/mcp-grafana/mcp_bridge_network_data`), `State=restarting`, `RestartCount=82+`, cycling roughly every 20s, never serving traffic.
+
+### Reproduction
+
+1. Inspect the container's exit reason and the last stderr line of each cycle.
+2. Read `/app/configs/config-network.yaml` from the bind mount.
+3. Run the same image locally with that config and capture the single JSON diagnostic.
+4. Compare with MB-004's duration rule to see whether any `*timeout`/`*_timeout` key is the trigger.
+
+### Evidence
+
+- Live container state and the config path **not re-verified at ticket time**; reported from the observation window.
+- The diagnostics path that produces one JSON line and exit 1 is `cmd/mcp-bridge/main.go:56-68`; config bounds live in `internal/config/bounds.go:168-186`.
+
+### Hypothesis (testable)
+
+One value in `config-network.yaml` violates a validation bound, and the supervisor's `restart: always` policy turns a deterministic config error into an endless loop. The MB-004 duration heuristic is a candidate but must be confirmed against the actual file.
+
+### Acceptance
+
+- Diagnosis recorded in this ticket: which key, which validation stage, and whether the MB-004 duration rule is the cause.
+- Reproduction with that config locally, quoting the diagnostic.
+- Fix applied (config or code), with the service kept running — **not** resolved by deleting the service.
+- After the fix, the container reaches `running` and serves traffic.
+
+---
+
+## MB-009 — `storage.directory: ./data` resolves against the config file, not the process CWD
+
+**Severity:** low
+**Status:** open
+**First observed:** 2026-11-21 (observation window above)
+**Component:** `internal/config` storage resolution; startup observability
+
+### Symptom (verbatim)
+
+- Container `WorkingDir=/app` with the config at `/app/configs/config.yaml`.
+- `/app/data` is empty while `snapshot.json` (1.68 MB), `prompts.json`, and `.writer.lock` live in `/app/configs/data` — inside the bind-mounted config directory.
+
+### Reproduction
+
+1. Put `storage.directory: "./data"` in a config file and run the binary from a different working directory.
+2. Observe the resolved path (state is created next to the config file, not the CWD).
+3. Confirm the resolved absolute path is absent from startup output.
+
+### Evidence
+
+- `internal/config/config.go:380-381` — a relative `storage.directory` is cleaned/joined onto `filepath.Dir(configPath)`.
+- `internal/config/config_test.go:304-312` — `TestParseResolvesRelativeStorageAgainstConfigDirectory` asserts `/etc/mcp-bridge/config.yaml` + `./state` ⇒ `/etc/mcp-bridge/state`. The config-dir base is therefore deliberate and tested, not an accident.
+- `configs/config.example.yaml:10` documents that `{file:}` secret paths are relative to the config file; `:35` sets `directory: "./data"` without stating the base for this key.
+- No `config_loaded` event exists (`grep -r 'config_loaded' cmd internal` → 0); startup emits only `config_validation_failed` / `startup_failed`.
+- **Unverified at ticket time:** the live `/app/data` vs `/app/configs/data` listing and file sizes.
+
+### Hypothesis (testable)
+
+The base for `storage.directory` is config-file-relative and tested, but it is not stated where operators read it, and the resolved absolute path is never logged. With the config bind-mounted at `/app/configs`, state lands inside the config directory, where it is invisible to anyone assuming CWD-relative `./data`.
+
+### Acceptance
+
+- One documented base for relative resolution (CWD or config-file dir), chosen explicitly.
+- Emit the resolved absolute path once in a startup `config_loaded` event (new or existing event), including the config path.
+- Reject a `storage.directory` that resolves inside the config file's own directory unless explicitly allowed.
+- Update `configs/config.example.yaml` and docs.
+- Tests for both resolution bases, for the inside-config-dir rejection, and for the startup event carrying the absolute path.

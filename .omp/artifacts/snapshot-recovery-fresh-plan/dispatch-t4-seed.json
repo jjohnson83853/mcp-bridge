@@ -1,0 +1,38 @@
+{
+  "intent": "T4 startup integration, emitter, and end-to-end gate",
+  "instructions": "Implement T4 per approved snapshot-recovery spec r30 and canonical state; bounded files only; RED/GREEN; report commands and results.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r30",
+    "requests": [
+      {
+        "name": "SnapshotRecoveryT4Engineer",
+        "taskId": "T4",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "cmd/mcp-bridge/serve.go",
+            "cmd/mcp-bridge/snapshot_recovery_test.go",
+            "cmd/mcp-bridge/serve_edge_test.go",
+            "cmd/mcp-bridge/startup_failure_test.go",
+            "internal/storage/recovery_test.go"
+          ]
+        },
+        "targetCandidateId": "snapshot-recovery-spec-r30",
+        "targetRevision": "r30"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoveryT4Engineer",
+      "agent": "engineer",
+      "solutionSpace": "one fix layer: startup wiring + emitter + end-to-end oracles in the fixed 5-file set; spec decides behavior; any needed non-envelope edit is a reported blocker",
+      "task": "# Dispatch T4 — startup integration, emitter, and end-to-end gate (engineer)\n\nFeature snapshot-recovery, revision r30. T1-T3 done. Scope: ONLY the five T4 files. No edits to startup_failure.go, wiring.go, main.go, internal/service/**, or any other file; no external research; no network.\n\n## Files (your only write set)\n- cmd/mcp-bridge/serve.go\n- cmd/mcp-bridge/snapshot_recovery_test.go (new)\n- cmd/mcp-bridge/serve_edge_test.go\n- cmd/mcp-bridge/startup_failure_test.go\n- internal/storage/recovery_test.go\n\n## Read first\n- .scratch/snapshot-recovery/spec.md: T4 objective and AC2-1..AC2-9, R1/R3/R4/R9, D3/D4/D5/D8/D12; serve.go current startup flow; startup_failure.go, wiring.go, main.go as read-only inputs.\n\n## Required work\n1. Wire the env gate (D4) and the single storage.RecoverRejected call site after storage.Open; emit records via emitRecoveryRecords (per-Recovery mapping incl orphaned_link; per-RetentionFailure pinned literals and fixed message); cause-preserving storage.ErrSnapshotUnrecoverable -> stateDirectoryFailure mapping with an unexported wrapper helper in serve.go.\n2. Ensure continue-startup behavior: absent post-recovery paths stay absent; admission persists snapshot; loop async initial refresh persists prompts; second run no-op.\n3. Tests: emitRecoveryRecords unit tests and AC2-1..AC2-7 integration in snapshot_recovery_test.go; AC2-4/AC2-5 lanes in serve_edge_test.go; stateDirectoryFailure exact record pin plus recoveryStateDirectoryFailure chain oracle in startup_failure_test.go; AC2-8 seam oracles in internal/storage/recovery_test.go.\n4. AC2-9 (now owned by T4 in canonical state): add harness tests with exact names TestSnapshotRecoveryOrphanedLink, TestSnapshotRecoveryMutualLink, TestSnapshotRecoveryMutualBothMoved, TestSnapshotRecoveryMutualHardlinked, TestSnapshotRecoveryNonMutualDangling in snapshot_recovery_test.go, plus the mutual-class retention assertion and the pinned non-mutual originally-dangling OPEN limitation (assert documented behavior; do not falsely pass).\n5. Cross-ticket gate: one suite that runs open -> recover (quarantine/reconcile) -> admission -> publish -> prompt persistence -> restart no-op, plus mutual-pair restart (fresh regular prompts accepted by direct SavePrompts) and both-moved/self-moved no-fire with exactly-once counting.\n\n## Verify (report exact commands+outputs)\n1. go build ./...\n2. go test ./cmd/mcp-bridge/... -count=1\n3. go test ./cmd/mcp-bridge/ -run TestSnapshotRecoveryOrphanedLink|TestSnapshotRecoveryMutualLink|TestSnapshotRecoveryMutualBothMoved|TestSnapshotRecoveryMutualHardlinked|TestSnapshotRecoveryNonMutualDangling -count=1 -v (must list the tests as RUN)\n4. go test ./internal/storage/... ./internal/observe/... ./cmd/mcp-bridge/... -count=1\nEnd with INCOMPLETE and the exact blocker if any required behavior needs a non-envelope file edit."
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "intent": "Review snapshot-recovery specification r25",
+  "instructions": "Candidate: snapshot-recovery-spec-r25 @ r25. Author: planner. Review mode: specification only; no implementation exists.\n\nReviewed inputs:\n- .scratch/snapshot-recovery/spec.md\n- .scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md\n- docs/logging-contract.md\n- go.mod\n- internal/observe/envelope.go\n- internal/observe/log.go\n- internal/service/loop.go\n- internal/storage/store.go\n- internal/storage/snapshot_v1.go\n- cmd/mcp-bridge/serve.go\n- cmd/mcp-bridge/startup_failure.go\n- cmd/mcp-bridge/wiring.go\n\nRead the r25 specification at .scratch/snapshot-recovery/spec.md (the four specdd regions plus 6.1 ENVELOPE), the ticket mirror, docs/logging-contract.md and the referenced code anchors. The candidate boundary is the exact hashed bytes in the registry. Prior evidence: .omp/artifacts/snapshot-recovery-fresh-plan/ct-r24-raw.md (REVISE: C5 HIGH, C8 LOW) and cr-r24-raw.md (APPROVE with 2 LOW). Treat them as evidence, not reviewed bytes. The ticket mirror is intentionally stale (section 9.7); it is not the candidate contract.\n\nRead-only independent review. Do not modify files, do not run tests, do not claim runtime verification. Report findings with severity, anchor and confidence; do not invent ids.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r25",
+    "requests": [
+      {
+        "name": "SnapshotRecoverySpecR25CodeReview",
+        "taskId": "CR1",
+        "agent": "code-reviewer",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/snapshot-recovery/spec.md",
+            ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+          ]
+        },
+        "targetCandidateId": "snapshot-recovery-spec-r25",
+        "targetRevision": "r25"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecR25CodeReview",
+      "agent": "code-reviewer",
+      "task": "# Target\nReview snapshot-recovery specification candidate snapshot-recovery-spec-r25@r25 (specification only; no implementation). This round makes an owner-authorized plan change and re-applies two carried findings.\n\n# Required checks\n1. **CT24-C5 closure (HIGH, lifecycle hazard).** Verify the D12 moved-entry set is keyed by ORIGINAL CONFIGURED PATH + pre-move entry identity, that ordinary (iii)/(iv) and mutual (m-iii)/(m-iv) partner-versus-self is decided from recorded chain-entry paths and never a bare inode match, that the hard-linked-symlink counterexample is stated, that the inode-only alternative is explicitly rejected, and that the AC2-9 mutual hard-linked variant is executable (exactly [snapshot read_error, prompts orphaned_link], Readlink assertion, fresh regular prompts.json accepted by direct SavePrompts, second-run no-op, counting discrimination: both-moved/self-moved ZERO, clean pair exactly ONE). Check the re-key is echoed consistently in R2, §4 contract, §4(3), §4 alternatives, §8(2), T3, §7, §9 and that D10/D11 protection is untouched.\n2. **Four-ticket decomposition (owner-authorized).** Verify §6 T1-T4 is a complete, disjoint partition: every R id and every AC id owned by exactly one task; dependency edges T1→T2,T3; T2→T3; T1,T2,T3→T4 consistent with the task text; the §6.1 write set unchanged at the same 14 files with T4 added as a task id only; no live (non-historical) stale reference to the old T1-T3 meanings; historical round text preserved and scoped.\n3. **CT24-C8** wording: fixtures described as remaining required planned oracles, no implied executed GREEN; §9.6 unchanged.\n4. **CR24 LOWs**: §9.21 documents `orphaned_label` → `orphaned_link`, AC1-10(b-dangle) cites (m-ii)+(m-iii). The quoted old token must remain as a quotation where the change is described; only the live reason value must be `orphaned_link`.\n\nCheck regressions: no added/removed/renumbered R/AC id, no envelope path change, no new dependency beyond std-lib, no contradiction with D1-D12 or the ACs, no false review/approval/test claim, C4 and CR23 closures intact.\n\nReturn Findings as a Markdown list, each with severity (CRITICAL/HIGH/MEDIUM/LOW), file:line anchor and confidence, and a one-line recommended fix, followed by a verdict heading on its own line:\n## Verdict: APPROVE, REQUEST CHANGES, or BLOCKED. Do not edit any file.",
+      "solutionSpace": "one review: C5 re-key, decomposition integrity, two LOWs, regression on a fixed id set"
+    }
+  ]
+}

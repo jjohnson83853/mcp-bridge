@@ -1,0 +1,17 @@
+{
+  "intent": "Author fresh snapshot-recovery specification revision r12 (plan round 1 of at most 3)",
+  "instructions": "Planning-only dispatch probe: no implementation, no file writes, no review of r11. Owner directive 2026-11-21: fresh new revision; at most 3 plans.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r11",
+    "requests": [
+      { "name": "SnapshotFreshSpecR12Round1", "taskId": "PLAN1", "agent": "planner", "effects": { "kind": "read", "paths": [] } }
+    ]
+  },
+  "tasks": [
+    { "name": "SnapshotFreshSpecR12Round1", "agent": "planner", "solutionSpace": "one fresh specification; no implementation", "task": "PLAN PROBE ONLY. Return BLOCKED with reason 'probe'." }
+  ]
+}

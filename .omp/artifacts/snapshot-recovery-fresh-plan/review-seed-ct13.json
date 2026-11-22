@@ -1,0 +1,35 @@
+{
+  "intent": "Critic snapshot-recovery specification r13",
+  "instructions": "Candidate: snapshot-recovery-spec-r13 @ r13. Author: planner. Review mode: specification only; no implementation exists.\n\nReviewed inputs (all candidate-bound and hashed):\n- .scratch/snapshot-recovery/spec.md\n- .scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md\n- .scratch/mcp-bridge-defects/backlog.md\n- docs/agents/domain.md\n- docs/agents/issue-tracker.md\n- docs/logging-contract.md\n- go.mod\n- internal/config/config.go\n- internal/observe/envelope.go\n- internal/observe/log.go\n- internal/observe/log_test.go\n- internal/observe/edge_test.go\n- internal/observe/metrics.go\n- internal/service/loop.go\n- internal/service/reload.go\n- internal/storage/store.go\n- internal/storage/snapshot_v1.go\n- internal/storage/store_test.go\n- internal/storage/store_edge_test.go\n- internal/storage/snapshot_edge_test.go\n- cmd/mcp-bridge/runtime_edge_test.go\n- cmd/mcp-bridge/serve.go\n- cmd/mcp-bridge/serve_edge_test.go\n- cmd/mcp-bridge/startup_failure.go\n- cmd/mcp-bridge/startup_failure_test.go\n- cmd/mcp-bridge/logging_contract_test.go\n- cmd/mcp-bridge/wiring.go\n- cmd/mcp-bridge/config_envelope_test.go\n\nRead the r13 specification at .scratch/snapshot-recovery/spec.md (including the four specdd regions and the 6.1 ENVELOPE subsection), the ticket mirror, backlog, docs/logging-contract.md, go.mod, and the referenced code anchors. The candidate boundary is the exact hashed bytes in the review registry; do not treat later edits as reviewed.\n\nPrior evidence: the r12 CodeReviewer round was REQUEST CHANGES (SR12-01..05) and the r12 Critic was REVISE (C1..C4), artifacts .omp/artifacts/snapshot-recovery-fresh-plan/cr-r12-raw.md and ct-r12-raw.md; treat them as evidence, not as reviewed r13 bytes. r13 claims to close all of them in place with no R/AC/T id or envelope change.\n\nThis is a read-only independent review. Do not modify files, run implementation tests, implement, dispatch, or claim approval. Treat the dispatch context wrapper as metadata; this task text is authoritative.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r13",
+    "requests": [
+      {
+        "name": "SnapshotRecoverySpecR13Critic",
+        "taskId": "CT1",
+        "agent": "critic",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/snapshot-recovery/spec.md",
+            ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+          ]
+        },
+        "targetCandidateId": "snapshot-recovery-spec-r13",
+        "targetRevision": "r13"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecR13Critic",
+      "agent": "critic",
+      "task": "# Target\nIndependently apply the SpecDD/TDD pass policy to snapshot-recovery candidate snapshot-recovery-spec-r13@r13. No implementation exists; judge only the specification against R1-R9, AC1-1..AC2-9, T1-T3 and the owner envelope.\n\n# Required checks\n- Verify the r13 revision closes the r12 findings (cr SR12-01..05, ct C1..C4) with evidence-backed text, not assertions; the r12 artifacts are evidence, not reviewed bytes.\n- Judge: single-intake contract consistency, AC traceability (each R has an AC; each AC names requirement ids; T1/T2/T3 own the ACs), envelope containment (14 files only; executor restrictions stay mbtest-only), retention/atomicity invariants, warning record counts, and the section 9 handoff quality.\n- Flag owner-decision-required items only for envelope or R/AC changes; none are expected.\n- Report blocking findings with class, severity, confidence and the exact anchor plus minimal fix. Do not invent runs, receipts or approvals.\n\n# Output contract\nUse the installed Critic format: end with exactly '### Verdict' followed by PASS, REVISE or BLOCKED and nothing after it. REVISE for any blocking high-confidence specification defect; BLOCKED only for missing decisive evidence.",
+      "solutionSpace": "one verdict: pass policy on a fixed id set; new defects open"
+    }
+  ]
+}

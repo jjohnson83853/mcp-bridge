@@ -1,0 +1,35 @@
+{
+  "intent": "Review snapshot-recovery specification r11",
+  "instructions": "Candidate: snapshot-recovery-spec-r11 @ r11. Author: planner. Review mode: specification only; no implementation exists.\n\nReviewed inputs (all candidate-bound and hashed):\n- .scratch/snapshot-recovery/spec.md\n- .scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md\n- .scratch/mcp-bridge-defects/backlog.md\n- docs/agents/domain.md\n- docs/agents/issue-tracker.md\n- docs/logging-contract.md\n- go.mod\n- internal/config/config.go\n- internal/observe/envelope.go\n- internal/observe/log.go\n- internal/observe/log_test.go\n- internal/observe/edge_test.go\n- internal/observe/metrics.go\n- internal/service/loop.go\n- internal/service/reload.go\n- internal/storage/store.go\n- internal/storage/snapshot_v1.go\n- internal/storage/store_test.go\n- internal/storage/store_edge_test.go\n- internal/storage/snapshot_edge_test.go\n- cmd/mcp-bridge/runtime_edge_test.go\n- cmd/mcp-bridge/serve.go\n- cmd/mcp-bridge/serve_edge_test.go\n- cmd/mcp-bridge/startup_failure.go\n- cmd/mcp-bridge/startup_failure_test.go\n- cmd/mcp-bridge/logging_contract_test.go\n- cmd/mcp-bridge/wiring.go\n- cmd/mcp-bridge/config_envelope_test.go\n\nRead the r11 specification at .scratch/snapshot-recovery/spec.md (including the four specdd regions and the 6.1 ENVELOPE subsection), the ticket, backlog, docs/logging-contract.md, go.mod, and the referenced code anchors. The candidate boundary is the exact hashed bytes in the review registry; do not treat later edits as reviewed. The r10 CodeReviewer review is evidence at .omp/artifacts/snapshot-review-code-review-r10-20261121T170000Z.md (sha256 d5676c22fdd5821ae71b434c810fac755f207a86195aad126c2152b8a052f216); treat it as evidence, not as reviewed r11 bytes.\n\nThis is a read-only independent review. Do not modify files, run implementation tests, implement, dispatch, or claim approval. Treat the dispatch context wrapper as metadata; this task text is authoritative. This is the final owner-authorized r11 planning round; do not propose an r12 revision.\n\nRisk packet for both stages: (1) R8 MCP_SNAPSHOT_QUARANTINE=off semantics and default ON; (2) retention keep-5-newest per family, this-run exclusion, non-fatal prune failure and non-fatal listing failure; (3) failure_reason as an optional AD13 addition with schema_version 1; (4) errors.Is(err, ErrCorrupt) preservation; (5) single-writer startup fatal route and the os.Stat fatal arm; (6) exactly one startup_snapshot_rejected warning per quarantined file; (7) T1/T2/T3 file boundaries and the 6.1 envelope; (8) the r11 specdd markers and packet binding; (9) r10 closure: symlink corrupt/broken cases, os.Stat fatal, reservation failure, prompts/both-family seams, AC2-6 retention count, listing failure, envelope.go citation, ticket mirror status.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r11",
+    "requests": [
+      {
+        "name": "SnapshotRecoverySpecR11CodeReview",
+        "taskId": "CR1",
+        "agent": "code-reviewer",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/snapshot-recovery/spec.md",
+            ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+          ]
+        },
+        "targetCandidateId": "snapshot-recovery-spec-r11",
+        "targetRevision": "r11"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecR11CodeReview",
+      "agent": "code-reviewer",
+      "task": "# Target\nIndependently review snapshot-recovery specification candidate snapshot-recovery-spec-r11@r11 in specification mode. No implementation exists. The bound r10 CodeReviewer review was REQUEST CHANGES (3 MEDIUM, 5 LOW, 2 open questions); verify this r11 revision closes it. This is the final owner-authorized planning round; if a new blocking or medium defect remains, report it rather than proposing an r12.\n\n# Required checks\n- Verify CR10-1 symlink closure: AC1-10 has the corrupt symlinked regular target subcase (one Recovery; link entry moved; target bytes exactly preserved at target path; configured path absent); AC1-1 has the broken symlink subcase (zero recoveries; link entry untouched; no quarantine/prune); no new id.\n- Verify CR10-2 os.Stat closure: R3 and section 4 step 1 make any os.Stat error other than fs.ErrNotExist fatal wrapping ErrSnapshotUnrecoverable with the path on the state_directory route; AC2-4 has the symlink-loop subcase (one startup_failed/state_directory record; untouched link); no new id.\n- Verify CR10-3 reservation closure: R3 and section 4 step 3 make any reservation error other than an already-exists error fatal wrapping ErrSnapshotUnrecoverable with the original untouched and no rename; AC2-8(b-res) exists; no new id.\n- Verify CR10-4 prompts closure: AC1-10 has a prompts read_error subcase and AC2-8(a)/(b)/(b-res) execute for both families; no new id.\n- Verify CR10-5: AC2-6 arm 1 asserts zero snapshot_retention_failed records.\n- Verify CR10-6: retention directory-listing failure is non-fatal for that family with exactly one snapshot_retention_failed record and deterministic this-run quarantine_path; AC1-5(a-list) exists; no new id.\n- Verify CR10-7: addEnvelopeFields is cited at envelope.go:244-475 with unknown-key default at :471-472.\n- Verify CR10-8 and the two open questions: r10 ticket delta is APPLIED with byte-equality evidence and none pending; section 3 ticket:91 description corrected; section 6.1 read inventory clarified; AUTO-DECISION rationale corrected without widening the envelope.\n- Trace R1-R9 to AC1-1..AC1-10, AC2-1..AC2-9 and T1-T3; identify missing boundary, error, precedence, state-transition or warning-count coverage.\n- Verify the section 9 ledger closes the exact r10 review; the r10 artifact is evidence, not reviewed r11 bytes.\n- Verify the owner envelope is unchanged: no new/removed/renamed R/AC/T id; T1/T2/T3 file sets only approved paths; 6.1 ENVELOPE matches section 6.\n- Apply W09E. Report every finding with class, severity, confidence, exact anchor, consequence and minimal fix. Do not claim unrun tests, git diff or LSP diagnostics.\n\n# Output contract\nUse the installed CodeReviewer format: Summary, Files Reviewed, By Severity, Issues, Open Questions, Positive Observations, then exactly '### Recommendation' followed by APPROVE or REQUEST CHANGES and nothing after it. APPROVE only if no blocking-class finding remains at high confidence. Do not modify any file.",
+      "solutionSpace": "Independent specification review of one fixed candidate; verdict plus evidence-backed findings; no implementation or design widening."
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "snapshot-recovery-spec-r14",
+  "revision": "r14",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "7ab4bfd74a7121153553fa5b41d4ada407ef08327859a97f2f8d80c9ee0d5ff2"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "d2af1e891c7d4d79f225d4b5c549f7b20fe9a8b5c1fdced53725de1fd7401d02"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR14CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "3caa18da80d2dfbd62c6baddadd2cc7c878c38c68ec6451d99b01fe7f40a16ab",
+      "targetCandidateId": "snapshot-recovery-spec-r14",
+      "targetRevision": "r14",
+      "taskSha256": "a2167b698395a08bc189ae837021f09d01b021073ef5a4a0eb09a924cf85d435",
+      "instructionsSha256": "d910b2a73a751f574eb05439843dce70f0a3453343fe3ec84d2fe7d21b07c265"
+    },
+    {
+      "name": "SnapshotRecoverySpecR14Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "bc73d1b4a9e1a154e2183eac30d22fde2d380661c97e5c2044c8d47322fc2686",
+      "targetCandidateId": "snapshot-recovery-spec-r14",
+      "targetRevision": "r14",
+      "taskSha256": "1173ff4fd6c1390308cdcfc5f929504886857466830aa4ccba475ecdcf51745f",
+      "instructionsSha256": "d910b2a73a751f574eb05439843dce70f0a3453343fe3ec84d2fe7d21b07c265"
+    }
+  ],
+  "output": "Spec ID: SNAPREC-SPEC-r14\nRevision: r14\nCandidate: snapshot-recovery-spec-r14@r14\nFindings by ID: C5\n\n**C5 — HIGH / statement-contradiction / confidence HIGH**  \nAnchors: `.scratch/snapshot-recovery/spec.md:19,75,110` (R5, retention algorithm, AC1-6).\n\nR5 promises at most five retained files and eviction “while more than four pre-existing remain.” AC1-6 seeds five pre-existing files per family, makes unlink fail, and requires exactly one failed eviction per family with successful return. All five pre-existing files plus the new quarantine necessarily remain: six, not five. The specified stopping condition also remains true after failure; retrying cannot meet AC1-6’s exact warning counts.\n\n**Consequence:** T1 lacks a consistent, terminating failure-path contract; implementations can hang, over-delete alternative evidence, or produce incorrect retention-warning counts.\n\n**Minimal amendment:** reconcile R5/§4 with AC1-5/AC1-6: select the oldest excess candidates once, attempt each at most once, preserve this run’s file, and explicitly permit exceeding the retention bound when listing/unlink fails. Pin attempt counts and surviving bytes in the existing ACs. Planner owns reconciliation; any substantive acceptance change requires affected-owner confirmation. Escalate the irreversible-deletion contract to configured non-OpenAI `spec_critic_escalated`.\n\nThis is a newly identified retention-failure invariant defect, not CR13-01’s cross-family-filter finding reopening. Reason for the earlier miss is unknown.\n\n**Verified closures**\n- CR13-01/02: family-scoped filtering and cross-family fixtures; collision advancement versus fatal reservation errors.\n- CR13-03/04: disabled-mode Durable warning retained; fatal-first processing leaves prompts untouched.\n- CR13-05/06/08: explicit retention classification/message literals, producer remediations, numeric no-block deadlines.\n- CR13-09 and both open questions: five-reason admission table, prompts negative oracles, satisfiable successful-pruning wording, empty-string enablement.\n- CR13-07 remains advisory: §9.7 still says the ticket mirrors r13; the supplied heading and repaired cases are r14. Update that account.\n\n**Coverage and limits**\nAll nine requirements have AC references; task file unions match the 14-file envelope. Rename/reservation, cause preservation, warning ordering and startup/refresher paths were assessed against supplied source. Successful-path retention is specified; failure-path retention remains inconsistent. T1 and dependent T3 acceptance remain unresolved by C5.\n\nSource checks confirmed `validErrorInfo` equality at `internal/observe/envelope.go:136-141`—the spec’s `:200-206` citation is stale—and producer remediation literals. §7 explicitly acknowledges unalerted events, consistent with `docs/logging-contract.md:607-614`.\n\nRead-only specification review: no implementation, tests, hash recomputation, runtime proof or execution approval claimed. Registry identity relies on supplied bindings. Repairs require fresh candidate-bound review observations; historical observations remain intact.\n\n### Verdict\nREVISE\n",
+  "invocationId": "f3291c87-39b6-431d-8561-6cf9735d1f2c"
+}

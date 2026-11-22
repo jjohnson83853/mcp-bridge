@@ -1,0 +1,85 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "snapshot-recovery-spec-r24",
+  "revision": "r24",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "382dac82a08289694048cdc201870086349cf5260e25e31335b8e60f00c79f1e"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR24CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "bd4757d345c73c3f29866f7442cc523914b6f5a5355e7f6c9209c7f30ceb3200",
+      "targetCandidateId": "snapshot-recovery-spec-r24",
+      "targetRevision": "r24",
+      "taskSha256": "2cb554abeae86b5913bcdd79ad4528b2e358ce7aa3ec5d1ace1923480931a30c",
+      "instructionsSha256": "038a709cc7a198da48935122de3e9334a6859625484c296caba83fe3e8535c63"
+    },
+    {
+      "name": "SnapshotRecoverySpecR24Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "99aafbcf6933ecae09eaf5e554e07a02a126bd5d760050fdc0acfed6c4db6958",
+      "targetCandidateId": "snapshot-recovery-spec-r24",
+      "targetRevision": "r24",
+      "taskSha256": "5a737f68f0ad90534f447d7ef6b7565bf56a22a4ba035c2a3d07963b7c65deb5",
+      "instructionsSha256": "038a709cc7a198da48935122de3e9334a6859625484c296caba83fe3e8535c63"
+    }
+  ],
+  "output": "Spec ID: snapshot-recovery-spec-r24\nRevision: r24\nFindings by ID: C5, C8\n\n**C5 — HIGH; lifecycle-hazard; confidence HIGH.**\nAnchors: `.scratch/snapshot-recovery/spec.md:69,83` (D12 moved-entry identity and eligibility), `:122` (hard-linked symlink fixtures).\n\nThe moved-entry guard conflates distinct hard-linked directory entries. Static counterexample:\n- `snapshot.json` is a symlink targeting `snapshot.json`.\n- `prompts.json` is a hard link to that symlink: same inode and target text, different directory entry.\n- Both pre-pass chains loop. Pass 1 quarantines snapshot as `read_error`; prompts then dangles and its pass no-ops.\n- D12 records moves by pre-move **entry identity**. Prompts shares the moved snapshot inode, so the guard incorrectly treats prompts as already moved and excludes reconciliation.\n\nAdmission recreates snapshot; prompts now resolves to catalog bytes. The unchanged `SavePrompts` guard rejects them (`store.go:84-126`), and restart quarantines prompts—another C5-class self-healing failure. The ordinary mutual-pair fixture is repaired; this is an adjacent alias instance, not reopening that fixture. The earlier miss’s reason is unknown.\n\n**Minimal amendment:** distinguish moved directory entries by original configured path plus identity, and distinguish partner from self using the recorded chain-entry path—not inode alone. Keep retention protection separate. Add this layout under AC2-9, requiring `[snapshot read_error, prompts orphaned_link]`, preserved link text, fresh regular prompts, and second-run no-op. No new IDs/files are needed.\n\n**C8 — LOW; evidence precision; confidence HIGH.**\nAnchor: `spec.md:245` says fixtures are “still passing under the stricter key,” although no implementation exists and §9.6 declares tests planned. Replace with “remain required planned oracles”; do not imply executed GREEN.\n\n**Verified closures**\n- CR23 F1/F2: D12/§4 require a live post-pass symlink and exclude self-moved entries in both classes. AC1-10(b-xA2) and AC2-9’s both-moved layout correctly require two recoveries, zero reconciliations, and no missing-source fatal. Universal closure remains incomplete because of C5 above.\n- Base C5 mutual pair: one reconciliation, deterministic two-warning order, R3 failures preserved, retention after reconciliation, fresh snapshot/prompts and restart no-op are coherently specified.\n- F3–F6 and C4: Readlink/seeded-retention oracles, directory-identity expansion keys, deciding-condition citation and spelling corrections are present; hard-alias finite traversal remains distinguishable from true cycles.\n- R→AC→T coverage, T1/T2→T3 dependencies and the 14-file envelope remain. §7 documents collection/metric/alert exceptions; the unalerted consequence matches `logging-contract.md:607-614`.\n\n**Recommendation:** revise T1/T3’s identity contract and oracle, then obtain newly bound reviews. Keep owner checkpoints and requested non-OpenAI escalation open.\n\n**Limits:** static review only; no edits/tests. Registry digests match the supplied manifest, but byte hashes could not be recomputed with available tools. No execution permission is granted.\n\n### Verdict\nREVISE\n",
+  "invocationId": "739aeedb-acca-4e86-a3e2-4f18204a436a"
+}

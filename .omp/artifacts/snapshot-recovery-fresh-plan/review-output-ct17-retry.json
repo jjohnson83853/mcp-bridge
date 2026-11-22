@@ -1,0 +1,72 @@
+{
+  "text": "<task-result id=\"SnapshotRecoverySpecR17Critic-2\" agent=\"critic\" status=\"completed\" duration=\"2m4s\">\n\n<output>\nSpec ID: snapshot-recovery-spec-r17 (document: SNAPREC-SPEC-r17)\nRevision: r17\nFindings by ID: C1, C2\n\n**C1 — irreversible-deletion; HIGH/MAJOR; confidence HIGH.**\nAnchors: `.scratch/snapshot-recovery/spec.md:16,19,78,117`.\nThe protected set records only each configured link’s immediate target. Seed five conforming snapshot quarantines: oldest regular file T containing corrupt bytes, next-oldest symlink Q→T, and three newer files; configure `snapshot.json`→Q. Stat/read follows both links and rejects. Recovery protects Q, moves the configured link, then retention unlinks unprotected T. The count reaches five, but the quarantine read-through dangles and rejected bytes are destroyed.\nThis is a new instance of the C6/F1 failed backing-evidence invariant, not recurrence of direct counterexamples A/B. Prior-miss reason is unknown; r17 CodeReviewer independently identified the chain limitation but rated it LOW.\nMinimal amendment: protect the complete backing-link dependency chain, not just its first hop; specify resolution-failure and protected-count/bound behavior without weakening preservation. Add this deterministic fixture within existing AC1-3/AC1-10.\n\n**C2 — statement-contradiction; MEDIUM/MAJOR; confidence HIGH.**\nAnchors: `spec.md:19,78,197`.\nR5/§4 require eviction until four pre-existing files survive. Newly amended §8(2) instead promises “at most” four deletions. With ten unprotected pre-existing files, successful retention requires six deletions; both promises cannot hold.\nMinimal amendment: replace the deletion cap with `max(0, N−4)` for the successful path and pin a backlog exceeding eight within an existing retention AC. This is an F2 repair regression: preserved r16 §8 lacked this cap.\n\n**Verified closures and coverage**\n- F1’s exact A/B layouts are closed: both paths populate protection before pass one; the affected pass preserves `now−5s`, evicts `now−4s`, and permits both recoveries with readable backing bytes.\n- F2’s candidate-set starvation is closed in R5/D10/§4; C2 prevents whole-contract closure.\n- F3–F5 closed: source confirms `wiring.go:486–493`; §9.7 records ticket line 11’s stale r3 reference; symlink fixtures explicitly seed rejected bytes.\n- C6’s original single-hop fixture and CR15-01–05 closures remain: mirror accounting, disjoint ownership, corrected anchors, exact ErrorInfo shapes and two-excess eviction.\n- R1–R9 and 19 AC IDs remain; T1/T2 independent, T3 depends on both. The 14-file envelope remains 4+6+4. Warning-count, fatal-order, cause-chain and reserve/rename/sync oracles are planned and falsifiable. Section 7 documents collector, metrics and alert limits; no delivery or runtime proof is claimed.\n\n**Limits/checkpoints**\nNo implementation or tests were run. Available tools cannot recompute supplied SHA-256s, so digest identity remains unverified. Configured non-OpenAI `spec_critic_escalated` is reported unavailable; coordinator escalation and retention-unlink owner confirmation remain open. No execution approval is granted; repairs require fresh candidate-bound review.\n\n### Verdict\nREVISE\n</output>\n</task-result>",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [
+      {
+        "index": 0,
+        "id": "SnapshotRecoverySpecR17Critic-2",
+        "agent": "critic",
+        "agentSource": "user",
+        "task": "Complete assignment thoroughly:\n\n# Target\nApply the SpecDD pass policy to snapshot-recovery candidate snapshot-recovery-spec-r17@r17 (specification only). No implementation exists. The bound r16 review findings are the closure ledger; verify them against these exact bytes.\n\n# Required checks\n- Verify F1/F2 and F3-F5 are closed with evidence-backed text, especially the run-level protected-target set across both family passes and the candidate-set redefinition. Reconstruct the r16 counterexamples against r17 and report any residual contradiction or unreachable oracle.\n- Verify C6 same-family behavior and CR15 closures still hold; no R/AC/T id, 6.1 envelope path, task decomposition or stated behavior changed beyond the closures.\n- Judge AC traceability and falsifiability, retention/atomicity invariants, warning counts, ownership split and section 9 handoff.\n- Blocking findings need class, severity, confidence, anchor and minimal fix. Do not invent runs or approvals. Escalation: the configured non-OpenAI spec_critic_escalated reviewer is reported unavailable; record that as a limit, not a verdict substitute.\n\n# Output contract\nEnd with exactly '### Verdict' then PASS, REVISE or BLOCKED and nothing after it.",
+        "assignment": "# Target\nApply the SpecDD pass policy to snapshot-recovery candidate snapshot-recovery-spec-r17@r17 (specification only). No implementation exists. The bound r16 review findings are the closure ledger; verify them against these exact bytes.\n\n# Required checks\n- Verify F1/F2 and F3-F5 are closed with evidence-backed text, especially the run-level protected-target set across both family passes and the candidate-set redefinition. Reconstruct the r16 counterexamples against r17 and report any residual contradiction or unreachable oracle.\n- Verify C6 same-family behavior and CR15 closures still hold; no R/AC/T id, 6.1 envelope path, task decomposition or stated behavior changed beyond the closures.\n- Judge AC traceability and falsifiability, retention/atomicity invariants, warning counts, ownership split and section 9 handoff.\n- Blocking findings need class, severity, confidence, anchor and minimal fix. Do not invent runs or approvals. Escalation: the configured non-OpenAI spec_critic_escalated reviewer is reported unavailable; record that as a limit, not a verdict substitute.\n\n# Output contract\nEnd with exactly '### Verdict' then PASS, REVISE or BLOCKED and nothing after it.",
+        "lastIntent": "Verifying preserved task ownership split",
+        "exitCode": 0,
+        "output": "Spec ID: snapshot-recovery-spec-r17 (document: SNAPREC-SPEC-r17)\nRevision: r17\nFindings by ID: C1, C2\n\n**C1 — irreversible-deletion; HIGH/MAJOR; confidence HIGH.**\nAnchors: `.scratch/snapshot-recovery/spec.md:16,19,78,117`.\nThe protected set records only each configured link’s immediate target. Seed five conforming snapshot quarantines: oldest regular file T containing corrupt bytes, next-oldest symlink Q→T, and three newer files; configure `snapshot.json`→Q. Stat/read follows both links and rejects. Recovery protects Q, moves the configured link, then retention unlinks unprotected T. The count reaches five, but the quarantine read-through dangles and rejected bytes are destroyed.\nThis is a new instance of the C6/F1 failed backing-evidence invariant, not recurrence of direct counterexamples A/B. Prior-miss reason is unknown; r17 CodeReviewer independently identified the chain limitation but rated it LOW.\nMinimal amendment: protect the complete backing-link dependency chain, not just its first hop; specify resolution-failure and protected-count/bound behavior without weakening preservation. Add this deterministic fixture within existing AC1-3/AC1-10.\n\n**C2 — statement-contradiction; MEDIUM/MAJOR; confidence HIGH.**\nAnchors: `spec.md:19,78,197`.\nR5/§4 require eviction until four pre-existing files survive. Newly amended §8(2) instead promises “at most” four deletions. With ten unprotected pre-existing files, successful retention requires six deletions; both promises cannot hold.\nMinimal amendment: replace the deletion cap with `max(0, N−4)` for the successful path and pin a backlog exceeding eight within an existing retention AC. This is an F2 repair regression: preserved r16 §8 lacked this cap.\n\n**Verified closures and coverage**\n- F1’s exact A/B layouts are closed: both paths populate protection before pass one; the affected pass preserves `now−5s`, evicts `now−4s`, and permits both recoveries with readable backing bytes.\n- F2’s candidate-set starvation is closed in R5/D10/§4; C2 prevents whole-contract closure.\n- F3–F5 closed: source confirms `wiring.go:486–493`; §9.7 records ticket line 11’s stale r3 reference; symlink fixtures explicitly seed rejected bytes.\n- C6’s original single-hop fixture and CR15-01–05 closures remain: mirror accounting, disjoint ownership, corrected anchors, exact ErrorInfo shapes and two-excess eviction.\n- R1–R9 and 19 AC IDs remain; T1/T2 independent, T3 depends on both. The 14-file envelope remains 4+6+4. Warning-count, fatal-order, cause-chain and reserve/rename/sync oracles are planned and falsifiable. Section 7 documents collector, metrics and alert limits; no delivery or runtime proof is claimed.\n\n**Limits/checkpoints**\nNo implementation or tests were run. Available tools cannot recompute supplied SHA-256s, so digest identity remains unverified. Configured non-OpenAI `spec_critic_escalated` is reported unavailable; coordinator escalation and retention-unlink owner confirmation remain open. No execution approval is granted; repairs require fresh candidate-bound review.\n\n### Verdict\nREVISE",
+        "stderr": "",
+        "truncated": false,
+        "durationMs": 124402,
+        "tokens": 106127,
+        "requests": 9,
+        "contextTokens": 105147,
+        "contextWindow": 500000,
+        "modelOverride": [
+          "openai-codex/gpt-6.1-sol:high"
+        ],
+        "resolvedModel": "openai-codex/gpt-6.1-sol:high",
+        "resolvedModelIdentity": "openai-codex/gpt-6.1-sol",
+        "resolvedThinkingLevel": "high",
+        "aborted": false,
+        "usage": {
+          "input": 101693,
+          "output": 4434,
+          "cacheRead": 558464,
+          "cacheWrite": 0,
+          "totalTokens": 664591,
+          "reasoningTokens": 1887,
+          "cost": {
+            "input": 0.203386,
+            "output": 0.044340000000000004,
+            "cacheRead": 0.05584640000000001,
+            "cacheWrite": 0,
+            "total": 0.3035724
+          }
+        },
+        "outputPath": "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-21T18-17-21-887Z_01a1ff53-c2df-74e3-bb3d-25260e912ac3/SnapshotRecoverySpecR17Critic-2.md",
+        "outputMeta": {
+          "lineCount": 27,
+          "charCount": 3075
+        }
+      }
+    ],
+    "totalDurationMs": 124418,
+    "usage": {
+      "input": 101693,
+      "output": 4434,
+      "cacheRead": 558464,
+      "cacheWrite": 0,
+      "totalTokens": 664591,
+      "reasoningTokens": 1887,
+      "cost": {
+        "input": 0.203386,
+        "output": 0.044340000000000004,
+        "cacheRead": 0.05584640000000001,
+        "cacheWrite": 0,
+        "total": 0.3035724
+      }
+    },
+    "outputPaths": [
+      "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-21T18-17-21-887Z_01a1ff53-c2df-74e3-bb3d-25260e912ac3/SnapshotRecoverySpecR17Critic-2.md"
+    ]
+  }
+}

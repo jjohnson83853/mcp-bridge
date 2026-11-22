@@ -1,0 +1,598 @@
+{
+  "schemaVersion": 2,
+  "feature": "snapshot-recovery",
+  "revision": "r22",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/snapshot-recovery/spec.md",
+    "sha256": "c7ee2a405461cc4fc3a7f12bec011eaa321f5393657fb538680bdd2186aef42f",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r22",
+        "sha256": "debfdf610700380e7187d417d94d7e540d6df3428018f0b5d8932ccd04a830e7"
+      },
+      "design": {
+        "revision": "r22",
+        "sha256": "933a3f5a6e9a7797d51d43084ac6373eb79962b80f69f082b6933106c880fc8c"
+      },
+      "tasks": {
+        "revision": "r22",
+        "sha256": "4cb4d3fd48b488f507a217995e58503f7e26b9b5ae223668b1b4cd0eb6ae94c5"
+      },
+      "envelope": {
+        "revision": "r22",
+        "sha256": "3a5b39d0147d2e46ae838fb779cd546b92216aa5d6ea4cdccb6e74236d520f00"
+      }
+    }
+  },
+  "packet": {
+    "digest": "31807011c853a9cfcfddf3d374ed23954a5a0291f147d4d9e5ea1e8a698b2122",
+    "branches": [
+      {
+        "id": "snapshot-recovery-r22",
+        "answerIds": [],
+        "taskIds": [],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r22",
+            "sha256": "debfdf610700380e7187d417d94d7e540d6df3428018f0b5d8932ccd04a830e7"
+          },
+          "design": {
+            "revision": "r22",
+            "sha256": "933a3f5a6e9a7797d51d43084ac6373eb79962b80f69f082b6933106c880fc8c"
+          },
+          "tasks": {
+            "revision": "r22",
+            "sha256": "4cb4d3fd48b488f507a217995e58503f7e26b9b5ae223668b1b4cd0eb6ae94c5"
+          },
+          "envelope": {
+            "revision": "r22",
+            "sha256": "3a5b39d0147d2e46ae838fb779cd546b92216aa5d6ea4cdccb6e74236d520f00"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": null
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Recovery locus — one startup-phase mutator. Recovery is exactly one new `Store` method, `RecoverRejected`, called **once per process** by `cmd/mcp-bridge/serve.go` immediately after `storage.Open` succeeds and before any admission/loop work. It is the only code path that creates or prunes quarantine files. `Load`, `Save`, `LoadPrompts`, `SavePrompts`, and `ensureReplaceable` keep today's observable behavior byte-for-byte and never quarantine."
+    },
+    {
+      "id": "R2",
+      "summary": "Quarantine-once byte preservation. Per family, a store-rejected file is moved exactly once via `os.Rename` into the same state directory under a bounded conforming quarantine name; bytes are preserved (rename, never delete/truncate/overwrite-first); the configured path is absent afterwards; a file that loads is never moved; the target of a symlinked entry is never touched."
+    },
+    {
+      "id": "R3",
+      "summary": "Fatal classes. A directory at a family path (including a symlink resolving to a directory), a rename failure, a reservation-create failure, a post-rename directory-sync failure, and exhaustion of the 4096 reservation attempts are **fatal**: `RecoverRejected` returns an error wrapping the new sentinel `storage.ErrSnapshotUnrecoverable` and the real cause; `serve.go` maps it to the existing `stateDirectoryFailure(state dir)`, so `runContext` writes exactly one `startup_failed` record (`code=state_directory`, `kind=resource`, `resource.path`). Nothing is overwritten on the fatal path."
+    },
+    {
+      "id": "R4",
+      "summary": "Typed warning records. Each completed quarantine yields exactly one stderr `startup_snapshot_rejected` record: level `warn`, operation `startup`, outcome `degraded`, `error.code=snapshot_unavailable` (`kind=resource`), `failure_reason` (finite taxonomy), `resource.path`=configured state directory, `quarantine_path`=absolute quarantine path. Retention failures yield one `snapshot_retention_failed` record each (`warn`/`startup`/`failure`, `code=state_directory`). No `startup_failed` and no `internal_error` is emitted for the recoverable path. Records for completed recoveries are emitted **before** any fatal return."
+    },
+    {
+      "id": "R5",
+      "summary": "Retention bounds. Per family, at most `QuarantineKeep` (5) newest **conforming** quarantine files are retained; pruning runs only for a family that created a quarantine this run; this run's own file is never pruned; non-conforming and offset-form names are never counted or touched; prune/listing/unlink failures are reported as non-fatal `RetentionFailure` entries, never silently ignored."
+    },
+    {
+      "id": "R6",
+      "summary": "Reason taxonomy. `Recovery.Reason` is a five-value closed vocabulary — `corrupt_json`, `checksum_mismatch`, `unsupported_schema`, `validation_failure`, `read_error` — derived deterministically from the same branch walk `Load`/`LoadPrompts` exercise: every schema-1 branch failure (decode, trailing data, frozen-checksum mismatch) is `corrupt_json`; `checksum_mismatch` is produced only by the schema-2 checksum sentinel; unreadable paths (read or unclassified stat errors) are `read_error`."
+    },
+    {
+      "id": "R7",
+      "summary": "Opt-out. `MCP_SNAPSHOT_QUARANTINE` defaults **ON** (unset ⇒ enabled). The value `off`, compared case-insensitively and exactly, is the only disabled spelling (fail-closed opt-out for manual-inspection deployments). When disabled, no recovery runs, no file is renamed, and **no** recovery or retention record of any kind is emitted; today's behavior is retained."
+    },
+    {
+      "id": "R8",
+      "summary": "Envelope vocabulary evolution. The shared envelope gains the optional event-specific field `quarantine_path`; the existing `failure_reason` field's admitted vocabulary is extended with the five snapshot reasons; `snapshot_unavailable` and `state_directory` join the closed runtime error classification; the new event `snapshot_retention_failed` gets a fixed message. All are optional event-specific additions: `schema_version` stays 1, no field is removed/renamed/retyped. `docs/logging-contract.md` union and tables are updated; the `EnvelopeFieldNames` count pin moves 129→130."
+    },
+    {
+      "id": "R9",
+      "summary": "Continue startup and self-heal. After recovery, startup proceeds with no restored catalog/prompt state, admission persists and publishes a fresh valid `snapshot.json`, the loop's async initial refresh republishes `prompts.json` (`internal/service/loop.go:172` `Trigger()`; admission skips `PersistPrompts`, `internal/service/reload.go:728`), and a second run against the same state directory is a no-op (no new quarantine file, no new record)."
+    }
+  ],
+  "authorization": null,
+  "reviews": null,
+  "sources": [],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "PLAN1",
+      "CR1",
+      "CT1",
+      "T1",
+      "T2",
+      "T3"
+    ],
+    "readPaths": [
+      ".scratch/snapshot-recovery/spec.md",
+      ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      ".scratch/mcp-bridge-defects/backlog.md",
+      "docs/agents/domain.md",
+      "docs/agents/issue-tracker.md",
+      "docs/logging-contract.md",
+      "go.mod",
+      "internal/config/config.go",
+      "internal/observe/envelope.go",
+      "internal/observe/log.go",
+      "internal/observe/metrics.go",
+      "internal/service/loop.go",
+      "internal/service/reload.go",
+      "internal/storage/store.go",
+      "internal/storage/store_test.go",
+      "internal/storage/store_edge_test.go",
+      "internal/storage/snapshot_edge_test.go",
+      "cmd/mcp-bridge/runtime_edge_test.go",
+      "cmd/mcp-bridge/serve.go",
+      "cmd/mcp-bridge/startup_failure.go",
+      "cmd/mcp-bridge/wiring.go",
+      "cmd/mcp-bridge/startup_failure_test.go"
+    ],
+    "writePaths": [
+      "cmd/mcp-bridge/config_envelope_test.go",
+      "cmd/mcp-bridge/serve.go",
+      "cmd/mcp-bridge/serve_edge_test.go",
+      "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "cmd/mcp-bridge/startup_failure_test.go",
+      "docs/logging-contract.md",
+      "internal/observe/edge_test.go",
+      "internal/observe/envelope.go",
+      "internal/observe/log.go",
+      "internal/observe/log_test.go",
+      "internal/storage/recovery.go",
+      "internal/storage/recovery_test.go",
+      "internal/storage/store.go",
+      "internal/storage/store_edge_test.go"
+    ],
+    "allowedEffects": [
+      "read"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "PLAN1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": []
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "planner"
+      ]
+    },
+    {
+      "id": "CR1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/snapshot-recovery/spec.md",
+          ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "CT1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/snapshot-recovery/spec.md",
+          ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "critic"
+      ]
+    },
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/storage/recovery.go",
+          "internal/storage/recovery_test.go",
+          "internal/storage/store.go",
+          "internal/storage/store_edge_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC1-1",
+        "AC1-2",
+        "AC1-3",
+        "AC1-4",
+        "AC1-5",
+        "AC1-6",
+        "AC1-7",
+        "AC1-8",
+        "AC1-9",
+        "AC1-10",
+        "AC2-8"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T2",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/observe/envelope.go",
+          "internal/observe/log.go",
+          "internal/observe/log_test.go",
+          "internal/observe/edge_test.go",
+          "docs/logging-contract.md",
+          "cmd/mcp-bridge/config_envelope_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC1-6",
+        "AC2-2"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T3",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1",
+        "T2"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/snapshot_recovery_test.go",
+          "cmd/mcp-bridge/serve_edge_test.go",
+          "cmd/mcp-bridge/startup_failure_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC2-1",
+        "AC2-2",
+        "AC2-3",
+        "AC2-4",
+        "AC2-5",
+        "AC2-6",
+        "AC2-7",
+        "AC2-8",
+        "AC2-9"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC1-1",
+      "requirementIds": [
+        "R1",
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-2",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-3",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-4",
+      "requirementIds": [
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-5",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-6",
+      "requirementIds": [
+        "R5",
+        "R4",
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T1",
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-7",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-8",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-9",
+      "requirementIds": [
+        "R2",
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC1-10",
+      "requirementIds": [
+        "R2",
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-1",
+      "requirementIds": [
+        "R9",
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-2",
+      "requirementIds": [
+        "R4",
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T2",
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-3",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-4",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-5",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-6",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-7",
+      "requirementIds": [
+        "R3",
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-8",
+      "requirementIds": [
+        "R3",
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T1",
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2-9",
+      "requirementIds": [
+        "R9",
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.superpowers/sdd/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "intent": "Review snapshot-recovery specification r27",
+  "instructions": "Candidate: snapshot-recovery-spec-r27 @ r27. Author: planner. Review mode: specification only; no implementation exists.\n\nReviewed inputs:\n- .scratch/snapshot-recovery/spec.md\n- .scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md\n- docs/logging-contract.md\n- go.mod\n- internal/observe/envelope.go\n- internal/observe/log.go\n- internal/service/loop.go\n- internal/storage/store.go\n- internal/storage/snapshot_v1.go\n- cmd/mcp-bridge/serve.go\n- cmd/mcp-bridge/startup_failure.go\n- cmd/mcp-bridge/wiring.go\n\nRead the r27 specification at .scratch/snapshot-recovery/spec.md, the ticket mirror, docs/logging-contract.md and the referenced code anchors. The candidate boundary is the exact hashed bytes in the registry. Read-only; do not edit files; do not run tests.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r28",
+    "requests": [
+      {
+        "name": "SnapshotRecoverySpecR28CodeReview",
+        "taskId": "CR1",
+        "agent": "code-reviewer",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/snapshot-recovery/spec.md",
+            ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md"
+          ]
+        },
+        "targetCandidateId": "snapshot-recovery-spec-r28",
+        "targetRevision": "r28"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecR28CodeReview",
+      "agent": "code-reviewer",
+      "task": "# Target\nReview snapshot-recovery specification candidate snapshot-recovery-spec-r28@r28 (specification only; no implementation). This is the round-18 closing revision for CR26.\n\n# Required checks\n1. CR26-1: §9.8 headline/body now state no write-path change, T4 added at r25 by owner authorization, 14-file write set unchanged — no residual 'Envelope changes: none'.\n2. CR26-2: decision ledger at §3 and D12 header record the r26 amendment (final target's cleaned path, CR25-5).\n3. CR26-3: the live pre-pass clauses scope the final-target path to ordinary (iii); (m-iii) still matches moved link entries; historical change-log wording stays round-scoped.\n4. Regressions: no R/AC/T id add/remove/rename; §6.1 same 14 files; section order; no contradiction with D1-D12 or the ACs; no review/approval/test claim.\n\n# Output contract\nReturn Findings (severity, anchor, confidence, one-line fix), then end with exactly these two lines:\n### Recommendation\nAPPROVE (or REQUEST CHANGES / COMMENT if that is the verdict).\nDo not edit any file.\n",
+      "solutionSpace": "one review: CR26 closure plus regression on a fixed id set"
+    }
+  ]
+}

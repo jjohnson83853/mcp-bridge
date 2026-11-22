@@ -1,0 +1,85 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r23",
+  "revision": "r23",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "72522a9a17c1e95bf356288aa77a5a11372ab1615b913366ff64b236942be660"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR23CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "4141926169964cc840fa3911f6d91aa6a22d71e2025d9130e84479e97849815e",
+      "targetCandidateId": "snapshot-recovery-spec-r23",
+      "targetRevision": "r23",
+      "taskSha256": "b1ca84f8f84d53f41e094b922a564da2bd0284807c6e92ddc80723285d24d483",
+      "instructionsSha256": "69f1f58cea9fe5f1ae6f2040a2ee095afe8b1b296b7064ac340d95521ce87653"
+    },
+    {
+      "name": "SnapshotRecoverySpecR23Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "ae17f60efd5110dd6e52c6c1f816bec73bb961eddff130ff6569bd7146485d6c",
+      "targetCandidateId": "snapshot-recovery-spec-r23",
+      "targetRevision": "r23",
+      "taskSha256": "0174b96ae8dcf84729af0c0aaa4baeced6f7e5491a7d976f6b3f84fab521afa2",
+      "instructionsSha256": "69f1f58cea9fe5f1ae6f2040a2ee095afe8b1b296b7064ac340d95521ce87653"
+    }
+  ],
+  "output": "# Code Review — snapshot-recovery spec r23 (specification mode; no implementation)\n\n**Findings**\n\n1. **HIGH** `[statement-contradiction]` `.scratch/snapshot-recovery/spec.md:83` (§4(3)), confidence HIGH — the reconciliation predicate reads \"in both classes, whose entry now `Stat`s `fs.ErrNotExist` **or is absent**\". An absent configured entry satisfies it for the ORDINARY class too, so AC1-10(b-xA2) (`:122`: snapshot link moved in pass 1, its target `prompts.json` moved in pass 2) spuriously reconciles — a third `Recovery`/fatal rename — contradicting D12 (iv) (`:69`) and b-xA2's \"no reconciliation fires … nothing is left to reconcile\". Fix: delete \"or is absent\"; require the entry to still exist as a symlink post-pass.\n\n2. **MEDIUM** `[lifecycle-hazard]` `:69` D12 (m-iv), confidence HIGH — \"or the entry is absent\" lets the mutual detection reconcile an entry this run itself quarantined: `snapshot.json→prompts.json` with `prompts.json→prompts.json` makes both sides `Stat` ELOOP, both move; (m-iii) passes via the partner's move, (m-iv) via absence ⇒ reserve succeeds, rename of a missing source fails ⇒ R3 fatal (exit 1), and two reconciliations break D12's own at-most-one argument. R2 (`:16`) likewise presumes a present link (\"link bytes preserved\"). Fix: apply the ordinary (iii) guard — configured entry not in the moved-entry set.\n\n3. **LOW** `[verification]` `:131` AC2-9 mutual subcase, confidence HIGH — the reconciled quarantine's preserved link text is never asserted (no `Readlink`→`snapshot.json`), and the mutual class's post-reconciliation retention is unseeded (only ordinary b-xB-res). Fix: add the Readlink assertion plus one seeded variant.\n\n4. **LOW** `[precision]` `:68` D11, confidence MEDIUM — \"resolved containing-directory context\" is never pinned to path string vs directory entry identity (`:122` uses a path). Path spelling sends a true cycle through a directory alias to the budget class instead of the cycle class (harmless, unoracled). Fix: define it as the containing directory's `lstat` identity, path as fallback.\n\n5. **LOW** `[statement-precision]` `:113` AC1-1(d), confidence MEDIUM — cites only (m-iii) for the mutual no-fire; a pre-pass dangling chain fails (m-ii), the deciding condition. Fix: cite (m-ii)+(m-iii).\n\n6. **LOW** `[editorial]` `:131,:164,:167,:191` — \"non-mutal\" typo (5×). Fix: \"non-mutual\".\n\n**Closure**\n\n- **C4: VERIFIED CLOSED.** Traced (b-hardalias) `a`→`d/l`→`d/d/l`→`q5`: context+identity keys splice finitely, `q5` recorded (entry identity+path), protected, `q4` evicted, read-through resolves, link moves. (b-hardalias2) three same-inode links in three containing dirs traverse finitely; (b-hardcycle) `x2` shares `x`'s inode *and* directory ⇒ same key ⇒ true cycle stops as `read_error` with ordinary eviction. Key is sound (same inode+context+target text ⇒ identical continuation); popped/different-context revisits continue; membership unchanged; both 4096 bounds retained.\n- **CR22 LOWs: all three closed** — (b-budget) `k4097`→`q5` makes the trip observable; either-bound wording; R9 rescoped and names the originally-dangling limitation.\n- **C5: PARTIAL** (findings 1–2). The clean mutual pair traces correctly end-to-end: pass-1 `read_error`, pass-2 dangling no-op, own-family rename with `orphaned_link`, order [snapshot, prompts], R3 discipline, retention pass, second-run no-op; AC2-9 discriminates (unreconciled ⇒ catalog bytes ⇒ `SavePrompts` refusal + second-run record). Owner direction is recorded in `round-12-seed.json`; §9.11/§8(2) keep retention-unlink and the NON-mutual carve-out OPEN — no false claim.\n- **Regression OK:** no id/envelope change (14-file union = 4+6+4); std-lib only (`os.Link`); `store.go:104-106`,`:122-126` anchors correct; `publishFile` renames over the symlink, so \"fresh regular `prompts.json`\" is mechanically right; §9.7's stale-mirror account accurate; no review/approval claim.\n\n**Limits:** no hashing tool — supplied SHA-256 identity unverified; no tests/lint run by me (spec-lint's 20 findings are pre-existing mirror-drift/shared-oracle).\n\n## Verdict: REQUEST CHANGES\n",
+  "invocationId": "571d5644-42c9-49c4-ac3a-41babf34d73c"
+}

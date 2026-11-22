@@ -1,0 +1,85 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r15",
+  "revision": "r15",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "b859f4f2a1a2f1b94964cd7dd3c7e09d6be8a9e602afa213a2eb93a3dce62d0a"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR15CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "c81c36521f11faeaf97ca9584b71de500811198a17111ad834a7b4c5c11dd90b",
+      "targetCandidateId": "snapshot-recovery-spec-r15",
+      "targetRevision": "r15",
+      "taskSha256": "68f75e6323b5048af5d4e9e130e583dc3de3e17f80a9c4d075d8c569f119e8e8",
+      "instructionsSha256": "042288e38373cbd4c73bf3840a51077ddab8f8f89916e1e9aa5c7a25449e0186"
+    },
+    {
+      "name": "SnapshotRecoverySpecR15Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "9bd06b2716cf20d2ed52b9874e2257e6ead15d77388085bcd57509f0f264c35c",
+      "targetCandidateId": "snapshot-recovery-spec-r15",
+      "targetRevision": "r15",
+      "taskSha256": "371b3d392e6df7aa9242b978e9f474eed622e1c6dee22ac5cd054c51b42ad381",
+      "instructionsSha256": "042288e38373cbd4c73bf3840a51077ddab8f8f89916e1e9aa5c7a25449e0186"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode/pass:** specification, initial (r15). **Files Reviewed:** 18. **Total Issues:** 5 (0 CRITICAL/HIGH/MEDIUM; 5 LOW).\n\n**Closure (source-checked):** per-family retention filter, fs.ErrExist advance, R7 carve-out, fatal-first ordering, AC1-6 full shape + fixed message, T2 producer strings, five-reason table, LoadPrompts/SavePrompts negatives, tie-break, empty-string env, R2 stat-error: all closed. C5: R5/D10/§4(3)/AC1-5/AC1-6 agree on select-once, attempt-once, first-failure-ends-pass, zero-attempt listing, permitted excess; second-unlink over-deletion is caught by the exact-one-attempt + named-attempt assertions. Not closed: ticket account (F1), AC1-6 ownership (F2).\n\n**Envelope/ids:** R1–R9, AC1-1..10, AC2-1..9, T1–T3 unchanged vs round-3-spec-r14.md; §6.1 write set identical (14 files) and equals the §6 union; schema_version 1.\n\n### By Severity\n- CRITICAL: 0\n- HIGH: 0\n- MEDIUM: 0\n- LOW: 5\n\n### Issues\n\n**[LOW][provenance] Ticket account contradicted by the input**\nFile: spec.md:33,210 vs issues/01:91 | ID: CR15-01 (reopens r14 §9.7) | Confidence: HIGH\nIssue: spec claims the heading is \"mirror of spec r14\" with differing text; the input reads r15 and already carries the tie-break, C5/D10 and resource.path pins. No AC impact.\nFix: state the observed heading/body; drop the divergence claim.\n\n**[LOW][traceability] T1 still claims AC1-6 wholesale**\nFile: spec §6 T1 vs AC1-6 Verify, T3 | ID: CR15-02 | Confidence: HIGH\nIssue: T1 lists AC1-1..AC1-10, but AC1-6's cmd TestEmitRecoveryRecords half is T3's and unreachable from T1's files; T3's \"no dual ownership\" is contradicted on paper.\nFix: scope T1 to the storage half; name T3 for the cmd half.\n\n**[LOW][verifiability] Two ranges omit the fact they support**\nFile: spec T2 inputs/§3: wiring.go:486-491, log.go:224- | ID: CR15-03 | Confidence: HIGH\nIssue: the off-arm block is 486-494 and the quoted remediation is at 492; eventMessage starts at 228 (default 275 is inside the cited 270-275).\nFix: 486-494; 227-276.\n\n**[LOW][coverage] snapshot_unavailable ErrorInfo shape unpinned**\nFile: spec §4/T2 inputs vs AC2-2, T2 RED | ID: CR15-04 | Confidence: HIGH\nIssue: §4 requires kind=resource/retryable=true/remediation \"verify the durable snapshot and storage permissions, then retry\"; AC2-2 checks only error.code and T2 pins only state_directory. validErrorInfo admits exact equality, so a wrong remediation ships green.\nFix: add a four-field snapshot_unavailable shape case in edge_test.go, cited by AC2-2.\n\n**[LOW][coverage] Retention loop tested only with one excess**\nFile: AC1-3/1-5/1-6/1-8/1-9 (5 seeds), R5/§4(3) | ID: CR15-05 | Confidence: HIGH\nIssue: no oracle requires two evictions, so evicting at most one per pass passes all ACs; a backlog could stay above QuarantineKeep (a second unlink is still caught).\nFix: add a 6-seed (2-excess) subcase asserting two evictions and total 5.\n\n### Positive Observations\n- Family-scoped parse and cross-family seeds are consistent across R5/§4(3)/AC1-3/1-6/1-8/§8(2).\n- R7 carve-out and fatal-first are negative behavioral oracles, not prose; §9.11's owner flag for irreversible deletion is explicit.\n- AC1-6 pins resource.path, validErrorInfo equality, the canonical remediation and the non-default message; producer literals match source.\n\n**Limits:** no shell/hash or write tool, so registry section hashes and byte identity of .scratch/spec.md vs round-4-spec-r15.md (same 215 lines/header) are unverified; no go test/spec-lint; no implementation exists; ticket edit timing unavailable (agentview recorded no edit).\n\n### Recommendation\nAPPROVE\n",
+  "invocationId": "a60a584a-d7a0-44a4-ac1c-9a15e5a73146"
+}

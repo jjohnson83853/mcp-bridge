@@ -1,0 +1,85 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "snapshot-recovery-spec-r20",
+  "revision": "r20",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "21c479cbe7e3c4f3e847deef01d2db8aaa577cedf519e9f73b5c43d3f40a0f06"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR20CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "59d2ed5dbe4ad5562aa93d612e25d661220ba2f46fcf86581dc9f1bac6333bd8",
+      "targetCandidateId": "snapshot-recovery-spec-r20",
+      "targetRevision": "r20",
+      "taskSha256": "d5a6cf06fba1f475fbb37ba9f86bcbd43ac8cb3cc7989b459fefba30617d9050",
+      "instructionsSha256": "532fbd5f931137db7ed1db03c407995fc6162c8865a1aada6142b9d4643701be"
+    },
+    {
+      "name": "SnapshotRecoverySpecR20Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "dbfee044c16962d9191f48043de665a616d23a483c1cfde68ea82b01c5c56d07",
+      "targetCandidateId": "snapshot-recovery-spec-r20",
+      "targetRevision": "r20",
+      "taskSha256": "9bc780344044844a0fc522d71edcc52e4e7197646ade2bcb5a2367ffbb1d97a6",
+      "instructionsSha256": "532fbd5f931137db7ed1db03c407995fc6162c8865a1aada6142b9d4643701be"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** specification (initial), `snapshot-recovery-spec-r20@r20`; no implementation. **Limits:** no SHA-256/shell tool, so supplied digests are byte-unverified; no tests/spec-lint run; ticket mirror is stale by design (r15 heading, r7/r3 refs) and was not treated as contract. Anchors spot-verified in `store.go`, `envelope.go`, `log.go`, `startup_failure.go`.\n\n### Closure\n- **C1 CLOSED.** R2/R5/D10/D11/§4(3)/§8(2)/T1 agree: every hop resolves component-wise from `filepath.Dir` of the link read (root for absolute), with `..` on the resolved parent. Reconstructed `/s/sub/alias -> /s/deep`, `snapshot.json -> sub/alias/../q5` reaches `/s/q5`: q5 protected by entry identity plus cleaned path and survives, q4 evicted, link moved, read-through non-dangling (`AC1-10(b-alias):122`). `(b-alias2)` escape terminates before q5: absent branch, no quarantine/retention, five seeds intact, no reconciliation. `(b-alias-loop)` terminates on identity revisit: link moves as `read_error`, c5 evicted. Dangling component, ELOOP, mid-path not-a-directory and 4096-component budget are stated harmless. No operative lexical resolution remains; \"lexical\" survives only as the protection path fallback.\n- **C7 CLOSED in substance.** D12:69 records pre-pass link status, chain, termination class, existing-regular-target identity and a pre-move moved-entry set; conditions (i)-(iv); fatal-free path only; own-family reserve+rename with `Reason=orphaned_link`; one record; R3-fatal failures with pass records already emitted; then ordinary retention. `AC1-10(b-xB2)/(b-xB3):122` pin both move-through directions, result order and counts; `AC2-9:131` pins exit 0, two warn records in order, fresh valid catalog, fresh regular `prompts.json` accepted by `SavePrompts` (no refusal wrap), and second-run no new quarantine. Guard confirmed (`store.go:122-126`; absent yields `ErrNoSnapshot`, `:86-88`). Owner checkpoint recorded OPEN, not claimed (§8:202; §9.11/§9.16).\n- **L-1..L-4 closed; regression OK.** Narrowed \"not itself a recorded chain element\" wording (R5/AC1-3); ordinary count pre-existing-4 and mixed count the full unprotected set, with AC counts re-derived; over-protection oracle seeded (AC1-3:115); R2 backtick gone; LoadPrompts anchors 95-96/98-99/101-102/104-106 correct. No R/AC/T id changed; 14-file envelope (T1 4 + T2 6 + T3 4); std-lib only; Load/Save/LoadPrompts/SavePrompts/ensureReplaceable unchanged; C6/CR15 retained; six reasons consistent (R6/R8/T2/AC1-6/AC2-2); pin 129->130.\n\n### Issues\n**[MEDIUM][statement-contradiction]** C7's exclusion list disables its own fixtures and contradicts the quarantine rule.\nFile: `.scratch/snapshot-recovery/spec.md:69` (D12 ii), `:83` (§4(3)), `:15-16` (R2); AC at `:122`. Confidence HIGH.\nThe walk defines \"non-conforming final target\" as any regular target that is not a conforming quarantine name, which includes `snapshot.json`/`prompts.json` - exactly the `(b-xB2)/(b-xB3)` targets; read literally condition (ii) never passes, so reconciliation cannot fire. R2's \"dangling, loop, escape, non-conforming, or directory ... is NOT moved\" also contradicts R2's own stat-error rule and `(b-eloop)/(b-vac)` Mode 1, where such links ARE moved.\nFix: remove \"non-conforming\" from both exclusion lists (keep dangling/loop/escape/directory), or scope it to out-of-state-directory targets; write \"NOT reconciled\" instead of \"NOT moved\" in R2.\n\n**[LOW][statement-precision]** `(b-xA2)` gives the wrong non-reconciliation reason.\nFile: `.scratch/snapshot-recovery/spec.md:122`. Confidence HIGH.\nThe target `prompts.json` WAS moved, so condition (iii) passes; the real failure is (iv): the configured snapshot link itself moved, so the entry no longer exists as a symlink.\nFix: cite condition (iv).\n\n**[LOW][editorial]** Checksum attribution off by one.\nFile: `internal/storage/store.go:103-105` (spec §3). Confidence HIGH.\n`ChecksumValue` is `:103`, guard `:104`, return `:105`; §3 says `:104`/`:105`/`:106`. Range `:104-106` is still correct.\nFix: reattribute.\n\n### Advisory LOWs\n4096 budget and mid-path not-a-directory lack seeded oracles. No fixture exercises post-reconciliation retention with pre-existing files. AC1-3 alias-identity (`:115`) keeps lexical-era \"lexically unequal\" wording; entry identity carries it. D12's fatal list omits post-rename sync failure (covered by R3's \"exactly like a family pass's\", unnamed).\n\n### Positive\nC1 fixture is end-to-end (q5 preserved, q4 evicted, link moved, read-through); escape/cycle cases observably harmless; `(b-xB3)` proves reconciliation runs after both passes; (i)/(ii) owner split explicit and unclaimed.\n\n### Recommendation\nREQUEST CHANGES\n",
+  "invocationId": "2ae22819-08f6-4ddf-a3c6-727276d08bae"
+}

@@ -1,0 +1,85 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "snapshot-recovery-spec-r22",
+  "revision": "r22",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/snapshot-recovery/spec.md",
+      "sha256": "c7ee2a405461cc4fc3a7f12bec011eaa321f5393657fb538680bdd2186aef42f"
+    },
+    {
+      "path": ".scratch/snapshot-recovery/issues/01-untrusted-snapshot-self-recovery.md",
+      "sha256": "006b793520ba4ed7ca8c2dae5c05311409413ebc110a01497356290c566239f4"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "53bea5258c5afc2164191397f5f5d7f5eb29064984a80cd508aa77acafe67c18"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "da4e327b02dd0bbaa97330703c84e52c2150f4e3483460fb6cef69ace3f60c56"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "4ebf4febb75a291e9d9e2908d582c787ab74523144c3a0a6624dfb261a03b4e0"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "92ce68517a4c66ceb83489b822a65d3440992c474f7925cda031df6781a445e6"
+    },
+    {
+      "path": "internal/service/loop.go",
+      "sha256": "c8e48e64293a9b8f4a0bd39cca5e74d258e8905abf175d1b3094129412c5362e"
+    },
+    {
+      "path": "internal/storage/store.go",
+      "sha256": "b1e1bcc69d7329bb4d1b07c164d0e94aa97ad5eb5385e27e0743f67400254b20"
+    },
+    {
+      "path": "internal/storage/snapshot_v1.go",
+      "sha256": "52675aebb7ecead48ba30c5bcb48c49d4e867020310cde9be683cb41cf075644"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "73600c1af8a85078c198377b26b93a5723963a017b2f7a3ff57ed3dbec5dda6c"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/wiring.go",
+      "sha256": "dc065b4ad6fb45d706907dcf7aea0958e1ca67a110b6b6b2afaea3c78475384c"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SnapshotRecoverySpecR22CodeReview",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "c2f57c993ddaf6d79d81427544229bc595e704cac58b01d549a215d89d99de75",
+      "targetCandidateId": "snapshot-recovery-spec-r22",
+      "targetRevision": "r22",
+      "taskSha256": "b049036997cf96946dc49e54685a9581c30c65e537cf676cde1330559b9de762",
+      "instructionsSha256": "584619e99b2e845a17251a71b366e6e29f5257dba8ab4a80e536074bb6f16863"
+    },
+    {
+      "name": "SnapshotRecoverySpecR22Critic",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "89cb0be684ee4fcf216404e3c455eca063759499377c8b5021ea717954aa301f",
+      "targetCandidateId": "snapshot-recovery-spec-r22",
+      "targetRevision": "r22",
+      "taskSha256": "572b1d1baa92e79404e873c81228b5c864975b682cc6c0391c34bbfc42cf3316",
+      "instructionsSha256": "584619e99b2e845a17251a71b366e6e29f5257dba8ab4a80e536074bb6f16863"
+    }
+  ],
+  "output": "Spec ID: snapshot-recovery-spec-r22\nRevision: r22\nFindings by ID: C4, C5\n\n**C4 — MAJOR; class=lifecycle-hazard; confidence=HIGH.**\nAnchor: `.scratch/snapshot-recovery/spec.md:68,83,122` (D11, protection, AC1-10).\nOn-stack **inode identity alone** still mistakes finite resolution for a cycle when hard-linked symlinks have different containing directories.\n\nStatic counterexample: create directories `d/d`; `snapshot.json→a`; `a→d/l`; make `d/l` a hard link to symlink `a` (same inode and target text); set `d/d/l→../../q5`. With five conforming seeds and corrupt `q5` oldest, filesystem resolution reaches `q5`. D11 instead stops at `d/l`, whose inode matches active `a`, leaving `q5` unprotected. Retention deletes `q5`, destroying backing bytes and dangling the quarantine link.\n\nLinux permits these hard links: [link(2), VERSIONS](https://man7.org/linux/man-pages/man2/link.2.html).\nMinimal fix: distinguish active expansions by resolved containing-directory context as well as identity; keep protection membership separate. Add this layout under AC1-10, asserting `q5` survives, `q4` is evicted, and read-through preserves bytes. This is a **new C1-class instance**, not reopening the repaired repeated-alias fixture; the earlier miss’s reason is unknown.\n\n**C5 — MAJOR; class=statement-contradiction; confidence=HIGH.**\nAnchor: `spec.md:23,69,83` (R9 versus D12).\nFor `snapshot.json↔prompts.json`, pass 1 quarantines snapshot as `read_error`; pass 2 sees dangling prompts and no-ops; reconciliation rejects its pre-pass loop class. Admission republishes snapshot, making prompts resolve to catalog bytes. The unchanged `SavePrompts` guard rejects them, preventing prompt healing; restart quarantines prompts again—contradicting R9’s persistence/no-new-quarantine promise.\n\nSource support: `store.go:84-126`, `reload.go:723-740`. Independently confirmed by static tracing; also identified in `cr-r22-raw.md`. Existing defect; earlier miss’s reason unknown.\nMinimal fix: reconcile R9/D12 explicitly and pin the mutual-link startup/restart behavior under AC2-9. Narrowing the promised recovery behavior requires affected-owner confirmation, not merely weaker assertions.\n\n**Verified textually**\n- Original C1 fixture repaired: alias expansions pop before subsequent parent hops; b-realias/b-revisit require `q5` preservation, `q4` eviction and byte read-through; b-cycle retains true ancestor-cycle termination.\n- C3’s moved-chain-element rationale is corrected. D11/AC1-10 agree on 4096 splices, excluding the configured input hop and ordinary components; termination/protection clauses remain specified.\n- C7/D12 ordinary reconciliation, C6/CR15 protections, R→AC→T coverage, fixed IDs, 14-file envelope and no-new-dependency constraint remain.\n- §7 documents collection/alert exceptions and consequences.\n\n**Limits:** §9.19 consistently records the historical r21 manifest; eleven non-spec digests match r22. Exact-byte recomputation is unavailable, not a spec defect. No runtime/tests executed. Both owner checkpoints remain OPEN and unclaimed; non-OpenAI escalation remains unavailable. T1/T3 correctness closure is incomplete; repairs require newly bound reviews.\n\n### Verdict\nREVISE\n",
+  "invocationId": "997ad544-c587-43c3-baff-d4809bc3628f"
+}
