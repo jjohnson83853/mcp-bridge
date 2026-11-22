@@ -1,0 +1,69 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "startup-diagnostics-spec-r1",
+  "revision": "r1",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/startup-diagnostics/spec.md",
+      "sha256": "4309e0e1ee128acca60bba1c7d67fb426cebf8391b7c2dff2fd4676a5400575f"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewStartupDiagnosticsCR1",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "af449a5a91ddae3c45e60911de5db028e61afa90b357622cb2348d3a066abcdc",
+      "targetCandidateId": "startup-diagnostics-spec-r1",
+      "targetRevision": "r1",
+      "taskSha256": "18f22bb3a3e943c2bb21f51ac844f4404a13927337838e4330c27f4f92860a39",
+      "instructionsSha256": "09289de6c8933226c76baed657f3bf4d68b6ac0f06f120f0a9fce96801741f2b"
+    },
+    {
+      "name": "ReviewStartupDiagnosticsCT1",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "4c77c51b196ead701f86266ea8ad263ba3cb7712708e2b06c551ddb215f8ce35",
+      "targetCandidateId": "startup-diagnostics-spec-r1",
+      "targetRevision": "r1",
+      "taskSha256": "5d3458074ee338009bcddbebf69bc7b646e5ee985f0af15d7010cd379389dafd",
+      "instructionsSha256": "09289de6c8933226c76baed657f3bf4d68b6ac0f06f120f0a9fce96801741f2b"
+    }
+  ],
+  "output": "**Mode:** specification, initial pass — candidate `startup-diagnostics-spec-r1` (r1), spec sha256 `4309e0e1…`. Reviewed: spec, ticket 01, owner decision, canonical state r1 (T1 effects, env-1), `main.go`, `serve.go`, `startup_failure.go`, `envelope.go`, `storage/recovery.go`+`store.go`, `service/loop.go`+`reload.go`, docs/logging tests. Limits: read-only; no commands/tests executed; hash not recomputed.\n\n### Findings\n\n- [HIGH][task-envelope] Envelope count pin blocks AC3. `cmd/mcp-bridge/config_envelope_test.go:168` pins `len(EnvelopeFieldNames())==130`; adding `startup_stage` makes 131, but T1's effects and `env-1.writePaths` omit that file (`execution-state.json` T1 paths; spec Envelope). T1's mandated `go test ./cmd/mcp-bridge -count=1` cannot pass, and the spec forbids editing outside the seven paths. Fix: add the file and set 131.\n\n- [HIGH][statement-contradiction] `snapshot_recovery` cannot be emitted. `serve.go:160-167` routes every `RecoverRejected` fatal through `state_directory`; `recovery.go:77-79` yields a non-`ErrSnapshotUnrecoverable` error only for a nil/closed store, impossible after `serve.go:158`. Even if wrapped, `serve.go:167` returns before `startupFailureForError` (`serve.go:409`), and `main.go:51-64` recognizes only `*startupFailure`, so a carrier falls to `fallbackStartupFailure` (internal_error). AC2's test fabricates carriers, so it passes while the real path stays `state_directory`/`internal_error`. Fix: drop the stage, or classify at the return site (`return startupFailureForError(carry(...))`) with a reachable trigger named.\n\n- [HIGH][task-envelope/test-blocker] A read-only test will fail. `cmd/mcp-bridge/snapshot_recovery_test.go:472` pins `internal_error` for the quarantine-disabled corrupt-snapshot path. Its failure is `loop.Start`'s admission persist refusal (`reload.go:722-726` → `Save`→`ensureReplaceable`, `store.go:236`) — a loop error the design wraps as `catalog_loop_start`. The spec's \"expected to stay internal_error\" is false; the file is not in the write set, and T1 step 3 both permits and forbids changing such an assertion. Fix: add the file to T1/env-1, update the pin, correct the claim.\n\n- [MEDIUM][r-ac-coverage-gap] No AC drives `serve` for the new stages. AC1/AC2 commands run constructor/classifier unit tests only; deleting the serve-side wrapping or listener/address attribution still passes, and exactly-one-line for real exits (the risk packet's double-emission check) is unverified. Fix: add one full-path test per stage (at least loop + listener) asserting a single record and code/stage.\n\n- [MEDIUM][lifecycle-hazard] Nil-wrapping is unspecified. `loop.Start` returns nil on clean shutdown (`loop.go:183-192`), `serveListener` returns nil for `http.ErrServerClosed` (`serve.go:414-421`), and the drain path re-reads `loopErr` (`serve.go:393-398`). Unconditional wraps would emit a spurious `startup_failed` and exit 1 on every graceful shutdown. Fix: require a nil-preserving wrap helper.\n\n- [LOW][observability-precision] `catalog_loop_start` is described as \"the catalog loop failed to start\", but it also covers admission/persist failures (`reload.go:723`; the disabled-quarantine class), so the operator-facing cause can misname the stage.\n\n- [LOW][ac-precision] R1.4/AC4 test a literal bearer inside a cause, not a configured secret; the conclusion is still structurally sound because only static fields plus listener/address are serialized.\n\n### Recommendation\nREQUEST CHANGES\n",
+  "invocationId": "49c9a454-5d3b-4b6a-8418-b3521fea2cb7"
+}

@@ -1,0 +1,81 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "startup-diagnostics-spec-r8",
+  "revision": "r8",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/startup-diagnostics/spec.md",
+      "sha256": "f559a884e9000b7f8ebe7ada63dee8b489aea52d68fdd54d41aed0c5054581c6"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewStartupDiagnosticsCR8",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "15f3759b29884d11aab24ad4c6d2bf43c568ef73710a36be01921dbc11ea3d39",
+      "targetCandidateId": "startup-diagnostics-spec-r8",
+      "targetRevision": "r8",
+      "taskSha256": "352395e049c9d10cbc0a5ffc620c29ed944cf27aa51159abcb73665db6a23d3e",
+      "instructionsSha256": "9faa3be32ac5738e6a9fc30d6725b17cd0e088ef7f701a5db7aa6e3e7cc7c436"
+    },
+    {
+      "name": "ReviewStartupDiagnosticsCT8",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "339c1ee08757212447c974c3ed49b0dd60e8887d27d91af5d6f6a4e8f515041b",
+      "targetCandidateId": "startup-diagnostics-spec-r8",
+      "targetRevision": "r8",
+      "taskSha256": "3d66ce850a19f48b6ebe634bc6c2be3c69d964cf8dc575aed6771a5118072300",
+      "instructionsSha256": "9faa3be32ac5738e6a9fc30d6725b17cd0e088ef7f701a5db7aa6e3e7cc7c436"
+    }
+  ],
+  "output": "Spec ID: startup-diagnostics/01\nRevision: r8\nFindings by ID: none\n\nNo unresolved blocking specification defects found.\n\n**Verified r7 closures**\n- **C1:** AC4 and T1 now specify the same configured-secret, real failing startup fixture (`.scratch/startup-diagnostics/spec.md:169,179`). Its corruption→persist-refusal chain is supported by `internal/storage/store.go:313-325` and `internal/service/loop.go:157-161`.\n- **C2:** Diagnostic-carrier tests preserve `errors.As`; classification remains subordinate to the actual interception at `cmd/mcp-bridge/serve.go:405-409`.\n- **C3:** Full-suite, ≥90% coverage and built-CLI smoke prerequisites are explicit (`spec.md:188,207`).\n- **C4:** Captured test-process status is checked before PASS records (`spec.md:166-171`); package failure cannot be replaced by a successful grep.\n\n**Coverage**\n- Ticket→R1→AC1–AC6→T1 traceability is sufficient. The ten-path write envelope covers production, affected tests, contract documentation and changelog.\n- Secret safety uses static fields and closed enums, not cause serialization. Schema version 1, optional-field omission, existing constructor compatibility and genuine-unknown fallback are explicit.\n- Independently checked direct snapshot classification, publication precedence, diagnostic interception, nil-preserving shutdown and first-error retention (`serve.go:154-167,357-409`; `startup_failure.go:108-133`).\n- Section 7 plus `docs/logging-contract.md:585-595` define the existing stderr/collector boundary and local delivery-verification limit. No infrastructure, recovery, reload or deployment changes are introduced; rollback is one commit.\n\n**Limits and authority**\nRead-only review; no tests, smoke runs or digest recomputation. The listener’s initially unsuccessful readiness probe alone does not prove draining began; the required bounded exit and emitted-line assertions remain decisive. Candidate-bound CodeReviewer APPROVE is recorded in `.omp/plans/review-sequence.json`.\n\nTechnically ready for implementation. This PASS grants no execution permission: canonical authorization/review binding and owner checkpoints still govern dispatch.\n\n### Verdict\nPASS\n",
+  "invocationId": "c99b16e9-eca6-4571-946f-b3680cfd0289"
+}

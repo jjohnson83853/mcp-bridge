@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "feature": "startup-diagnostics",
+  "packetDigest": "f66e242f8c1e70a826d8c3b2935316223203f4bc98b7f6fd565548d399c8d695",
+  "selectedBranchId": "startup-diagnostics-r8",
+  "origin": "user",
+  "explicit": true,
+  "timedOut": false,
+  "automatic": false,
+  "messages": [
+    "Yes go ahead simplify the plan and start with startup diagnostics",
+    "try same thing again",
+    "Go with A",
+    "critic"
+  ],
+  "decisions": [
+    "Supersede the combined config-admission-resilience plan; implement the startup diagnostics ticket as its own narrow feature.",
+    "Authorize the planner and review rounds needed to reach implementation; the owner accepted the review-cost extensions.",
+    "Proceed through the Critic gate; the Critic then PASSed r8."
+  ],
+  "authorizationRequested": "Implement startup-diagnostics revision r8, task T1: typed, sanitized startup-failure stage/cause classification with the additive envelope fields."
+}

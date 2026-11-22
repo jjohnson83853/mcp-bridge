@@ -1,0 +1,77 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "startup-diagnostics-spec-r4",
+  "revision": "r4",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/startup-diagnostics/spec.md",
+      "sha256": "47918bb7d136736f2ff9ef73a14a8bcd1a14c0f25ede03094cd67710a9692ed4"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewStartupDiagnosticsCR4",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "8b02283f96c5a6fd2744b0608b3e0ab1dfe797a9168eed431c6936f51ec6bc42",
+      "targetCandidateId": "startup-diagnostics-spec-r4",
+      "targetRevision": "r4",
+      "taskSha256": "1edf2c87c829aaa19406cba0353c9b2178928413ff9fdfc4754808c66c123f96",
+      "instructionsSha256": "c45506d84020ce41953efb9f1b358b3f0f9f83993fb788fd3af9b120b1d191f2"
+    },
+    {
+      "name": "ReviewStartupDiagnosticsCT4",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "91d93a0b0cf7ae0fc4b55482d20fc8a15fc5937b8bccc1fd0453410d0b0c34d5",
+      "targetCandidateId": "startup-diagnostics-spec-r4",
+      "targetRevision": "r4",
+      "taskSha256": "c1acc3bdd51c28f92b98ff377a8886a8dbd77e4e4b9ef94f7d11c925088823a2",
+      "instructionsSha256": "c45506d84020ce41953efb9f1b358b3f0f9f83993fb788fd3af9b120b1d191f2"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** specification (initial pass). **Candidate:** `startup-diagnostics-spec-r4` (sha256 `47918bb7…`), bound to `.omp/plans/execution-state.json` env-1. Reviewed: spec, normative ticket, owner decision, execution state, and all cited sources. **Limits:** read-only reviewer; no build/test execution, so the failing-test conclusions below are static traces of the cited assertions.\n\n### Findings\n\n- [HIGH][spec-conflict] The reclassification breaks `cmd/mcp-bridge/serve_edge_test.go:534`, which pins `state_directory` for FIFO / symlink-to-directory startup entries. AD1 routes `storage.ErrSnapshotUnrecoverable` (`internal/storage/recovery.go:226`; `cmd/mcp-bridge/serve.go:164-165`) to `snapshot_recovery`, so this test fails. The file is absent from both the sanctioned expectation list (`.scratch/startup-diagnostics/spec.md:136`) and `env-1.writePaths` (`spec.md:145`); AC3's `go test ./cmd/mcp-bridge -count=1` therefore cannot pass, and T1's own blocker rule stops execution. Fix: add `cmd/mcp-bridge/serve_edge_test.go` to the write set and the sanctioned list; update `:534` to `snapshot_recovery` + stage.\n\n- [HIGH][spec-conflict] The proposed docs column breaks an untouched contract test. `docs/logging-contract.md:330-338` startup rows are parsed positionally by `cmd/mcp-bridge/logging_contract_test.go:490-505` and compared with a 9-cell vector at `:675`; inserting a `Startup stage` column after `Code` (`spec.md:109`) makes every row 10 cells. That test file is declared a read-only input (`spec.md:33`, `:145`), so AC3 fails with no authorized repair. Fix: keep row cells unchanged and document stage association in prose/enum text, or authorize editing the parser and the expected vector.\n\n- [HIGH][test-infeasibility] AC2's listener full-path test cannot pass as described. T1 1a overrides `serveListenerFn` to signal a seam and return a synthetic error \"when called\", then waits for readiness. Both listeners call that var (`serve.go:341-355`); if both calls fail, nothing serves and `waitFor` (`cmd/mcp-bridge/serve_test.go:484-496`) can never observe readiness; if only one fails, the select (`serve.go:358-363`) immediately begins a drain that closes both servers (`serve.go:372-388`), so readiness is at best a microsecond race. Fix: add a release gate — serve the non-failing listener for readiness, block the failing call on a test channel, release it after readiness, then return the synthetic error.\n\n- [MEDIUM][requirement-coverage] Ticket item 1 requires \"a sanitized cause summary\"; R1.1/AC1 replace it with a static remediation without stating the equivalence (`spec.md:13`, `:116`). Make the mapping explicit (class-level static summary) or record the narrowing.\n\n- [MEDIUM][spec-contradiction] R1.3/§8 call the snapshot reclassification the \"single sanctioned compatibility change\" (`spec.md:16`, `:158`), yet T1 step 1b (`spec.md:132`) reclassifies disabled-quarantine startup from `internal_error` to `catalog_loop_start` (currently pinned at `cmd/mcp-bridge/snapshot_recovery_test.go:472`) — a second operator-visible code change. Declare both in R1.3/§8 and the changelog.\n\n- [MEDIUM][verification] AC1/AC4/AC5/AC6 verify with `go test -run <new test name>`. Go exits 0 when nothing matches, so a name mismatch yields a green AC with no executed oracle. Add `-v` run-count checks (or an assertion-bearing package run) to each such command.\n\n- [LOW][stale-anchor] `var testServeNow` is `serve.go:32`, not `:33` (`spec.md:27`, AD2); the quarantined `errors.Is` block is `serve.go:164-166`, not `:163-165`; `TestRecoveryStateDirectoryFailurePreservesClassificationAndCause` is `startup_failure_test.go:162`, not `:164`; `TestSnapshotRecoveryFatalDirectoryPaths` starts at `snapshot_recovery_test.go:872`, not `:906`.\n\n### Positive Observations\n\nThe stage/code split is coherent, the `startup_stage` union insertion is correctly sorted (130→131), the nil-preserving wrap protects graceful shutdown, and AD1's reachability claim (only `recovery.go:78` yields a non-unrecoverable error) is verified. The envelope change is additive with `omitempty`, so existing constructors remain byte-identical.\n\n### Recommendation\n\nREQUEST CHANGES\n",
+  "invocationId": "75549d13-5f8e-4e2d-a1d5-8d239adf14c0"
+}

@@ -1,0 +1,25 @@
+<task-result id="ReviewStartupDiagnosticsCR1" agent="code-reviewer" status="completed" duration="4m2s">
+
+<output>
+**Mode:** specification, initial pass — candidate `startup-diagnostics-spec-r1` (r1), spec sha256 `4309e0e1…`. Reviewed: spec, ticket 01, owner decision, canonical state r1 (T1 effects, env-1), `main.go`, `serve.go`, `startup_failure.go`, `envelope.go`, `storage/recovery.go`+`store.go`, `service/loop.go`+`reload.go`, docs/logging tests. Limits: read-only; no commands/tests executed; hash not recomputed.
+
+### Findings
+
+- [HIGH][task-envelope] Envelope count pin blocks AC3. `cmd/mcp-bridge/config_envelope_test.go:168` pins `len(EnvelopeFieldNames())==130`; adding `startup_stage` makes 131, but T1's effects and `env-1.writePaths` omit that file (`execution-state.json` T1 paths; spec Envelope). T1's mandated `go test ./cmd/mcp-bridge -count=1` cannot pass, and the spec forbids editing outside the seven paths. Fix: add the file and set 131.
+
+- [HIGH][statement-contradiction] `snapshot_recovery` cannot be emitted. `serve.go:160-167` routes every `RecoverRejected` fatal through `state_directory`; `recovery.go:77-79` yields a non-`ErrSnapshotUnrecoverable` error only for a nil/closed store, impossible after `serve.go:158`. Even if wrapped, `serve.go:167` returns before `startupFailureForError` (`serve.go:409`), and `main.go:51-64` recognizes only `*startupFailure`, so a carrier falls to `fallbackStartupFailure` (internal_error). AC2's test fabricates carriers, so it passes while the real path stays `state_directory`/`internal_error`. Fix: drop the stage, or classify at the return site (`return startupFailureForError(carry(...))`) with a reachable trigger named.
+
+- [HIGH][task-envelope/test-blocker] A read-only test will fail. `cmd/mcp-bridge/snapshot_recovery_test.go:472` pins `internal_error` for the quarantine-disabled corrupt-snapshot path. Its failure is `loop.Start`'s admission persist refusal (`reload.go:722-726` → `Save`→`ensureReplaceable`, `store.go:236`) — a loop error the design wraps as `catalog_loop_start`. The spec's "expected to stay internal_error" is false; the file is not in the write set, and T1 step 3 both permits and forbids changing such an assertion. Fix: add the file to T1/env-1, update the pin, correct the claim.
+
+- [MEDIUM][r-ac-coverage-gap] No AC drives `serve` for the new stages. AC1/AC2 commands run constructor/classifier unit tests only; deleting the serve-side wrapping or listener/address attribution still passes, and exactly-one-line for real exits (the risk packet's double-emission check) is unverified. Fix: add one full-path test per stage (at least loop + listener) asserting a single record and code/stage.
+
+- [MEDIUM][lifecycle-hazard] Nil-wrapping is unspecified. `loop.Start` returns nil on clean shutdown (`loop.go:183-192`), `serveListener` returns nil for `http.ErrServerClosed` (`serve.go:414-421`), and the drain path re-reads `loopErr` (`serve.go:393-398`). Unconditional wraps would emit a spurious `startup_failed` and exit 1 on every graceful shutdown. Fix: require a nil-preserving wrap helper.
+
+- [LOW][observability-precision] `catalog_loop_start` is described as "the catalog loop failed to start", but it also covers admission/persist failures (`reload.go:723`; the disabled-quarantine class), so the operator-facing cause can misname the stage.
+
+- [LOW][ac-precision] R1.4/AC4 test a literal bearer inside a cause, not a configured secret; the conclusion is still structurally sound because only static fields plus listener/address are serialized.
+
+### Recommendation
+REQUEST CHANGES
+</output>
+</task-result>

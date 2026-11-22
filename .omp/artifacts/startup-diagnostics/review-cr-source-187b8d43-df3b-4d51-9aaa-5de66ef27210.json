@@ -1,0 +1,77 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "startup-diagnostics-spec-r3",
+  "revision": "r3",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/startup-diagnostics/spec.md",
+      "sha256": "f14206ad4a14f6fc9b325ba2a29d9bfc5f55da52f631f6f71f8ece132299dac0"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewStartupDiagnosticsCR3",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "233d8d0f4fd9bd69b4f38bee85b767e832b97698ece34719d7e4f39f218eaf39",
+      "targetCandidateId": "startup-diagnostics-spec-r3",
+      "targetRevision": "r3",
+      "taskSha256": "14b01dd80cf95fc47dcef93d7a1ee5916ac79c485e7a67b801e65ef8aa9d5982",
+      "instructionsSha256": "3b152e562c06abd0913a38c390efcecd686feeef1a69bf6a1a5238da41164824"
+    },
+    {
+      "name": "ReviewStartupDiagnosticsCT3",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "198cb917891be47c6e7c0a0438a0383ba07f625a8d8caf26616ea51f378a7139",
+      "targetCandidateId": "startup-diagnostics-spec-r3",
+      "targetRevision": "r3",
+      "taskSha256": "a1b6fffa1233036b283560cb7320833ac088c197705015be19b18e3a72d1e1e6",
+      "instructionsSha256": "3b152e562c06abd0913a38c390efcecd686feeef1a69bf6a1a5238da41164824"
+    }
+  ],
+  "output": "## Specification Review — startup-diagnostics r3\n\nMode: specification, initial pass. Inputs: `spec.md` (f14206a…dac0), ticket, owner decision, and the cited live source. No implementation/diagnostics were run; feasibility is assessed from source anchors.\n\n- [MEDIUM] AC5's oracle does not cover AC5's own second clause. `spec.md:122` requires \"unknown carrier stage → `internal_error`, no stage\", but the AC5 command only runs `TestUnknownStartupErrorKeepsDistinctUnknownCode|TestStartupFailureRecords`. T1 1a (`spec.md:131`) assigns the unknown-carrier assertion to `TestStartupFailureForErrorClassifiesStages`, which appears only in AC1/AC2 (`spec.md:118-119`). Running AC5 alone cannot observe that clause. Fix: add `TestStartupFailureForErrorClassifiesStages` to AC5's `-run` regex, or move the assertion into `TestUnknownStartupErrorKeepsDistinctUnknownCode`.\n- [LOW] AC1's \"carrier-classified startup error → one stderr JSON line\" (`spec.md:118`) is not directly exercised: the classifier test asserts code/stage only, and `TestStartupFailureRecords` writes constructors, not carrier-derived failures. The end-to-end composition is verified only by AC2 (`spec.md:119`). Fix: have the classifier test write each failure and assert exactly one line, or add an AC2 full-path test to AC1's command.\n- [LOW] Stale \"verified\" `loop.go` anchors. `spec.md:30` cites `loop.go:149-192` (Start), `:155-162`, `:166-170`, `:171-177`, `:191`; actual: `Start` at `internal/service/loop.go:136`, Durable warn `:150`, `AdmitStartup` `:157`, publication wrap `:165`, clean `return nil` `:190`. `spec.md:89` and `:95` repeat the stale lines; P04 requires exact ranges. Fix: re-anchor.\n- [LOW] Stale `log_test.go` anchor: `spec.md:33` cites `internal/observe/log_test.go:60-88`; the union test starts at `:46` with DeepEqual at `:78`.\n- [LOW] The contract table cannot express the new field. `spec.md:109` adds four rows to `docs/logging-contract.md:326-338`, whose columns have no `startup_stage`; the stage association exists only in prose, so the operator reference cannot show which rows carry it. Fix: add a stage column or per-row note.\n- [LOW] The omission sentence (`spec.md:109`) mixes events and codes: it lists `cli_usage` (code of `cli_usage_failed`) and `startup_publication_failed` (event whose code is `publication_failed`) as \"`startup_failed` codes\" and omits `publication_failed`. Fix: name codes and note events separately.\n- [LOW] AD1's rationale (`spec.md:39`) says a carrier at `:167` \"could never … be recognized by main (main matches only `startupFailure`)\". `main.go:57-58` uses `errors.As`, and the deleted carrier's `Unwrap() []error` (`serve.go:51-53`) is how it was recognized. The design conclusion stands; the reasoning is inaccurate.\n- [LOW] The new full-path listener test (`spec.md:119`) has no cancellation/timeout design. `serve.go:105-106` defers `cancel()`, so a listener failure leaves the loop running until the 10s `shutdownTimeout` (`serve.go:26`) expires in the drain (`serve.go:392-398`); AC2 gains ~10s and may trip a harness timeout. Fix: specify cancel-after-seam or a bounded wait.\n\nPositive observations: AD1 reachability checks out — `serve.go:165` is the only `ErrSnapshotUnrecoverable` return; `recovery.go:78` is the only non-unrecoverable error and is excluded after `storage.Open` (`serve.go:154-156`); `recovery.go:107`/`:135` propagate only `unrecoverable`-wrapped errors (`recovery.go:225-227`). `state_directory` is not repurposed (`serve.go:154-156`, `snapshot_recovery_test.go:340`). The envelope change is additive: `WriteJSONLine` uses `json.Marshal` (`internal/observe/log.go:43-55`), there is no custom `MarshalJSON`, and `omitempty` preserves existing constructor bytes; the sorted insertion matches `envelope.go:705-706` and `docs:222-223`. The write set covers all nine artifacts and nothing wider; `addEnvelopeFields`/`eventMessage` are not on the `writeStartupFailure` path (`startup_failure.go:114-137`). Exactly-one-line is testable: `writeStartupFailure` is the only `startup_failed` emitter, exercised by AC2's full-path tests and AC6.\n\n### Recommendation\n\nREQUEST CHANGES\n",
+  "invocationId": "187b8d43-df3b-4d51-9aaa-5de66ef27210"
+}

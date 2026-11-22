@@ -1,0 +1,78 @@
+<task-result id="ReviewStartupDiagnosticsCR2" agent="code-reviewer" status="completed" duration="10m16s">
+
+<output>
+## Code Review Summary
+
+**Subject mode:** Specification (feasibility/correctness), feature `startup-diagnostics` r2, candidate `startup-diagnostics-spec-r2` (sha256 `1657d2c2…d3fc`).
+**Pass:** Initial. Read-only; no files modified.
+
+**Files examined:** spec, ticket, owner decision, execution state, `main.go`, `startup_failure.go`, `serve.go`, `internal/observe/envelope.go`, `config_envelope_test.go`, `go.mod`.
+**Total Issues:** 8 (2 HIGH, 3 MEDIUM, 3 LOW)
+
+### Issues
+
+[HIGH][verification-oracle] AC5's headline test has no defined oracle
+File: `.scratch/startup-diagnostics/spec.md:137` (T1 1a) vs `spec.md:106` (AC5)
+Confidence: HIGH
+Issue: AC5's command runs `TestUnknownStartupErrorKeepsDistinctUnknownCode`, but T1 names that test with no assertions, while every other new test has an explicit oracle. `go test -run` with no matching/`t.Log`-only bodies exits 0, so AC5 can pass vacuously. The unknown-carrier case is already covered by `TestStartupFailureForErrorClassifiesStages`, leaving the "genuinely unknown error" clause unverified.
+Fix: specify the oracle (e.g. `startupFailureForError(errors.New("sentinel"))` → `internal_error`, empty stage; emitted JSON has no `startup_stage`) or fold it into AC1's named test.
+
+[HIGH][contract-contradiction] R1.1 and R1.3/AC3 disagree on when `startup_stage` must exist
+File: `spec.md:9` (R1.1) vs `spec.md:13` (R1.3); `cmd/mcp-bridge/startup_failure.go:26-107`
+Confidence: HIGH
+Issue: R1.1 says *any* startup error that is not `config.Diagnostics` or a publication failure is classified with "a bounded `startup_stage`", but six established codes (`state_directory`, `jwks_cache`, `embedding_provider`, `tool_surface`, `listener_bind`, `catalog_loop`) must remain byte-identical and therefore stage-less. AC1's observable ("`startup_stage` present") gives a verifier no basis to decide which paths satisfy it.
+Fix: scope R1.1 to "otherwise-unclassified" errors and state explicitly that pre-existing codes omit `startup_stage`.
+
+[MEDIUM][spec-completeness] Required serve.go edit site is missing from the design/task
+File: `cmd/mcp-bridge/serve.go:341-351`, `spec.md:82` (AD2), `spec.md:122` (T1 GREEN)
+Confidence: HIGH
+Issue: The listener loop iterates a positional `[]struct{server, listener}` literal with two values per element. Adding `name`/`address` fields makes those literals fail to compile, yet neither §4.1, AD2, nor T1 instructs updating them. A bounded engineer (P04) is left to infer the change or stall.
+Fix: name the two literal updates explicitly (`"inbound"/settings.HTTPListen`, `"operations"/settings.OperationsListen`).
+
+[MEDIUM][sanitization-gap] R1.4's universal no-secret claim exceeds the AC4 oracle and the design serializes configured strings
+File: `spec.md:14` (R1.4), `spec.md:75` (§4.4), `spec.md:92` (§4.3 resource), `cmd/mcp-bridge/startup_failure.go:114-135`
+Confidence: MEDIUM
+Issue: AC4 only exercises a bearer-token fixture, while `resource.path` (state dir) and `resource.address` (listen address) are emitted verbatim for `snapshot_recovery`/`listener_serve`. A credential-bearing configured path/URL would be serialized, contradicting "credential URLs … never serialized". The claim as written is untestable by the supplied oracle.
+Fix: narrow R1.4 to "no secret resolved from a secret reference, no bearer token, no raw cause text", and document `resource.*` as configured non-secret fields.
+
+[MEDIUM][plan-inconsistency] Step 3's "only two re-pinned assertions" contradicts step 1a
+File: `spec.md:137` (T1 1a) vs `spec.md:124` (T1 3)
+Confidence: HIGH
+Issue: Step 1a explicitly replaces `TestRecoveryStateDirectoryFailurePreservesClassificationAndCause` and extends `TestStartupFailureRecords`; step 3 then declares that only `:472` and `:928` may change and that "any other failing assertion" is a blocker. Following the task literally can trigger a false blocker/stall.
+Fix: enumerate all four sanctioned expectation changes (`:472`, `:928`, the replaced test, the extended table).
+
+[LOW][traceability] Stale line anchor for `storage.Open`
+File: `spec.md:34`, `spec.md:99` citing `serve.go:158-159`; actual `cmd/mcp-bridge/serve.go:154-156`
+Confidence: HIGH
+Issue: The "unreachable `:167`" reachability argument rests on a four-line-shifted anchor. `:165` and `:167` are correct.
+Fix: cite `:154-156`.
+
+[LOW][precision] "Exactly one emission site remains" is false as stated
+File: `spec.md:78`; `cmd/mcp-bridge/main.go:46-66`
+Confidence: HIGH
+Issue: `runContext` calls `writeStartupFailure` at three sites plus `checkConfig`'s separate path. The intended invariant (one startup-failure line per serve exit) is true, but the sentence overstates it.
+Fix: say "one startup-failure emission per `serve` exit".
+
+[LOW][documentation] `startup_stage` omission is documented only for `internal_error`
+File: `spec.md:76-77` (§4.5)
+Confidence: HIGH
+Issue: §4.5 requires one sentence about omission "for `internal_error`", but six established codes also omit the key; the operator contract will imply stage presence on every `startup_failed`.
+Fix: state the omission rule for the whole closed enum.
+
+### Review Limits (decisive evidence not opened)
+- `internal/observe/log_test.go` want-list and `docs/logging-contract.md` structure: the "no edit needed to `logging_contract_test.go`" claim is unverified.
+- `internal/service/loop.go`, `recovery.go`, `reload.go`: the disabled-quarantine → `catalog_loop_start` cause chain and the `:167` unreachability are accepted from the spec, not re-derived.
+- No Go toolchain run (read-only specification review); no claim about test outcomes.
+
+### Positive Observations
+- Envelope change is genuinely additive: `SchemaVersion = 1` (`envelope.go:10`), `Envelope` has no `stage` field today (`:13-31`), and sorted insertion of `"startup_stage"` between `"stage"` and `"static_configured"` is correct; the 130 pin exists at `config_envelope_test.go:166-169`.
+- `omitempty` + "set only when non-empty" preserves byte-identical records for existing constructors.
+- `go 1.25.0` (`go.mod:3`) supports `Unwrap() []error`, so `errors.Is/As` traversal through the carrier is sound.
+- Write set is exactly the nine `env-1.writePaths` in `.omp/plans/execution-state.json` and covers every file the specified work touches; no wider effect is required.
+- Unknown carrier stages fall back to `internal_error` rather than inventing a code.
+
+### Recommendation
+REQUEST CHANGES
+</parameter_candidate_placeholder></invoke_param_placeholder></function_calls>
+</output>
+</task-result>

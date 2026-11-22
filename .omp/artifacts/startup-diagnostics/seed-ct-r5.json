@@ -1,0 +1,34 @@
+{
+  "intent": "ReviewStartupDiagnosticsCT5",
+  "instructions": "Feature startup-diagnostics, revision r5, candidate startup-diagnostics-spec-r5.\n\nYou are an independent read-only reviewer. Do not modify any file, state, plan or artifact.\n\nReview target: the specification at .scratch/startup-diagnostics/spec.md (sha256 7f33d9bce0901b6ad49fcb6d795c215919a7841255242f22d234cb0ee6fcb8fb), bound to the canonical execution state and packet digest.\n\nNormative ticket: .scratch/startup-diagnostics/issues/01-surface-unclassified-startup-failure-cause.md. Owner narrowing decision: .omp/artifacts/startup-diagnostics/owner-decision-narrow-scope.json.\n\nLive context: the second instance mcp-bridge-network restarts every ~60s with only startup_failed/internal_error; the primary bridge serves normally. The specification must make that class diagnosable without changing recovery, reload, or deployment behavior.\n\nRisk packet: (1) envelope compatibility is fragile - SchemaVersion stays 1 and existing constructors must stay byte-identical; (2) the stage classification must never serialize raw error text, secrets, tokens, URLs with credentials or file contents; (3) exactly one startup failure line per exit, no double emission with config.Diagnostics or publication_failed; (4) genuinely unknown errors must stay a distinct class; (5) the task write set must cover the real classification and test files but nothing wider.\n\nOutput contract: list findings as bullets starting with [CRITICAL], [HIGH], [MEDIUM] or [LOW], each with file:line evidence. End with a heading '### Recommendation' followed on the next non-empty line by exactly one of APPROVE, REQUEST CHANGES, or COMMENT. Do not invent findings; approve only when the specification is implementable as written.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "startup-diagnostics",
+    "revision": "r5",
+    "requests": [
+      {
+        "name": "ReviewStartupDiagnosticsCT5",
+        "taskId": "CT1",
+        "agent": "critic",
+        "targetCandidateId": "startup-diagnostics-spec-r5",
+        "targetRevision": "r5",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/startup-diagnostics/spec.md"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ReviewStartupDiagnosticsCT5",
+      "agent": "critic",
+      "task": "Act as the independent SpecDD gate for feature startup-diagnostics r5.\n\nAssess the specification ./.scratch/startup-diagnostics/spec.md against the ticket, the canonical requirements/AC set, and the project development workflow. Decide whether implementation may start: are the requirements complete, unambiguous and non-contradictory; do ACs prove them; is the task and envelope sufficient and bounded; are secret-safety, envelope compatibility and the unknown-class distinction explicit; does the design avoid inventing authority?\n\nReport blocking findings first with severity and evidence. End with a heading exactly `### Verdict` followed on the next non-empty line by exactly PASS, REVISE, or BLOCKED. Use BLOCKED only when decisive evidence is missing and you cannot reach a judgement from the cited material.",
+      "solutionSpace": "independent SpecDD gate review of specification completeness and implementability"
+    }
+  ]
+}

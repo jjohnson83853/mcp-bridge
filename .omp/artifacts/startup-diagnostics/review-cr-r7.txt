@@ -1,0 +1,30 @@
+<task-result id="ReviewStartupDiagnosticsCR7" agent="code-reviewer" status="completed" duration="5m54s">
+
+<output>
+## Specification Review — startup-diagnostics r7
+
+Mode: specification (candidate `startup-diagnostics-spec-r7`); read-only, nothing modified. Verification limits: no Go build/test was run (spec stage, reviewer has no write/exec role); all claims below were checked against the named source lines.
+
+**Coverage verified against source** (ticket→R→AC mapping): all five ticket items map cleanly — item 1→R1.1/AC1, item 2→R1.2/AC2, item 3→R1.3/AC3, item 4→R1.4/AC4, item 5→R1.5/AC5, plus AC6. Anchors are accurate: `serve.go:154-167,339-353,357-363,383-384,393-409,414-421`; `startup_failure.go:108-133`; `main.go:51-64`; `internal/observe/envelope.go:14-29,705-706`; `config_envelope_test.go:167-169` (the only `130` pin in code); `internal/observe/log_test.go:46-78`; `logging_contract_test.go:490-505,675`; `loop.go:136-190`; `recovery.go:74-79` (the `serve.go:167` "unreachable" claim holds: every non-nil `RecoverRejected` error with a live store wraps `ErrSnapshotUnrecoverable`). The disabled-quarantine chain really is `storage.ErrCorrupt`: `reload.go:724-726` wraps the `store.Save` refusal with `%w`, and `store.go:313-329` wraps `ErrCorrupt`, so `catalog_loop_start`/`admission_persist_failed` is reachable and deterministic. Envelope change is additive and byte-compatible (`omitempty`; `log_test.go:177-200` exact-key pin unaffected). `env-1.writePaths` (10 paths) covers the whole job; no missed file — `serve_edge_test.go:576` keeps `state_directory` because read-only `storage.Open` fails on the `.writer.lock` create (`store.go:43-55`), so "exactly five sanctioned changes" is correct. Union insertion between `stage` and `static_configured` is lexicographically correct.
+
+### Findings
+
+- [MEDIUM] AC4 claims coverage its own task step does not specify. AC4's observable pass says "the configured-secret fixture additionally exercises the real failing startup path" (`.scratch/startup-diagnostics/spec.md:161`), but T1 step 1a defines `TestStartupStageFailureOmitsRawCauseAndConfiguredSecrets` only as a writer-level unit test: a cause embedding the sentinel, written through `writeStartupFailure` (`spec.md:171`); no `runContext`/`serve` failing exit is defined, and AC4's command names only that test. A verifier applying AC4's text will find no such coverage, and an engineer must choose between §5 and §6. Fix: delete the clause, or specify the real-path assertion explicitly (e.g., a `listener_bind` or `catalog_loop_start` `runContext` exit with the sentinel env configured, resolved secret absent from stderr) and add it to AC4's `grep -q` guards.
+
+- [LOW] `startup_cause=admission_persist_failed` is emitted only when `errors.Is(err, storage.ErrCorrupt)` (`spec.md:121`, `spec.md:130`); other persist failures (disk full, closed store, encode) fall to `generic_loop_start`, so the value name overstates its trigger and an operator cannot read "persist failed" from the enum. Fix: rename to an untrusted-snapshot-specific value, or derive the cause from the persist stage rather than one sentinel error.
+
+- [LOW] `publication_wrap_failed` is listed in the closed per-stage domain (`spec.md:45`, `spec.md:130`) but is unreachable: a carrier matching `service.ErrPublicationFailed` is intercepted before the stage switch (`spec.md:121`). Fix: mark it explicitly reserved/never-emitted in the contract doc, or drop it from the §4.3 enum.
+
+- [LOW] The §4.7 / step 1a claim that the readiness probe "follows the select … consuming `listenerErr`" (`spec.md:152`) is not observable: the inverted `waitFor` returns on the first failed probe (see `serve_test.go:484-494`), which can precede the drain. Determinism actually rests on never cancelling the context, so `listenerErr` is the only ready select case (`spec.go:357-363`, `main.go:51-64`). Fix: state that invariant and reword the probe step as an optional drain observation.
+
+- [LOW] Anchor drift: §4.1/§4.3 cite `reload.go:728` for the persist refusal (`spec.md:121`, `spec.md:130`); the `%w` wrap is at `internal/service/reload.go:725-726` (`Persist` call at :724). §3.1's `~722-726` is correct.
+
+### Positive Observations
+- The direct-return vs carrier-stage split (`snapshot_recovery` vs the other three) matches the actual control flow and is honestly documented.
+- Nil-preserving wrap plus `errors.As` traversal over `Unwrap() []error` (Go 1.25) keeps `config.Diagnostics` and `ErrPublicationFailed` single-line and single-event; no double emission.
+- The expectation inventory (five changes) is complete; `TestServeStartupFailures`, `TestSnapshotRecoveryReadOnlyStateDirectoryFailsBeforeRecovery`, and `TestEmitRecoveryRecords` were each checked and correctly left untouched.
+
+### Recommendation
+REQUEST CHANGES
+</output>
+</task-result>

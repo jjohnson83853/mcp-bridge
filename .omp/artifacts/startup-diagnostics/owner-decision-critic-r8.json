@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "feature": "startup-diagnostics",
+  "decisionId": "critic-revise-repair-r8",
+  "origin": "user",
+  "explicit": true,
+  "recordedAt": "2026-11-22T00:00:00Z",
+  "instruction": "Owner directed proceeding through the Critic gate. The Critic returned REVISE with four MEDIUM findings (C1-C4); author r8 to close them, then the bound CodeReviewer and Critic re-reviews. This extends the planning budget by one r8/CR8 cycle and one Critic re-review.",
+  "scope": {
+    "target": "C1 real-path AC4 fixture, C2 diagnostic-carrier oracle, C3 workflow coverage+runtime smoke verification, C4 test-guard exit semantics",
+    "excluded": "new requirements, new acceptance ids, new task ids, write-path changes beyond the ten, design reversals"
+  }
+}

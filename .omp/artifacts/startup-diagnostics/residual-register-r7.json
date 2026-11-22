@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "feature": "startup-diagnostics",
+  "revision": "r7",
+  "specSha256": "c7e04d6d9e4eb994975b163fa5df07a450d9ee6d931eabb414e9b9796b5ce864",
+  "source": ".omp/artifacts/startup-diagnostics/review-cr-r7.txt",
+  "ownerDisposition": "Proceed to Critic without further spec repair (owner answer 'critic'); no CR8 authorized. Repairs would invalidate the recorded CR7 observation under W09A.",
+  "residual": [
+    {
+      "id": "CR7-F1",
+      "severity": "MEDIUM",
+      "finding": "AC4's clause 'the configured-secret fixture additionally exercises the real failing startup path' is not specified in T1 step 1a, which defines only a writer-level unit test.",
+      "resolution": "Disclosed, not applied. T1 step 1a governs implementation; AC4's command exercises TestStartupStageFailureOmitsRawCauseAndConfiguredSecrets (writer shape). No real-path secret assertion is claimed for implementation or verification."
+    },
+    {
+      "id": "CR7-F2",
+      "severity": "LOW",
+      "finding": "startup_cause=admission_persist_failed is emitted only for errors.Is(err, storage.ErrCorrupt); other persist failures yield generic_loop_start.",
+      "resolution": "Advisory. Enum value name is documented with its exact trigger in the design; no code consequence for this feature."
+    },
+    {
+      "id": "CR7-F3",
+      "severity": "LOW",
+      "finding": "publication_wrap_failed is listed but unreachable (publication failure is intercepted first).",
+      "resolution": "Advisory. Implementer must not emit this value; it remains reserved in the documented enum."
+    },
+    {
+      "id": "CR7-F4",
+      "severity": "LOW",
+      "finding": "The readiness-probe wording does not observe listenerErr consumption; determinism rests on never cancelling the context.",
+      "resolution": "Advisory wording. The test design invariant (never cancel; await runContext exit under a bounded timeout) is authoritative."
+    },
+    {
+      "id": "CR7-F5",
+      "severity": "LOW",
+      "finding": "reload.go:728 anchor drift; the wrap is at 725-726.",
+      "resolution": "Advisory anchor. Source reading during implementation uses reload.go:724-726."
+    }
+  ]
+}

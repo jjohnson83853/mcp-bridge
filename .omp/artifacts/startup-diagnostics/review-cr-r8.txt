@@ -1,0 +1,27 @@
+<task-result id="ReviewStartupDiagnosticsCR8" agent="code-reviewer" status="completed" duration="6m41s">
+
+<output>
+**Specification mode, repair pass (r8).** Candidate `startup-diagnostics-spec-r8`; spec sha256 `f559a884…`; reviewed against the ticket, owner narrowing decision, `env-1`/T1, and live source. Read-only; no commands run, SHA not recomputed.
+
+**CR7 closure verified:** C1 (AC4 row + T1 1a name both tests; the real path is reachable — `store.Save`→`ensureReplaceable` at `internal/storage/store.go:313-325` wraps `storage.ErrCorrupt`, `internal/service/reload.go:724-725` rewraps with `%w`, `internal/service/loop.go:157-161` returns it, so `admission_persist_failed` is derivable); C2 (no classifier fallback for diagnostics; interception is `serve.go:405-409`); C3 (`cmd/covcheck` exists, default gate 90); C4 (`out=…; rc=$?` precedes every PASS check).
+
+**Verified-feasible (no findings):** AD1 — `serve.go:164-166` is the only `ErrSnapshotUnrecoverable` site and every non-closed-store `RecoverRejected` error is wrapped (`internal/storage/recovery.go:226`), so `serve.go:167` truly stays unclassified. Nil-preserving wrap holds (`loop.go:190`, `serve.go:414-421`). Envelope change is additive/byte-compatible: the only `Envelope` literal is keyed (`internal/observe/envelope.go:79`), both new fields are `omitempty`, and the sorted insertion point is real (`envelope.go:705-706`, `docs/logging-contract.md:222-223`); lockstep is exactly the four named artifacts. Exactly-one-line holds (`operatorLog` maps `startup_snapshot_rejected` separately, `wiring.go:471-479`). The 9-cell row parser is unaffected (`logging_contract_test.go:490-505,:675`) and no new event name is added (23-event pin safe). Write set matches `env-1` and T1 exactly; all needed helpers exist; the only read-only pin on the affected paths is none (`serve_edge_test.go:576` is the `storage.Open` path).
+
+### Findings
+
+- [LOW] AC3 observable/command mismatch. `spec.md:168` claims `schema_version` 1 and byte-identical existing rows, but its command runs only the union/doc/pair tests; `schema_version` and key-absence are asserted only in AC1/AC4 tests (`spec.md:166,169`). Narrow the observable or add `TestStartupFailureRecords`.
+- [LOW] AC5's second clause ("unknown carrier stage → `internal_error`", `spec.md:170`) is asserted in `TestStartupFailureForErrorClassifiesStages` (`spec.md:179`), which AC5's command does not run.
+- [LOW] `spec.md:185` says "exactly five sanctioned expectation changes" but omits the `config_envelope_test.go:168` 130→132 pin introduced by step 1c (`spec.md:180`); name six or list the pin separately.
+- [LOW] Stale anchors: `spec.md:31,52` cite `internal/storage/store.go:236 ensureReplaceable`, actual `:313` (correctly cited at `spec.md:129`); `spec.md:129,138` cite `reload.go:728`, actual persist wrap `:724-725`.
+- [LOW] `spec.md:45,129,138` declare `startup_cause` a closed enum yet include `publication_wrap_failed`, which no branch can emit; remove it or mark it reserved/never-emitted in the contract text.
+- [LOW] `spec.md:138` introduces `catalog_loop_start` ("…failed to start or persist…") overlapping existing `catalog_loop` ("…failed to start", `serve.go` `NewLoop` failure); §7's operator actions never tell operators to widen `catalog_loop` queries. Document the boundary.
+- [LOW] AC cells (`spec.md:166-171`) render guards as `\| grep -q` (Markdown escaping); copied raw, `grep` becomes a `printf` argument and a missing named test still exits 0. T1's prose form (`spec.md:186`) is correct — use it, or put each AC command in a fenced block.
+- [LOW] AC4 real-path ordering (`spec.md:169`, T1 1a): `newSnapshotRecoveryHarness` sets `SERVE_CLIENT_TOKEN=serveClientToken` (`snapshot_recovery_test.go:41`), so the unique sentinel must be set after harness creation; state this, else the sentinel check is vacuous.
+- [LOW] T1 1a (`spec.md:178`) only implicitly confines the five new tests to `startup_failure_test.go`; two belong naturally in `serve_test.go`, which is outside `env-1.writePaths`. Make file ownership explicit.
+
+**Positives:** the design answers the live symptom (every `serve` return past `storage.Open` is now classified), keeps `internal_error` honest, and the seam/drain analysis is deterministic post-CR6. **Limits:** no shell, so the six AC commands and the smoke were not executed; verdict is technical only.
+
+### Recommendation
+APPROVE
+</output>
+</task-result>

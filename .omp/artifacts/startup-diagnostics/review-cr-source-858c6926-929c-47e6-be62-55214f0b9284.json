@@ -1,0 +1,81 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "startup-diagnostics-spec-r5",
+  "revision": "r5",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/startup-diagnostics/spec.md",
+      "sha256": "7f33d9bce0901b6ad49fcb6d795c215919a7841255242f22d234cb0ee6fcb8fb"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewStartupDiagnosticsCR5",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "0506df5d7f005b43075984a31a68ce1352fe8000477faffb8246ddcbf7ab45dc",
+      "targetCandidateId": "startup-diagnostics-spec-r5",
+      "targetRevision": "r5",
+      "taskSha256": "08616bac275820a2eb96eba551ad93fcea7c0109ac0fed13da864d9a674e7b44",
+      "instructionsSha256": "5b24bd33b0d7019873a0b1300c3d9fd052a4b028e7e5b5cd18418d9250e805c0"
+    },
+    {
+      "name": "ReviewStartupDiagnosticsCT5",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "229c6d0bb98746c11a39692e0d78bb83bbde7887d86169e0ff62dab5ae3d633d",
+      "targetCandidateId": "startup-diagnostics-spec-r5",
+      "targetRevision": "r5",
+      "taskSha256": "36d34fa789a50b0e5eabefcdea3c8a582f6bf7a66a06295afbe1ec27d1759e2b",
+      "instructionsSha256": "5b24bd33b0d7019873a0b1300c3d9fd052a4b028e7e5b5cd18418d9250e805c0"
+    }
+  ],
+  "output": "Mode: specification/feasibility (initial). Candidate `startup-diagnostics-spec-r5` (sha256 `7f33d9…`), bound to `.omp/plans/execution-state.json` env-1. Read the spec, ticket, owner decision, canonical state, and cited sources. Limits: read-only; no build/test execution, so source/behaviour claims are static traces.\n\n- [HIGH][test-infeasibility] AC2's listener full-path test is nondeterministic. The test releases the seam and then cancels the run context (`spec.md:143`, `spec.md:131`), but nothing proves `serve`'s select (`cmd/mcp-bridge/serve.go:358-363`) consumed `listenerErr`; cancellation makes `ctx.Done`/`loopErr` (nil) ready, so `serve` can take a nil case, return nil (`serve.go:392-409`), and `runContext` exits 0 (`main.go:51-64`), intermittently failing AC2's \"exit 1\" assertion. Fix: after release, wait until the drain's server close is observable (e.g. readiness probe refusal) before cancelling; do not cancel on a pre-send seam signal.\n\n- [MEDIUM][verification] The AC commands do not fail when the named new tests are absent. AC1/AC4/AC5/AC6 run `go test ./cmd/mcp-bridge -count=1` (`spec.md:130,133-135`) and AC2 uses `-run` (`spec.md:131`); a package run passes without the named tests, and `go test -run` exits 0 with \"no tests to run\". The CR4 #6 closure claim (`spec.md:77`) that these commands \"exit 0 only with the named tests' assertions executing\" is false. Fix: use `-v`/`-json` and assert `--- PASS: <name>`, or add a test-list guard.\n\n- [MEDIUM][spec-conflict] The operator-visible inventory is incomplete. R1.3/non-goals (`spec.md:16,21`), §7 (`spec.md:165`) and §8 (`spec.md:171`) declare only two reclassifications, but the design also changes `internal_error`→`listener_serve` (`serve.go:352,414-421`) and `internal_error`→`catalog_loop_drain` (`serve.go:397`), and classifies every non-publication `loop.Start` error as `catalog_loop_start`, not only the disabled-quarantine admission/persist path (`serve.go:339`; `internal/service/loop.go:157-165`). Operators keying `internal_error` lose those classes; §7's \"Two operator actions\" and the changelog omit them. Fix: enumerate all four new classifications in R1.3/§7/§8/CHANGELOG.\n\n- [MEDIUM][spec-ambiguity] Classifier scope is inconsistent with AC2/step 1a. `startupFailureForError`'s switch covers only `catalog_loop_start`, `catalog_loop_drain`, `listener_serve` (`spec.md:94`), and `snapshot_recovery` is emitted only by the direct return at `serve.go:164-166`; yet AC2 claims \"four distinct codes/stages\" (`spec.md:131`), the §4.3 table includes `snapshot_recovery` (`spec.md:106`), and step 1a says \"per-stage carrier\" (`spec.md:143`). A test author adding a `snapshot_recovery` carrier gets the default `internal_error`. Step 1a also says a carrier wrapping `*config.Diagnostics` \"still unwraps to it\", but `startupFailureForError` never inspects diagnostics; only `serve`'s `errors.As` does (`serve.go:405-408`). Fix: state that `snapshot_recovery` is direct-return-only and not a carrier stage, and that the diagnostics assertion is `errors.As` on the carrier, not a classifier result.\n\n- [LOW][verification] The AC4 secret oracle is structurally tautological. The test builds a synthetic carrier whose cause contains the sentinel and writes the classified failure (`spec.md:143`); `writeStartupFailure` serializes only static constructor fields (`startup_failure.go:115+`), so it cannot catch a producer leaking a secret into `resource`, `message`, or `remediation`. Fix: drive a real failing startup path whose cause carries the sentinel, or state the test only pins the writer's static shape.\n\n- [LOW][text-accuracy] Stale/incorrect claims: CR1 #3's oracle \"disabled-Off subtest exit 0\" (`spec.md:51`) is false — disabled subtests assert exit 1 (`snapshot_recovery_test.go:450-451`); CR2 #5 says \"step 3 names four\" (`spec.md:64`) but step 3 names five (`spec.md:149`); AC3 says \"the one documented reclassification\" (`spec.md:132`) while R1.3/§8 list two; R1.1/non-goals/docs list `snapshot_unavailable` and `cli_usage` as startup-failure codes (`spec.md:14,21,121`) though they are emitted on `startup_snapshot_rejected` (`serve.go:72`) and `cli_usage_failed` (`startup_failure.go:81`); `serve.go:401-408` is actually 405-409 (`spec.md:98`) and `waitFor` is `serve_test.go:491-503`, not 484-496 (`spec.md:143`). The ticket's \"unknown panics\" requirement (ticket:3) is also unaddressed: R1.1/R1.5 cover errors only, with no panic path (`main.go:51-64`).\n\nPositive observations: the envelope change is additive and byte-compatible (`Envelope` + `omitempty`; union insertion sorted between `stage`/`static_configured`); AD1 reachability is verified (all non-nil `RecoverRejected` errors are `unrecoverable`-wrapped; `serve.go:167` is unreachable); the write set equals `env-1.writePaths` and covers the five sanctioned re-pins; nil-preserving wrapping keeps graceful shutdown silent.\n\n### Recommendation\nREQUEST CHANGES\n",
+  "invocationId": "858c6926-929c-47e6-be62-55214f0b9284"
+}

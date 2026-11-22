@@ -1,0 +1,273 @@
+{
+  "schemaVersion": 2,
+  "feature": "startup-diagnostics",
+  "revision": "r1",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/startup-diagnostics/spec.md",
+    "sha256": "4309e0e1ee128acca60bba1c7d67fb426cebf8391b7c2dff2fd4676a5400575f",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r1",
+        "sha256": "4cd22164f6b0e6acbe89daf0e970f177eebd0f3c5cfd6b411cf5cd5d611d2598"
+      },
+      "design": {
+        "revision": "r1",
+        "sha256": "9a7aaaaeb8a4487e1d7bd8059bda6dfb4d6540273fca2fcd3237005713754249"
+      },
+      "tasks": {
+        "revision": "r1",
+        "sha256": "bf416e38825724710a6eb3e7810b7851e2772eb948bf0fe4ac8f410f573979ec"
+      },
+      "envelope": {
+        "revision": "r1",
+        "sha256": "ce2f8fa5f9c30171134e47532da5779ce2d93d51a6884c3fe78bff353edf22ad"
+      }
+    }
+  },
+  "packet": {
+    "digest": "1fffb485f8f718c522503ca6db921af176fb5699fac15cedcbca557edb62103b",
+    "branches": [
+      {
+        "id": "startup-diagnostics-r1",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T1"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r1",
+            "sha256": "4cd22164f6b0e6acbe89daf0e970f177eebd0f3c5cfd6b411cf5cd5d611d2598"
+          },
+          "design": {
+            "revision": "r1",
+            "sha256": "9a7aaaaeb8a4487e1d7bd8059bda6dfb4d6540273fca2fcd3237005713754249"
+          },
+          "tasks": {
+            "revision": "r1",
+            "sha256": "bf416e38825724710a6eb3e7810b7851e2772eb948bf0fe4ac8f410f573979ec"
+          },
+          "envelope": {
+            "revision": "r1",
+            "sha256": "ce2f8fa5f9c30171134e47532da5779ce2d93d51a6884c3fe78bff353edf22ad"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "startup-diagnostics-r1"
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Surface unclassified startup failures with a typed code, bounded startup_stage identifier, and sanitized static cause (snapshot_recovery, catalog_loop_start, catalog_loop_drain, listener_serve); additive one-field envelope change with schema_version 1 preserved; genuine unknown stays internal_error; exactly one startup failure line per exit; no secrets or raw error text."
+    }
+  ],
+  "authorization": null,
+  "reviews": null,
+  "sources": [],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "CR1",
+      "CT1",
+      "T1"
+    ],
+    "readPaths": [
+      ".scratch/startup-diagnostics",
+      "cmd/mcp-bridge",
+      "internal/observe",
+      "internal/storage",
+      "internal/service",
+      "docs",
+      "CHANGELOG.md",
+      "go.mod",
+      "go.sum"
+    ],
+    "writePaths": [
+      "cmd/mcp-bridge/startup_failure.go",
+      "cmd/mcp-bridge/serve.go",
+      "cmd/mcp-bridge/startup_failure_test.go",
+      "internal/observe/envelope.go",
+      "internal/observe/log_test.go",
+      "docs/logging-contract.md",
+      "CHANGELOG.md"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "status": "pending",
+      "evidenceIds": [],
+      "requires": [],
+      "acceptanceIds": [],
+      "agentRoles": [
+        "code-reviewer"
+      ],
+      "id": "CR1",
+      "stage": "research",
+      "blockedBy": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          "/home/opencode/projects/default/mcp-bridge/.scratch/startup-diagnostics/spec.md"
+        ]
+      }
+    },
+    {
+      "status": "pending",
+      "evidenceIds": [],
+      "requires": [],
+      "acceptanceIds": [],
+      "agentRoles": [
+        "critic"
+      ],
+      "id": "CT1",
+      "stage": "research",
+      "blockedBy": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          "/home/opencode/projects/default/mcp-bridge/.scratch/startup-diagnostics/spec.md"
+        ]
+      }
+    },
+    {
+      "status": "pending",
+      "evidenceIds": [],
+      "requires": [],
+      "acceptanceIds": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5"
+      ],
+      "agentRoles": [
+        "engineer"
+      ],
+      "id": "T1",
+      "stage": "implementation",
+      "blockedBy": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/startup_failure.go",
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/startup_failure_test.go",
+          "internal/observe/envelope.go",
+          "internal/observe/log_test.go",
+          "docs/logging-contract.md",
+          "CHANGELOG.md"
+        ]
+      }
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC1",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC3",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC4",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC5",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/startup-diagnostics/GATE_OPEN.json",
+    "activationEvidenceIds": []
+  }
+}

@@ -1,0 +1,25 @@
+<task-result id="ReviewStartupDiagnosticsCT7" agent="critic" status="completed" duration="1m47s">
+
+<output>
+Spec ID: startup-diagnostics/01
+Revision: r7
+Findings by ID: C1, C2, C3, C4
+
+References below use `spec.md` = `.scratch/startup-diagnostics/spec.md`.
+
+- **[MEDIUM] C1 — CR7-F1 remains unresolved.** `spec.md:161,171`: AC4 promises a configured-secret **real failing startup path**, but T1 specifies only a writer-level fixture. `.omp/artifacts/startup-diagnostics/residual-register-r7.json` substitutes the weaker oracle without changing the acceptance contract. Consequence: implementation can satisfy T1 while failing AC4. **Amendment:** explicitly require the configured-secret fixture on a deterministic failing `runContext` path and check its stderr. Do not delete the AC promise without affected owner confirmation. Confidence: high.
+
+- **[MEDIUM] C2 — Diagnostic-carrier oracle contradicts the classifier.** `spec.md:114-119,171`: the switch maps a `catalog_loop_start` carrier to that stage regardless of its cause, but T1 demands classifier fallback for a carrier wrapping `*config.Diagnostics`. Actual interception occurs in `cmd/mcp-bridge/serve.go:405-409`, before classification. Consequence: the natural diagnostic-carrier fixture cannot satisfy both instructions. **Amendment:** specify its stage and test `errors.As` preservation plus `serve` interception; remove the unsupported classifier-fallback requirement. New instance of the CR5 #4 contract-alignment class; earlier miss unknown. Confidence: high.
+
+- **[MEDIUM] C3 — Verification ledger omits mandatory delivery prerequisites.** `spec.md:180` lists focused package checks only. Development workflow W06 (`development-workflow.md:12`) requires full-suite aggregate production-line coverage ≥90%; W07 (`:13`) separately requires runtime smoke proof. Consequence: every listed check can pass without satisfying the project workflow. **Amendment:** assign final integrated coverage verification and a disposable built-CLI startup-failure smoke, with expected exit status and sanitized one-line assertions. Confidence: high.
+
+- **[MEDIUM] C4 — Named-test guards discard test-process failure.** `spec.md:158-163`: `go test … | grep -q …` reports grep’s status, not the test process’s. A named PASS followed by a package failure can therefore produce exit 0, contradicting the stated oracle. **Amendment:** capture each successful test run once, require its exit 0, then check all required PASS records from that same output. Confidence: high.
+
+Coverage: independently checked emission ownership, publication precedence, nil-preserving shutdown, persistence-cause wrapping and listener drain. The cancellation-race repair is coherent; the inverted readiness probe is not proof that draining began. Additive enums, unknown-class separation, ten-path envelope and rollback are explicit. Collector-delivery limits are documented in `docs/logging-contract.md:585-595`.
+
+Read-only review; no runtime checks or mutations. T1 is not technically ready. Canonical authorization/reviews remain null; this verdict grants no execution authority. Repairs invalidate candidate-bound review observations.
+
+### Verdict
+REVISE
+</output>
+</task-result>

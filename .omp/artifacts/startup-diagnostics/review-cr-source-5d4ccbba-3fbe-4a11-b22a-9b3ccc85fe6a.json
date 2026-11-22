@@ -1,0 +1,81 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "startup-diagnostics-spec-r8",
+  "revision": "r8",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/startup-diagnostics/spec.md",
+      "sha256": "f559a884e9000b7f8ebe7ada63dee8b489aea52d68fdd54d41aed0c5054581c6"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewStartupDiagnosticsCR8",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "15f3759b29884d11aab24ad4c6d2bf43c568ef73710a36be01921dbc11ea3d39",
+      "targetCandidateId": "startup-diagnostics-spec-r8",
+      "targetRevision": "r8",
+      "taskSha256": "352395e049c9d10cbc0a5ffc620c29ed944cf27aa51159abcb73665db6a23d3e",
+      "instructionsSha256": "9faa3be32ac5738e6a9fc30d6725b17cd0e088ef7f701a5db7aa6e3e7cc7c436"
+    },
+    {
+      "name": "ReviewStartupDiagnosticsCT8",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "339c1ee08757212447c974c3ed49b0dd60e8887d27d91af5d6f6a4e8f515041b",
+      "targetCandidateId": "startup-diagnostics-spec-r8",
+      "targetRevision": "r8",
+      "taskSha256": "3d66ce850a19f48b6ebe634bc6c2be3c69d964cf8dc575aed6771a5118072300",
+      "instructionsSha256": "9faa3be32ac5738e6a9fc30d6725b17cd0e088ef7f701a5db7aa6e3e7cc7c436"
+    }
+  ],
+  "output": "**Specification mode, repair pass (r8).** Candidate `startup-diagnostics-spec-r8`; spec sha256 `f559a884…`; reviewed against the ticket, owner narrowing decision, `env-1`/T1, and live source. Read-only; no commands run, SHA not recomputed.\n\n**CR7 closure verified:** C1 (AC4 row + T1 1a name both tests; the real path is reachable — `store.Save`→`ensureReplaceable` at `internal/storage/store.go:313-325` wraps `storage.ErrCorrupt`, `internal/service/reload.go:724-725` rewraps with `%w`, `internal/service/loop.go:157-161` returns it, so `admission_persist_failed` is derivable); C2 (no classifier fallback for diagnostics; interception is `serve.go:405-409`); C3 (`cmd/covcheck` exists, default gate 90); C4 (`out=…; rc=$?` precedes every PASS check).\n\n**Verified-feasible (no findings):** AD1 — `serve.go:164-166` is the only `ErrSnapshotUnrecoverable` site and every non-closed-store `RecoverRejected` error is wrapped (`internal/storage/recovery.go:226`), so `serve.go:167` truly stays unclassified. Nil-preserving wrap holds (`loop.go:190`, `serve.go:414-421`). Envelope change is additive/byte-compatible: the only `Envelope` literal is keyed (`internal/observe/envelope.go:79`), both new fields are `omitempty`, and the sorted insertion point is real (`envelope.go:705-706`, `docs/logging-contract.md:222-223`); lockstep is exactly the four named artifacts. Exactly-one-line holds (`operatorLog` maps `startup_snapshot_rejected` separately, `wiring.go:471-479`). The 9-cell row parser is unaffected (`logging_contract_test.go:490-505,:675`) and no new event name is added (23-event pin safe). Write set matches `env-1` and T1 exactly; all needed helpers exist; the only read-only pin on the affected paths is none (`serve_edge_test.go:576` is the `storage.Open` path).\n\n### Findings\n\n- [LOW] AC3 observable/command mismatch. `spec.md:168` claims `schema_version` 1 and byte-identical existing rows, but its command runs only the union/doc/pair tests; `schema_version` and key-absence are asserted only in AC1/AC4 tests (`spec.md:166,169`). Narrow the observable or add `TestStartupFailureRecords`.\n- [LOW] AC5's second clause (\"unknown carrier stage → `internal_error`\", `spec.md:170`) is asserted in `TestStartupFailureForErrorClassifiesStages` (`spec.md:179`), which AC5's command does not run.\n- [LOW] `spec.md:185` says \"exactly five sanctioned expectation changes\" but omits the `config_envelope_test.go:168` 130→132 pin introduced by step 1c (`spec.md:180`); name six or list the pin separately.\n- [LOW] Stale anchors: `spec.md:31,52` cite `internal/storage/store.go:236 ensureReplaceable`, actual `:313` (correctly cited at `spec.md:129`); `spec.md:129,138` cite `reload.go:728`, actual persist wrap `:724-725`.\n- [LOW] `spec.md:45,129,138` declare `startup_cause` a closed enum yet include `publication_wrap_failed`, which no branch can emit; remove it or mark it reserved/never-emitted in the contract text.\n- [LOW] `spec.md:138` introduces `catalog_loop_start` (\"…failed to start or persist…\") overlapping existing `catalog_loop` (\"…failed to start\", `serve.go` `NewLoop` failure); §7's operator actions never tell operators to widen `catalog_loop` queries. Document the boundary.\n- [LOW] AC cells (`spec.md:166-171`) render guards as `\\| grep -q` (Markdown escaping); copied raw, `grep` becomes a `printf` argument and a missing named test still exits 0. T1's prose form (`spec.md:186`) is correct — use it, or put each AC command in a fenced block.\n- [LOW] AC4 real-path ordering (`spec.md:169`, T1 1a): `newSnapshotRecoveryHarness` sets `SERVE_CLIENT_TOKEN=serveClientToken` (`snapshot_recovery_test.go:41`), so the unique sentinel must be set after harness creation; state this, else the sentinel check is vacuous.\n- [LOW] T1 1a (`spec.md:178`) only implicitly confines the five new tests to `startup_failure_test.go`; two belong naturally in `serve_test.go`, which is outside `env-1.writePaths`. Make file ownership explicit.\n\n**Positives:** the design answers the live symptom (every `serve` return past `storage.Open` is now classified), keeps `internal_error` honest, and the seam/drain analysis is deterministic post-CR6. **Limits:** no shell, so the six AC commands and the smoke were not executed; verdict is technical only.\n\n### Recommendation\nAPPROVE\n",
+  "invocationId": "5d4ccbba-3fbe-4a11-b22a-9b3ccc85fe6a"
+}

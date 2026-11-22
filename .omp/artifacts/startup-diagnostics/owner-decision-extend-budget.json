@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "feature": "startup-diagnostics",
+  "decisionId": "extend-review-budget-r6",
+  "origin": "user",
+  "explicit": true,
+  "recordedAt": "2026-11-22T00:00:00Z",
+  "instruction": "Owner chose option A: authorize one additional planning round (r6) plus one additional bound CodeReviewer review (CR6) beyond the S15 default budget of five, then proceed to the Critic, implementation and verification.",
+  "scope": {
+    "additionalRounds": 1,
+    "additionalCodeReviews": 1,
+    "target": "CR5 findings only: deterministic listener test, non-vacuous AC commands, complete four-classification inventory, classifier-vs-AC2 scope, AC4 oracle wording, stale anchors",
+    "excluded": "new requirements, new acceptance ids, new task ids, write-path changes beyond the current ten, design reversals"
+  }
+}

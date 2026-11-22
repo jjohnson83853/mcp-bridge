@@ -1,0 +1,32 @@
+<task-result id="ReviewStartupDiagnosticsCR4" agent="code-reviewer" status="completed" duration="6m57s">
+
+<output>
+## Code Review Summary
+
+**Mode:** specification (initial pass). **Candidate:** `startup-diagnostics-spec-r4` (sha256 `47918bb7…`), bound to `.omp/plans/execution-state.json` env-1. Reviewed: spec, normative ticket, owner decision, execution state, and all cited sources. **Limits:** read-only reviewer; no build/test execution, so the failing-test conclusions below are static traces of the cited assertions.
+
+### Findings
+
+- [HIGH][spec-conflict] The reclassification breaks `cmd/mcp-bridge/serve_edge_test.go:534`, which pins `state_directory` for FIFO / symlink-to-directory startup entries. AD1 routes `storage.ErrSnapshotUnrecoverable` (`internal/storage/recovery.go:226`; `cmd/mcp-bridge/serve.go:164-165`) to `snapshot_recovery`, so this test fails. The file is absent from both the sanctioned expectation list (`.scratch/startup-diagnostics/spec.md:136`) and `env-1.writePaths` (`spec.md:145`); AC3's `go test ./cmd/mcp-bridge -count=1` therefore cannot pass, and T1's own blocker rule stops execution. Fix: add `cmd/mcp-bridge/serve_edge_test.go` to the write set and the sanctioned list; update `:534` to `snapshot_recovery` + stage.
+
+- [HIGH][spec-conflict] The proposed docs column breaks an untouched contract test. `docs/logging-contract.md:330-338` startup rows are parsed positionally by `cmd/mcp-bridge/logging_contract_test.go:490-505` and compared with a 9-cell vector at `:675`; inserting a `Startup stage` column after `Code` (`spec.md:109`) makes every row 10 cells. That test file is declared a read-only input (`spec.md:33`, `:145`), so AC3 fails with no authorized repair. Fix: keep row cells unchanged and document stage association in prose/enum text, or authorize editing the parser and the expected vector.
+
+- [HIGH][test-infeasibility] AC2's listener full-path test cannot pass as described. T1 1a overrides `serveListenerFn` to signal a seam and return a synthetic error "when called", then waits for readiness. Both listeners call that var (`serve.go:341-355`); if both calls fail, nothing serves and `waitFor` (`cmd/mcp-bridge/serve_test.go:484-496`) can never observe readiness; if only one fails, the select (`serve.go:358-363`) immediately begins a drain that closes both servers (`serve.go:372-388`), so readiness is at best a microsecond race. Fix: add a release gate — serve the non-failing listener for readiness, block the failing call on a test channel, release it after readiness, then return the synthetic error.
+
+- [MEDIUM][requirement-coverage] Ticket item 1 requires "a sanitized cause summary"; R1.1/AC1 replace it with a static remediation without stating the equivalence (`spec.md:13`, `:116`). Make the mapping explicit (class-level static summary) or record the narrowing.
+
+- [MEDIUM][spec-contradiction] R1.3/§8 call the snapshot reclassification the "single sanctioned compatibility change" (`spec.md:16`, `:158`), yet T1 step 1b (`spec.md:132`) reclassifies disabled-quarantine startup from `internal_error` to `catalog_loop_start` (currently pinned at `cmd/mcp-bridge/snapshot_recovery_test.go:472`) — a second operator-visible code change. Declare both in R1.3/§8 and the changelog.
+
+- [MEDIUM][verification] AC1/AC4/AC5/AC6 verify with `go test -run <new test name>`. Go exits 0 when nothing matches, so a name mismatch yields a green AC with no executed oracle. Add `-v` run-count checks (or an assertion-bearing package run) to each such command.
+
+- [LOW][stale-anchor] `var testServeNow` is `serve.go:32`, not `:33` (`spec.md:27`, AD2); the quarantined `errors.Is` block is `serve.go:164-166`, not `:163-165`; `TestRecoveryStateDirectoryFailurePreservesClassificationAndCause` is `startup_failure_test.go:162`, not `:164`; `TestSnapshotRecoveryFatalDirectoryPaths` starts at `snapshot_recovery_test.go:872`, not `:906`.
+
+### Positive Observations
+
+The stage/code split is coherent, the `startup_stage` union insertion is correctly sorted (130→131), the nil-preserving wrap protects graceful shutdown, and AD1's reachability claim (only `recovery.go:78` yields a non-unrecoverable error) is verified. The envelope change is additive with `omitempty`, so existing constructors remain byte-identical.
+
+### Recommendation
+
+REQUEST CHANGES
+</output>
+</task-result>

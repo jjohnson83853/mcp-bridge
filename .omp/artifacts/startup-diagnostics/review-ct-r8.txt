@@ -1,0 +1,30 @@
+<task-result id="ReviewStartupDiagnosticsCT8" agent="critic" status="completed" duration="1m31s">
+
+<output>
+Spec ID: startup-diagnostics/01
+Revision: r8
+Findings by ID: none
+
+No unresolved blocking specification defects found.
+
+**Verified r7 closures**
+- **C1:** AC4 and T1 now specify the same configured-secret, real failing startup fixture (`.scratch/startup-diagnostics/spec.md:169,179`). Its corruption→persist-refusal chain is supported by `internal/storage/store.go:313-325` and `internal/service/loop.go:157-161`.
+- **C2:** Diagnostic-carrier tests preserve `errors.As`; classification remains subordinate to the actual interception at `cmd/mcp-bridge/serve.go:405-409`.
+- **C3:** Full-suite, ≥90% coverage and built-CLI smoke prerequisites are explicit (`spec.md:188,207`).
+- **C4:** Captured test-process status is checked before PASS records (`spec.md:166-171`); package failure cannot be replaced by a successful grep.
+
+**Coverage**
+- Ticket→R1→AC1–AC6→T1 traceability is sufficient. The ten-path write envelope covers production, affected tests, contract documentation and changelog.
+- Secret safety uses static fields and closed enums, not cause serialization. Schema version 1, optional-field omission, existing constructor compatibility and genuine-unknown fallback are explicit.
+- Independently checked direct snapshot classification, publication precedence, diagnostic interception, nil-preserving shutdown and first-error retention (`serve.go:154-167,357-409`; `startup_failure.go:108-133`).
+- Section 7 plus `docs/logging-contract.md:585-595` define the existing stderr/collector boundary and local delivery-verification limit. No infrastructure, recovery, reload or deployment changes are introduced; rollback is one commit.
+
+**Limits and authority**
+Read-only review; no tests, smoke runs or digest recomputation. The listener’s initially unsuccessful readiness probe alone does not prove draining began; the required bounded exit and emitted-line assertions remain decisive. Candidate-bound CodeReviewer APPROVE is recorded in `.omp/plans/review-sequence.json`.
+
+Technically ready for implementation. This PASS grants no execution permission: canonical authorization/review binding and owner checkpoints still govern dispatch.
+
+### Verdict
+PASS
+</output>
+</task-result>

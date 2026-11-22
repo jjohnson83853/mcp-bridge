@@ -1,0 +1,293 @@
+{
+  "schemaVersion": 2,
+  "feature": "startup-diagnostics",
+  "revision": "r6",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/startup-diagnostics/spec.md",
+    "sha256": "e53a517dc79e421b798f3a2b7b0c7fecbb7a5fab1dbe125825faa2b28974bb89",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r6",
+        "sha256": "b6dab0afd156d3826e9e1b344e583a2e83149bf95fafdc6f8c05f09e97e9b240"
+      },
+      "design": {
+        "revision": "r6",
+        "sha256": "a12eb0c3d5c63cc870f33c07498bc263d157bcc6802e99c85cdf4c5be79e72d3"
+      },
+      "tasks": {
+        "revision": "r6",
+        "sha256": "d171f173bb93acac946cbdffea485510328ebd0035fc057caa00d5b6008c2542"
+      },
+      "envelope": {
+        "revision": "r6",
+        "sha256": "71c71708399fb033efd61c6787b3859b1c0fa35ee7e40ae59772c10104f60096"
+      }
+    }
+  },
+  "packet": {
+    "digest": "848dbb2b7d16f535e28e81c18f60809b0ccc28f608e5cba7291387644696e89e",
+    "branches": [
+      {
+        "id": "startup-diagnostics-r6",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T1"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r6",
+            "sha256": "b6dab0afd156d3826e9e1b344e583a2e83149bf95fafdc6f8c05f09e97e9b240"
+          },
+          "design": {
+            "revision": "r6",
+            "sha256": "a12eb0c3d5c63cc870f33c07498bc263d157bcc6802e99c85cdf4c5be79e72d3"
+          },
+          "tasks": {
+            "revision": "r6",
+            "sha256": "d171f173bb93acac946cbdffea485510328ebd0035fc057caa00d5b6008c2542"
+          },
+          "envelope": {
+            "revision": "r6",
+            "sha256": "71c71708399fb033efd61c6787b3859b1c0fa35ee7e40ae59772c10104f60096"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "startup-diagnostics-r6"
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Surface unclassified startup failures with a typed error.code and bounded optional startup_stage (snapshot_recovery, catalog_loop_start, catalog_loop_drain, listener_serve) emitted as exactly one startup_failed line per failing exit and none on graceful shutdown (nil-preserving wrap); two documented operator-visible compatibility changes: quarantined-unrecoverable snapshot-recovery exits reclassify state_directory→snapshot_recovery (state_directory keeps its meaning for storage.Open failures) and disabled-quarantine loop.Start admission/persist-refusal exits reclassify internal_error→catalog_loop_start (internal_error stays the code for every genuinely unknown startup error); additive one-field envelope with schema_version 1 preserved and the field union 130→131 in lockstep across envelopeFieldNames, docs/logging-contract.md, internal/observe/log_test.go and the config_envelope_test.go count pin; full-path runContext tests prove one line + code + stage for catalog_loop_start, snapshot_recovery and listener_serve (listener via a release-gated serveListenerFn seam: only the named listener fails, gated until after waitFor readiness); genuine unknown stays internal_error; the ticket item 1 sanitized cause summary is the class-level static error.remediation field; no secrets or raw error text."
+    }
+  ],
+  "authorization": null,
+  "reviews": null,
+  "sources": [],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "CR1",
+      "CT1",
+      "T1"
+    ],
+    "readPaths": [
+      ".scratch/startup-diagnostics",
+      "cmd/mcp-bridge",
+      "internal/observe",
+      "internal/storage",
+      "internal/service",
+      "docs",
+      "CHANGELOG.md",
+      "go.mod",
+      "go.sum"
+    ],
+    "writePaths": [
+      "cmd/mcp-bridge/startup_failure.go",
+      "cmd/mcp-bridge/serve.go",
+      "cmd/mcp-bridge/startup_failure_test.go",
+      "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "cmd/mcp-bridge/config_envelope_test.go",
+      "cmd/mcp-bridge/serve_edge_test.go",
+      "internal/observe/envelope.go",
+      "internal/observe/log_test.go",
+      "docs/logging-contract.md",
+      "CHANGELOG.md"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "status": "pending",
+      "evidenceIds": [],
+      "requires": [],
+      "acceptanceIds": [],
+      "agentRoles": [
+        "code-reviewer"
+      ],
+      "id": "CR1",
+      "stage": "research",
+      "blockedBy": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          "/home/opencode/projects/default/mcp-bridge/.scratch/startup-diagnostics/spec.md"
+        ]
+      }
+    },
+    {
+      "status": "pending",
+      "evidenceIds": [],
+      "requires": [],
+      "acceptanceIds": [],
+      "agentRoles": [
+        "critic"
+      ],
+      "id": "CT1",
+      "stage": "research",
+      "blockedBy": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          "/home/opencode/projects/default/mcp-bridge/.scratch/startup-diagnostics/spec.md"
+        ]
+      }
+    },
+    {
+      "status": "pending",
+      "evidenceIds": [],
+      "requires": [],
+      "acceptanceIds": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC6"
+      ],
+      "agentRoles": [
+        "engineer"
+      ],
+      "id": "T1",
+      "stage": "implementation",
+      "blockedBy": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/startup_failure.go",
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/startup_failure_test.go",
+          "cmd/mcp-bridge/snapshot_recovery_test.go",
+          "cmd/mcp-bridge/config_envelope_test.go",
+          "cmd/mcp-bridge/serve_edge_test.go",
+          "internal/observe/envelope.go",
+          "internal/observe/log_test.go",
+          "docs/logging-contract.md",
+          "CHANGELOG.md"
+        ]
+      }
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC1",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC3",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC4",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC5",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC6",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/startup-diagnostics/GATE_OPEN.json",
+    "activationEvidenceIds": []
+  }
+}

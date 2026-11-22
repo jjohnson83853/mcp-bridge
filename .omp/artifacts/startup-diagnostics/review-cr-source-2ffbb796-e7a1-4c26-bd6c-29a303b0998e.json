@@ -1,0 +1,77 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "startup-diagnostics-spec-r2",
+  "revision": "r2",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/startup-diagnostics/spec.md",
+      "sha256": "1657d2c2311fa87c3303755af0b9ddee24c283f5c61e96a4117e59e5f5f8d3fc"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewStartupDiagnosticsCR2",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "546fae24ab0f64d05ce66aabbc0bfca4b177fedcc02b7f4abc94f9e3990948dc",
+      "targetCandidateId": "startup-diagnostics-spec-r2",
+      "targetRevision": "r2",
+      "taskSha256": "88da5d509c0b9e090ac8b1098dace830e2b3e2ae3f2f8b861935d41696c16393",
+      "instructionsSha256": "6098844d749d365bff9194119708b229be8fda45d9045176900662ad2863ef81"
+    },
+    {
+      "name": "ReviewStartupDiagnosticsCT2",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "c4c133090a8b29108969647f87d859f434069a20c0e725c3787707d1926bdb8f",
+      "targetCandidateId": "startup-diagnostics-spec-r2",
+      "targetRevision": "r2",
+      "taskSha256": "cf7f5de0d6899ec32645560d9634a7252f8b9ad2266523d92ada3d41b5c4da08",
+      "instructionsSha256": "6098844d749d365bff9194119708b229be8fda45d9045176900662ad2863ef81"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Subject mode:** Specification (feasibility/correctness), feature `startup-diagnostics` r2, candidate `startup-diagnostics-spec-r2` (sha256 `1657d2c2…d3fc`).\n**Pass:** Initial. Read-only; no files modified.\n\n**Files examined:** spec, ticket, owner decision, execution state, `main.go`, `startup_failure.go`, `serve.go`, `internal/observe/envelope.go`, `config_envelope_test.go`, `go.mod`.\n**Total Issues:** 8 (2 HIGH, 3 MEDIUM, 3 LOW)\n\n### Issues\n\n[HIGH][verification-oracle] AC5's headline test has no defined oracle\nFile: `.scratch/startup-diagnostics/spec.md:137` (T1 1a) vs `spec.md:106` (AC5)\nConfidence: HIGH\nIssue: AC5's command runs `TestUnknownStartupErrorKeepsDistinctUnknownCode`, but T1 names that test with no assertions, while every other new test has an explicit oracle. `go test -run` with no matching/`t.Log`-only bodies exits 0, so AC5 can pass vacuously. The unknown-carrier case is already covered by `TestStartupFailureForErrorClassifiesStages`, leaving the \"genuinely unknown error\" clause unverified.\nFix: specify the oracle (e.g. `startupFailureForError(errors.New(\"sentinel\"))` → `internal_error`, empty stage; emitted JSON has no `startup_stage`) or fold it into AC1's named test.\n\n[HIGH][contract-contradiction] R1.1 and R1.3/AC3 disagree on when `startup_stage` must exist\nFile: `spec.md:9` (R1.1) vs `spec.md:13` (R1.3); `cmd/mcp-bridge/startup_failure.go:26-107`\nConfidence: HIGH\nIssue: R1.1 says *any* startup error that is not `config.Diagnostics` or a publication failure is classified with \"a bounded `startup_stage`\", but six established codes (`state_directory`, `jwks_cache`, `embedding_provider`, `tool_surface`, `listener_bind`, `catalog_loop`) must remain byte-identical and therefore stage-less. AC1's observable (\"`startup_stage` present\") gives a verifier no basis to decide which paths satisfy it.\nFix: scope R1.1 to \"otherwise-unclassified\" errors and state explicitly that pre-existing codes omit `startup_stage`.\n\n[MEDIUM][spec-completeness] Required serve.go edit site is missing from the design/task\nFile: `cmd/mcp-bridge/serve.go:341-351`, `spec.md:82` (AD2), `spec.md:122` (T1 GREEN)\nConfidence: HIGH\nIssue: The listener loop iterates a positional `[]struct{server, listener}` literal with two values per element. Adding `name`/`address` fields makes those literals fail to compile, yet neither §4.1, AD2, nor T1 instructs updating them. A bounded engineer (P04) is left to infer the change or stall.\nFix: name the two literal updates explicitly (`\"inbound\"/settings.HTTPListen`, `\"operations\"/settings.OperationsListen`).\n\n[MEDIUM][sanitization-gap] R1.4's universal no-secret claim exceeds the AC4 oracle and the design serializes configured strings\nFile: `spec.md:14` (R1.4), `spec.md:75` (§4.4), `spec.md:92` (§4.3 resource), `cmd/mcp-bridge/startup_failure.go:114-135`\nConfidence: MEDIUM\nIssue: AC4 only exercises a bearer-token fixture, while `resource.path` (state dir) and `resource.address` (listen address) are emitted verbatim for `snapshot_recovery`/`listener_serve`. A credential-bearing configured path/URL would be serialized, contradicting \"credential URLs … never serialized\". The claim as written is untestable by the supplied oracle.\nFix: narrow R1.4 to \"no secret resolved from a secret reference, no bearer token, no raw cause text\", and document `resource.*` as configured non-secret fields.\n\n[MEDIUM][plan-inconsistency] Step 3's \"only two re-pinned assertions\" contradicts step 1a\nFile: `spec.md:137` (T1 1a) vs `spec.md:124` (T1 3)\nConfidence: HIGH\nIssue: Step 1a explicitly replaces `TestRecoveryStateDirectoryFailurePreservesClassificationAndCause` and extends `TestStartupFailureRecords`; step 3 then declares that only `:472` and `:928` may change and that \"any other failing assertion\" is a blocker. Following the task literally can trigger a false blocker/stall.\nFix: enumerate all four sanctioned expectation changes (`:472`, `:928`, the replaced test, the extended table).\n\n[LOW][traceability] Stale line anchor for `storage.Open`\nFile: `spec.md:34`, `spec.md:99` citing `serve.go:158-159`; actual `cmd/mcp-bridge/serve.go:154-156`\nConfidence: HIGH\nIssue: The \"unreachable `:167`\" reachability argument rests on a four-line-shifted anchor. `:165` and `:167` are correct.\nFix: cite `:154-156`.\n\n[LOW][precision] \"Exactly one emission site remains\" is false as stated\nFile: `spec.md:78`; `cmd/mcp-bridge/main.go:46-66`\nConfidence: HIGH\nIssue: `runContext` calls `writeStartupFailure` at three sites plus `checkConfig`'s separate path. The intended invariant (one startup-failure line per serve exit) is true, but the sentence overstates it.\nFix: say \"one startup-failure emission per `serve` exit\".\n\n[LOW][documentation] `startup_stage` omission is documented only for `internal_error`\nFile: `spec.md:76-77` (§4.5)\nConfidence: HIGH\nIssue: §4.5 requires one sentence about omission \"for `internal_error`\", but six established codes also omit the key; the operator contract will imply stage presence on every `startup_failed`.\nFix: state the omission rule for the whole closed enum.\n\n### Review Limits (decisive evidence not opened)\n- `internal/observe/log_test.go` want-list and `docs/logging-contract.md` structure: the \"no edit needed to `logging_contract_test.go`\" claim is unverified.\n- `internal/service/loop.go`, `recovery.go`, `reload.go`: the disabled-quarantine → `catalog_loop_start` cause chain and the `:167` unreachability are accepted from the spec, not re-derived.\n- No Go toolchain run (read-only specification review); no claim about test outcomes.\n\n### Positive Observations\n- Envelope change is genuinely additive: `SchemaVersion = 1` (`envelope.go:10`), `Envelope` has no `stage` field today (`:13-31`), and sorted insertion of `\"startup_stage\"` between `\"stage\"` and `\"static_configured\"` is correct; the 130 pin exists at `config_envelope_test.go:166-169`.\n- `omitempty` + \"set only when non-empty\" preserves byte-identical records for existing constructors.\n- `go 1.25.0` (`go.mod:3`) supports `Unwrap() []error`, so `errors.Is/As` traversal through the carrier is sound.\n- Write set is exactly the nine `env-1.writePaths` in `.omp/plans/execution-state.json` and covers every file the specified work touches; no wider effect is required.\n- Unknown carrier stages fall back to `internal_error` rather than inventing a code.\n\n### Recommendation\nREQUEST CHANGES\n</parameter_candidate_placeholder></invoke_param_placeholder></function_calls>\n",
+  "invocationId": "2ffbb796-e7a1-4c26-bd6c-29a303b0998e"
+}

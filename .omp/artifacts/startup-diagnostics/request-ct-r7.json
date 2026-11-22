@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "startup-diagnostics",
+  "revision": "r7",
+  "requests": [
+    {
+      "name": "ReviewStartupDiagnosticsCT7",
+      "taskId": "CT1",
+      "agent": "critic",
+      "targetCandidateId": "startup-diagnostics-spec-r7",
+      "targetRevision": "r7",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/startup-diagnostics/spec.md"
+        ]
+      }
+    }
+  ]
+}

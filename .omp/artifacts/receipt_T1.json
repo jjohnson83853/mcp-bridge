@@ -3,46 +3,31 @@
   "status": "COMPLETED",
   "artifact_receipt": ".omp/artifacts/receipt_T1.json",
   "telemetry_ref": null,
-  "summary": "T1 envelope and pin-ceiling implementation, required tests/vet, and changed-file formatting pass. Repository-wide formatting debt is out of T1 scope per the owner gate decision in decisions.md.",
+  "summary": "PASS: startup diagnostics tests and CLI smoke passed; aggregate source-line coverage 90.0% (7335/8146).",
   "error_code": null,
   "evidence": [
     {
-      "command": "go test ./cmd/mcp-bridge -run 'TestPinCeiling'",
+      "command": "go test ./internal/observe -count=1",
+      "exitCode": 0,
+      "result": "observe package tests passed."
+    },
+    {
+      "command": "go test ./... -count=1",
+      "exitCode": 0,
+      "result": "All Go packages passed."
+    },
+    {
+      "command": "go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck -profile coverage.out -root .",
+      "exitCode": 0,
+      "result": "Aggregate source-line coverage 90.0% (7335/8146); 90% gate passed."
+    },
+    {
+      "command": "Disposable built-CLI corrupt-snapshot smoke with MCP_SNAPSHOT_QUARANTINE=off and configured secret sentinel",
       "exitCode": 1,
-      "result": "RED: CLI emitted plaintext invalid configuration output instead of a JSON envelope."
-    },
-    {
-      "command": "go test ./internal/config -run 'Pin|Ceiling'",
-      "exitCode": 1,
-      "result": "RED: new diagnostic count assertions failed to compile because AD3 fields were absent."
-    },
-    {
-      "command": "go test ./cmd/mcp-bridge -run TestPinCeilingConfigEnvelope",
-      "exitCode": 1,
-      "result": "RED: config.diagnostics_incomplete was omitted; implementation now preserves false explicitly."
-    },
-    {
-      "command": "go test ./internal/config/... ./cmd/mcp-bridge/...",
-      "exitCode": 0,
-      "result": "GREEN: final config and CLI suites passed."
-    },
-    {
-      "command": "go vet ./...",
-      "exitCode": 0,
-      "result": "PASS."
-    },
-    {
-      "command": "gofmt -l .",
-      "exitCode": 0,
-      "result": "BLOCKED: non-empty output lists 28 Go files outside the T1 write set; no assigned file is listed."
-    },
-    {
-      "command": "gofmt -l internal/observe/envelope.go internal/observe/log.go internal/config/config.go internal/config/diagnostics.go internal/config/pins_bounds_test.go cmd/mcp-bridge/diagnostics_envelope.go cmd/mcp-bridge/main.go cmd/mcp-bridge/config_envelope_test.go cmd/mcp-bridge/example_config_test.go cmd/mcp-bridge/serve_edge_test.go cmd/mcp-bridge/main_test.go cmd/mcp-bridge/embedding_env_cli_test.go cmd/mcp-bridge/embedding_env_process_test.go",
-      "exitCode": 0,
-      "result": "empty for T1 changed files; 28 pre-existing unformatted files outside T1 write set, out of scope per decisions.md gate-scope decision"
+      "result": "CLI exited 1 as expected; stdout empty. stderr contained exactly one startup_failed event with code and stage catalog_loop_start and cause admission_persist_failed, plus one separate startup_snapshot_rejected warning. No configured secret or raw cause text appeared."
     }
   ],
   "decisions": [
-    "[AUTO-DECISION] YAML syntax errors retain only parser positions that exist; the tested malformed document has a line but no column, so config.column is omitted."
+    "[AUTO-DECISION] Used existing fake upstream and fake embeddings fixtures for valid isolated config and listener lifecycle tests."
   ]
 }

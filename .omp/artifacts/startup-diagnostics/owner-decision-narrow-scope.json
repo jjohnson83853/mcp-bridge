@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "feature": "startup-diagnostics",
+  "decisionId": "narrow-to-startup-diagnostics-r1",
+  "origin": "user",
+  "explicit": true,
+  "recordedAt": "2026-11-22T00:00:00Z",
+  "instruction": "Supersede the combined config-admission-resilience plan (r21, never approved) and implement the startup diagnostics ticket first, as its own narrow feature. Defer last-known-good fallback (ticket 03) and strict-mode config_loaded (ticket 04) to later, separately approved work.",
+  "scope": {
+    "included": [".scratch/startup-diagnostics/issues/01-surface-unclassified-startup-failure-cause.md"],
+    "deferred": [".scratch/config-admission-resilience/issues/03-last-known-good-config-fallback.md", ".scratch/config-admission-resilience/issues/04-strict-mode-config-loaded-event.md"],
+    "superseded": ".omp/plans/config-admission-resilience/execution-state.json r21 (preserved as history; no implementation)"
+  },
+  "authorization": {
+    "implement": true,
+    "push": true,
+    "notes": "Owner authorized simplifying the plan and starting implementation with startup diagnostics after the narrowed spec passes its required reviews."
+  }
+}

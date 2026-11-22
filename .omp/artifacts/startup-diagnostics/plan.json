@@ -1,0 +1,176 @@
+{
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Surface unclassified startup failures with a typed error.code, a bounded optional startup_stage and a bounded optional startup_cause emitted as exactly one startup_failed line per failing exit and none on graceful shutdown (nil-preserving wrap); four documented classifications — snapshot_recovery (quarantined-unrecoverable recovery), catalog_loop_start (loop.Start errors that are neither publication failures nor *config.Diagnostics wraps, incl. admission/persist refusal), catalog_loop_drain (drain-budget expiry) and listener_serve (non-ErrServerClosed serve error) — each with a closed startup_cause enum value (snapshot_unrecoverable; admission_persist_failed or generic_loop_start, with publication_wrap_failed documented but intercepted; drain_budget_exceeded; listener_serve_failed) and no raw text; two documented operator-visible compatibility changes: quarantined-unrecoverable snapshot-recovery exits reclassify state_directory→snapshot_recovery (state_directory keeps its meaning for storage.Open failures) and disabled-quarantine loop.Start admission/persist-refusal exits reclassify internal_error→catalog_loop_start (internal_error stays the code for every genuinely unknown startup error, with neither optional key); additive two-field envelope with schema_version 1 preserved and the field union 130→132 in lockstep across envelopeFieldNames, docs/logging-contract.md, internal/observe/log_test.go and the config_envelope_test.go count pin; full-path runContext tests prove one line + code + stage + cause for catalog_loop_start, snapshot_recovery and listener_serve (listener via a release-free serveListenerFn seam whose override closes the named listener and returns the synthetic error immediately, with the served listener's refusal observed after the drain starts and a bounded exit wait instead of a cancel race); the ticket item 1 sanitized cause summary is the class-level static error.remediation plus the closed startup_cause enum; no secrets or raw error text."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "blockedBy": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/startup_failure.go",
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/startup_failure_test.go",
+          "cmd/mcp-bridge/snapshot_recovery_test.go",
+          "cmd/mcp-bridge/config_envelope_test.go",
+          "cmd/mcp-bridge/serve_edge_test.go",
+          "internal/observe/envelope.go",
+          "internal/observe/log_test.go",
+          "docs/logging-contract.md",
+          "CHANGELOG.md"
+        ]
+      },
+      "acceptanceIds": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC6"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "AC1",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC3",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC4",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC5",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC6",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "CR1",
+      "CT1",
+      "T1"
+    ],
+    "readPaths": [
+      ".scratch/startup-diagnostics",
+      "cmd/mcp-bridge",
+      "internal/observe",
+      "internal/storage",
+      "internal/service",
+      "docs",
+      "CHANGELOG.md",
+      "go.mod",
+      "go.sum"
+    ],
+    "writePaths": [
+      "cmd/mcp-bridge/startup_failure.go",
+      "cmd/mcp-bridge/serve.go",
+      "cmd/mcp-bridge/startup_failure_test.go",
+      "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "cmd/mcp-bridge/config_envelope_test.go",
+      "cmd/mcp-bridge/serve_edge_test.go",
+      "internal/observe/envelope.go",
+      "internal/observe/log_test.go",
+      "docs/logging-contract.md",
+      "CHANGELOG.md"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  }
+}
