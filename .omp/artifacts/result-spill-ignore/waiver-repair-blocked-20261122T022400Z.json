@@ -1,0 +1,19 @@
+{
+  "feature": "result-spill-ignore",
+  "revision": "r1",
+  "taskId": "ENG1",
+  "complete": false,
+  "status": "blocked",
+  "code": "E_WAIVER",
+  "observations": {
+    "missingRegistryCheckpoints": ["reviews.specification", "reviews.tasks"],
+    "matchingReviewCandidates": 0,
+    "canonicalTasks": ["ENG1"],
+    "completionCommand": "node /home/opencode/.omp/agent/workflow-policy/execution-state.mjs complete .omp/plans/execution-state.json",
+    "completionExitCode": 1
+  },
+  "cause": "State-side owner maintenance waivers were installed without registry records. The installed waiver producer requires an actual candidate-bound Critic REVISE or BLOCKED observation and findings, not merely an owner exemption from conducting reviews.",
+  "constraints": "Do not fabricate a Critic observation, prescribe a negative verdict, bypass the active task schema, directly edit canonical state, or weaken waiver validation.",
+  "requiredNextWork": "An authorized maintenance implementation must support owner-authorized pre-review exemptions separately from dispositions of actual Critic findings, or a planner-owned admitted review frontier must be installed and genuine reviews obtained. Existing review and owner receipts must be preserved. Then record ENG1 completion through recordCompletion and require complete exit 0.",
+  "mutations": "Only this diagnostic artifact; no canonical, registry, run, counter or production mutations."
+}
