@@ -1,0 +1,4 @@
+# T4 evidence AC2-6
+ok  	github.com/jjohnson83853/mcp-bridge/cmd/mcp-bridge	0.097s
+ok  	github.com/jjohnson83853/mcp-bridge/internal/storage	0.007s [no tests to run]
+exit=0

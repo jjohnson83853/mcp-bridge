@@ -1,0 +1,12 @@
+# Target
+Review snapshot-recovery specification candidate snapshot-recovery-spec-r20@r20 in specification mode. No implementation exists. The r19 critic returned REVISE with C1 HIGH and C7 HIGH; the r19 code review returned APPROVE with four LOWs.
+
+# Required checks
+- C1 closure: each hop's target is resolved component-by-component from filepath.Dir of the link just read (root for absolute targets); .. applies to the resolved parent after symlinked directory components are spliced; identity-revisit cycle, 4096-component budget, missing component, state-directory escape and not-a-directory mid-path all terminate harmlessly; every visited link entry's identity and cleaned path are recorded; complete-chain protection and entry-identity candidacy remain. Reconstruct /s/sub/alias -> /s/deep with snapshot.json -> sub/alias/../q5: q5 must be protected and survive, q4 evicted, link moved, read-through works. Check (b-alias2) escape and (b-alias-loop) termination, and that no lexical shortcut remains in R2/R5/D10/D11/section 4/section 8/T1.
+- C7 closure: the orphaned-link design distinguishes originally dangling links (i) from links orphaned by this run's move (ii), defines pre-pass resolution identity/link-status recording, pass ordering, detection, own-family quarantine, warning records and counts, fatal behavior, and post-reconciliation retention. Verify revised AC1-10(b-xB2) plus inverse (b-xB3) and AC2-9: exit 0, two warnings in order, fresh valid catalog, fresh regular prompts.json that SavePrompts accepts, second run no new quarantine. Confirm the owner checkpoint is recorded open, not claimed.
+- L-1..L-4: narrowed protection wording, corrected count formulas (ordinary = pre-existing - 4; mixed = full unprotected set), seeded non-over-protection oracle, stray backtick and LoadPrompts anchors store.go:95-96/:98-99/:101-102/:104-106 in every affected clause.
+- Regression: no R/AC/T id change; 14-file envelope and per-task sets unchanged; no new dependency; Load/Save/LoadPrompts/SavePrompts/ensureReplaceable unchanged; C6/CR15 closures retained; six-value taxonomy and envelope vocabulary changes are internally consistent where R6/R8 were touched.
+- Advisory LOWs separately. Do not propose a new id or envelope widening.
+
+# Output contract
+Report severity (CRITICAL/HIGH/MEDIUM/LOW), file:line anchor and confidence per finding. End with exactly '### Recommendation' then APPROVE or REQUEST CHANGES.

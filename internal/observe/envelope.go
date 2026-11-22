@@ -125,6 +125,10 @@ func runtimeErrorInfo(reason string) (ErrorInfo, bool) {
 		info.Kind, info.Remediation = "configuration", "correct the server configuration or credentials"
 	case "invalid_config", "pin_rejected":
 		info.Kind, info.Remediation = "configuration", "correct the configuration"
+	case "snapshot_unavailable":
+		info.Kind, info.Retryable, info.Remediation = "resource", true, "verify the durable snapshot and storage permissions, then retry"
+	case "state_directory":
+		info.Kind, info.Remediation = "resource", "create the configured state directory or fix its permissions"
 	case "internal_error", "correlation_unavailable", "unknown":
 		info.Kind, info.Remediation = "internal", "inspect the bridge logs and configuration"
 	default:
@@ -222,7 +226,9 @@ func validFailureReason(reason string) bool {
 	case "upstream_unavailable", "discovery_failed", "client_missing",
 		"authentication_rejected_during_initialize", "authentication_rejected_during_tools_list",
 		"dns_lookup_failed", "connect_failed", "tls_handshake_failed",
-		"initialize_failed", "tools_list_failed", "upstream_http_error":
+		"initialize_failed", "tools_list_failed", "upstream_http_error",
+		"corrupt_json", "checksum_mismatch", "unsupported_schema",
+		"validation_failure", "read_error", "orphaned_link":
 		return true
 	}
 	for _, prefix := range []string{
@@ -364,6 +370,12 @@ func addEnvelopeFields(record map[string]any, fields map[string]any) bool {
 				return false
 			}
 			record[key] = reason
+		case "quarantine_path":
+			path, ok := value.(string)
+			if !ok || path == "" {
+				return false
+			}
+			record[key] = path
 		case "mode":
 			mode, ok := value.(string)
 			if !ok || (mode != "hybrid" && mode != "hybrid_partial" && mode != "keyword") {
@@ -666,6 +678,7 @@ var envelopeFieldNames = [...]string{
 	"process_state",
 	"protocol_version",
 	"publication_impact",
+	"quarantine_path",
 	"refresh_id",
 	"request_id",
 	"resource",

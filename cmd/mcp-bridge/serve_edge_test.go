@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
 	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
+	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
 
 func edgeConfig(t *testing.T, embeddingURL string) string {
@@ -465,5 +467,120 @@ func TestRejectedRefreshUpdatesReadinessReasonAndFailureRecord(t *testing.T) {
 	}
 	if _, exists := failure["next_attempt_ms"]; exists {
 		t.Errorf("next_attempt_ms present although this rejected pass has no automatic retry")
+	}
+}
+
+func TestSnapshotRecoveryFatalEntriesServeEdge(t *testing.T) {
+	for _, setup := range []struct {
+		name string
+		seed func(*testing.T, string)
+	}{
+		{
+			name: "directory",
+			seed: func(t *testing.T, path string) {
+				if err := os.MkdirAll(path, 0o700); err != nil {
+					t.Fatal(err)
+				}
+			},
+		},
+		{
+			name: "symlink to directory",
+			seed: func(t *testing.T, path string) {
+				if err := os.Mkdir(filepath.Join(filepath.Dir(path), "target"), 0o700); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Symlink("target", path); err != nil {
+					t.Fatal(err)
+				}
+			},
+		},
+		{
+			name: "fifo",
+			seed: func(t *testing.T, path string) {
+				if err := syscall.Mkfifo(path, 0o600); err != nil {
+					t.Fatal(err)
+				}
+			},
+		},
+	} {
+		t.Run(setup.name, func(t *testing.T) {
+			t.Setenv("MCP_SNAPSHOT_QUARANTINE", "on")
+			harness := newSnapshotRecoveryHarness(t)
+			path := filepath.Join(harness.stateDir, storage.SnapshotFile)
+			if err := os.MkdirAll(harness.stateDir, 0o700); err != nil {
+				t.Fatal(err)
+			}
+			setup.seed(t, path)
+
+			stdout, stderr := &syncWriter{}, &syncWriter{}
+			done := make(chan int, 1)
+			go func() {
+				done <- runContext(context.Background(), []string{"--config", harness.configPath}, stdout, stderr)
+			}()
+			select {
+			case code := <-done:
+				if code != 1 {
+					t.Fatalf("fatal state entry exit=%d; want 1", code)
+				}
+			case <-time.After(2 * time.Second):
+				t.Fatal("fatal state entry did not return within 2s; the entry may have been opened")
+			}
+
+			records := recoveryLogRecords(t, stderr.String())
+			failures := recoveryEvents(records, "startup_failed")
+			if len(failures) != 1 || len(recoveryEvents(records, "startup_snapshot_rejected")) != 0 {
+				t.Fatalf("fatal state entry records=%#v", records)
+			}
+			if failures[0]["error"].(map[string]any)["code"] != "state_directory" ||
+				failures[0]["resource"].(map[string]any)["path"] != harness.stateDir {
+				t.Fatalf("fatal state entry record=%#v", failures[0])
+			}
+			if _, err := os.Lstat(path); err != nil {
+				t.Fatalf("fatal state entry was moved: %v", err)
+			}
+			if counts := recoveryQuarantineCounts(t, harness.stateDir); counts["snapshot"] != 0 || counts["prompts"] != 0 {
+				t.Fatalf("fatal state entry created quarantine: %v", counts)
+			}
+		})
+	}
+}
+
+func TestSnapshotRecoveryReadOnlyStateDirectoryFailsBeforeRecovery(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("read-only state directory cannot deny root")
+	}
+	t.Setenv("MCP_SNAPSHOT_QUARANTINE", "on")
+	harness := newSnapshotRecoveryHarness(t)
+	if err := os.MkdirAll(harness.stateDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	original := []byte("{")
+	path := filepath.Join(harness.stateDir, storage.SnapshotFile)
+	if err := os.WriteFile(path, original, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(harness.stateDir, 0o555); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chmod(harness.stateDir, 0o700)
+
+	code, stderr := runSnapshotRecoveryToExit(t, harness)
+	if code != 1 {
+		t.Fatalf("read-only startup exit=%d; want 1; stderr=%q", code, stderr)
+	}
+	records := recoveryLogRecords(t, stderr)
+	failures := recoveryEvents(records, "startup_failed")
+	if len(failures) != 1 || len(recoveryEvents(records, "startup_snapshot_rejected")) != 0 {
+		t.Fatalf("read-only startup records=%#v", records)
+	}
+	if failures[0]["error"].(map[string]any)["code"] != "state_directory" ||
+		failures[0]["resource"].(map[string]any)["path"] != harness.stateDir {
+		t.Fatalf("read-only startup record=%#v", failures[0])
+	}
+	if got, err := os.ReadFile(path); err != nil || !bytes.Equal(got, original) {
+		t.Fatalf("read-only startup changed corrupt bytes=%q err=%v", got, err)
+	}
+	if counts := recoveryQuarantineCounts(t, harness.stateDir); counts["snapshot"] != 0 || counts["prompts"] != 0 {
+		t.Fatalf("read-only Open failure created quarantine: %v", counts)
 	}
 }

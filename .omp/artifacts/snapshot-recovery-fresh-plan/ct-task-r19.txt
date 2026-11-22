@@ -1,0 +1,11 @@
+# Target
+Apply the SpecDD pass policy to snapshot-recovery candidate snapshot-recovery-spec-r19@r19 (specification only). No implementation exists. Verify the r19 closures against these exact bytes.
+
+# Required checks
+- F1/F2: chain protection with per-hop resolution base, entry-identity/lexical matching for Stat-failing links, sensitive cycle oracle, subdirectory chain oracles. Reconstruct the sub/l1 -> ../q5 layout and the ELOOP cycle layout; confirm no residual dangling/backing-byte deletion.
+- L1-L4: entry-identity candidacy and bound reconciliation; move-through oracles; mixed-carve-out breadth and counts; vacuous modes.
+- Regression: C6, CR15 and CR17/CR18 closures; all ids; 14-file envelope; no new dependency or narrowing.
+- Judge traceability, falsifiability, retention/atomicity, warning counts, ownership and section 9 handoff. Blocking findings need class, severity, confidence, anchor and minimal fix. The configured non-OpenAI spec_critic_escalated reviewer is unavailable; record that as a limit, not a verdict substitute.
+
+# Output contract
+End with exactly '### Verdict' then PASS, REVISE or BLOCKED and nothing after it.

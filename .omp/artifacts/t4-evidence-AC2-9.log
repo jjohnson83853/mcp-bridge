@@ -1,0 +1,18 @@
+# T4 AC2-9 named tests
+=== RUN   TestSnapshotRecoveryOrphanedLink
+--- PASS: TestSnapshotRecoveryOrphanedLink (0.05s)
+=== RUN   TestSnapshotRecoveryMutualLink
+--- PASS: TestSnapshotRecoveryMutualLink (0.06s)
+=== RUN   TestSnapshotRecoveryMutualBothMoved
+=== RUN   TestSnapshotRecoveryMutualBothMoved/both_moved
+=== RUN   TestSnapshotRecoveryMutualBothMoved/self_moved
+--- PASS: TestSnapshotRecoveryMutualBothMoved (0.11s)
+    --- PASS: TestSnapshotRecoveryMutualBothMoved/both_moved (0.05s)
+    --- PASS: TestSnapshotRecoveryMutualBothMoved/self_moved (0.05s)
+=== RUN   TestSnapshotRecoveryMutualHardlinked
+--- PASS: TestSnapshotRecoveryMutualHardlinked (0.05s)
+=== RUN   TestSnapshotRecoveryNonMutualDangling
+--- PASS: TestSnapshotRecoveryNonMutualDangling (0.05s)
+PASS
+ok  	github.com/jjohnson83853/mcp-bridge/cmd/mcp-bridge	0.336s
+exit=0

@@ -1,0 +1,22 @@
+{
+  "intent": "Plan round 8: revise r18 to close CR18 F1 HIGH-class F2 plus L1-L4",
+  "instructions": "Revise .scratch/snapshot-recovery/spec.md in place from r18 to r19. Read the current r18 spec and .omp/artifacts/snapshot-recovery-fresh-plan/cr-r18-raw.md (F1 MEDIUM, F2 MEDIUM, L1-L4 LOW). Close each with exact text; do not change any R/AC/T id, the 6.1 ENVELOPE, or the task decomposition; return a machine-readable blocker if a closure needs one. This is the final round of the 6-8 loop budget. Do not claim reviews or approvals. Return the complete nine-section spec and a finding-to-text change log.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r18",
+    "requests": [
+      { "name": "SnapshotRecoverySpecRound8", "taskId": "PLAN1", "agent": "planner", "effects": { "kind": "read", "paths": [] } }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecRound8",
+      "agent": "planner",
+      "solutionSpace": "closure of CR18 F1/F2/L1-L4 within a fixed id set; no new ids, no envelope change",
+      "task": "Close these in r19; no id/envelope changes; blocker if impossible. Round 8, final budget round.\n1 F1 MEDIUM statement-contradiction: protection membership is recorded for intermediate links by lstat identity but candidacy compares the candidate's Stat identity, falling back lexically only when Stat fails, and no fallback path is recorded for an entry whose Stat fails ELOOP, so R5's 'visited entries still protected' and AC1-10(b-eloop) ('skips BOTH cycle entries as protected') contradict the candidacy rule. Record every visited link entry's cleaned path in the protected set as a lexical fallback (in addition to identity matching), or match by entry identity (lstat dev+inode) so a Stat-failing link always matches. Make the cycle oracle sensitive: seed the cycle entries as the oldest so an unprotected c1/c2 is observably evicted, and assert both cycle entries survive and the next-oldest unprotected entry is evicted.\n2 F2 MEDIUM residual C1-class deletion: relative link targets are resolved against the state directory even for intermediate links; with /s/snapshot.json -> sub/l1 and /s/sub/l1 -> ../snapshot.corrupt-q5.json the walk computes an out-of-directory path, protects nothing, evicts q5 and dangles the moved link. Resolve each relative target against filepath.Dir of the link just read; update R5/section 4 and add AC1-10 subcases for a subdirectory intermediate link (target preserved, next-oldest evicted, link chain moved, quarantine read-through) and for a chain that alternates subdirectory and parent hops.\n3 L1 LOW over-protection: candidate identity matching over-protects any conforming symlink resolving into a protected target, so the success path can exceed QuarantineKeep and contradict the ordinary-case bound. Match candidates by entry identity (lstat dev+inode) rather than Stat identity; keep Stat identity only for backing targets. Reconcile the four-survivor bound, the greater-than-four-protected carve-out and AC counts.\n4 L2 LOW: the other-configured-path move-through has no oracle. Add an AC subcase in AC1-10(b-xA)/(b-xB) where the link target is the other family's configured path, and assert which family moves it, both families' warning counts, bytes at quarantine, and the absent configured path afterwards.\n5 L3 LOW: the greater-than-four-protected carve-out has no AC and its mixed-case exhaustion breadth (every unprotected pre-existing file deleted while the bound cannot be restored) is absent from section 8(2) and the section 9.11 owner flag. State that breadth explicitly and add a mixed-case AC1-10 subcase with survivor/deletion counts.\n6 L4 LOW: non-conforming final target and directory final target modes have no oracle. Add explicit AC1-3 or AC1-10 assertions that these modes are mechanically vacuous (no protection entry, no mutation, no extra warning) or state the vacuity in the AC text.\nReturn the full nine-section spec, unchanged ids, and a change log mapping each finding to its closing text."
+    }
+  ]
+}

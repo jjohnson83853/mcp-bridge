@@ -65,7 +65,7 @@ func TestEnvelopeFieldNamesMatchesIndependentR8Union(t *testing.T) {
 		"metadata_target_registered", "mode", "next_attempt_ms", "oauth_enabled", "operation",
 		"operation_id", "operation_id_state", "operation_relation", "outcome", "path_class",
 		"pins_resolved", "pins_total", "policy_source", "process_id", "process_state",
-		"protocol_version", "publication_impact", "refresh_id", "request_id", "resource",
+		"protocol_version", "publication_impact", "quarantine_path", "refresh_id", "request_id", "resource",
 		"resource.address", "resource.listener", "resource.path", "resource_path_mode",
 		"retained_age_ms", "retained_generation", "route", "route_outcome", "schema_version",
 		"scope_required", "scope_state", "server", "servers_discovered", "service",

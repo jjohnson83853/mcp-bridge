@@ -1,0 +1,15 @@
+Close the six CR23 findings in r24 as a single semantic correction of the reconciliation predicate; no id/envelope changes; blocker if impossible. Round 13 of the reset 12-14 budget.
+
+1 CR23-F1 HIGH: section 4(3) reconciliation predicate says the entry now Stats fs.ErrNotExist "or is absent", so an ordinary-class configured entry that is simply absent also reconciles; AC1-10(b-xA2) (snapshot link moved in pass 1, prompts.json moved in pass 2) then fires a spurious third reconciliation/R3 rename, contradicting D12(iv) and b-xA2. Delete "or is absent": require the configured entry to still exist post-passes as a symlink (lstat) and only then allow reconciliation; the absence case must remain a no-op with the recorded reason. Keep b-xA2's "no reconciliation fires, nothing left to reconcile" true.
+
+2 CR23-F2 MEDIUM: D12(m-iv) also admits "or the entry is absent", so a mutual pair where the run itself moved the entry (snapshot.json->prompts.json with prompts.json->prompts.json, both ELOOP) reconciles a missing source: reserve succeeds, rename ENOENT, R3 fatal, and two records break the at-most-one-reconciliation property. Apply the ordinary moved-entry guard to the mutual class: a configured entry that this run already moved is ineligible for mutual reconciliation; the partner alone is reconciled, or if both moved then no reconciliation fires. State the exact counting rule and update the mutual oracles and warning/record expectations accordingly. R2 assumes a present link; make every reconciliation path require a live symlink entry.
+
+3 CR23-F3 LOW: AC2-9 never asserts the quarantined entry's preserved link text; add a Readlink assertion that the reconciled quarantine contains the original target text, plus one seeded variant where post-reconciliation retention runs on the mutual class.
+
+4 CR23-F4 LOW: D11's "resolved containing-directory context" is not pinned to path string vs directory identity; define the key as the containing directory's lstat identity (device+inode) with the resolved path as tie-break/fallback, and name where a directory alias routes a true cycle to the budget class rather than the cycle class.
+
+5 CR23-F5 LOW: AC1-1(d) cites only (m-iii) for the mutual no-fire on a pre-pass dangling chain; cite (m-ii)+(m-iii), the deciding conditions.
+
+6 CR23-F6 LOW: replace the "non-mutal" typo with "non-mutual" everywhere.
+
+Return the complete nine-section spec, unchanged ids, and a change log mapping each finding to its closing text. Do not claim reviews, approvals, owner confirmations beyond the mutual-link direction, or test execution.

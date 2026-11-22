@@ -1,0 +1,12 @@
+# Target
+Apply the SpecDD pass policy to snapshot-recovery candidate snapshot-recovery-spec-r28@r28 (specification only). This is the round-18 closing revision for CR26.
+
+# Required checks
+- Verify CR26-1 (the §9.8 envelope statement no longer contradicts §6.1's T4 task id), CR26-2 (the decision ledger and D12 header record the r26 amendment), and CR26-3 (the final-target path is scoped to ordinary (iii); (m-iii) still matches moved link entries; history stays round-scoped).
+- Confirm the closing revision adds no R/AC/T id, changes no envelope path, and introduces no dependency.
+- Keep every open item open and unclaimed (retention-unlink checkpoint, non-mutual originally-dangling carve-out, external escalation); reject implied approval, owner confirmation beyond the stated authorization, or executed-test claims.
+# Output contract
+Return Findings with severity and anchor, then end with exactly three lines:
+### Verdict
+PASS (or REVISE / BLOCKED if that is the verdict).
+Do not edit any file.

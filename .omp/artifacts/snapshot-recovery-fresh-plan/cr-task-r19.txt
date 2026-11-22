@@ -1,0 +1,15 @@
+# Target
+Review snapshot-recovery specification candidate snapshot-recovery-spec-r19@r19 in specification mode. No implementation exists. The r18 code review returned REQUEST CHANGES with F1 MEDIUM, F2 MEDIUM and L1-L4 LOW.
+
+# Required checks
+- F1 closure: ELOOP/Stat-failing protected link entries match candidacy via recorded lexical fallback or entry identity; AC1-10(b-eloop) seeds the cycle entries as the oldest so an unprotected entry is observably evicted; both cycle entries survive; R5's visited-entry promise holds.
+- F2 closure: every relative target resolves against filepath.Dir of the link just read (D11); subdirectory and alternating-hop chains protect the final backing bytes; AC1-10(b-sub)/(b-sub2) assert target bytes, eviction, chain transfer and read-through.
+- L1: candidates match by entry identity (lstat dev+inode), Stat identity only for backing targets; the ordinary-path four-survivor bound and >4 carve-out and AC counts agree.
+- L2: AC1-10(b-xA2)/(b-xB2) oracle the other-configured-path move-through both directions with owning pass, counts and absent configured path.
+- L3: mixed carve-out case (5 protected + 1 unprotected) deletes every unprotected pre-existing file, bound unrestorable, breadth stated in section 8(2) and the section 9.11 owner flag.
+- L4: non-conforming and directory final-target modes asserted mechanically vacuous (ordinary eviction, no diversion/mutation/extra record).
+- Regression: no R/AC/T id change; section 6.1 envelope and per-task sets unchanged; no new dependency; Load/Save/LoadPrompts/SavePrompts/ensureReplaceable unchanged; C6 and CR15 closures retained.
+- Advisory LOWs separately. Do not propose a new id or envelope widening.
+
+# Output contract
+Report severity (CRITICAL/HIGH/MEDIUM/LOW), file:line anchor and confidence per finding. End with exactly '### Recommendation' then APPROVE or REQUEST CHANGES.

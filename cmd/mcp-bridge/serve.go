@@ -35,6 +35,64 @@ func sessionAdmissionEnabled(value string) bool {
 	return strings.EqualFold(value, "true") || value == "1"
 }
 
+func quarantineEnabled(value string) bool {
+	return !strings.EqualFold(value, "off")
+}
+
+type recoveryStateDirectoryError struct {
+	failure startupFailure
+	cause   error
+}
+
+func (err recoveryStateDirectoryError) Error() string {
+	return err.failure.Error()
+}
+
+func (err recoveryStateDirectoryError) Unwrap() []error {
+	return []error{err.failure, err.cause}
+}
+
+func recoveryStateDirectoryFailure(directory string, cause error) error {
+	return recoveryStateDirectoryError{
+		failure: stateDirectoryFailure(directory),
+		cause:   cause,
+	}
+}
+
+func emitRecoveryRecords(logger *observe.Logger, stateDir string, result *storage.RecoveryResult) {
+	if result == nil {
+		return
+	}
+	for _, recovery := range result.Recoveries {
+		logger.Log(observe.Entry{
+			Level:     "warn",
+			Event:     "startup_snapshot_rejected",
+			Operation: "startup",
+			Outcome:   "degraded",
+			Error:     observe.RuntimeErrorInfo("snapshot_unavailable"),
+			Fields: map[string]any{
+				"failure_reason":  string(recovery.Reason),
+				"quarantine_path": recovery.QuarantinePath,
+				"resource.path":   stateDir,
+			},
+		})
+	}
+	for _, failure := range result.RetentionFailures {
+		logger.Log(observe.Entry{
+			Level:     "warn",
+			Event:     "snapshot_retention_failed",
+			Operation: "startup",
+			Outcome:   "failure",
+			Error:     observe.RuntimeErrorInfo("state_directory"),
+			Fields: map[string]any{
+				"quarantine_path": failure.QuarantinePath,
+				"resource.path":   stateDir,
+			},
+		})
+	}
+}
+
+
 // serve is the composition root: it turns one operator document into the
 // serving bridge of plan §4.2 — the inbound edge with its bounds and tokens,
 // the local catalog, the operations listener, the refresh/reload loop, and the
@@ -98,6 +156,17 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 		return stateDirectoryFailure(settings.StorageDirectory)
 	}
 	defer store.Close()
+
+	if quarantineEnabled(os.Getenv("MCP_SNAPSHOT_QUARANTINE")) {
+		result, recoveryErr := store.RecoverRejected()
+		emitRecoveryRecords(logger, settings.StorageDirectory, result)
+		if recoveryErr != nil {
+			if errors.Is(recoveryErr, storage.ErrSnapshotUnrecoverable) {
+				return recoveryStateDirectoryFailure(settings.StorageDirectory, recoveryErr)
+			}
+			return recoveryErr
+		}
+	}
 
 	jwksCache, err := auth.NewJWKSCache(ctx, authCfg.PocketIDJWKSURL)
 	if err != nil {

@@ -1,0 +1,16 @@
+Review the r24 snapshot-recovery specification candidate (specification-only; no implementation exists).
+
+The candidate revises r23 to close the six CR23 findings. Verify the four specdd regions R1-R9, EVIDENCE/UNCERTAINTY (D1-D12), DESIGN, AC1-1..AC1-10 + AC2-1..AC2-9, and the 6.1 ENVELOPE (14 files); the ticket mirror is intentionally stale (section 9.7).
+
+Closure under review (CR23, compare with cr-r23-raw.md):
+- F1 HIGH: the reconciliation predicate no longer admits a merely absent configured entry; a reconciliation requires the entry to still exist post-passes as a symlink, and AC1-10(b-xA2) fires no reconciliation. Verify the deletion of "or is absent" is complete and that absence becomes a recorded no-op, not a silent pass.
+- F2 MEDIUM: the moved-entry guard applies to the mutual class as well; a pair where both entries moved this run fires zero reconciliations, one moved entry leaves only the partner eligible, and every reconciliation path requires a live symlink. Verify at-most-one-reconciliation, records ordering/counts, R3 fatal discipline and second-run no-op remain consistent.
+- F3 LOW: the reconciled quarantine's preserved link text is asserted (Readlink), plus a seeded mutual retention variant. Verify the oracles are executable definitions.
+- F4 LOW: D11 defines the containing-directory context as the directory's lstat identity (device+inode) with path tie-break/fallback, and names the alias misrouting.
+- F5 LOW: AC1-1(d) cites (m-ii)+(m-iii).
+- F6 LOW: no "non-mutal" occurrence remains.
+
+Check for regressions: id/envelope unchanged, no contradiction with R1-R9, D1-D12 or the ACs, no false owner-confirmation/review/approval/test-execution claim, no new dependency beyond std-lib, and C4's earlier closure still intact.
+
+Return Findings as a Markdown list, each with severity (CRITICAL/HIGH/MEDIUM/LOW), file:line anchor and confidence, and a one-line recommended fix, followed by a verdict heading on its own line:
+## Verdict: APPROVE, REQUEST CHANGES, or BLOCKED. Do not edit any file.

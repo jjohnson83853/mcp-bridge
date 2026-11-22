@@ -1,0 +1,12 @@
+# Target
+Apply the SpecDD pass policy to snapshot-recovery candidate snapshot-recovery-spec-r18@r18 (specification only). No implementation exists. Verify the r18 closures against these exact bytes.
+
+# Required checks
+- C1: complete backing-chain protection including quarantined symlink chains, all resolution failure modes, the over-four-chain carve-out, and the deterministic AC1-10 subcases. Reconstruct the q1-to-q5 counterexample and confirm no residual path deletes or dangles backing bytes on the success path; confirm the carve-out does not contradict the survivor bound.
+- C2: deletion cap removed, five-deletion nine-file backlog oracle, all sections agree.
+- Alias identity and other-configured-path closures; R2 consistency.
+- Regression: C6, CR15-01..05, all ids and the 14-file envelope unchanged; no new dependency or behavior narrowing.
+- Judge AC traceability, falsifiability, retention/atomicity, warning counts, ownership and section 9 handoff. Blocking findings need class, severity, confidence, anchor and minimal fix. Do not invent runs or approvals. The configured non-OpenAI spec_critic_escalated reviewer is unavailable; record that as a limit, not a verdict substitute.
+
+# Output contract
+End with exactly '### Verdict' then PASS, REVISE or BLOCKED and nothing after it.

@@ -89,21 +89,9 @@ func (s *Store) LoadPrompts() (*PromptSnapshot, error) {
 		}
 		return nil, fmt.Errorf("storage: read prompt snapshot: %w", err)
 	}
-	prompts := &PromptSnapshot{}
-	decoder := json.NewDecoder(bytes.NewReader(raw))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(prompts); err != nil {
-		return nil, fmt.Errorf("%w: decode prompt snapshot: %v", ErrCorrupt, err)
-	}
-	if err := decoder.Decode(new(struct{})); !errors.Is(err, io.EOF) {
-		return nil, fmt.Errorf("%w: trailing prompt snapshot data", ErrCorrupt)
-	}
-	if err := prompts.Validate(); err != nil {
+	prompts, _, err := decodePromptSnapshot(raw)
+	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrCorrupt, err)
-	}
-	checksum, err := prompts.ChecksumValue()
-	if err != nil || prompts.Checksum != checksum {
-		return nil, fmt.Errorf("%w: prompt checksum mismatch", ErrCorrupt)
 	}
 	s.promptTrusted = true
 	return prompts, nil
@@ -140,6 +128,68 @@ func (s *Store) SavePrompts(prompts *PromptSnapshot) error {
 	return nil
 }
 
+func decodePromptSnapshot(raw []byte) (*PromptSnapshot, Reason, error) {
+	prompts := &PromptSnapshot{}
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(prompts); err != nil {
+		return nil, ReasonCorruptJSON, fmt.Errorf("decode prompt snapshot: %v", err)
+	}
+	if err := decoder.Decode(new(struct{})); !errors.Is(err, io.EOF) {
+		return nil, ReasonCorruptJSON, errors.New("trailing prompt snapshot data")
+	}
+	if err := prompts.Validate(); err != nil {
+		return nil, ReasonValidationFailure, err
+	}
+	checksum, err := prompts.ChecksumValue()
+	if err != nil || prompts.Checksum != checksum {
+		return nil, ReasonChecksumMismatch, errors.New("prompt checksum mismatch")
+	}
+	return prompts, "", nil
+}
+
+func decodeSnapshot(raw []byte) (*Snapshot, Reason, error) {
+	var probe struct {
+		SchemaVersion int `json:"schema_version"`
+	}
+	if err := json.Unmarshal(raw, &probe); err != nil {
+		return nil, ReasonCorruptJSON, fmt.Errorf("decode envelope: %v", err)
+	}
+
+	var snapshot *Snapshot
+	var err error
+	switch probe.SchemaVersion {
+	case schemaVersionLegacy:
+		snapshot, err = decodeSnapshotV1(raw)
+		if err != nil {
+			return nil, ReasonCorruptJSON, err
+		}
+	case SchemaVersion:
+		snapshot = &Snapshot{}
+		decoder := json.NewDecoder(bytes.NewReader(raw))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(snapshot); err != nil {
+			return nil, ReasonCorruptJSON, fmt.Errorf("decode: %v", err)
+		}
+		if err := decoder.Decode(new(struct{})); !errors.Is(err, io.EOF) {
+			return nil, ReasonCorruptJSON, errors.New("trailing data after snapshot")
+		}
+		checksum, err := snapshot.Checksum()
+		if err != nil {
+			return nil, ReasonCorruptJSON, err
+		}
+		if snapshot.Envelope.SnapshotChecksum != checksum {
+			return nil, ReasonChecksumMismatch, errors.New("checksum mismatch")
+		}
+	default:
+		return nil, ReasonUnsupportedSchema, fmt.Errorf("unsupported schema_version %d", probe.SchemaVersion)
+	}
+	if err := snapshot.Validate(); err != nil {
+		return nil, ReasonValidationFailure, err
+	}
+	return snapshot, "", nil
+}
+
 // Load reads and fully re-validates the published snapshot. A missing file is
 // ErrNoSnapshot; every rejection is ErrCorrupt and leaves the file untouched.
 // The decoder is selected by the document's schema version: schema 1 is
@@ -154,40 +204,8 @@ func (s *Store) Load() (*Snapshot, error) {
 		}
 		return nil, fmt.Errorf("storage: read snapshot: %w", err)
 	}
-	var probe struct {
-		SchemaVersion int `json:"schema_version"`
-	}
-	if err := json.Unmarshal(raw, &probe); err != nil {
-		return nil, fmt.Errorf("%w: decode envelope: %v", ErrCorrupt, err)
-	}
-	var snapshot *Snapshot
-	switch probe.SchemaVersion {
-	case schemaVersionLegacy:
-		snapshot, err = decodeSnapshotV1(raw)
-		if err != nil {
-			return nil, fmt.Errorf("%w: %v", ErrCorrupt, err)
-		}
-	case SchemaVersion:
-		snapshot = &Snapshot{}
-		decoder := json.NewDecoder(bytes.NewReader(raw))
-		decoder.DisallowUnknownFields()
-		if err := decoder.Decode(snapshot); err != nil {
-			return nil, fmt.Errorf("%w: decode: %v", ErrCorrupt, err)
-		}
-		if err := decoder.Decode(new(struct{})); !errors.Is(err, io.EOF) {
-			return nil, fmt.Errorf("%w: trailing data after snapshot", ErrCorrupt)
-		}
-		checksum, err := snapshot.Checksum()
-		if err != nil {
-			return nil, fmt.Errorf("%w: %v", ErrCorrupt, err)
-		}
-		if snapshot.Envelope.SnapshotChecksum != checksum {
-			return nil, fmt.Errorf("%w: checksum mismatch", ErrCorrupt)
-		}
-	default:
-		return nil, fmt.Errorf("%w: unsupported schema_version %d", ErrCorrupt, probe.SchemaVersion)
-	}
-	if err := snapshot.Validate(); err != nil {
+	snapshot, _, err := decodeSnapshot(raw)
+	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrCorrupt, err)
 	}
 	s.trusted = true

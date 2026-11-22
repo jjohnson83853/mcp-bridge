@@ -247,6 +247,8 @@ func eventMessage(event string) string {
 		return "startup publication failed"
 	case "startup_snapshot_rejected":
 		return "startup snapshot unavailable"
+	case "snapshot_retention_failed":
+		return "quarantine retention failed"
 	case "prompt_publication_failed":
 		return "prompt publication failed"
 	case "config_reload_applied":

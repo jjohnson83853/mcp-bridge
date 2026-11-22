@@ -1,0 +1,22 @@
+import { readFileSync, writeFileSync, renameSync, statSync } from 'node:fs';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { withReviewRegistryLock } from '/home/opencode/.omp/agent/workflow-policy/execution-review-sequence.mjs';
+import { canonicalJson, sha } from '/home/opencode/.omp/agent/workflow-policy/execution-contract-binding.mjs';
+
+const root = '/home/opencode/projects/default/mcp-bridge';
+const rev = process.argv[2];
+if (!/^r\d+$/.test(rev ?? '')) throw new Error('usage: register-candidate.mjs <rN>');
+const d = root + '/.omp/artifacts/snapshot-recovery-fresh-plan/';
+const crSeed = JSON.parse(readFileSync(d + 'review-seed-cr-' + rev + '.json', 'utf8'));
+const ctSeed = JSON.parse(readFileSync(d + 'review-seed-ct-' + rev + '.json', 'utf8'));
+const state = JSON.parse(readFileSync(root + '/.omp/plans/execution-state.json', 'utf8'));
+const abs = p => p.startsWith('/') ? p : root + '/' + p;
+const rel = p => path.relative(root, abs(p));
+const paths = [...new Set([rel(state.spec.path), ...state.tasks.flatMap(t => t.effects.paths).filter(p => { try { return statSync(abs(p)).isFile(); } catch { return false; } })])];
+const inputs = paths.map(p => ({ path: p, sha256: sha(readFileSync(root + '/' + p)) }));
+const desc = (seed, rid) => { const q = seed.workflowDispatch.requests[0]; return { name: q.name, agent: q.agent, reviewerId: rid, taskId: q.taskId, requestSha256: sha(canonicalJson(q)), targetCandidateId: q.targetCandidateId, targetRevision: q.targetRevision, taskSha256: sha(seed.tasks[0].task), instructionsSha256: sha(seed.instructions) }; };
+const candidate = { id: 'snapshot-recovery-spec-' + rev, revision: rev, authorIds: ['planner'], maxRounds: 5, inputs, targetRevision: rev, dispatches: [desc(crSeed, 'code-reviewer'), desc(ctSeed, 'critic')] };
+const registryPath = root + '/.omp/plans/review-sequence.json';
+withReviewRegistryLock(registryPath, {}, { readFileSync, writeFileSync, renameSync }, () => { const registry = JSON.parse(readFileSync(registryPath, 'utf8')); registry.candidates = registry.candidates.filter(c => c.id !== candidate.id).concat([candidate]); const temp = registryPath + '.' + randomUUID() + '.tmp'; writeFileSync(temp, JSON.stringify(registry, null, 2) + '\n'); renameSync(temp, registryPath); return { ok: true }; });
+console.log(JSON.stringify({ registered: candidate.id, specSha: sha(readFileSync(root + '/.scratch/snapshot-recovery/spec.md')) }));

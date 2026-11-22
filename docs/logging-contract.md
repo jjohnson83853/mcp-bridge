@@ -70,6 +70,7 @@ object.
 | `config_reload_rejected` | `reload` | `warn` / `failure` |
 | `reload_publication_failed` | `publish` | `warn` / `failure` |
 | `startup_snapshot_rejected` | `startup` | `warn` / `degraded` |
+| `snapshot_retention_failed` | `startup` | `warn` / `failure` |
 | `prompt_publication_failed` | `publish` | `warn` / `failure` |
 | `reload_rejected` | `reload` | `warn` / `failure` |
 | `internal_warning` | `reload` | `warn` / `failure` |
@@ -194,6 +195,7 @@ auth_mode
  process_state
  protocol_version
  publication_impact
+ quarantine_path
  refresh_id
  request_id
  resource
@@ -308,6 +310,8 @@ runtime records, the closed mappings are:
 | `host_rejected`, `origin_rejected`, `client_auth_failed`, `session_auth_failed`, `request_too_large`, `route_not_found`, `unsupported_capability`, `unsupported_schema`, `invalid_arguments`, `unknown_tool`, `malformed_request`, `invalid_request`, `method_not_found`, `client_disconnected` | `usage` | `false` | `correct the request and retry` |
 | `request_cancelled` | `usage` | `true` | `retry the request` |
 | `session_capacity` | `resource` | `true` | `retry when capacity is available` |
+| `snapshot_unavailable` | `resource` | `true` | `verify the durable snapshot and storage permissions, then retry` |
+| `state_directory` | `resource` | `false` | `create the configured state directory or fix its permissions` |
 | `backend_unavailable`, `backend_auth_failed`, `backend_busy`, `deadline_exceeded`, `upstream_protocol_error`, `catalog_changed` | `dependency` | `true` | `verify the upstream service and retry` |
 | `tool_reported_error` | `dependency` | `false` | `correct the upstream tool behavior` |
 | `invalid_config` | `configuration` | `false` | `correct the configuration` |
@@ -475,10 +479,18 @@ invented source positions.
 | Event | Level | Operation | Outcome | `error.code` | Kind | Retryable | Remediation | Static message |
 |---|---|---|---|---|---|---:|---|---|
 | `startup_snapshot_rejected` | `warn` | `startup` | `degraded` | `snapshot_unavailable` | `resource` | `true` | `verify the durable snapshot and storage permissions, then retry` | `startup snapshot unavailable` |
+| `snapshot_retention_failed` | `warn` | `startup` | `failure` | `state_directory` | `resource` | `false` | `create the configured state directory or fix its permissions` | `quarantine retention failed` |
 | `prompt_publication_failed` | `warn` | `publish` | `failure` | `internal_error` | `internal` | `false` | `inspect the bridge logs and configuration` | `prompt publication failed` |
 | `reload_rejected` | `warn` | `reload` | `failure` | `internal_error` | `internal` | `false` | `inspect the bridge logs and configuration` | `configuration reload rejected` |
 | `reload_publication_failed` | `warn` | `publish` | `failure` | `internal_error` | `internal` | `false` | `inspect the bridge logs and configuration` | `configuration reload publication failed` |
 | `internal_warning` | `warn` | `reload` | `failure` | `internal_error` | `internal` | `false` | `inspect the bridge logs and configuration` | `bridge encountered an internal warning` |
+
+For `startup_snapshot_rejected`, `failure_reason` is the finite union of the
+existing upstream-discovery reasons and `corrupt_json`, `checksum_mismatch`,
+`unsupported_schema`, `validation_failure`, `read_error`, or `orphaned_link`.
+`quarantine_path` identifies the absolute family quarantine entry, while
+`resource.path` remains the configured state directory. Retention failures carry
+the attempted `quarantine_path` and the same configured `resource.path`.
 
 All these messages are fixed event messages; raw error strings are dropped. A
 publication failure after accepting a reload has exactly one emitter,

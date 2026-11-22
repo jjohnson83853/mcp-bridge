@@ -1,0 +1,13 @@
+Review the r23 snapshot-recovery specification candidate (specification-only; no implementation exists).
+
+Bindings to verify first: the four specdd regions R1-R9, EVIDENCE/UNCERTAINTY, DESIGN, AC1-1..AC1-10 + AC2-1..AC2-9, and the 6.1 ENVELOPE (14 files); the ticket mirror is intentionally stale (section 9.7).
+
+Closure under review (compare against cr-r22-raw.md and ct-r22-raw.md):
+- C4 MAJOR: active-expansion stack rekeyed to resolved containing-directory context + entry identity; the hard-linked-symlink counterexample splices finitely and protects q5; protection membership unchanged (entry identity + cleaned path); new AC1-10 (b-hardalias)/(b-hardalias2)/(b-hardcycle). Verify the stated counterexample step-by-step against the text: is membership by context sufficient, does it reclassify false cycles, and does the (b-hardcycle) true-cycle case still stop? Check q5/q4 outcomes, read-through, link move and the 4096 bounds.
+- C5 MAJOR (owner-directed): mutual snapshot.json<->prompts.json reconciliation. Verify detection (m-i)-(m-iv), own-family reserve+rename preserving link bytes, orphaned_link reason record (R6 taxonomy), deterministic record order, R3 fatal discipline, post-reconciliation retention, and second-run no-op. Verify R9's rescoped promise matches the mechanics and names the originally-dangling limitation. Verify AC2-9 mutual-pair and non-mutual subcases actually discriminate (fresh valid snapshot, fresh regular prompts accepted by direct SavePrompts, exactly two warn records).
+- CR22 LOWs: (b-budget) eviction discriminates budget trip vs completion; D11 either-bound wording; R9 scope text.
+
+Check for regressions introduced by the edit: id/envelope unchanged, no contradiction with R1-R9 or D1-D12, no false owner-confirmation or review claim, no new dependency beyond std-lib.
+
+Return Findings as a Markdown list, each with severity (CRITICAL/HIGH/MEDIUM/LOW), file:line anchor and confidence, and a one-line recommended fix, followed by a verdict heading on its own line:
+## Verdict: APPROVE, REQUEST CHANGES, or BLOCKED. Do not edit any file.

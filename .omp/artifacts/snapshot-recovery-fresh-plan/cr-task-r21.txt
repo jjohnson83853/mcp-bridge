@@ -1,0 +1,13 @@
+# Target
+Review snapshot-recovery specification candidate snapshot-recovery-spec-r21@r21 in specification mode. No implementation exists. The r20 code review returned REQUEST CHANGES with one MEDIUM, two LOW, and advisory LOWs.
+
+# Required checks
+- M1 closure: reconciliation exclusion lists in R2, D12(ii) and section 4(3) no longer exclude non-conforming final targets; the two configured family paths are stated eligible orphan targets by definition; "NOT reconciled" replaces "NOT moved" where the two differ; the protection-side non-conforming walk class is retained only for retention candidacy. Re-run the b-xB2/b-xB3 logic: condition (ii) must pass for a configured target moved by the other pass, and reconciliation must fire. Confirm no condition is now vacuous.
+- L1: (b-xA2) cites condition (iv), not (iii).
+- L2: the planner rejected the checksum-attribution LOW with evidence (store.go ChecksumValue :104, guard :105, sentinel return :106). Independently check the raw source and either accept the rejection or re-raise with exact lines; do not rely on the prior reviewer's assertion.
+- A1-A4: seeded oracles for the 4096-component budget and mid-path not-a-directory; post-reconciliation retention fixture with pre-existing seeds; AC1-3 alias-identity wording uses entry identity, not lexical inequality; D12 fatal list names post-rename directory-sync failure or explicitly delegates to R3.
+- Regression: no R/AC/T id change; 14-file envelope and per-task sets unchanged; no new dependency; Load/Save/LoadPrompts/SavePrompts/ensureReplaceable unchanged; C6/CR15 closures retained; C1 component resolver and D12 owner checkpoints remain as accepted at r20.
+- Advisory LOWs separately. Do not propose a new id or envelope widening.
+
+# Output contract
+Report severity (CRITICAL/HIGH/MEDIUM/LOW), file:line anchor and confidence per finding. End with exactly '### Recommendation' then APPROVE or REQUEST CHANGES.

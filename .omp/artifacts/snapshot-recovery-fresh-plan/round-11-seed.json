@@ -1,0 +1,22 @@
+{
+  "intent": "Plan round 11: revise r21 to close CT21 C1/C3 and budget boundary",
+  "instructions": "Revise .scratch/snapshot-recovery/spec.md in place from r21 to r22. Read the current r21 spec and .omp/artifacts/snapshot-recovery-fresh-plan/ct-r21-raw.md (C1 MAJOR, C3 MINOR; C2 is a reviewer capability gap, not a spec defect). Close the text-level findings; do not change any R/AC/T id, the 6.1 ENVELOPE, or the task decomposition; return a machine-readable blocker if a closure needs one. Do not claim reviews, approvals, owner confirmation, or digest verification. Return the complete nine-section spec and a finding-to-text change log.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r21",
+    "requests": [
+      { "name": "SnapshotRecoverySpecRound11", "taskId": "PLAN1", "agent": "planner", "effects": { "kind": "read", "paths": [] } }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecRound11",
+      "agent": "planner",
+      "solutionSpace": "closure of CT21 C1/C3 within a fixed id set; C2 recorded as a review-capability limit; no new ids, no envelope change",
+      "task": "Close these in r22; no id/envelope changes; blocker if impossible. Round 11, final round of the reset 9-11 budget.\n1 C1 MAJOR resolver correctness: the unconditional 'identity revisit means cycle' rule rejects finite paths that traverse the same directory symlink twice. Counterexample: five conforming snapshot quarantines with q5 oldest and backing rejected bytes; directory deep; alias -> deep; snapshot.json -> alias/../alias/../q5. Filesystem resolution reaches <state>/q5, but the specified pre-pass stops at the second alias identity, protects nothing, moves the link, and retention deletes q5. Replace the global visited-set cycle rule with resolution-state tracking that distinguishes a true cycle (revisiting a component currently on the active expansion stack) from a finite repeated traversal (revisiting a component after it has been popped), bounded by the existing 4096-component budget and a stated depth limit. Define the state precisely (stack membership, pop on completion, absolute/relative bases, directory symlink splicing, budget counting including whether the configured link's own splice counts). Keep complete-chain protection, entry-identity candidacy, and every r21 termination class. Add AC1-10 subcases: (b-realias) the alias/../alias/../q5 counterexample (q5 preserved, q4 evicted, link moved, read-through); (b-cycle) a true ancestor cycle (alias -> sub, sub/back -> alias) terminating harmlessly as read_error with the link moved; and (b-revisit) a finite layout that revisits the same directory twice without a cycle, asserting protection succeeds.\n2 C3 MINOR: D12's assertion that any other non-quarantine-named final target fails condition (iii) is too broad; a chain through the other configured symlink can lose that intermediate entry while ending at keeper.json and then (iii) passes. Amend to 'fails (iii) only when no chain element other than the configured link moved'.\n3 Budget boundary: state the exact 4096 counting rule and align AC1-10(b-budget) with it, or drop the unasserted boundary claim; the fixture must not claim a visited-set size that no FAILS clause pins.\n4 C2 (no spec change): the critic cannot compute SHA-256 with its tools, so exact-input identity is a review-capability gap, not a contract defect. Record in section 9 the recorded digest manifest (path plus sha256 for the 12 candidate inputs) and the limitation explicitly; do not claim independent verification and do not weaken any binding rule.\nReturn the full nine-section spec, unchanged ids, and a change log mapping each finding to its closing text."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+# Target
+Apply the SpecDD pass policy to snapshot-recovery candidate snapshot-recovery-spec-r20@r20 (specification only). No implementation exists. Verify the r20 closures against these exact bytes.
+
+# Required checks
+- C1: component-wise resolver semantics, all termination branches, complete-chain protection and entry identity; reconstruct the alias/.. counterexample and the escape/loop fixtures; confirm no backing-byte deletion or dangling moved link remains.
+- C7: orphaned-link class, detection, ordering, family attribution and warning counts, post-admission self-healing, inverse direction, second-run no-op; confirm the two open owner checkpoints are not claimed as confirmed.
+- L-1..L-4 closures and their consistency across R2/R5/R6/R8/AC1-2/AC1-3/AC1-10.
+- Regression: C6, CR15, ids, 14-file envelope, no new dependency.
+- Judge traceability, falsifiability, retention/atomicity, warning counts, ownership and section 9 handoff. Blocking findings need class, severity, confidence, anchor and minimal fix. The configured non-OpenAI spec_critic_escalated reviewer is unavailable; record that as a limit, not a verdict substitute.
+
+# Output contract
+End with exactly '### Verdict' then PASS, REVISE or BLOCKED and nothing after it.

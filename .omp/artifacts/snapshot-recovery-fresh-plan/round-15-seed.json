@@ -1,0 +1,33 @@
+{
+  "intent": "Plan round 15: owner-authorized four-ticket decomposition plus carried CT24 C5/C8 and CR24 LOWs",
+  "ownerAuthorization": {
+    "source": "owner chat message, 2026-11-21",
+    "text": "authorize planner spec update",
+    "scope": "revise the specification task decomposition from T1-T3 to four behavior-owned tickets (quarantine core, retention/protection, configured-link reconciliation, startup integration); preserve every R/AC id; no new files; T4 task id may be introduced as the integration ticket. Grants no implementation, waiver, review-retry or pipeline-transition authority.",
+    "conversationAnchor": ".omp/artifacts/snapshot-recovery-ticket-decomposition-r25.md"
+  },
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "snapshot-recovery",
+    "revision": "r24",
+    "requests": [
+      {
+        "name": "SnapshotRecoverySpecRound15",
+        "taskId": "PLAN1",
+        "agent": "planner",
+        "effects": { "kind": "read", "paths": [] }
+      }
+    ]
+  },
+  "dispatchMode": "out-of-band (canonical state is r16; prepare-dispatch revision binding unavailable, same as rounds 10-14)",
+  "tasks": [
+    {
+      "name": "SnapshotRecoverySpecRound15",
+      "agent": "planner",
+      "solutionSpace": "owner-authorized task-boundary restructure of section 6 plus re-application of two carried Critic findings and two advisory LOWs; fixed R/AC ids, fixed 14-file envelope; delta return, no full-spec dump",
+      "task": "Revise .scratch/snapshot-recovery/spec.md from r24 to r25. Read the current r24 spec, ct-r24-raw.md, cr-r24-raw.md, round-14-task.txt, and .omp/artifacts/snapshot-recovery-ticket-decomposition-r25.md. Round 15, owner-authorized."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+# Target
+Review snapshot-recovery specification candidate snapshot-recovery-spec-r22@r22 in specification mode. No implementation exists. The r21 critic returned BLOCKED with C1 MAJOR, C2 evidence gap and C3 MINOR; the r21 code review returned APPROVE with two LOWs.
+
+# Required checks
+- C1 closure: cycle detection uses an active-expansion stack (push a spliced component, pop when its target text is fully resolved), so an on-stack identity revisit is a true cycle and a popped identity revisit is a finite traversal that continues. Reconstruct snapshot.json -> alias/../alias/../q5: q5 protected, q4 evicted, link moved, read-through. Check (b-realias), (b-cycle) and (b-revisit), the 4096 spliced-component budget counting rule, the expansion-stack depth bound, and that every r21 termination class and complete-chain protection remain. Confirm no unconditional global visited-set test remains.
+- C3: D12 (iii) now says a chain fails (iii) only when no chain element other than the configured link moved.
+- Budget boundary: the counting rule is exact and AC1-10(b-budget) asserts only what it pins.
+- C2: the critic lane cannot compute SHA-256; section 9.19 records the 12-input manifest and the limitation without weakening binding. Treat this as a lane capability limit; do not re-raise it as a contract defect unless you find an actual manifest/binding inconsistency in the spec text.
+- Regression: no R/AC/T id change; 14-file envelope and per-task sets unchanged; no new dependency; Load/Save/LoadPrompts/SavePrompts/ensureReplaceable unchanged; C6/CR15, C7 reconciliation and owner checkpoints unchanged.
+- Advisory LOWs separately. Do not propose a new id or envelope widening.
+
+# Output contract
+Report severity (CRITICAL/HIGH/MEDIUM/LOW), file:line anchor and confidence per finding. End with exactly '### Recommendation' then APPROVE or REQUEST CHANGES.

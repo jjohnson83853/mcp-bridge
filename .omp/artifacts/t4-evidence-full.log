@@ -1,0 +1,6 @@
+# T4 full suite
+ok  	github.com/jjohnson83853/mcp-bridge/internal/storage	1.015s
+ok  	github.com/jjohnson83853/mcp-bridge/internal/observe	0.310s
+?   	github.com/jjohnson83853/mcp-bridge/internal/observe/internal/genhttpwriter	[no test files]
+ok  	github.com/jjohnson83853/mcp-bridge/cmd/mcp-bridge	8.724s
+exit=0

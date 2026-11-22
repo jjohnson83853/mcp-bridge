@@ -1,0 +1,12 @@
+Critic review of the r24 snapshot-recovery specification (specification-only; no implementation exists).
+
+Check the four specdd regions R1-R9, EVIDENCE/UNCERTAINTY (D1-D12), DESIGN, AC1-1..AC1-10 + AC2-1..AC2-9, 6.1 ENVELOPE, OBSERVABILITY, RELEASE AND RECOVERY. The ticket mirror is intentionally stale (section 9.7); judge the spec, not the mirror.
+
+Required checks for this round:
+- CR23 F1/F2 closure: is reconciliation now correctly gated on a live symlink entry, with the moved-entry guard applied to both ordinary and mutual classes? Probe the boundary between a legitimate reconciliation (live dangling/loop-class link, partner moved) and the no-op absence case. Verify record counts, deterministic order, at-most-one reconciliation, R3 fatal handling and retention timing.
+- C5 owner-directed mutual-link reconciliation still self-heals end to end (two warn records, fresh snapshot, prompts absent then recreated as a regular file by SavePrompts, second run no-op).
+- C4 closure intact; F3-F6 text/oracle corrections are precise.
+- No R/AC/T id, envelope, or decomposition change; no fabricated reviews, approvals, owner confirmations or test execution; oracles are planned, not passed.
+
+Return Findings with severity (CRITICAL/HIGH/MEDIUM/LOW), anchors, and a closing recommendation, then a verdict heading on its own line:
+## Verdict: PASS, REVISE, or BLOCKED. Cite evidence for every finding; do not edit files.

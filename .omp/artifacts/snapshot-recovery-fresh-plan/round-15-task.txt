@@ -1,0 +1,8 @@
+Round 15 planner task (verbatim dispatch) — owner-authorized r24 -> r25
+
+Target: .scratch/snapshot-recovery/spec.md (r24).
+Change set: (1) section 6 decomposition into T1 quarantine core, T2 retention/protection, T3 configured-link reconciliation, T4 startup integration + end-to-end gate (new id, owner-authorized); R/AC ids and 14-file envelope unchanged. (2) Re-apply CT24-C5 moved-entry re-key by original configured path + pre-move identity, partner-vs-self by recorded chain-entry path, hard-linked-symlink counterexample in D12, AC2-9 hard-linked mutual variant with Readlink assertion and counting discrimination. (3) CT24-C8 wording: planned oracles, no executed GREEN. (4) CR24 LOWs: orphaned_label -> orphaned_link; AC1-10(b-dangle) cites (m-ii)+(m-iii).
+
+Return: change log + delta blocks {section, oldAnchor, newText}; no full-spec dump; no id/envelope changes; no review/approval/test claims; blocker if a closure is impossible.
+
+Dispatch: agent SnapshotRecoverySpecRound15 (planner), out-of-band round; canonical state r16 untouched.

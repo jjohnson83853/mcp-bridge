@@ -1,0 +1,12 @@
+Critic review of the r23 snapshot-recovery specification (specification-only; no implementation exists).
+
+Check the four specdd regions R1-R9, EVIDENCE/UNCERTAINTY (D1-D12), DESIGN, AC1-1..AC1-10 + AC2-1..AC2-9, 6.1 ENVELOPE, OBSERVABILITY, RELEASE AND RECOVERY. The ticket mirror is intentionally stale (section 9.7); judge the spec, not the mirror.
+
+Required checks for this round:
+- C4 MAJOR closure: is the expansion-stack key change (resolved containing-directory context + entry identity) free of residual inode-identity misclassification, including the hard-linked-symlink counterexample? Verify AC1-10 (b-hardalias)/(b-hardalias2)/(b-hardcycle) are executable definitions, not assertions.
+- C5 MAJOR closure under the owner's explicit mutual-link direction: does the reconciliation make the mutual pair self-heal end to end (both warn records, snapshot republished, prompts absent then recreated as a regular file on SavePrompts, second run no-op)? Are the loop-partner detection, ordering, record taxonomy, fatal handling and retention timing consistent? Does R9 claim no more than that, and does it state the still-open originally-dangling carve-out and retention-unlink checkpoint without claiming owner confirmation?
+- CR22 LOW closures: (b-budget) observability, D11 either-bound wording, R9 scope.
+- No R/AC/T id, envelope, or decomposition change; no fabrication of reviews, approvals, outputs, owner confirmations or test execution; RED/GREEN oracles are planned, not passed.
+
+Return Findings with severity (CRITICAL/HIGH/MEDIUM/LOW), anchors, and a closing recommendation, then a verdict heading on its own line:
+## Verdict: PASS, REVISE, or BLOCKED. Cite evidence for every finding; do not edit files.

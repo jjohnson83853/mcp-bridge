@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
+	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
 
 func TestStartupFailureRecords(t *testing.T) {
@@ -155,5 +156,47 @@ func assertStartupFailure(t *testing.T, err error, event, code, kind string, ret
 		failure.kind != kind || failure.retryable != retryable || failure.remediation == "" ||
 		!reflect.DeepEqual(failure.resource, resource) {
 		t.Fatalf("startup failure=%#v, want %s/%s/%s retryable=%t resource=%#v", failure, event, code, kind, retryable, resource)
+	}
+}
+
+func TestRecoveryStateDirectoryFailurePreservesClassificationAndCause(t *testing.T) {
+	const directory = "/safe/state"
+	cause := errors.New("private filesystem detail")
+	storageCause := errors.Join(storage.ErrSnapshotUnrecoverable, cause)
+	err := recoveryStateDirectoryFailure(directory, storageCause)
+
+	var got startupFailure
+	if !errors.As(err, &got) {
+		t.Fatalf("recovery error=%T; want startupFailure in error chain", err)
+	}
+	if want := stateDirectoryFailure(directory); !reflect.DeepEqual(got, want) {
+		t.Fatalf("startup failure=%#v; want exact classification %#v", got, want)
+	}
+	if !errors.Is(err, storage.ErrSnapshotUnrecoverable) || !errors.Is(err, cause) {
+		t.Fatalf("recovery error chain lost storage cause: %v", err)
+	}
+
+	var output bytes.Buffer
+	writeStartupFailure(&output, got)
+	record := decodeEnvelopeLine(t, output.String())
+	wantRecord := map[string]any{
+		"schema_version": float64(1),
+		"level":          "error",
+		"service":        "mcp-bridge",
+		"event":          "startup_failed",
+		"message":        "application startup failed",
+		"operation":      "startup",
+		"outcome":        "failure",
+		"error": map[string]any{
+			"code": "state_directory", "kind": "resource", "retryable": false,
+			"remediation": "create the configured state directory or fix its permissions",
+		},
+		"resource": map[string]any{"path": directory},
+	}
+	if !reflect.DeepEqual(record, wantRecord) {
+		t.Fatalf("startup recovery record=%#v; want exact pin %#v", record, wantRecord)
+	}
+	if strings.Contains(output.String(), cause.Error()) {
+		t.Fatalf("startup recovery record leaked cause: %q", output.String())
 	}
 }

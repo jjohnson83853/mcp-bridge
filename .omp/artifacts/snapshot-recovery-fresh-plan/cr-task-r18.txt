@@ -1,0 +1,12 @@
+# Target
+Review snapshot-recovery specification candidate snapshot-recovery-spec-r18@r18 in specification mode. No implementation exists. The r17 critic returned REVISE with C1 HIGH and C2 MEDIUM; the r17 code review returned APPROVE with three LOWs.
+
+# Required checks
+- C1 closure: protection covers the complete backing chain, not one hop. Reconstruct the critic counterexample (five conforming snapshot entries, q1 newest is a relative symlink to q5 oldest, snapshot.json points to q1) and the two-hop chain; check that q1 and q5 are both protected, q4 is evicted, q1/q5 bytes survive, and the link entries themselves move. Verify each stated resolution failure mode (ELOOP/cycle, dangling link, non-conforming final target, directory final target, alias spelling) terminates harmlessly without deleting backing bytes. Verify the over-four-chain carve-out (survivor bound yields to protection) is stated and bounded, and that it does not contradict R5, section 4, section 8 or the AC survivor counts.
+- C2 closure: the section 8 deletion cap is removed; successful deletion count equals excess above four surviving pre-existing files; nine-file backlog needs five deletions with four survivors plus this run's file; R5/D10/section 4/section 8/AC1-3 agree.
+- Alias identity and other-configured-path closure: identity matching by device+inode with lexical fallback, AC1-3 alias subcase; the cross-family move of the other configured path is named, only the owning family reports, and R2's wording is narrowed consistently.
+- Regression: no R/AC/T id change; section 6.1 write set is the same 14-file envelope and per-task file sets; no new dependency; Load/Save/LoadPrompts/SavePrompts/ensureReplaceable unchanged; C6 same-family behavior retained.
+- Advisory LOWs separately. Do not propose a new id or envelope widening.
+
+# Output contract
+Report severity (CRITICAL/HIGH/MEDIUM/LOW), file:line anchor and confidence per finding. End with exactly '### Recommendation' then APPROVE or REQUEST CHANGES.

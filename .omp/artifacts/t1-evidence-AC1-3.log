@@ -1,0 +1,4 @@
+# T1 evidence AC1-3
+$ go test ./internal/storage/ -run 'TestRecoverRetention' -count=1
+ok  	github.com/jjohnson83853/mcp-bridge/internal/storage	0.013s
+exit=0

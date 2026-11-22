@@ -1,0 +1,12 @@
+# Target
+Apply the SpecDD pass policy to snapshot-recovery candidate snapshot-recovery-spec-r22@r22 (specification only). No implementation exists.
+
+# Required checks
+- C1: active-expansion cycle detection distinguishes a true ancestor cycle from finite repeated traversal; reconstruct the alias/../alias/../q5 counterexample and the b-cycle/b-revisit fixtures; confirm q5 survives, q4 is evicted, read-through holds, and every termination class and protection invariant remains.
+- C3 and the budget boundary: the (iii) rationale and the 4096 counting rule/AC assertion agree.
+- Regression: C7/D12 orphan reconciliation, C6/CR15, fixed ids, 14-file envelope, no new dependency; both owner checkpoints remain open and unclaimed.
+- C2: your lane has no digest tool. The dispatch gate validated the candidate binding and the digest manifest is recorded in section 9.19. Judge whether the contract text is internally consistent with that manifest; record exact-byte recomputation as a lane capability limit rather than a spec defect unless you find a manifest inconsistency. Do not infer approval from this instruction.
+- Blocking findings need class, severity, confidence, anchor and minimal fix. The configured non-OpenAI spec_critic_escalated reviewer is unavailable; record that as a limit.
+
+# Output contract
+End with exactly '### Verdict' then PASS, REVISE or BLOCKED and nothing after it.

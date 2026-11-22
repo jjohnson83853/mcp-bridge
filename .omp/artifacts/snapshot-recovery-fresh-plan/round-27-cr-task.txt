@@ -1,0 +1,15 @@
+# Target
+Review snapshot-recovery specification candidate snapshot-recovery-spec-r27@r27 (specification only; no implementation). This is the round-17 closing revision for CR26.
+
+# Required checks
+1. CR26-1: §9.8 headline/body now state no write-path change, T4 added at r25 by owner authorization, 14-file write set unchanged — no residual 'Envelope changes: none'.
+2. CR26-2: decision ledger at §3 and D12 header record the r26 amendment (final target's cleaned path, CR25-5).
+3. CR26-3: the live pre-pass clauses scope the final-target path to ordinary (iii); (m-iii) still matches moved link entries; historical change-log wording stays round-scoped.
+4. Regressions: no R/AC/T id add/remove/rename; §6.1 same 14 files; section order; no contradiction with D1-D12 or the ACs; no review/approval/test claim.
+
+Return Findings (severity, anchor, confidence, one-line fix) then a verdict heading:
+## Verdict: APPROVE, REQUEST CHANGES, or BLOCKED. Do not edit any file.
+# Output contract
+End the report with exactly these two lines:
+### Recommendation
+APPROVE (or REQUEST CHANGES / COMMENT if that is the verdict).
