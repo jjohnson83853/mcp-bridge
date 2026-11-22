@@ -1,0 +1,72 @@
+{
+  "text": "<task-result id=\"ReviewConfigAdmissionSpecCR16\" agent=\"code-reviewer\" status=\"completed\" duration=\"5m58s\">\n\n<output>\nPrior-ledger closure verified first, then independent re-verification of the anchors the r16 text relies on.\n\n## Code Review Summary\nMode: specification (not implementation); pass: repair; candidate `config-admission-resilience-spec-r16` (sha256 `e5cc6e13…` matches `.omp/plans/execution-state.json`).\n\n**Prior ledger (`review-cr-r15.txt`) closure — all three closed**\n- CR15 MEDIUM closed: §10 T3 header/annotions (`spec.md:502`), Prohibited (`:510`), R8 (`:208`), roll-up (`:514`) now name `ResolvedSecrets()` + `owner-secret-inventory-authorization.json`; envelope `writePaths` and T3 `effects` remain exactly `internal/config/config.go` + `internal/config/config_test.go` (canonical state).\n- CR15 LOW (scan enumerations) closed: the phrase \"server, embedding, or client-token\" survives only inside the M2 finding row; `:342,:359,:363,:365,:462,:464,:479,:489` all name the complete inventory.\n- CR15 LOW (tool-metadata anchor) closed: `_meta` gate at `internal/config/tool_metadata.go:141-148` (MappingNode only), resolution by the generic walk `internal/config/diagnostics.go:271-333` (result writes `:355,:423`), retained at `internal/config/config.go:456`.\n- CT14 C8 substantively closed: inventory implementable from `Config.resolved`; owner artifact's scope is the same two files.\n\n**Findings**\n- [LOW][ledger-state-drift] Decision id mismatch: `spec.md:187` and `:514` record `approve-complete-secret-inventory-authorization`, but `.omp/artifacts/config-admission-resilience/owner-secret-inventory-authorization.json` has `\"decision\":\"authorize-complete-secret-inventory\"`. Authority is still identified by path/`origin:\"user\"`/`explicit:true`. Fix: cite the artifact's actual field.\n- [LOW][stale-citation] `Config.resolved` anchor off by one: `spec.md:177,189,208,247,303,384,403,433,485,491,506` cite `config.go:68,384,455`; the assignment is `internal/config/config.go:456` (`:433` digest append verified correct; `:384` resolveSecrets call correct).\n- [LOW][ac-not-falsifiable] AC1 (`spec.md:377`) omits `TestStartupAdmissionFailureClass` though its observable includes the admission class; `go test -run` exits 0 when absent (only AC5 `:381` runs it). Fix: add it to AC1's pattern.\n- [LOW][statement-contradiction] AD4 (`spec.md:285`) makes `MCP_STRICT_CONFIG=1` strict-true, but R4 (`:200`) says \"unset or non-true\" keeps R3 and AC13 (`:389`) tests only false/yes/0 — the `1` alias has no oracle and R4 can be read as fallback-enabled. Fix: add a `1` strict case or drop the alias.\n- [LOW][stale-citation] M1-class wording survives at `spec.md:398` (\"the only `internal/config` change is the widening-3 resolver pair\"), naming no r16 accessor while R8/§10 now do.\n\n**Verified sound (not re-raised)**\nTicket mapping complete 01→AC1–5, 02→AC17–19 (owner lane `owner-ticket02-evidence.json`: `approve`, explicit, r7), 03→AC6–11, 04→AC12–16 incl. degraded `resource.path`. Design anchors match exactly: `loop.go:103,105,110,117-118,122,137,139,157,159,162-163,168`; `serve.go:136,139,143,198,306,317,322,339,397,409,414`; `Start` returns nil post-publication, so `fromStartExit` cannot see a reload capture; `single()` sets `not_checked`, so AC9 parity is achievable; `bounds.go` admits `embedding.timeout: 3s`; `restartOnlyField` includes `storage.directory`; `WriteJSONLine` is unlocked (`log.go:47-66`); Envelope has no `Stage`/`Cause` (`envelope.go:12-28`); legacy vocabulary contains `unknown`, not `admission`. Exactly-one emission is testable (reportReload call set only), secret hygiene is testable (AC8(i)–(vi)), T2 widening is BLOCKED-with-evidence, and no ticket clause is dropped by non-goals.\n\n**Limits:** read-only; no tests, hashes, or `effectCheck` executed; test names are proposals.\n\n### Recommendation\nAPPROVE\n</output>\n</task-result>",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [
+      {
+        "index": 0,
+        "id": "ReviewConfigAdmissionSpecCR16",
+        "agent": "code-reviewer",
+        "agentSource": "user",
+        "task": "Complete assignment thoroughly:\n\nIndependently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r16 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr-r15.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "assignment": "Independently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r16 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr-r15.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "lastIntent": "Checking startupFailureForError call sites",
+        "exitCode": 0,
+        "output": "Prior-ledger closure verified first, then independent re-verification of the anchors the r16 text relies on.\n\n## Code Review Summary\nMode: specification (not implementation); pass: repair; candidate `config-admission-resilience-spec-r16` (sha256 `e5cc6e13…` matches `.omp/plans/execution-state.json`).\n\n**Prior ledger (`review-cr-r15.txt`) closure — all three closed**\n- CR15 MEDIUM closed: §10 T3 header/annotions (`spec.md:502`), Prohibited (`:510`), R8 (`:208`), roll-up (`:514`) now name `ResolvedSecrets()` + `owner-secret-inventory-authorization.json`; envelope `writePaths` and T3 `effects` remain exactly `internal/config/config.go` + `internal/config/config_test.go` (canonical state).\n- CR15 LOW (scan enumerations) closed: the phrase \"server, embedding, or client-token\" survives only inside the M2 finding row; `:342,:359,:363,:365,:462,:464,:479,:489` all name the complete inventory.\n- CR15 LOW (tool-metadata anchor) closed: `_meta` gate at `internal/config/tool_metadata.go:141-148` (MappingNode only), resolution by the generic walk `internal/config/diagnostics.go:271-333` (result writes `:355,:423`), retained at `internal/config/config.go:456`.\n- CT14 C8 substantively closed: inventory implementable from `Config.resolved`; owner artifact's scope is the same two files.\n\n**Findings**\n- [LOW][ledger-state-drift] Decision id mismatch: `spec.md:187` and `:514` record `approve-complete-secret-inventory-authorization`, but `.omp/artifacts/config-admission-resilience/owner-secret-inventory-authorization.json` has `\"decision\":\"authorize-complete-secret-inventory\"`. Authority is still identified by path/`origin:\"user\"`/`explicit:true`. Fix: cite the artifact's actual field.\n- [LOW][stale-citation] `Config.resolved` anchor off by one: `spec.md:177,189,208,247,303,384,403,433,485,491,506` cite `config.go:68,384,455`; the assignment is `internal/config/config.go:456` (`:433` digest append verified correct; `:384` resolveSecrets call correct).\n- [LOW][ac-not-falsifiable] AC1 (`spec.md:377`) omits `TestStartupAdmissionFailureClass` though its observable includes the admission class; `go test -run` exits 0 when absent (only AC5 `:381` runs it). Fix: add it to AC1's pattern.\n- [LOW][statement-contradiction] AD4 (`spec.md:285`) makes `MCP_STRICT_CONFIG=1` strict-true, but R4 (`:200`) says \"unset or non-true\" keeps R3 and AC13 (`:389`) tests only false/yes/0 — the `1` alias has no oracle and R4 can be read as fallback-enabled. Fix: add a `1` strict case or drop the alias.\n- [LOW][stale-citation] M1-class wording survives at `spec.md:398` (\"the only `internal/config` change is the widening-3 resolver pair\"), naming no r16 accessor while R8/§10 now do.\n\n**Verified sound (not re-raised)**\nTicket mapping complete 01→AC1–5, 02→AC17–19 (owner lane `owner-ticket02-evidence.json`: `approve`, explicit, r7), 03→AC6–11, 04→AC12–16 incl. degraded `resource.path`. Design anchors match exactly: `loop.go:103,105,110,117-118,122,137,139,157,159,162-163,168`; `serve.go:136,139,143,198,306,317,322,339,397,409,414`; `Start` returns nil post-publication, so `fromStartExit` cannot see a reload capture; `single()` sets `not_checked`, so AC9 parity is achievable; `bounds.go` admits `embedding.timeout: 3s`; `restartOnlyField` includes `storage.directory`; `WriteJSONLine` is unlocked (`log.go:47-66`); Envelope has no `Stage`/`Cause` (`envelope.go:12-28`); legacy vocabulary contains `unknown`, not `admission`. Exactly-one emission is testable (reportReload call set only), secret hygiene is testable (AC8(i)–(vi)), T2 widening is BLOCKED-with-evidence, and no ticket clause is dropped by non-goals.\n\n**Limits:** read-only; no tests, hashes, or `effectCheck` executed; test names are proposals.\n\n### Recommendation\nAPPROVE",
+        "stderr": "",
+        "truncated": false,
+        "durationMs": 358433,
+        "tokens": 205680,
+        "requests": 35,
+        "contextTokens": 174696,
+        "contextWindow": 1048576,
+        "modelOverride": [
+          "openrouter/deepseek/deepseek-v4.1-flash-1017:high"
+        ],
+        "resolvedModel": "openrouter/deepseek/deepseek-v4.1-flash-1017:high",
+        "resolvedModelIdentity": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+        "resolvedThinkingLevel": "high",
+        "aborted": false,
+        "usage": {
+          "input": 158460,
+          "output": 47220,
+          "cacheRead": 4064768,
+          "cacheWrite": 0,
+          "totalTokens": 4270448,
+          "reasoningTokens": 39884,
+          "cost": {
+            "input": 0.004071718612870081,
+            "output": 0.012126106347663954,
+            "cacheRead": 0.02331595103946597,
+            "cacheWrite": 0,
+            "total": 0.03951377600000001
+          }
+        },
+        "outputPath": "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR16.md",
+        "outputMeta": {
+          "lineCount": 25,
+          "charCount": 3742
+        }
+      }
+    ],
+    "totalDurationMs": 358443,
+    "usage": {
+      "input": 158460,
+      "output": 47220,
+      "cacheRead": 4064768,
+      "cacheWrite": 0,
+      "totalTokens": 4270448,
+      "reasoningTokens": 39884,
+      "cost": {
+        "input": 0.004071718612870081,
+        "output": 0.012126106347663954,
+        "cacheRead": 0.02331595103946597,
+        "cacheWrite": 0,
+        "total": 0.03951377600000001
+      }
+    },
+    "outputPaths": [
+      "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR16.md"
+    ]
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "config-admission-resilience-spec-r15",
+  "revision": "r15",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+      "sha256": "df338fdec5768fc3431b2d20791a30d6546356c3cf3829eacd4bcc203c48291f"
+    },
+    {
+      "path": ".scratch/config-admission-resilience/spec.md",
+      "sha256": "410af7289f6c55cd554a7da62535d881cbd261fbfc0895734e1079a63db8890d"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/diagnostics_envelope.go",
+      "sha256": "27d30dd457e9747f57254ce77200e8f14dd739998171d2d4ec68c97ada3c842e"
+    },
+    {
+      "path": "cmd/mcp-bridge/example_config_test.go",
+      "sha256": "81f856efe04649d88aedc1ad156ff4b73de5aabebdc15d28810bfa1d494b0727"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "sha256": "6f657d754dd13c9524476e0a51fbca4b8f36f7163e0f4de0c870cb3b172b606d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "internal/config/config_test.go",
+      "sha256": "a24161dee00df60d0c7a3578408729b1a3d3a6148ba058ca9e3f249d1609ec46"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR15",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "9dc1f4e0f3b1968a7b9f84ce8bc6233624689c1deb911adf399b4825f4aade91",
+      "targetCandidateId": "config-admission-resilience-spec-r15",
+      "targetRevision": "r15",
+      "taskSha256": "8e1db9bc8b520649386527075948f1bbf3500f72f4ace7697000eed7eb6bb9e3",
+      "instructionsSha256": "44f65ce853927bb89787d598b8c66b6889ca9741f4baa2b3294674fea3695013"
+    },
+    {
+      "name": "ReviewConfigAdmissionSpecCT15",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "bf92b3c4033a0d6f5fbdbe3c84c3c358ee8f4c79bad44971bb632d5610245693",
+      "targetCandidateId": "config-admission-resilience-spec-r15",
+      "targetRevision": "r15",
+      "taskSha256": "a3773be4d8a13754852feb89012327ca15bc7acfbd41780537b667971e31250a",
+      "instructionsSha256": "44f65ce853927bb89787d598b8c66b6889ca9741f4baa2b3294674fea3695013"
+    }
+  ],
+  "output": "## Code Review Summary\n**Mode:** specification (not implementation); **pass:** repair, candidate `config-admission-resilience-spec-r15`.\n**Issues:** 3 (MEDIUM 1, LOW 2).\n\n**Prior CodeReviewer ledger closure (`review-cr-r14.txt`)**\n- **LOW1 closed.** Every LIVE canonical-state citation is now field-based (`spec.md:240` state bullet, `:479-481`, `:486-500`); grep finds no live `execution-state.json:<line>` — only preserved historical ledger rows keep pins.\n- **LOW2 closed.** AC1's command (`spec.md:367`) now includes `TestListenerRuntimeFailureClass`, matching its listener-runtime clause; AC2 (`:368`) keeps the producer+entry oracle.\n- **CT14 C8 closed substantively.** `resolveSecrets` (`internal/config/diagnostics.go:630-648`; walk `:271-448`) resolves every `{env:}`/`{file:}` mapping in the document, including `tool_metadata._meta` (`internal/config/tool_metadata.go:142-148`, which permits an arbitrary mapping); `Config.resolved` (`internal/config/config.go:68,384,455`) retains the values, so an in-file `ResolvedSecrets()` is implementable. `owner-secret-inventory-authorization.json` is origin/user, explicit, and scoped to the two approved files. AC8(v)/(vi) are named (`spec.md:374`) and falsifiable.\n\n**Issues**\n- **[MEDIUM][statement-contradiction]** The envelope scope still forbids what r15 requires. `spec.md:492` bounds T3's `internal/config/config.go` to \"the exported `ResolvedClientTokens()` resolver; no other change\"; `:388` says \"the only `internal/config` change is the widening-3 resolver pair\"; `:504`'s Widening/APPROVED roll-up omits `owner-secret-inventory-authorization.json`. R8 (`:198`), T3 (`:423`), AC8/AC10 (`:374-376`) and §10 Prohibited (`:500`) require/permit the r15 `ResolvedSecrets()` accessor. Consequence: an implementer or envelope auditor applying §10's write-set line literally must reject the accessor the ACs mandate. Fix: name the accessor and the r15 artifact in `:492`, `:388`, `:504`.\n- **[LOW][stale-citation]** r15 left eight scan-input enumerations at \"server, embedding, or client-token\", omitting `tool_metadata`: `spec.md:332` (§4.3 slot payload — the operative AD22 gate input), `:349`, `:353`, `:355`, `:452`, `:454`, `:464`, `:469`. A literal §4.3 payload contradicts AD22/AC8(v); AC8's oracle catches it only at test time. Fix: say \"any `ResolvedSecrets()` match\".\n- **[LOW][stale-citation]** `spec.md:177,237,421,481,496` call `internal/config/tool_metadata.go:140-148` the tool_metadata \"reference-resolution machinery\"; it is the `_meta` shape gate that permits an arbitrary mapping. Resolution is the generic walk (`diagnostics.go:271-448`). Substance true; anchor characterization inaccurate.\n\n**Verified sound (not re-raised):** tickets 01→AC1–5, 02→AC17–19 (owner lane, `owner-ticket02-evidence.json`), 03→AC6–11, 04→AC12–16; exactly-one emission holds against `internal/service/loop.go:105,110,122,139,159,168` and the emission-free `Published` (`loop.go:81`, `refresh.go:455`); listener producer is reachable (`serve.go:409,414-420`); F3 B is restart-only (`wiring.go:100-123`); `embedding.timeout: 3s` is valid (`bounds.go:167-186`); T2's widening is BLOCKED-with-evidence, not claimed; no ticket item is silently dropped.\n\n**Limits:** read-only; no tests, hashes or `effectCheck` executed; test names are proposals.\n\n### Recommendation\nREQUEST CHANGES\n",
+  "invocationId": "2b8fa21d-fd3e-4ffc-8960-4efe566d1442"
+}

@@ -1,0 +1,113 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "config-admission-resilience-spec-r16",
+  "revision": "r16",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+      "sha256": "df338fdec5768fc3431b2d20791a30d6546356c3cf3829eacd4bcc203c48291f"
+    },
+    {
+      "path": ".scratch/config-admission-resilience/spec.md",
+      "sha256": "e5cc6e132f9e9153ccf00c5b4e2caccd2a5ab969a4cd5caee5feb806ded2a0ae"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/diagnostics_envelope.go",
+      "sha256": "27d30dd457e9747f57254ce77200e8f14dd739998171d2d4ec68c97ada3c842e"
+    },
+    {
+      "path": "cmd/mcp-bridge/example_config_test.go",
+      "sha256": "81f856efe04649d88aedc1ad156ff4b73de5aabebdc15d28810bfa1d494b0727"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "sha256": "6f657d754dd13c9524476e0a51fbca4b8f36f7163e0f4de0c870cb3b172b606d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "internal/config/config_test.go",
+      "sha256": "a24161dee00df60d0c7a3578408729b1a3d3a6148ba058ca9e3f249d1609ec46"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR16",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "0281e26c46470a776d8b034991b2e90a0369397b64e24d2d32dd5a6729a417a6",
+      "targetCandidateId": "config-admission-resilience-spec-r16",
+      "targetRevision": "r16",
+      "taskSha256": "2a7dfd2a1e38794c9d6e347991cfd4ee2dbf0fce014b6dfecf61da573508d8fe",
+      "instructionsSha256": "6d1048583564ee46cdc8c8dfbbd51b5a3d4349c9ed212fa4bb322ea35d596410"
+    },
+    {
+      "name": "ReviewConfigAdmissionSpecCT16",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "508711e136253cc7c89a957b575e5c3f265f0155c444ece3f26eadfa825cffaa",
+      "targetCandidateId": "config-admission-resilience-spec-r16",
+      "targetRevision": "r16",
+      "taskSha256": "be565423e12bd127f41c29828282c566dcd7a0ced244498c1480e78dd288c587",
+      "instructionsSha256": "6d1048583564ee46cdc8c8dfbbd51b5a3d4349c9ed212fa4bb322ea35d596410"
+    }
+  ],
+  "output": "Spec ID: config-admission-resilience\nRevision: r16\nFindings by ID: C9\n\n- **[HIGH] C9 — T2 runs before the admission diagnostic it needs exists.** `.scratch/config-admission-resilience/spec.md:407` explicitly leaves the real drain tail calling `startupFailureForError(err)` with admission capture **false until T3**. Yet `:420-421,454` require T1 → T2 → T3 and instruct T2 to diagnose using the post-T1 binary. Counterexample: startup admission rejects the network instance’s configuration. `internal/service/loop.go:157-160` reports `admission_failed` then returns the error; `cmd/mcp-bridge/serve.go:409` classifies it through the old entry. Under the specified post-T1 implementation, that entry delegates with false, producing `unclassified/internal_error`, not the required admission diagnosis. T1’s unit oracle cannot establish that T2’s executable emits the typed class.\n\n  **Consequence:** AC17’s failing-stage capture is unattainable for this expressly supported incident class at T2’s scheduled execution point. The downstream T3 repair cannot satisfy an upstream prerequisite retroactively.\n\n  **Minimal amendment:** make complete, wired R1 diagnostics a prerequisite of T2’s capture. Reconcile implementation ownership, total writer order and canonical dependencies accordingly, within existing fences; preserve the approved actual-layout/pre-fix evidence lane and owner/operator-only live effects. Require a behavioral oracle observing the wired admission diagnostic in the prerequisite build—not merely a classifier unit call.\n\n  **Confidence: high.** New cross-task instance of the lifecycle/dependency class, not reopening C6’s proposed classifier repair. Reason for the earlier miss: unknown.\n\n**Verified coverage and limits**\n- Inspected tickets 01–04, canonical R1–R8/AC1–AC20, task effects/dependencies, current CodeReviewer evidence and W09E.\n- Source supports the two-load bootstrap window, memo requirement, post-publication success-report lane and startup/reload discriminator.\n- C8’s proposed complete-inventory repair is supported by retained `Config.resolved` and the owner’s two-file authorization. Static causes exclude runtime-error text.\n- T2’s diagnosis-dependent path blocking and explicit prohibition on deployment/live probes preserve authority. Section 7 names existing logging infrastructure and justified observability exceptions.\n- Read-only static review: no tests, live probes or independent digest recomputation. T2 readiness remains unresolved; amend and obtain fresh candidate-bound observations. Canonical authorization/reviews are null; this report grants no execution permission.\n\n### Verdict\nREVISE\n",
+  "invocationId": "a1bb8323-1a8a-4fc2-8de2-4e21a020a5a8"
+}

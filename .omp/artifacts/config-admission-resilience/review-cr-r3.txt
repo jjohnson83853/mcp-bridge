@@ -1,0 +1,21 @@
+<task-result id="ReviewConfigAdmissionSpecCR3" agent="code-reviewer" status="completed" duration="7m55s">
+
+<output>
+**Spec mode, repair pass** (candidate `config-admission-resilience-spec-r3`; 3 HIGH, 2 MEDIUM, 1 LOW). CR2 closure: C2–C6 verified closed in r3 (AD17/AC2/AC5, T2 test path/AC19, README/AC15, AD15/AC6b, AD16/AC9); C1 closed only for `internal/observe/log_test.go` — the same class recurs at finding 1. Independently verified: state T1–T4 paths equal §10 exactly; `single`→`not_checked` (`diagnostics.go:33,520`); document-level `config_too_large` (`config.go:97-104`); stage vocabulary disjoint from `unknown` (`httpdiagnostics.go:632-639`); URL userinfo/secret-query rejection (`config.go:613-628`); 3s embedding timeout valid (`bounds.go:167-186`). Limit: no shell, so the spec SHA-256 was not recomputed.
+
+- [HIGH] T1 still cannot pass its mandated gates. `cmd/mcp-bridge/config_envelope_test.go:166-170` pins `len(EnvelopeFieldNames())==130`; adding `cause` (§4.1/AD8, AC3; docs union at `cmd/mcp-bridge/logging_contract_test.go:116`) makes 131 and fails `go test ./cmd/mcp-bridge`. T1's write set omits this file (§10; state `effects.paths`; the r3 widening JSON adds only `log_test.go`), and no task ordering helps because the count cannot change before `cause` exists. §3's "no other observe test" claim misses this cmd test. Fix: owner-widen T1 with `cmd/mcp-bridge/config_envelope_test.go`.
+
+- [HIGH] T2's effects exceed the bound envelope. §10 grants registry push, container redeploy, live SSH inspection and an inbound MCP request (`spec.md:298-300`), but the canonical envelope allows only read/write/test and forbids network/publish/deploy/infrastructure (`.omp/plans/execution-state.json:148-159`). AC17 (method inspection) and AC18 (method runtime) are unexecutable; R2 cannot complete. Fix: owner-authorized effect widening, or reconstitute AC17/AC18 as owner-run evidence handed back.
+
+- [HIGH] Exactly-one `config_loaded`/`config_degraded`/persist does not follow from the cited contract. AD12 says `Published` fires only from `Loop.Start`/`Loop.Reload` (`loop.go:117,162`), but `NewLoop` passes the same callback to the Refresher (`loop.go:81`), which invokes it on every successful refresh pass (`refresh.go:454-455`), concurrently with `Reload` (`loop.go:99-118`). Unconditional emission adds a record per refresh; a one-shot load outcome can be consumed by the wrong publication. AC14 covers only start/reload/rejected. Fix: specify an identity/token discriminator (or emit only for the admission publication), correct AD12, add a refresh-publication case.
+
+- [MEDIUM] `catalog_loop` exclusivity contradicts an existing exit. §4.1/AD17/I10 and AC2 say `catalog_loop` comes only from the drain sentinel, but `serve.go:282-315` returns `catalogLoopFailure()` when `service.NewLoop` fails (`startup_failure.go:62-69`), and no alternative stage is specified. Fix: name that class (unclassified or a new stage) and test both sources.
+
+- [MEDIUM] `config_loaded` is emitted ahead of `publishAcceptedAssembly` (§4.3 "pre-publish hook"; `serve.go:308-310,430-440`). When `publishProjection` fails, the same generation emits info/success `config_loaded` and then `startup_publication_failed` (`loop.go:117-120`), contradicting AD5 "states what is served"; AC14 has no such case. Fix: emit after successful publication, or define and test the failure ordering.
+
+- [LOW] AC7 has no named oracle: its verification is "same test" (AC6's command) and no normative assertion requires the byte-identical active file, so AC6 can pass without AC7's property being checked. Fix: name the test and state the hash assertion.
+
+### Recommendation
+REQUEST CHANGES
+</output>
+</task-result>

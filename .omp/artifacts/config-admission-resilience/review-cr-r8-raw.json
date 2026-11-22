@@ -1,0 +1,72 @@
+{
+  "text": "<task-result id=\"ReviewConfigAdmissionSpecCR8\" agent=\"code-reviewer\" status=\"completed\" duration=\"6m2s\">\n\n<output>\n**Mode:** specification (feasibility/correctness), repair pass; candidate `config-admission-resilience-spec-r8`; read-only, no tests executed.\n\n**Prior ledger (CR7 F1–F9): all nine verified closed; none re-raised.**\n- **F1** — `Config.ClientTokenHashes()` (internal/config/config.go:81) returns sha256 digests only; it is populated in the parse-time resolution pass (config.go:433), and a validated `client_auth.bearer_tokens` document always yields ≥1 digest (unresolvable → `reference_unresolved`, config.go:927-944). `len(candidate.ClientTokenHashes())>0` is therefore a sound exported refusal predicate; AC8(iii) added.\n- **F2** — deterministic seam now specified (spec.md:234, AD21-r8): cmd hook, nil in production, `t.Cleanup` reset, both memo-falsifiers. Feasible: tests already drive `serveWithToolPageSize` and SIGHUP (serve_hybrid_progressive_reveal_test.go:311; serve_hybrid_metadata_defaults_test.go:284).\n- **F3** — B changes `storage.directory`; guard rejects (wiring.go:115-116).\n- **F4/F5** — hook body split T3 persist/clear vs T4 emission (§6/§10, AC10); §10 readPaths/effects mirror `.omp/plans/execution-state.json:120-147`; whole-repo and build claims removed.\n- **F6–F9** — `-race` added; AC12's unobservable clause replaced by I5; settings via staged holder with `Load` unchanged (loop.go:103,137); fingerprint payload removed.\n\n**Scope/coverage.** T1/T2/T3/T4 = 10/4/9/10 paths, mirroring canonical; no `Dockerfile`, no `internal/config`, no T2 live effect; T2 diagnosis-dependence is BLOCKED-with-evidence plus owner-lane AC18 (honest). Tickets 01–04 each map to an R and a runnable oracle; AC15's named tests genuinely do not exist today. Exactly-one emission still holds on the verified call-site set (loop.go:105,110,122,139,159,168; refresh.go:455 never reports). AC14's E1 fixture is constructible: an identical candidate is rejected when `buildReload` discovery fails (reload.go:629-631), and `refresh_interval` admits positive sub-second values (bounds.go:188-196), so a refresh pass follows deterministically.\n\n**Findings (advisory; no HIGH/MEDIUM, no regression)**\n- [LOW][ac-not-falsifiable] R6 requires the contract to document \"the new events\" (three, spec.md:257), but AC15's oracle asserts only the `config_loaded` and `config_degraded` rows (spec.md:289); a missing `config_last_good_write_failed` row would still pass. Fix: require that row in `TestLoggingContractDocumentsConfigEventsAndStorageBase` (file is in T3/T4 sets).\n- [LOW][statement-contradiction] AD21's hook boolean is \"already memoized\" yet \"true exactly on the second pre-publication load\" (spec.md:96,198). The memo survives publication and AC14 keeps the hook armed until `t.Cleanup` while sending a later SIGHUP (spec.md:288), so a one-shot block would hang. Fix: define it as memoized ∧ `publishedSettings()==nil`, or specify a close-based release.\n- [LOW][undefined-term] AD22 layer 1 evaluates `len(candidate.ClientTokenHashes())>0` inside the persist hook (spec.md:204), but the enumerated slot/memo payloads carry only \"resolved credential values\" (spec.md:202,236); the refusal predicate has no defined carrier. Fix: name it in both payload lists and T3's annotation.\n- [LOW][stale-citation] spec.md:96,155,204 cite `config.go:433` as the exported predicate; the method is at config.go:81 — :433 is the digest-append line. Fix: cite :81 for `ClientTokenHashes()`, keep :433 for digest-only population.\n\n### Recommendation\nAPPROVE\n</output>\n</task-result>",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [
+      {
+        "index": 0,
+        "id": "ReviewConfigAdmissionSpecCR8",
+        "agent": "code-reviewer",
+        "agentSource": "user",
+        "task": "Complete assignment thoroughly:\n\nIndependently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r8 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr-r7.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "assignment": "Independently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r8 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr-r7.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "lastIntent": "Checking exact line 433",
+        "exitCode": 0,
+        "output": "**Mode:** specification (feasibility/correctness), repair pass; candidate `config-admission-resilience-spec-r8`; read-only, no tests executed.\n\n**Prior ledger (CR7 F1–F9): all nine verified closed; none re-raised.**\n- **F1** — `Config.ClientTokenHashes()` (internal/config/config.go:81) returns sha256 digests only; it is populated in the parse-time resolution pass (config.go:433), and a validated `client_auth.bearer_tokens` document always yields ≥1 digest (unresolvable → `reference_unresolved`, config.go:927-944). `len(candidate.ClientTokenHashes())>0` is therefore a sound exported refusal predicate; AC8(iii) added.\n- **F2** — deterministic seam now specified (spec.md:234, AD21-r8): cmd hook, nil in production, `t.Cleanup` reset, both memo-falsifiers. Feasible: tests already drive `serveWithToolPageSize` and SIGHUP (serve_hybrid_progressive_reveal_test.go:311; serve_hybrid_metadata_defaults_test.go:284).\n- **F3** — B changes `storage.directory`; guard rejects (wiring.go:115-116).\n- **F4/F5** — hook body split T3 persist/clear vs T4 emission (§6/§10, AC10); §10 readPaths/effects mirror `.omp/plans/execution-state.json:120-147`; whole-repo and build claims removed.\n- **F6–F9** — `-race` added; AC12's unobservable clause replaced by I5; settings via staged holder with `Load` unchanged (loop.go:103,137); fingerprint payload removed.\n\n**Scope/coverage.** T1/T2/T3/T4 = 10/4/9/10 paths, mirroring canonical; no `Dockerfile`, no `internal/config`, no T2 live effect; T2 diagnosis-dependence is BLOCKED-with-evidence plus owner-lane AC18 (honest). Tickets 01–04 each map to an R and a runnable oracle; AC15's named tests genuinely do not exist today. Exactly-one emission still holds on the verified call-site set (loop.go:105,110,122,139,159,168; refresh.go:455 never reports). AC14's E1 fixture is constructible: an identical candidate is rejected when `buildReload` discovery fails (reload.go:629-631), and `refresh_interval` admits positive sub-second values (bounds.go:188-196), so a refresh pass follows deterministically.\n\n**Findings (advisory; no HIGH/MEDIUM, no regression)**\n- [LOW][ac-not-falsifiable] R6 requires the contract to document \"the new events\" (three, spec.md:257), but AC15's oracle asserts only the `config_loaded` and `config_degraded` rows (spec.md:289); a missing `config_last_good_write_failed` row would still pass. Fix: require that row in `TestLoggingContractDocumentsConfigEventsAndStorageBase` (file is in T3/T4 sets).\n- [LOW][statement-contradiction] AD21's hook boolean is \"already memoized\" yet \"true exactly on the second pre-publication load\" (spec.md:96,198). The memo survives publication and AC14 keeps the hook armed until `t.Cleanup` while sending a later SIGHUP (spec.md:288), so a one-shot block would hang. Fix: define it as memoized ∧ `publishedSettings()==nil`, or specify a close-based release.\n- [LOW][undefined-term] AD22 layer 1 evaluates `len(candidate.ClientTokenHashes())>0` inside the persist hook (spec.md:204), but the enumerated slot/memo payloads carry only \"resolved credential values\" (spec.md:202,236); the refusal predicate has no defined carrier. Fix: name it in both payload lists and T3's annotation.\n- [LOW][stale-citation] spec.md:96,155,204 cite `config.go:433` as the exported predicate; the method is at config.go:81 — :433 is the digest-append line. Fix: cite :81 for `ClientTokenHashes()`, keep :433 for digest-only population.\n\n### Recommendation\nAPPROVE",
+        "stderr": "",
+        "truncated": false,
+        "durationMs": 362626,
+        "tokens": 263148,
+        "requests": 58,
+        "contextTokens": 264666,
+        "contextWindow": 1048576,
+        "modelOverride": [
+          "openrouter/deepseek/deepseek-v4.1-flash-1017:high"
+        ],
+        "resolvedModel": "openrouter/deepseek/deepseek-v4.1-flash-1017:high",
+        "resolvedModelIdentity": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+        "resolvedThinkingLevel": "high",
+        "aborted": false,
+        "usage": {
+          "input": 204960,
+          "output": 58188,
+          "cacheRead": 8667648,
+          "cacheWrite": 0,
+          "totalTokens": 8930796,
+          "reasoningTokens": 49260,
+          "cost": {
+            "input": 0.007378560000000001,
+            "output": 0.02909399999999999,
+            "cacheRead": 0.08667648,
+            "cacheWrite": 0,
+            "total": 0.12314903999999996
+          }
+        },
+        "outputPath": "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR8.md",
+        "outputMeta": {
+          "lineCount": 19,
+          "charCount": 3444
+        }
+      }
+    ],
+    "totalDurationMs": 362636,
+    "usage": {
+      "input": 204960,
+      "output": 58188,
+      "cacheRead": 8667648,
+      "cacheWrite": 0,
+      "totalTokens": 8930796,
+      "reasoningTokens": 49260,
+      "cost": {
+        "input": 0.007378560000000001,
+        "output": 0.02909399999999999,
+        "cacheRead": 0.08667648,
+        "cacheWrite": 0,
+        "total": 0.12314903999999996
+      }
+    },
+    "outputPaths": [
+      "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR8.md"
+    ]
+  }
+}

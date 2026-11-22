@@ -1,0 +1,27 @@
+## Code Review Summary
+Mode: specification; pass: repair. Candidate `config-admission-resilience-spec-r17`; the state's `spec.sha256` field is `c193033c…` (field match; hash not recomputed — no shell tool).
+
+**CT16 C9 (r17 delta) — closed.** T2 `blockedBy:["T1","T3"]` is in `plan.json` and the canonical T2 entry; order T1→T3→T2→T4 is stated at §6 T1/T2/T3, §9(4), §10; the post-T3 capture prerequisite is coherent with AC10's `TestStartupAdmissionFailureClassifiesAdmission` gate.
+
+**Prior ledger `review-cr-r16.txt` — 0/5 closed** (all LOW; re-verified against r17 text):
+- [LOW][stale-citation] decision id `approve-complete-secret-inventory-authorization` at `spec.md:195,522`; `owner-secret-inventory-authorization.json` says `"decision":"authorize-complete-secret-inventory"`.
+- [LOW][stale-citation] `Config.resolved` still cited `config.go:68,384,455` (e.g. `spec.md:177,392,493,514`); field is `internal/config/config.go:67`, assignment `:456`.
+- [LOW][ac-not-falsifiable] AC1 `spec.md:385` observable includes the admission class, but its `-run` omits `TestStartupAdmissionFailureClass` (only AC5 `:389`/T1 command runs it); `go test -run` exits 0 when absent.
+- [LOW][statement-contradiction] AD4 `spec.md:293` makes `MCP_STRICT_CONFIG=1` strict; R4 `:208` says non-true keeps R3; AC13 `:397` tests only false/yes/0 — no oracle for `1`.
+- [LOW][statement-contradiction] `spec.md:406` still says “the only `internal/config` change is the widening-3 resolver pair”; R8 `:216` and §10 also name `ResolvedSecrets()`.
+
+**New findings**
+- [LOW][ledger-state-drift] ticket `issues/02-…:8` says “Blocked by: 01”; canonical T2 is `["T1","T3"]`. §6 T2 states the edge but, unlike ticket 03 (`spec.md:440`), records no ticket supersession.
+- [LOW][ledger-state-drift] `spec.md:11` and `:19` still record dispatch order T1→T2→T3→T4 as the r13/r12 resolution, while `spec.md:5` claims the new order “everywhere it is stated”.
+- [LOW][ac-not-falsifiable] R7 `spec.md:214` names `config_loaded`; AC8 `:392` has copy/`config_degraded` secret-negatives only — no `config_loaded` oracle (exposure bounded to paths).
+- [LOW][ledger-state-drift] `spec.md:493`(14) says “the review of this r15 revision is the FIFTH and FINAL — no further review remains”, contradicting `spec.md:5` (CR17+CT17 granted). Update before CT17.
+- [LOW][stale-citation] The post-T3 capture authority is `owner-ticket02-evidence.json` `amendments[0]` (2026-11-22T10:00Z, origin `user`, explicit, supersedes `scope`); `spec.md:309,401` cite only the artifact/base scope (“T1 build”), not the amendment.
+
+**Disproven prior claim (do not carry):** a finding that AD20 lacks post-T3 authority is wrong — the artifact's amendment explicitly supersedes the T1-build scope.
+
+**Verified sound:** tickets 01–04 map R→AC completely (01→AC1–5; 02→AC17–19; 03→AC6–11; 04→AC12–16); every AC has a runnable command or named lane (AC17 inspection, AC18 runtime); anchors re-read (`serve.go:108,136,139,143,282-315,339,389-409,414-420`; `loop.go:103,105,110,117,122,137,139,157-160,162-168`; `envelope.go:12-28,705` — `stage` is already unioned, only `cause` moves 130→131; `config.go:81,97-104,381,433,456`; `bounds.go:167-186`); `writePaths`/task effects mirror `plan.json` and canonical state exactly (T2 4 paths, T3 11, `internal/config` exact pair only); exactly-one loaded/degraded is testable (reportReload call set, E1 case); raw-byte safety is scan-enforced by AD22/AC8's complete inventory, not inferred from validation.
+
+Limits: read-only; no tests, `effectCheck` or spec-lint run; test names are proposals.
+
+### Recommendation
+APPROVE

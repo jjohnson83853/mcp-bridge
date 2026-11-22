@@ -1,0 +1,29 @@
+<task-result id="ReviewConfigAdmissionSpecCT17" agent="critic" status="completed" duration="3m45s">
+
+<output>
+Spec ID: config-admission-resilience
+Revision: r17
+Findings by ID: H2 (reopened)
+
+- **[MEDIUM] H2 — The raw-writer exception still asserts unsupported safety.** `.scratch/config-admission-resilience/spec.md:313,363,482` acknowledges that a refresher write can overlap the final raw diagnostic after drain-budget expiry, but claims complete, atomic JSON writes without partial corruption. `internal/observe/log.go:47-66` merely calls `io.Writer.Write`; it provides neither synchronization nor atomicity. `cmd/mcp-bridge/main.go:58-60` writes to the original stderr, bypassing T3’s pair, while `serve.go:389-403` supplies no join after timeout.
+
+  **Counterexample:** a late refresher holds the pair while writing to a buffer-backed sink; drain expires and main writes directly to that same sink. The pair cannot exclude main. Concurrent buffer mutation or interleaved output remains possible; synchronizing the admission-capture boolean does not synchronize these writes.
+
+  **Consequence:** the startup diagnostic this feature must make reliable can be corrupted, and the documented race-safety guarantee is false. This is H2’s original sink-serialization invariant remaining unresolved—not a new finding or evidence that r17 introduced it. Reason for the earlier miss: unknown.
+
+  **Minimal amendment:** reconcile the raw-exit exception with the actual sink contract. Establish shared serialization or substantiate a bounded atomicity guarantee; otherwise disclose the real corruption/race consequence rather than claiming only line-order nondeterminism. Add the previously requested deterministic drain-timeout/concurrent-write regression under `-race`. Obtain owner authorization before touching additional paths. Preserve acceptance requirements.
+
+  **Confidence: high.**
+
+**Verified closures and coverage**
+- **C9 closed:** canonical T2 dependencies are `["T1","T3"]`; the specified writer order and post-T3 capture prerequisite agree. The owner evidence artifact’s amendment explicitly authorizes that capture build.
+- Independently checked the two-load bootstrap window, startup/reload discriminator, post-publication success-report lane, static-cause classification and retained parse-time secret inventory.
+- Reviewed tickets 01–04, canonical R1–R8/AC1–AC20, task fences, RED/GREEN planning, compatibility, fallback visibility, observability exceptions and rollback.
+- T2 correctly receives no deployment/live-probe authority or permission to edit diagnosis-dependent paths outside its fence. AC18 remains owner/operator evidence.
+
+**Limits and readiness:** static, read-only review; no tests, live probes or independent digest recomputation. H2’s claimed closure is not verified. Amending the candidate requires fresh candidate-bound observations. Canonical authorization/reviews are null; neither this report nor advisory review scheduling grants implementation permission.
+
+### Verdict
+REVISE
+</output>
+</task-result>

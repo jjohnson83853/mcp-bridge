@@ -1,0 +1,72 @@
+{
+  "text": "<task-result id=\"ReviewConfigAdmissionSpecCR10\" agent=\"code-reviewer\" status=\"completed\" duration=\"5m29s\">\n\n<output>\n**Mode:** specification, repair pass (candidate r10). Inputs: `spec.md` (bound sha256 `d5f5785…`, per `.omp/plans/execution-state.json:5-8`), tickets 01–04, canonical state, plan record, and the cited sources. No tests were run; no shell, so the spec bytes were not re-hashed (review limit). The wrapper's `review-cr-r9.txt` does not exist — the CR9 ledger is `review-cr-r9-raw.json`, which the spec cites, and I reviewed that.\n\n**CR9 closure.** H1 closed at both levels (canonical `writePaths` now carries `internal/config`, `execution-state.json:136`; T3's 11 effects `:289-301` match §10) — with the repair consequence below. H2 closed for the named writers (pair + one-way lock order feasible; `internal/observe/log.go:31-36,121-124`). H3 closed (AC15 and T4's RED now require all three rows; `docs/logging-contract.md` contains none today, so the oracle is genuinely RED). H4 closed (`memo != nil && publishedSettings()==nil` is false on every post-publication load; `wiring.go:74-82`, `loop.go:117-118`). H5 closed (`config.go:81` method, `:433` digest append).\n\n- [MEDIUM][envelope-drift] Widening 3 was applied as the directory root `internal/config`, not the two approved files. `effectCheck` uses `inside(root,target)` (`workflow-policy/execution-contract-binding.mjs:14,309-316`), so any effect path under `internal/config` validates for any task; nothing enforces \"covers exactly those two effect paths … no other `internal/config` write\" (`spec.md:432`). The owner delta is exactly two files (`owner-envelope-widening-3.json`). Consequence: a later per-task effect addition under `internal/config` passes contract validation without a new owner ask. Fix: place the two exact files in `writePaths` (CR9's remedy; `inside` accepts equality), or record an owner decision for the root.\n- [MEDIUM][statement-contradiction] H2's serialization omits `operatorLogf`: it is built over the raw `stderr` (`serve.go:198`), passed as `LoopOptions.Logf` (`:310` → `loop.go:82`), writes via `observe.WriteJSONLine` under a private mutex (`wiring.go:432-433,517-521`), and is called from the refresher on a publication failure (`refresh.go:456-460`) and from `watch` (`loop.go:206-212`). Those warn lines share the `stderr` sink unmediated by the pair, so `spec.md:386` \"every delivered line is complete JSON\" is false and a shared-buffer `-race` fixture can race. Fix: `operatorLog(stderrPair)` at `serve.go:198` (T3's set); disclose the `os.Stdout` reload-applied residual (`wiring.go:485`; wiring.go is unwritable).\n- [MEDIUM][statement-contradiction] R1 requires every serve exit's `error.code` to name the stage, then carves admission errors to `unclassified`/`internal_error` (`spec.md:125`); AC1 restates the universal while AC5 requires the carve-out. Ticket 01 item 1 (`issues/01:9`) is therefore unmet for the admission class — the class most likely behind a `startup_failed`/`internal_error` loop — with no owner scope exception recorded (contrast AD20). Fix: qualify AC1 and record an owner exception, or widen R1 with the owner-gated `internal/service` sentinel.\n- [LOW][ac-not-falsifiable] AC5's \"a clean `Loop.Start` return emits no startup-failure record\" clause names only `TestStartupUnknownErrorKeepsUnknownClass`; no oracle covers that clause. Fix: name a second test.\n\n**Verified sound:** ticket→R→AC mapping; every AC has a runnable command or a named owner-lane evidence method; single-`|` selectors and `-race` placement; serve.go (108,136,139,143,154,282,306,307,314,317,339,397) and config.go (81,101,381,433,576,905,1078) anchors; `embedding.timeout: 3s` valid (`bounds.go:167-186`); AD22's scannable-secret set complete (`credentials.go:42,141`); `stage` present/`cause` absent, pin 130 (`envelope.go:705`, `config_envelope_test.go:166-168`); T2/T4 effects mirror canonical; no ticket requirement silently dropped beyond the disclosed admission carve-out.\n\n### Recommendation\nAPPROVE\n</output>\n</task-result>",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [
+      {
+        "index": 0,
+        "id": "ReviewConfigAdmissionSpecCR10",
+        "agent": "code-reviewer",
+        "agentSource": "user",
+        "task": "Complete assignment thoroughly:\n\nIndependently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r10 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr-r9.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "assignment": "Independently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r10 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr-r9.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "lastIntent": "Verifying canonical task effect lists",
+        "exitCode": 0,
+        "output": "**Mode:** specification, repair pass (candidate r10). Inputs: `spec.md` (bound sha256 `d5f5785…`, per `.omp/plans/execution-state.json:5-8`), tickets 01–04, canonical state, plan record, and the cited sources. No tests were run; no shell, so the spec bytes were not re-hashed (review limit). The wrapper's `review-cr-r9.txt` does not exist — the CR9 ledger is `review-cr-r9-raw.json`, which the spec cites, and I reviewed that.\n\n**CR9 closure.** H1 closed at both levels (canonical `writePaths` now carries `internal/config`, `execution-state.json:136`; T3's 11 effects `:289-301` match §10) — with the repair consequence below. H2 closed for the named writers (pair + one-way lock order feasible; `internal/observe/log.go:31-36,121-124`). H3 closed (AC15 and T4's RED now require all three rows; `docs/logging-contract.md` contains none today, so the oracle is genuinely RED). H4 closed (`memo != nil && publishedSettings()==nil` is false on every post-publication load; `wiring.go:74-82`, `loop.go:117-118`). H5 closed (`config.go:81` method, `:433` digest append).\n\n- [MEDIUM][envelope-drift] Widening 3 was applied as the directory root `internal/config`, not the two approved files. `effectCheck` uses `inside(root,target)` (`workflow-policy/execution-contract-binding.mjs:14,309-316`), so any effect path under `internal/config` validates for any task; nothing enforces \"covers exactly those two effect paths … no other `internal/config` write\" (`spec.md:432`). The owner delta is exactly two files (`owner-envelope-widening-3.json`). Consequence: a later per-task effect addition under `internal/config` passes contract validation without a new owner ask. Fix: place the two exact files in `writePaths` (CR9's remedy; `inside` accepts equality), or record an owner decision for the root.\n- [MEDIUM][statement-contradiction] H2's serialization omits `operatorLogf`: it is built over the raw `stderr` (`serve.go:198`), passed as `LoopOptions.Logf` (`:310` → `loop.go:82`), writes via `observe.WriteJSONLine` under a private mutex (`wiring.go:432-433,517-521`), and is called from the refresher on a publication failure (`refresh.go:456-460`) and from `watch` (`loop.go:206-212`). Those warn lines share the `stderr` sink unmediated by the pair, so `spec.md:386` \"every delivered line is complete JSON\" is false and a shared-buffer `-race` fixture can race. Fix: `operatorLog(stderrPair)` at `serve.go:198` (T3's set); disclose the `os.Stdout` reload-applied residual (`wiring.go:485`; wiring.go is unwritable).\n- [MEDIUM][statement-contradiction] R1 requires every serve exit's `error.code` to name the stage, then carves admission errors to `unclassified`/`internal_error` (`spec.md:125`); AC1 restates the universal while AC5 requires the carve-out. Ticket 01 item 1 (`issues/01:9`) is therefore unmet for the admission class — the class most likely behind a `startup_failed`/`internal_error` loop — with no owner scope exception recorded (contrast AD20). Fix: qualify AC1 and record an owner exception, or widen R1 with the owner-gated `internal/service` sentinel.\n- [LOW][ac-not-falsifiable] AC5's \"a clean `Loop.Start` return emits no startup-failure record\" clause names only `TestStartupUnknownErrorKeepsUnknownClass`; no oracle covers that clause. Fix: name a second test.\n\n**Verified sound:** ticket→R→AC mapping; every AC has a runnable command or a named owner-lane evidence method; single-`|` selectors and `-race` placement; serve.go (108,136,139,143,154,282,306,307,314,317,339,397) and config.go (81,101,381,433,576,905,1078) anchors; `embedding.timeout: 3s` valid (`bounds.go:167-186`); AD22's scannable-secret set complete (`credentials.go:42,141`); `stage` present/`cause` absent, pin 130 (`envelope.go:705`, `config_envelope_test.go:166-168`); T2/T4 effects mirror canonical; no ticket requirement silently dropped beyond the disclosed admission carve-out.\n\n### Recommendation\nAPPROVE",
+        "stderr": "",
+        "truncated": false,
+        "durationMs": 329574,
+        "tokens": 247389,
+        "requests": 69,
+        "contextTokens": 246355,
+        "contextWindow": 1048576,
+        "modelOverride": [
+          "openrouter/deepseek/deepseek-v4.1-flash-1017:high"
+        ],
+        "resolvedModel": "openrouter/deepseek/deepseek-v4.1-flash-1017:high",
+        "resolvedModelIdentity": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+        "resolvedThinkingLevel": "high",
+        "aborted": false,
+        "usage": {
+          "input": 188254,
+          "output": 59135,
+          "cacheRead": 10231936,
+          "cacheWrite": 0,
+          "totalTokens": 10479325,
+          "reasoningTokens": 48765,
+          "cost": {
+            "input": 0.006777143999999999,
+            "output": 0.029567499999999993,
+            "cacheRead": 0.10231936000000001,
+            "cacheWrite": 0,
+            "total": 0.138664004
+          }
+        },
+        "outputPath": "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR10.md",
+        "outputMeta": {
+          "lineCount": 13,
+          "charCount": 3908
+        }
+      }
+    ],
+    "totalDurationMs": 329584,
+    "usage": {
+      "input": 188254,
+      "output": 59135,
+      "cacheRead": 10231936,
+      "cacheWrite": 0,
+      "totalTokens": 10479325,
+      "reasoningTokens": 48765,
+      "cost": {
+        "input": 0.006777143999999999,
+        "output": 0.029567499999999993,
+        "cacheRead": 0.10231936000000001,
+        "cacheWrite": 0,
+        "total": 0.138664004
+      }
+    },
+    "outputPaths": [
+      "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR10.md"
+    ]
+  }
+}

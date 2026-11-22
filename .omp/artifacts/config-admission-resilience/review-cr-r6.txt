@@ -1,0 +1,29 @@
+<task-result id="ReviewConfigAdmissionSpecCR6" agent="code-reviewer" status="completed" duration="19m23s">
+
+<output>
+## Code Review Summary
+
+**Mode:** Specification, repair pass. **Candidate:** `config-admission-resilience-spec-r6`. Reviewed the spec, tickets 01–04, canonical state, the CR5 ledger, and every cited source anchor. No tests executed (read-only).
+
+### Prior-ledger closure (CR5: G1–G4)
+- **G1 closed.** spec.md:201 assigns `candidate, settings = copyCandidate, copySettings`; step 4 stages that effective candidate (spec.md:202); AC6 (spec.md:241) and Failure behavior assert `AdmitStartup` receives the copy's candidate, never a nil active parse. The mechanism exists: `load` returns the candidate (`serve.go:108-141`) and `holder.settings()` returns staged settings (`wiring.go:54-66`), so no `internal/service` change is needed.
+- **G2 closed.** T4's canonical effects include `cmd/mcp-bridge/logging_contract_test.go` (execution-state.json:326-334), and AC15 runs `TestLoggingContractDocumentsConfigEventsAndStorageBase` (spec.md:250). The doc has no `config_loaded`/`config_degraded` row and the required-string list omits both (`docs/logging-contract.md`; `logging_contract_test.go:195-223`), so the RED is genuine and the oracle runnable.
+- **G3 closed.** spec.md:270 confines compile-failure RED to exactly the two sentinel-referencing tests.
+- **G4 closed.** `PropertyPath` is assigned `record.Key` verbatim (`diagnostics_envelope.go:41-57`); the diagnostic is `Key "<document>"`, no line (`config.go:97-104`); `ConfigInfo` has no `Property` field (`envelope.go:43-58`).
+
+### Findings
+- [LOW][ac-evidence-mismatch] AC14 says "All under `-race`" but its command lacks `-race` — spec.md:249. AC20's `-race -p 1 ./...` compensates, so the E1 race case is covered elsewhere, but the AC's own evidence method contradicts its observable. Fix: add `-race` to the AC14 command.
+- [LOW][unobservable-clause] AC12's "no copy read" is not observable through `TestStrictConfigDisablesFallback` — spec.md:247. An unused read is behaviorally invisible; the test can only prove fail-closed, no `config_degraded`, no listener. Fix: keep I5 as the design invariant and drop the clause from the observable, or name an instrumented observation.
+- [LOW][imprecision] "the `load` closure RETURNS those effective values … via `options.Load`" conflicts with the `Load` hook's `func() (*config.Config, error)` — spec.md:201, AC6 spec.md:241, `loop.go:103,137`. The operative staging into the holder is correct; the wording could prompt a prohibited signature change. Fix: say settings reach the caller through the holder.
+- [LOW][stale-residue] The slot payload retains a "candidate fingerprint for the record" — spec.md:162,202,290 — that no specified event consumes; residue of the withdrawn r4 fingerprint match. Fix: remove it or name the consuming field.
+
+### Verified coverage
+- **Tickets:** every ticket-01..04 acceptance item maps to R/AC with a command or a named evidence lane; AC17/AC18 are explicitly local/owner-lane evidence (AD18/AD20) and claim no packet effect.
+- **Envelope:** spec write sets equal canonical effects for T1 (10), T2 (4), T3 (9), T4 (10) — execution-state.json:217-334; no `Dockerfile`, no r6 widening; T2's diagnosis-dependent fix is honestly `BLOCKED-with-evidence` plus owner-gated AC18.
+- **Exactly-one:** the slot is consumed only on `success` and cleared on `rejected` (spec.md:202); `reportReload` fires only at `loop.go:105,110,122,139,159,168`, never in the refresher (`refresh.go:450-461`); refresh publications enter only the emission-free `Published` closure (`loop.go:81`).
+- **Secret hygiene:** the schema is closed (`yaml_key_unknown`, `config.go:765-775`) and every secret-bearing field requires a reference (`config.go:809,924-932,1078`), so the raw-byte copy cannot carry resolved material.
+
+### Recommendation
+APPROVE
+</output>
+</task-result>

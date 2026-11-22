@@ -1,0 +1,105 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "config-admission-resilience-spec-r6",
+  "revision": "r6",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+      "sha256": "df338fdec5768fc3431b2d20791a30d6546356c3cf3829eacd4bcc203c48291f"
+    },
+    {
+      "path": ".scratch/config-admission-resilience/spec.md",
+      "sha256": "b5b4c17fc61e67d495a3e18e20476450d33f141068c04afc7b5503045f3ded58"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/diagnostics_envelope.go",
+      "sha256": "27d30dd457e9747f57254ce77200e8f14dd739998171d2d4ec68c97ada3c842e"
+    },
+    {
+      "path": "cmd/mcp-bridge/example_config_test.go",
+      "sha256": "81f856efe04649d88aedc1ad156ff4b73de5aabebdc15d28810bfa1d494b0727"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "sha256": "6f657d754dd13c9524476e0a51fbca4b8f36f7163e0f4de0c870cb3b172b606d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR6",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "870635397e2144677f721d08f57f228be94c944f53c3415bc5da4e7f35e07e0e",
+      "targetCandidateId": "config-admission-resilience-spec-r6",
+      "targetRevision": "r6",
+      "taskSha256": "f9a1bbddab0d510867ee0cdd2ccd10856c00adf0615599a6fa1712fad5f9f592",
+      "instructionsSha256": "56ee46e16012814d0058bce9eea16563c17eeaed3faf88eec29648b4c5ea8588"
+    },
+    {
+      "name": "ReviewConfigAdmissionSpecCT6",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "3b15e5e59b7d8d677d23d76fc738d44a63fa11e4fa9abc654ca0ddda60f5af6e",
+      "targetCandidateId": "config-admission-resilience-spec-r6",
+      "targetRevision": "r6",
+      "taskSha256": "668d3c62622218d2fda06f1b3348571144a89030cfeeadd44f16d4a776294dfa",
+      "instructionsSha256": "56ee46e16012814d0058bce9eea16563c17eeaed3faf88eec29648b4c5ea8588"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** Specification, repair pass. **Candidate:** `config-admission-resilience-spec-r6`. Reviewed the spec, tickets 01–04, canonical state, the CR5 ledger, and every cited source anchor. No tests executed (read-only).\n\n### Prior-ledger closure (CR5: G1–G4)\n- **G1 closed.** spec.md:201 assigns `candidate, settings = copyCandidate, copySettings`; step 4 stages that effective candidate (spec.md:202); AC6 (spec.md:241) and Failure behavior assert `AdmitStartup` receives the copy's candidate, never a nil active parse. The mechanism exists: `load` returns the candidate (`serve.go:108-141`) and `holder.settings()` returns staged settings (`wiring.go:54-66`), so no `internal/service` change is needed.\n- **G2 closed.** T4's canonical effects include `cmd/mcp-bridge/logging_contract_test.go` (execution-state.json:326-334), and AC15 runs `TestLoggingContractDocumentsConfigEventsAndStorageBase` (spec.md:250). The doc has no `config_loaded`/`config_degraded` row and the required-string list omits both (`docs/logging-contract.md`; `logging_contract_test.go:195-223`), so the RED is genuine and the oracle runnable.\n- **G3 closed.** spec.md:270 confines compile-failure RED to exactly the two sentinel-referencing tests.\n- **G4 closed.** `PropertyPath` is assigned `record.Key` verbatim (`diagnostics_envelope.go:41-57`); the diagnostic is `Key \"<document>\"`, no line (`config.go:97-104`); `ConfigInfo` has no `Property` field (`envelope.go:43-58`).\n\n### Findings\n- [LOW][ac-evidence-mismatch] AC14 says \"All under `-race`\" but its command lacks `-race` — spec.md:249. AC20's `-race -p 1 ./...` compensates, so the E1 race case is covered elsewhere, but the AC's own evidence method contradicts its observable. Fix: add `-race` to the AC14 command.\n- [LOW][unobservable-clause] AC12's \"no copy read\" is not observable through `TestStrictConfigDisablesFallback` — spec.md:247. An unused read is behaviorally invisible; the test can only prove fail-closed, no `config_degraded`, no listener. Fix: keep I5 as the design invariant and drop the clause from the observable, or name an instrumented observation.\n- [LOW][imprecision] \"the `load` closure RETURNS those effective values … via `options.Load`\" conflicts with the `Load` hook's `func() (*config.Config, error)` — spec.md:201, AC6 spec.md:241, `loop.go:103,137`. The operative staging into the holder is correct; the wording could prompt a prohibited signature change. Fix: say settings reach the caller through the holder.\n- [LOW][stale-residue] The slot payload retains a \"candidate fingerprint for the record\" — spec.md:162,202,290 — that no specified event consumes; residue of the withdrawn r4 fingerprint match. Fix: remove it or name the consuming field.\n\n### Verified coverage\n- **Tickets:** every ticket-01..04 acceptance item maps to R/AC with a command or a named evidence lane; AC17/AC18 are explicitly local/owner-lane evidence (AD18/AD20) and claim no packet effect.\n- **Envelope:** spec write sets equal canonical effects for T1 (10), T2 (4), T3 (9), T4 (10) — execution-state.json:217-334; no `Dockerfile`, no r6 widening; T2's diagnosis-dependent fix is honestly `BLOCKED-with-evidence` plus owner-gated AC18.\n- **Exactly-one:** the slot is consumed only on `success` and cleared on `rejected` (spec.md:202); `reportReload` fires only at `loop.go:105,110,122,139,159,168`, never in the refresher (`refresh.go:450-461`); refresh publications enter only the emission-free `Published` closure (`loop.go:81`).\n- **Secret hygiene:** the schema is closed (`yaml_key_unknown`, `config.go:765-775`) and every secret-bearing field requires a reference (`config.go:809,924-932,1078`), so the raw-byte copy cannot carry resolved material.\n\n### Recommendation\nAPPROVE\n",
+  "invocationId": "98438175-8b3e-45ab-80bc-eb8e56f7bde2"
+}

@@ -1,0 +1,627 @@
+{
+  "schemaVersion": 2,
+  "feature": "config-admission-resilience",
+  "revision": "r17",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/config-admission-resilience/spec.md",
+    "sha256": "c193033c9d6368abf7925328bfa582cdbcc09dc77e75948dbc81c1430b5d271e",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r17",
+        "sha256": "76726316df9f71562146cbc6ab542a0b3ef7650a5a7f430b93303c7870e3fb94"
+      },
+      "design": {
+        "revision": "r17",
+        "sha256": "46f2b50dd5e8d44a8176af1bb7dc8165f5c2caaaeaea51b89f2c8dc2bc508b64"
+      },
+      "tasks": {
+        "revision": "r17",
+        "sha256": "b0fa96dc55e9bd0f9824fa877707eceb49bc843336ee838721f0729c23eca412"
+      },
+      "envelope": {
+        "revision": "r17",
+        "sha256": "b2e8ce8ff8386d25d71d91684aaeb588e11120b99773933e6d8932320b944d21"
+      }
+    }
+  },
+  "packet": {
+    "digest": "2542598f59ee650fdf6a55d1147c72cece73b30b387b864c645ab5bd84ec85a6",
+    "branches": [
+      {
+        "id": "config-admission-resilience-r17",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r17",
+            "sha256": "76726316df9f71562146cbc6ab542a0b3ef7650a5a7f430b93303c7870e3fb94"
+          },
+          "design": {
+            "revision": "r17",
+            "sha256": "46f2b50dd5e8d44a8176af1bb7dc8165f5c2caaaeaea51b89f2c8dc2bc508b64"
+          },
+          "tasks": {
+            "revision": "r17",
+            "sha256": "b0fa96dc55e9bd0f9824fa877707eceb49bc843336ee838721f0729c23eca412"
+          },
+          "envelope": {
+            "revision": "r17",
+            "sha256": "b2e8ce8ff8386d25d71d91684aaeb588e11120b99773933e6d8932320b944d21"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "config-admission-resilience-r17"
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Typed, sanitized startup cause: every non-diagnostic serve exit names its stage class plus bounded stage and static cause; no raw runtime error text; unknown errors keep a distinct class"
+    },
+    {
+      "id": "R2",
+      "summary": "Live diagnosis and fix of the mcp-bridge-network crash loop: record stage/cause from the live instance, reproduce with its actual config and state, fix, and hold RestartCount for at least ten minutes while serving"
+    },
+    {
+      "id": "R3",
+      "summary": "Last-known-good startup fallback: invalid active config plus a validated raw-byte sibling copy serves with exactly one config_degraded; active file untouched; no resolved secret in the copy or event; no fallback on reload"
+    },
+    {
+      "id": "R4",
+      "summary": "MCP_STRICT_CONFIG=true disables the fallback and keeps fail-closed behavior; default preserves R3"
+    },
+    {
+      "id": "R5",
+      "summary": "Every successful load emits exactly one config_loaded with the effective config path and resolved absolute storage directory; degraded start emits config_loaded then config_degraded"
+    },
+    {
+      "id": "R6",
+      "summary": "Document the config-file-relative base for storage.directory and the new events/fields; do not add a rejection for state inside the config directory"
+    },
+    {
+      "id": "R7",
+      "summary": "No secret value, bearer token, or credential appears in any startup event, degraded/loaded record, or persisted fallback copy"
+    },
+    {
+      "id": "R8",
+      "summary": "Compatibility and non-goals: no new dependency, no exit-code change, no breaker/reload/embedding/client-pause changes, check-config unchanged"
+    }
+  ],
+  "authorization": null,
+  "reviews": null,
+  "sources": [],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "CR1",
+      "CT1",
+      "T1",
+      "T2",
+      "T3",
+      "T4"
+    ],
+    "readPaths": [
+      ".scratch/config-admission-resilience",
+      "cmd/mcp-bridge",
+      "internal/config",
+      "internal/observe",
+      "internal/storage",
+      "internal/service",
+      "internal/upstream",
+      "configs",
+      "docs",
+      "README.md",
+      "CHANGELOG.md",
+      "go.mod",
+      "go.sum"
+    ],
+    "writePaths": [
+      "cmd/mcp-bridge",
+      "internal/observe",
+      "internal/config/config.go",
+      "internal/config/config_test.go",
+      "configs/config.example.yaml",
+      "docs/logging-contract.md",
+      "README.md",
+      "CHANGELOG.md",
+      ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "status": "pending",
+      "evidenceIds": [],
+      "requires": [],
+      "acceptanceIds": [],
+      "agentRoles": [
+        "code-reviewer"
+      ],
+      "id": "CR1",
+      "stage": "research",
+      "blockedBy": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/config-admission-resilience/spec.md"
+        ]
+      }
+    },
+    {
+      "status": "pending",
+      "evidenceIds": [],
+      "requires": [],
+      "acceptanceIds": [],
+      "agentRoles": [
+        "critic"
+      ],
+      "id": "CT1",
+      "stage": "research",
+      "blockedBy": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/config-admission-resilience/spec.md"
+        ]
+      }
+    },
+    {
+      "status": "pending",
+      "evidenceIds": [],
+      "requires": [],
+      "acceptanceIds": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC20"
+      ],
+      "agentRoles": [
+        "engineer"
+      ],
+      "id": "T1",
+      "stage": "implementation",
+      "blockedBy": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/startup_failure.go",
+          "cmd/mcp-bridge/serve.go",
+          "internal/observe/envelope.go",
+          "cmd/mcp-bridge/startup_failure_test.go",
+          "cmd/mcp-bridge/snapshot_recovery_test.go",
+          "cmd/mcp-bridge/logging_contract_test.go",
+          "internal/observe/log_test.go",
+          "cmd/mcp-bridge/config_envelope_test.go",
+          "docs/logging-contract.md",
+          "CHANGELOG.md"
+        ]
+      }
+    },
+    {
+      "status": "pending",
+      "evidenceIds": [],
+      "requires": [],
+      "acceptanceIds": [
+        "AC17",
+        "AC18",
+        "AC19",
+        "AC20"
+      ],
+      "agentRoles": [
+        "engineer"
+      ],
+      "id": "T2",
+      "stage": "implementation",
+      "blockedBy": [
+        "T1",
+        "T3"
+      ],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/startup_failure.go",
+          "cmd/mcp-bridge/network_startup_recovery_test.go"
+        ]
+      }
+    },
+    {
+      "status": "pending",
+      "evidenceIds": [],
+      "requires": [],
+      "acceptanceIds": [
+        "AC6",
+        "AC7",
+        "AC8",
+        "AC9",
+        "AC10",
+        "AC11",
+        "AC20"
+      ],
+      "agentRoles": [
+        "engineer"
+      ],
+      "id": "T3",
+      "stage": "implementation",
+      "blockedBy": [
+        "T1"
+      ],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/last_known_good.go",
+          "internal/config/config.go",
+          "internal/config/config_test.go",
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/diagnostics_envelope.go",
+          "cmd/mcp-bridge/last_known_good_test.go",
+          "cmd/mcp-bridge/serve_edge_test.go",
+          "cmd/mcp-bridge/config_envelope_test.go",
+          "cmd/mcp-bridge/logging_contract_test.go",
+          "docs/logging-contract.md",
+          "CHANGELOG.md"
+        ]
+      }
+    },
+    {
+      "status": "pending",
+      "evidenceIds": [],
+      "requires": [],
+      "acceptanceIds": [
+        "AC12",
+        "AC13",
+        "AC14",
+        "AC15",
+        "AC16",
+        "AC20"
+      ],
+      "agentRoles": [
+        "engineer"
+      ],
+      "id": "T4",
+      "stage": "implementation",
+      "blockedBy": [
+        "T3"
+      ],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "cmd/mcp-bridge/last_known_good.go",
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/diagnostics_envelope.go",
+          "cmd/mcp-bridge/startup_failure_test.go",
+          "cmd/mcp-bridge/logging_contract_test.go",
+          "cmd/mcp-bridge/example_config_test.go",
+          "configs/config.example.yaml",
+          "docs/logging-contract.md",
+          "README.md",
+          "CHANGELOG.md"
+        ]
+      }
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC1",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC3",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC4",
+      "requirementIds": [
+        "R1",
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC5",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC6",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC7",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC8",
+      "requirementIds": [
+        "R3",
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC9",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC10",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC11",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC12",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC13",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC14",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC15",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC16",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC17",
+      "requirementIds": [
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "inspection",
+      "requiredEvidenceKinds": [
+        "inspection"
+      ]
+    },
+    {
+      "id": "AC18",
+      "requirementIds": [
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "runtime",
+      "requiredEvidenceKinds": [
+        "runtime"
+      ]
+    },
+    {
+      "id": "AC19",
+      "requirementIds": [
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC20",
+      "requirementIds": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R6",
+        "R7",
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/config-admission-resilience/GATE_OPEN.json",
+    "activationEvidenceIds": []
+  }
+}

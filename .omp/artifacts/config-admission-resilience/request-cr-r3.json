@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "config-admission-resilience",
+  "revision": "r3",
+  "requests": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR3",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "targetCandidateId": "config-admission-resilience-spec-r3",
+      "targetRevision": "r3",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/config-admission-resilience/spec.md"
+        ]
+      }
+    }
+  ]
+}

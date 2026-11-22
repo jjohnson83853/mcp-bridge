@@ -1,0 +1,113 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "config-admission-resilience-spec-r17",
+  "revision": "r17",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+      "sha256": "df338fdec5768fc3431b2d20791a30d6546356c3cf3829eacd4bcc203c48291f"
+    },
+    {
+      "path": ".scratch/config-admission-resilience/spec.md",
+      "sha256": "c193033c9d6368abf7925328bfa582cdbcc09dc77e75948dbc81c1430b5d271e"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/diagnostics_envelope.go",
+      "sha256": "27d30dd457e9747f57254ce77200e8f14dd739998171d2d4ec68c97ada3c842e"
+    },
+    {
+      "path": "cmd/mcp-bridge/example_config_test.go",
+      "sha256": "81f856efe04649d88aedc1ad156ff4b73de5aabebdc15d28810bfa1d494b0727"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "sha256": "6f657d754dd13c9524476e0a51fbca4b8f36f7163e0f4de0c870cb3b172b606d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "internal/config/config_test.go",
+      "sha256": "a24161dee00df60d0c7a3578408729b1a3d3a6148ba058ca9e3f249d1609ec46"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR17",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "f371313ef324b002c524272b66194f051214446c5df457f94ec2b3959852c295",
+      "targetCandidateId": "config-admission-resilience-spec-r17",
+      "targetRevision": "r17",
+      "taskSha256": "70d0d66ed8afdff6a2ec9bf7ee1e3d970089e027d537292d09d70e5a71545f60",
+      "instructionsSha256": "02274525f156619bbdcb570bfde03806369200d47421c18153c51e2253c87ef4"
+    },
+    {
+      "name": "ReviewConfigAdmissionSpecCT17",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "8ecb073e55ec6587adedcda4ad878faa782a695970e211ad8b3f67212dd7ea88",
+      "targetCandidateId": "config-admission-resilience-spec-r17",
+      "targetRevision": "r17",
+      "taskSha256": "693c73b22f71b1ae6b2d159f5d243507c15c6a8abd9836ae76356a34ad2b39ee",
+      "instructionsSha256": "02274525f156619bbdcb570bfde03806369200d47421c18153c51e2253c87ef4"
+    }
+  ],
+  "output": "Spec ID: config-admission-resilience\nRevision: r17\nFindings by ID: H2 (reopened)\n\n- **[MEDIUM] H2 — The raw-writer exception still asserts unsupported safety.** `.scratch/config-admission-resilience/spec.md:313,363,482` acknowledges that a refresher write can overlap the final raw diagnostic after drain-budget expiry, but claims complete, atomic JSON writes without partial corruption. `internal/observe/log.go:47-66` merely calls `io.Writer.Write`; it provides neither synchronization nor atomicity. `cmd/mcp-bridge/main.go:58-60` writes to the original stderr, bypassing T3’s pair, while `serve.go:389-403` supplies no join after timeout.\n\n  **Counterexample:** a late refresher holds the pair while writing to a buffer-backed sink; drain expires and main writes directly to that same sink. The pair cannot exclude main. Concurrent buffer mutation or interleaved output remains possible; synchronizing the admission-capture boolean does not synchronize these writes.\n\n  **Consequence:** the startup diagnostic this feature must make reliable can be corrupted, and the documented race-safety guarantee is false. This is H2’s original sink-serialization invariant remaining unresolved—not a new finding or evidence that r17 introduced it. Reason for the earlier miss: unknown.\n\n  **Minimal amendment:** reconcile the raw-exit exception with the actual sink contract. Establish shared serialization or substantiate a bounded atomicity guarantee; otherwise disclose the real corruption/race consequence rather than claiming only line-order nondeterminism. Add the previously requested deterministic drain-timeout/concurrent-write regression under `-race`. Obtain owner authorization before touching additional paths. Preserve acceptance requirements.\n\n  **Confidence: high.**\n\n**Verified closures and coverage**\n- **C9 closed:** canonical T2 dependencies are `[\"T1\",\"T3\"]`; the specified writer order and post-T3 capture prerequisite agree. The owner evidence artifact’s amendment explicitly authorizes that capture build.\n- Independently checked the two-load bootstrap window, startup/reload discriminator, post-publication success-report lane, static-cause classification and retained parse-time secret inventory.\n- Reviewed tickets 01–04, canonical R1–R8/AC1–AC20, task fences, RED/GREEN planning, compatibility, fallback visibility, observability exceptions and rollback.\n- T2 correctly receives no deployment/live-probe authority or permission to edit diagnosis-dependent paths outside its fence. AC18 remains owner/operator evidence.\n\n**Limits and readiness:** static, read-only review; no tests, live probes or independent digest recomputation. H2’s claimed closure is not verified. Amending the candidate requires fresh candidate-bound observations. Canonical authorization/reviews are null; neither this report nor advisory review scheduling grants implementation permission.\n\n### Verdict\nREVISE\n",
+  "invocationId": "cac4680b-65b0-40fd-8d3f-4b300753227b"
+}

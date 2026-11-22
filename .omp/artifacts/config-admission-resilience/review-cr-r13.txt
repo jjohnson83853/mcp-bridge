@@ -1,0 +1,28 @@
+<task-result id="ReviewConfigAdmissionSpecCR13" agent="code-reviewer" status="completed" duration="9m52s">
+
+<output>
+## Code Review Summary
+
+**Mode:** specification, repair pass. Candidate `config-admission-resilience-spec-r13` (sha256 `0b14ada…`, bound at `.omp/plans/execution-state.json:4-9`). Read-only: no tests, `effectCheck`, or hash recomputation run.
+
+**Prior CR12 ledger (`.omp/artifacts/config-admission-resilience/review-cr-r12-raw.json`; `review-cr-r12.txt` does not exist).**
+- K1 (HIGH) **closed**: the entry precedence is now publication → catalog → admission → typed-listener → unclassified (`spec.md:288,379`), AC2's stage/code pair is corrected to stage `listener`/code `listener_runtime` (`spec.md:345`), and the reachability argument matches source (`cmd/mcp-bridge/serve.go:409` classifies; `serveListener` `:414-420` returns raw today). One residual oracle gap below.
+- K2 (MEDIUM) **closed**: `plan.json` T3 `blockedBy:["T1"]` and the bound state also carries `["T1"]` (`.omp/plans/execution-state.json:4` + T3 entry); `spec.md:399` states the canonical binding; writer order declared.
+- K3 (LOW) **closed**: currency sites state the revision tracks the candidate and the bound state is r13 with this sha — no re-apply step remains.
+
+### Issues
+
+- [MEDIUM][ac-not-falsifiable] The listener wrapper's producer is unverified. `spec.md:345` (AC2) closes K1 with `TestListenerRuntimeFailureClass`, but that fixture constructs the typed error and asserts only the classifier **entry**; no named oracle drives `serveListener` (`cmd/mcp-bridge/serve.go:414-420` returns the raw `server.Serve` error today) to prove it wraps, or that a real listener failure ending `serve` classifies `listener`. AC2's own first sentence ("the listener runtime path … produce[s] distinct stage/code in tests") is therefore overstated, and T1's command (`spec.md:378`) would pass with `serveListener` unchanged — the K1 failure mode survives at the producer.
+  Fix: extend `TestListenerRuntimeFailureClass` (T1's `startup_failure_test.go`, already in T1's set and already matched by AC2's `-run` pattern) to call `serveListener` with a fake `net.Listener` whose `Accept` returns a deterministic non-temporary error, assert the returned error is the cmd-owned wrapper carrying `inbound`/`operations` + the configured address, then assert `startupFailureForStartExit` maps it to `listener`/`listener_runtime`. No id, set or command change required.
+
+- [LOW][ledger-state-drift] `spec.md:241` (r13 residual) still asserts the machine-state T3 entry shows `blockedBy: []`, contradicting the same section's "carried into the machine state by the r13 projection" and the bound state, which is r13 and carries `["T1"]` (`execution-state.json:4` + T3 entry). The residual is obsolete; delete or mark RESOLVED.
+
+### Verified sound (spot-checked, not exhaustive)
+Tickets 01–04 map to R1–R8/AC1–AC20; AC17 matches the owner artifact (explicit, `answer:"approve"`, 2026-11-22T05:10:00Z); widening-3 matches R8's two exact `internal/config` files; plan/state writePaths and T3's 11 paths agree; AD22 coverage and empty-value skip are testable; exactly-one-event holds against `loop.go:81,103,122,137,159,168`, `refresh.go:455` and `publishObserver`'s commit (`wiring.go:391-397`), and all `Loop.Start` non-nil exits precede the drivers (`loop.go:183-192` returns nil), so the `fromStartExit` gate is coherent; envelope vocabulary check holds — `stage` already in `EnvelopeFieldNames`, `log_test.go:46-79` + `config_envelope_test.go:165-170` (130→131 for `cause`); `legacyStageVocabulary` contains none of the new stage values (`httpdiagnostics.go:631-638`); AD16 read diagnostics match `ParseFile` (`config.go:576-592`); `bounds.go:167-186` confirms `embedding.timeout: 3s` is valid.
+
+**Limits:** test names are proposals; no execution evidence taken.
+
+### Recommendation
+REQUEST CHANGES
+</output>
+</task-result>

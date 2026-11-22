@@ -1,0 +1,105 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "config-admission-resilience-spec-r6",
+  "revision": "r6",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+      "sha256": "df338fdec5768fc3431b2d20791a30d6546356c3cf3829eacd4bcc203c48291f"
+    },
+    {
+      "path": ".scratch/config-admission-resilience/spec.md",
+      "sha256": "b5b4c17fc61e67d495a3e18e20476450d33f141068c04afc7b5503045f3ded58"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/diagnostics_envelope.go",
+      "sha256": "27d30dd457e9747f57254ce77200e8f14dd739998171d2d4ec68c97ada3c842e"
+    },
+    {
+      "path": "cmd/mcp-bridge/example_config_test.go",
+      "sha256": "81f856efe04649d88aedc1ad156ff4b73de5aabebdc15d28810bfa1d494b0727"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "sha256": "6f657d754dd13c9524476e0a51fbca4b8f36f7163e0f4de0c870cb3b172b606d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR6",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "870635397e2144677f721d08f57f228be94c944f53c3415bc5da4e7f35e07e0e",
+      "targetCandidateId": "config-admission-resilience-spec-r6",
+      "targetRevision": "r6",
+      "taskSha256": "f9a1bbddab0d510867ee0cdd2ccd10856c00adf0615599a6fa1712fad5f9f592",
+      "instructionsSha256": "56ee46e16012814d0058bce9eea16563c17eeaed3faf88eec29648b4c5ea8588"
+    },
+    {
+      "name": "ReviewConfigAdmissionSpecCT6",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "3b15e5e59b7d8d677d23d76fc738d44a63fa11e4fa9abc654ca0ddda60f5af6e",
+      "targetCandidateId": "config-admission-resilience-spec-r6",
+      "targetRevision": "r6",
+      "taskSha256": "668d3c62622218d2fda06f1b3348571144a89030cfeeadd44f16d4a776294dfa",
+      "instructionsSha256": "56ee46e16012814d0058bce9eea16563c17eeaed3faf88eec29648b4c5ea8588"
+    }
+  ],
+  "output": "Spec ID: config-admission-resilience\nRevision: r6\nFindings by ID: C1, C2, E3 (reopened), C3\n\n- **[HIGH] C1 — Bootstrap can admit a different configuration than its resources use.** `spec.md:201-207,344` omits the initial load at `cmd/mcp-bridge/serve.go:139`. That load configures storage/listeners (`:154,317-324`); `internal/service/loop.go:137` loads again while published settings remain nil. An intervening A→B edit can therefore admit, persist and report B while resources still use A. **Amendment:** define one consistent bootstrap snapshot, or reject incompatible changes between these loads; extend AC6/AC14 with normal/degraded inter-load mutation fixtures. Confidence: high.\n\n- **[HIGH] C2 — Raw-copy secret safety does not follow from credential-field validation.** `spec.md:124,152,193` assumes reference-only credentials prove the entire raw document secret-free. YAML comments remain accepted (`internal/config/fingerprint_test.go:83-91`); a valid document referencing an environment token can also contain that token in a comment. Exact-byte persistence copies it, violating R7 (`spec.md:91`), while AC8’s ordinary reference fixture can pass. **Amendment:** specify enforceable persistence safety covering comments and other noncredential text, with negative fixtures; do not weaken R7 without owner confirmation. Confidence: high. Coordinator should escalate this security disagreement to configured non-OpenAI `spec_critic_escalated`.\n\n- **[HIGH] E3 reopened — AC17 still cannot establish the approved live-evidence requirement.** Ticket `issues/02-diagnose-and-fix-network-startup-loop.md:9` requires the typed diagnostic **from the live instance**. `spec.md:81,170,252` permits local capture plus a PENDING interpretation marker instead. Acknowledging the conflict preserves provenance but does not close the acceptance mismatch. **Amendment:** require a bound owner decision, or schedule owner/operator pre-fix capture after T1 deployment as a prerequisite to satisfying R2. Do not grant T2 deployment authority. Confidence: high. This is the original E3 invariant, not a new finding; the earlier closure’s sufficiency was unsupported.\n\n- **[MEDIUM] C3 — T4 is instructed to write outside its fence.** `spec.md:169` explicitly says T4 writes the follow-up into ticket 04, but T4’s specification/canonical write sets exclude that ticket (`spec.md:305,363`; `.omp/plans/execution-state.json:319-334`). **Amendment:** return the follow-up through the receipt for an authorized coordinator record, or obtain explicit path authorization. Confidence: high.\n\nVerified: G1’s effective-candidate repair, G2’s oracle/path binding and G4’s property mapping; reload-success reporting follows publication and excludes refresh callbacks. T2’s diagnosis-dependent path escalation and live-effect prohibitions remain explicit.\n\nLimits: static read-only review; no tests, live verification or hash recomputation. Earlier APPROVE is not closure evidence. Amendments require fresh candidate-bound reviews; no execution permission is granted.\n\n### Verdict\nREVISE\n",
+  "invocationId": "73fcbdce-7df6-48f9-bfa2-0aae3a33109c"
+}

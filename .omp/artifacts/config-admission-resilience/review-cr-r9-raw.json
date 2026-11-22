@@ -1,0 +1,72 @@
+{
+  "text": "<task-result id=\"ReviewConfigAdmissionSpecCR9\" agent=\"code-reviewer\" status=\"completed\" duration=\"9m9s\">\n\n<output>\n**Mode:** specification, repair pass (candidate r9; read-only). Prior CR8 ledger (`.omp/artifacts/config-admission-resilience/review-cr-r8.txt`, APPROVE): LOW #1 (R6/AC15 third-event row) OPEN; #2 (AD21 gate boolean) OPEN; #3 (AD22 predicate carrier) CLOSED/moot (refusal layer removed at r9); #4 (`config.go:433` citation) OPEN.\n\n- [HIGH][envelope-drift] Widening 3 is on T3's task effect but absent from the canonical envelope write roots, so T3 fails the state contract. `.omp/plans/execution-state.json:135-143` (writePaths) has no `internal/config` root; `:291-292` grants T3 `internal/config/config.go` and `config_test.go`. `workflow-policy/execution-contract.mjs:50` runs `effectCheck` for every task, and `workflow-policy/execution-contract-binding.mjs:313-316` rejects write effects outside `writePaths` with `E_EFFECT_OUTSIDE_ENVELOPE`. The spec's \"APPROVED, bound and USED\" claim (`spec.md:408,421`) is therefore false at the envelope level: T3 cannot validate or dispatch, so C4's resolver cannot land. Fix: append the two exact files to `envelope.writePaths` via the amendment operation (`execution-amendment.mjs:77-79`).\n- [MEDIUM][design-gap] The emission lane uses raw `observe.WriteJSONLine` concurrently with refresher `observe.Logger` writes; no shared serialization is specified. The logger mutex covers only its own writes (`internal/observe/log.go:32-36`); `WriteJSONLine` is unlocked (`:47-66`). With the lane on loop/watch and refresh logs on the refresher goroutine (spec §7), shared-buffer `-race` fixtures can race and production lines can interleave. Fix: specify one locking writer shared by the logger and the three writers; exercise emission during a refresh pass under `-race`.\n- [LOW][ac-not-falsifiable] R6 requires documenting all new events, but AC15's oracle asserts only `config_loaded`/`config_degraded` (`spec.md:123,298`); a missing `config_last_good_write_failed` row passes. Fix: add that row to `TestLoggingContractDocumentsConfigEventsAndStorageBase` (T4's set).\n- [LOW][statement-contradiction] AD21 calls the gate boolean \"already memoized\" yet requires it true only on the second pre-publication call (`spec.md:212`). The memo is never cleared, so a literal `memo != nil` is also true on the post-publication SIGHUP that AC6(c)/AC14 expects to be guard-rejected (`spec.md:288,297`), hanging the fixture. Fix: define it as `memo != nil && publishedSettings()==nil`.\n- [LOW][stale-citation] `ClientTokenHashes()` is at `internal/config/config.go:81`; `:433` is the digest-append line. `spec.md:163` still cites `:433` as the method.\n\nCoverage: tickets 01–04 map to R1–R6 with runnable ACs, except ticket-01's \"specific stage\" item is `unclassified`/`internal_error` for `AdmitStartup` errors (`spec.md:113,226`, AC5) — disclosed, but not recorded as an owner scope exception. AC17/AC18 are honestly owner-lane (AD18/AD20); T2's diagnosis-dependent widening is blocked-with-evidence; secret-scan and exactly-one semantics are testable; R3's persistence contract is restored (C4); T3→T4 is acyclic (C5).\n\n### Recommendation\nREQUEST CHANGES\n</output>\n</task-result>",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [
+      {
+        "index": 0,
+        "id": "ReviewConfigAdmissionSpecCR9",
+        "agent": "code-reviewer",
+        "agentSource": "user",
+        "task": "Complete assignment thoroughly:\n\nIndependently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r9 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr-r8.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "assignment": "Independently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r9 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr-r8.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "lastIntent": "Reading config validation envelope writer",
+        "exitCode": 0,
+        "output": "**Mode:** specification, repair pass (candidate r9; read-only). Prior CR8 ledger (`.omp/artifacts/config-admission-resilience/review-cr-r8.txt`, APPROVE): LOW #1 (R6/AC15 third-event row) OPEN; #2 (AD21 gate boolean) OPEN; #3 (AD22 predicate carrier) CLOSED/moot (refusal layer removed at r9); #4 (`config.go:433` citation) OPEN.\n\n- [HIGH][envelope-drift] Widening 3 is on T3's task effect but absent from the canonical envelope write roots, so T3 fails the state contract. `.omp/plans/execution-state.json:135-143` (writePaths) has no `internal/config` root; `:291-292` grants T3 `internal/config/config.go` and `config_test.go`. `workflow-policy/execution-contract.mjs:50` runs `effectCheck` for every task, and `workflow-policy/execution-contract-binding.mjs:313-316` rejects write effects outside `writePaths` with `E_EFFECT_OUTSIDE_ENVELOPE`. The spec's \"APPROVED, bound and USED\" claim (`spec.md:408,421`) is therefore false at the envelope level: T3 cannot validate or dispatch, so C4's resolver cannot land. Fix: append the two exact files to `envelope.writePaths` via the amendment operation (`execution-amendment.mjs:77-79`).\n- [MEDIUM][design-gap] The emission lane uses raw `observe.WriteJSONLine` concurrently with refresher `observe.Logger` writes; no shared serialization is specified. The logger mutex covers only its own writes (`internal/observe/log.go:32-36`); `WriteJSONLine` is unlocked (`:47-66`). With the lane on loop/watch and refresh logs on the refresher goroutine (spec §7), shared-buffer `-race` fixtures can race and production lines can interleave. Fix: specify one locking writer shared by the logger and the three writers; exercise emission during a refresh pass under `-race`.\n- [LOW][ac-not-falsifiable] R6 requires documenting all new events, but AC15's oracle asserts only `config_loaded`/`config_degraded` (`spec.md:123,298`); a missing `config_last_good_write_failed` row passes. Fix: add that row to `TestLoggingContractDocumentsConfigEventsAndStorageBase` (T4's set).\n- [LOW][statement-contradiction] AD21 calls the gate boolean \"already memoized\" yet requires it true only on the second pre-publication call (`spec.md:212`). The memo is never cleared, so a literal `memo != nil` is also true on the post-publication SIGHUP that AC6(c)/AC14 expects to be guard-rejected (`spec.md:288,297`), hanging the fixture. Fix: define it as `memo != nil && publishedSettings()==nil`.\n- [LOW][stale-citation] `ClientTokenHashes()` is at `internal/config/config.go:81`; `:433` is the digest-append line. `spec.md:163` still cites `:433` as the method.\n\nCoverage: tickets 01–04 map to R1–R6 with runnable ACs, except ticket-01's \"specific stage\" item is `unclassified`/`internal_error` for `AdmitStartup` errors (`spec.md:113,226`, AC5) — disclosed, but not recorded as an owner scope exception. AC17/AC18 are honestly owner-lane (AD18/AD20); T2's diagnosis-dependent widening is blocked-with-evidence; secret-scan and exactly-one semantics are testable; R3's persistence contract is restored (C4); T3→T4 is acyclic (C5).\n\n### Recommendation\nREQUEST CHANGES",
+        "stderr": "",
+        "truncated": false,
+        "durationMs": 549698,
+        "tokens": 354901,
+        "requests": 44,
+        "contextTokens": 216891,
+        "contextWindow": 1048576,
+        "modelOverride": [
+          "openrouter/deepseek/deepseek-v4.1-flash-1017:high"
+        ],
+        "resolvedModel": "openrouter/deepseek/deepseek-v4.1-flash-1017:high",
+        "resolvedModelIdentity": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+        "resolvedThinkingLevel": "high",
+        "aborted": false,
+        "usage": {
+          "input": 151294,
+          "output": 203607,
+          "cacheRead": 5979904,
+          "cacheWrite": 0,
+          "totalTokens": 6334805,
+          "reasoningTokens": 56760,
+          "cost": {
+            "input": 0.005446583999999998,
+            "output": 0.10180350000000003,
+            "cacheRead": 0.05979903999999999,
+            "cacheWrite": 0,
+            "total": 0.167049124
+          }
+        },
+        "outputPath": "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR9.md",
+        "outputMeta": {
+          "lineCount": 12,
+          "charCount": 3084
+        }
+      }
+    ],
+    "totalDurationMs": 549719,
+    "usage": {
+      "input": 151294,
+      "output": 203607,
+      "cacheRead": 5979904,
+      "cacheWrite": 0,
+      "totalTokens": 6334805,
+      "reasoningTokens": 56760,
+      "cost": {
+        "input": 0.005446583999999998,
+        "output": 0.10180350000000003,
+        "cacheRead": 0.05979903999999999,
+        "cacheWrite": 0,
+        "total": 0.167049124
+      }
+    },
+    "outputPaths": [
+      "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR9.md"
+    ]
+  }
+}

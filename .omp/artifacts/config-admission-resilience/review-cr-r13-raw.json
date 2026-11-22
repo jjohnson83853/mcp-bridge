@@ -1,0 +1,72 @@
+{
+  "text": "<task-result id=\"ReviewConfigAdmissionSpecCR13\" agent=\"code-reviewer\" status=\"completed\" duration=\"9m52s\">\n\n<output>\n## Code Review Summary\n\n**Mode:** specification, repair pass. Candidate `config-admission-resilience-spec-r13` (sha256 `0b14ada…`, bound at `.omp/plans/execution-state.json:4-9`). Read-only: no tests, `effectCheck`, or hash recomputation run.\n\n**Prior CR12 ledger (`.omp/artifacts/config-admission-resilience/review-cr-r12-raw.json`; `review-cr-r12.txt` does not exist).**\n- K1 (HIGH) **closed**: the entry precedence is now publication → catalog → admission → typed-listener → unclassified (`spec.md:288,379`), AC2's stage/code pair is corrected to stage `listener`/code `listener_runtime` (`spec.md:345`), and the reachability argument matches source (`cmd/mcp-bridge/serve.go:409` classifies; `serveListener` `:414-420` returns raw today). One residual oracle gap below.\n- K2 (MEDIUM) **closed**: `plan.json` T3 `blockedBy:[\"T1\"]` and the bound state also carries `[\"T1\"]` (`.omp/plans/execution-state.json:4` + T3 entry); `spec.md:399` states the canonical binding; writer order declared.\n- K3 (LOW) **closed**: currency sites state the revision tracks the candidate and the bound state is r13 with this sha — no re-apply step remains.\n\n### Issues\n\n- [MEDIUM][ac-not-falsifiable] The listener wrapper's producer is unverified. `spec.md:345` (AC2) closes K1 with `TestListenerRuntimeFailureClass`, but that fixture constructs the typed error and asserts only the classifier **entry**; no named oracle drives `serveListener` (`cmd/mcp-bridge/serve.go:414-420` returns the raw `server.Serve` error today) to prove it wraps, or that a real listener failure ending `serve` classifies `listener`. AC2's own first sentence (\"the listener runtime path … produce[s] distinct stage/code in tests\") is therefore overstated, and T1's command (`spec.md:378`) would pass with `serveListener` unchanged — the K1 failure mode survives at the producer.\n  Fix: extend `TestListenerRuntimeFailureClass` (T1's `startup_failure_test.go`, already in T1's set and already matched by AC2's `-run` pattern) to call `serveListener` with a fake `net.Listener` whose `Accept` returns a deterministic non-temporary error, assert the returned error is the cmd-owned wrapper carrying `inbound`/`operations` + the configured address, then assert `startupFailureForStartExit` maps it to `listener`/`listener_runtime`. No id, set or command change required.\n\n- [LOW][ledger-state-drift] `spec.md:241` (r13 residual) still asserts the machine-state T3 entry shows `blockedBy: []`, contradicting the same section's \"carried into the machine state by the r13 projection\" and the bound state, which is r13 and carries `[\"T1\"]` (`execution-state.json:4` + T3 entry). The residual is obsolete; delete or mark RESOLVED.\n\n### Verified sound (spot-checked, not exhaustive)\nTickets 01–04 map to R1–R8/AC1–AC20; AC17 matches the owner artifact (explicit, `answer:\"approve\"`, 2026-11-22T05:10:00Z); widening-3 matches R8's two exact `internal/config` files; plan/state writePaths and T3's 11 paths agree; AD22 coverage and empty-value skip are testable; exactly-one-event holds against `loop.go:81,103,122,137,159,168`, `refresh.go:455` and `publishObserver`'s commit (`wiring.go:391-397`), and all `Loop.Start` non-nil exits precede the drivers (`loop.go:183-192` returns nil), so the `fromStartExit` gate is coherent; envelope vocabulary check holds — `stage` already in `EnvelopeFieldNames`, `log_test.go:46-79` + `config_envelope_test.go:165-170` (130→131 for `cause`); `legacyStageVocabulary` contains none of the new stage values (`httpdiagnostics.go:631-638`); AD16 read diagnostics match `ParseFile` (`config.go:576-592`); `bounds.go:167-186` confirms `embedding.timeout: 3s` is valid.\n\n**Limits:** test names are proposals; no execution evidence taken.\n\n### Recommendation\nREQUEST CHANGES\n</output>\n</task-result>",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [
+      {
+        "index": 0,
+        "id": "ReviewConfigAdmissionSpecCR13",
+        "agent": "code-reviewer",
+        "agentSource": "user",
+        "task": "Complete assignment thoroughly:\n\nIndependently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r13 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr-r12.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "assignment": "Independently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r13 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr-r12.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "lastIntent": "Locating r13 blockedBy residual line",
+        "exitCode": 0,
+        "output": "## Code Review Summary\n\n**Mode:** specification, repair pass. Candidate `config-admission-resilience-spec-r13` (sha256 `0b14ada…`, bound at `.omp/plans/execution-state.json:4-9`). Read-only: no tests, `effectCheck`, or hash recomputation run.\n\n**Prior CR12 ledger (`.omp/artifacts/config-admission-resilience/review-cr-r12-raw.json`; `review-cr-r12.txt` does not exist).**\n- K1 (HIGH) **closed**: the entry precedence is now publication → catalog → admission → typed-listener → unclassified (`spec.md:288,379`), AC2's stage/code pair is corrected to stage `listener`/code `listener_runtime` (`spec.md:345`), and the reachability argument matches source (`cmd/mcp-bridge/serve.go:409` classifies; `serveListener` `:414-420` returns raw today). One residual oracle gap below.\n- K2 (MEDIUM) **closed**: `plan.json` T3 `blockedBy:[\"T1\"]` and the bound state also carries `[\"T1\"]` (`.omp/plans/execution-state.json:4` + T3 entry); `spec.md:399` states the canonical binding; writer order declared.\n- K3 (LOW) **closed**: currency sites state the revision tracks the candidate and the bound state is r13 with this sha — no re-apply step remains.\n\n### Issues\n\n- [MEDIUM][ac-not-falsifiable] The listener wrapper's producer is unverified. `spec.md:345` (AC2) closes K1 with `TestListenerRuntimeFailureClass`, but that fixture constructs the typed error and asserts only the classifier **entry**; no named oracle drives `serveListener` (`cmd/mcp-bridge/serve.go:414-420` returns the raw `server.Serve` error today) to prove it wraps, or that a real listener failure ending `serve` classifies `listener`. AC2's own first sentence (\"the listener runtime path … produce[s] distinct stage/code in tests\") is therefore overstated, and T1's command (`spec.md:378`) would pass with `serveListener` unchanged — the K1 failure mode survives at the producer.\n  Fix: extend `TestListenerRuntimeFailureClass` (T1's `startup_failure_test.go`, already in T1's set and already matched by AC2's `-run` pattern) to call `serveListener` with a fake `net.Listener` whose `Accept` returns a deterministic non-temporary error, assert the returned error is the cmd-owned wrapper carrying `inbound`/`operations` + the configured address, then assert `startupFailureForStartExit` maps it to `listener`/`listener_runtime`. No id, set or command change required.\n\n- [LOW][ledger-state-drift] `spec.md:241` (r13 residual) still asserts the machine-state T3 entry shows `blockedBy: []`, contradicting the same section's \"carried into the machine state by the r13 projection\" and the bound state, which is r13 and carries `[\"T1\"]` (`execution-state.json:4` + T3 entry). The residual is obsolete; delete or mark RESOLVED.\n\n### Verified sound (spot-checked, not exhaustive)\nTickets 01–04 map to R1–R8/AC1–AC20; AC17 matches the owner artifact (explicit, `answer:\"approve\"`, 2026-11-22T05:10:00Z); widening-3 matches R8's two exact `internal/config` files; plan/state writePaths and T3's 11 paths agree; AD22 coverage and empty-value skip are testable; exactly-one-event holds against `loop.go:81,103,122,137,159,168`, `refresh.go:455` and `publishObserver`'s commit (`wiring.go:391-397`), and all `Loop.Start` non-nil exits precede the drivers (`loop.go:183-192` returns nil), so the `fromStartExit` gate is coherent; envelope vocabulary check holds — `stage` already in `EnvelopeFieldNames`, `log_test.go:46-79` + `config_envelope_test.go:165-170` (130→131 for `cause`); `legacyStageVocabulary` contains none of the new stage values (`httpdiagnostics.go:631-638`); AD16 read diagnostics match `ParseFile` (`config.go:576-592`); `bounds.go:167-186` confirms `embedding.timeout: 3s` is valid.\n\n**Limits:** test names are proposals; no execution evidence taken.\n\n### Recommendation\nREQUEST CHANGES",
+        "stderr": "",
+        "truncated": false,
+        "durationMs": 592480,
+        "tokens": 436787,
+        "requests": 26,
+        "contextTokens": 260213,
+        "contextWindow": 1048576,
+        "modelOverride": [
+          "openrouter/deepseek/deepseek-v4.1-flash-1017:high"
+        ],
+        "resolvedModel": "openrouter/deepseek/deepseek-v4.1-flash-1017:high",
+        "resolvedModelIdentity": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+        "resolvedThinkingLevel": "high",
+        "aborted": false,
+        "usage": {
+          "input": 216640,
+          "output": 220147,
+          "cacheRead": 3026432,
+          "cacheWrite": 0,
+          "totalTokens": 3463219,
+          "reasoningTokens": 39972,
+          "cost": {
+            "input": 0.00779904,
+            "output": 0.1100735,
+            "cacheRead": 0.03026432,
+            "cacheWrite": 0,
+            "total": 0.14813686
+          }
+        },
+        "outputPath": "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR13.md",
+        "outputMeta": {
+          "lineCount": 23,
+          "charCount": 3755
+        }
+      }
+    ],
+    "totalDurationMs": 592488,
+    "usage": {
+      "input": 216640,
+      "output": 220147,
+      "cacheRead": 3026432,
+      "cacheWrite": 0,
+      "totalTokens": 3463219,
+      "reasoningTokens": 39972,
+      "cost": {
+        "input": 0.00779904,
+        "output": 0.1100735,
+        "cacheRead": 0.03026432,
+        "cacheWrite": 0,
+        "total": 0.14813686
+      }
+    },
+    "outputPaths": [
+      "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR13.md"
+    ]
+  }
+}

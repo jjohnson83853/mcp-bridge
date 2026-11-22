@@ -1,0 +1,28 @@
+<task-result id="ReviewConfigAdmissionSpecCR7" agent="code-reviewer" status="completed" duration="8m45s">
+
+<output>
+## Specification Review — `config-admission-resilience` r7
+
+**Mode:** specification (feasibility/correctness), repair pass. Read-only; no tests executed.
+
+**Prior-ledger closure.** CR6 (APPROVE; 4 LOW advisories): **none closed** — all four persist verbatim, re-raised below as F–I. CT6 targets: **E3 CLOSED** (artifact verified: schemaVersion 1, revision r7, `explicit:true`, `answer:"approve"`, recordedAt 2026-11-22T05:10:00Z; R2/AC17 match, no PENDING). **C3 CLOSED** (T4 writes no ticket path; receipt+coordinator route; ticket 04 in no set). **C1** design plausible, evidence non-falsifiable (B). **C2** mechanism partial (A).
+
+### Findings
+
+- [HIGH][secret-hygiene/ac-not-falsifiable] (conf HIGH) AD22 scans only `ServerCredentials` + `EmbeddingCredential`, but `client_auth.bearer_tokens` are also secret references (config.go:924-933), resolved then hashed with only `ClientTokenHashes()` exported (config.go:433,68,81). A validated document quoting the resolved client token in a comment/non-credential text is persisted verbatim → R7/AC8 violated; no fixture observes it, and "no internal/config change needed" (spec.md:315) is false. Fix: exported resolver (owner authorization) **or** refuse persistence whenever `client_auth.bearer_tokens` is configured; add the negative fixture (spec.md:187-188,264).
+- [HIGH][ac-not-falsifiable] (conf HIGH) AC6(c)/AC14 claim an A→B edit lands between `serve.go:139` and `loop.go:137`, "injected after the inbound listener binds" (spec.md:262,270). The listener binds at serve.go:317-324; the loop goroutine launches at :339 and listener goroutines at :341-352, so the only test-observable point precedes the second `Load` by microseconds and no seam holds the window. Normally the mutation lands after loop.go:137, and both fixtures pass with the memo removed. Fix: specify a deterministic seam (test hook / blocked second load) and assert the memo; otherwise CT6-C1 closure is unproven.
+- [MEDIUM][ac-evidence-mismatch] AC14 asserts B's SIGHUP is guard-rejected "(`storage.directory` restart-only)" (spec.md:270) without stating B changes a restart-only field; a B differing only in a non-restart-only key is admitted (wiring.go:100-123). Fix: state the fixture's B changes `storage.directory`.
+- [LOW][ledger-state-drift] Emission-lane ownership is ambiguous: AC10 owner T3 (execution-state.json:363-520) needs the `ReloadMetrics` hook body that T4's expected files claim (spec.md:326), while T4 is blockedBy T3; T3's serve.go annotation lists only staging (spec.md:314). Fix: assign the hook's persist/clear body to T3.
+- [LOW][envelope-drift] §10 claims "The whole repository" reads and "local image build"; canonical readPaths exclude `.scratch/mcp-bridge-defects`/`Dockerfile` and allowedEffects are read/write/test only (execution-state.json:122-160). Fix: mirror canonical; drop the build claim.
+- [LOW] F (carried): AC14 says "All under `-race`" but its command lacks `-race` (spec.md:270).
+- [LOW] G (carried): AC12's "no copy read" names no instrument (spec.md:268).
+- [LOW] H (carried): "the `load` closure RETURNS those effective values … via `options.Load`" (settings) contradicts `Load func() (*config.Config, error)` (spec.md:262; loop.go:103,137).
+- [LOW] I (carried): slot keeps a "candidate fingerprint for the record" that no event consumes (spec.md:202,311).
+
+**Verified sound:** tickets 01–04 map to R/AC with runnable commands or named lanes; canonical T1/T2/T3/T4 sets mirror §10 exactly (10/4/9/10); exactly-one emission holds on the verified call-site set (loop.go:81,103-122,242; refresh.go:455); `stage` already in the union while `cause` raises the pin to 131 (envelope.go:705; config_envelope_test.go:168); T2's diagnosis-dependent widening is honest (4 paths, BLOCKED-with-evidence, owner-lane AC18); G1/G2/G3/G4 and E4/E5 remain closed.
+
+### Recommendation
+
+REQUEST CHANGES
+</output>
+</task-result>

@@ -1,0 +1,23 @@
+<task-result id="ReviewConfigAdmissionSpecCT6" agent="critic" status="completed" duration="3m22s">
+
+<output>
+Spec ID: config-admission-resilience
+Revision: r6
+Findings by ID: C1, C2, E3 (reopened), C3
+
+- **[HIGH] C1 — Bootstrap can admit a different configuration than its resources use.** `spec.md:201-207,344` omits the initial load at `cmd/mcp-bridge/serve.go:139`. That load configures storage/listeners (`:154,317-324`); `internal/service/loop.go:137` loads again while published settings remain nil. An intervening A→B edit can therefore admit, persist and report B while resources still use A. **Amendment:** define one consistent bootstrap snapshot, or reject incompatible changes between these loads; extend AC6/AC14 with normal/degraded inter-load mutation fixtures. Confidence: high.
+
+- **[HIGH] C2 — Raw-copy secret safety does not follow from credential-field validation.** `spec.md:124,152,193` assumes reference-only credentials prove the entire raw document secret-free. YAML comments remain accepted (`internal/config/fingerprint_test.go:83-91`); a valid document referencing an environment token can also contain that token in a comment. Exact-byte persistence copies it, violating R7 (`spec.md:91`), while AC8’s ordinary reference fixture can pass. **Amendment:** specify enforceable persistence safety covering comments and other noncredential text, with negative fixtures; do not weaken R7 without owner confirmation. Confidence: high. Coordinator should escalate this security disagreement to configured non-OpenAI `spec_critic_escalated`.
+
+- **[HIGH] E3 reopened — AC17 still cannot establish the approved live-evidence requirement.** Ticket `issues/02-diagnose-and-fix-network-startup-loop.md:9` requires the typed diagnostic **from the live instance**. `spec.md:81,170,252` permits local capture plus a PENDING interpretation marker instead. Acknowledging the conflict preserves provenance but does not close the acceptance mismatch. **Amendment:** require a bound owner decision, or schedule owner/operator pre-fix capture after T1 deployment as a prerequisite to satisfying R2. Do not grant T2 deployment authority. Confidence: high. This is the original E3 invariant, not a new finding; the earlier closure’s sufficiency was unsupported.
+
+- **[MEDIUM] C3 — T4 is instructed to write outside its fence.** `spec.md:169` explicitly says T4 writes the follow-up into ticket 04, but T4’s specification/canonical write sets exclude that ticket (`spec.md:305,363`; `.omp/plans/execution-state.json:319-334`). **Amendment:** return the follow-up through the receipt for an authorized coordinator record, or obtain explicit path authorization. Confidence: high.
+
+Verified: G1’s effective-candidate repair, G2’s oracle/path binding and G4’s property mapping; reload-success reporting follows publication and excludes refresh callbacks. T2’s diagnosis-dependent path escalation and live-effect prohibitions remain explicit.
+
+Limits: static read-only review; no tests, live verification or hash recomputation. Earlier APPROVE is not closure evidence. Amendments require fresh candidate-bound reviews; no execution permission is granted.
+
+### Verdict
+REVISE
+</output>
+</task-result>

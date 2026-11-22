@@ -1,0 +1,72 @@
+{
+  "text": "<task-result id=\"ReviewConfigAdmissionSpecCR17\" agent=\"code-reviewer\" status=\"completed\" duration=\"4m57s\">\n\n<output>\n## Code Review Summary\nMode: specification; pass: repair. Candidate `config-admission-resilience-spec-r17` (sha256 `c193033c…` matches the state's `sha256` field). Inputs: spec, tickets 01–04, `review-cr-r16.txt`, `plan.json`, `execution-state.json`, cited source anchors (re-read here).\n\n**CT16 C9 (r17 delta) — substantively closed.** T2 `blockedBy` is `[\"T1\",\"T3\"]` in `plan.json` and in the canonical T2 entry; §6/§9/§10 state T1→T3→T2→T4; T2's post-T3 capture prerequisite and its AC10 gate are coherent.\n\n**Prior ledger `review-cr-r16.txt` — 0/5 closed** (all LOW; re-verified against r17 text):\n- [LOW][stale-citation] decision id: `spec.md:195,522` say `approve-complete-secret-inventory-authorization`; the artifact says `\"decision\":\"authorize-complete-secret-inventory\"` (`owner-secret-inventory-authorization.json`).\n- [LOW][stale-citation] `Config.resolved` anchors: `internal/config/config.go:67` (field) and `:456` (assignment), not `:68`/`:455`; wrong at `spec.md:177,197,216,255,311,411,441,493,499,514`.\n- [LOW][ac-not-falsifiable] AC1 (`spec.md:385`) observable includes the admission class, but its `-run` pattern omits `TestStartupAdmissionFailureClass`; `go test -run` exits 0 when absent (AC5 `:388` runs it, so coverage is only partial).\n- [LOW][statement-contradiction] AD4 (`spec.md:293`) makes `MCP_STRICT_CONFIG=1` strict; R4 (`:208`) says non-true keeps R3; AC13 (`:397`) tests only \"false\"/\"yes\"/\"0\" — no oracle for `1`.\n- [LOW][statement-contradiction] `spec.md:406` still says \"the only `internal/config` change is the widening-3 resolver pair\"; R8 (`:216`) and §10 name `ResolvedSecrets()` too.\n\n**New findings**\n- [MEDIUM][statement-contradiction] `spec.md:309` (AD20), `:204` (R2), `:401` (AC17) and §4.5 require the pre-fix capture on the **post-T3 build** and cite AD20 as its authority, while the artifact's recorded scope is \"running the **T1 build** against the live instance's actual config/state\" (`owner-ticket02-evidence.json`). r17 introduced this mismatch (pre-r17 the capture was on the T1 build, matching the artifact). Fix: record a fresh owner decision naming the post-T3 build, or capture on a T1-only build and stop attributing the post-T3 run to AD20.\n- [LOW][ledger-state-drift] `issues/02-…:8` still says \"Blocked by: 01\"; canonical T2 `blockedBy` is `[\"T1\",\"T3\"]`. §6 T2 names the T3 edge but, unlike ticket 03, records no ticket supersession. Fix: coordinator records it in ticket 02.\n- [LOW][stale-citation] `spec.md:187` (C9 row) claims the order changed \"everywhere it is stated … and the historical J1/K2 currency notes\"; `spec.md:11` and `:19` still state T1→T2→T3→T4. Fix: annotate both as superseded.\n- [LOW][ac-not-falsifiable] R7 (`:214`) forbids secrets in `config_loaded`; AC8 (`:392`) names negative oracles only for the copy and `config_degraded` (`TestLastKnownGoodCopyHasNoSecrets`, `TestConfigDegradedEventHasNoSecrets`); no fixture covers `config_loaded` (exposure bounded — both fields are paths).\n\n**Verified sound (independently re-read)**\nTickets 01–04 all map to R→AC (01→AC1–5, 02→AC17–19, 03→AC6–11, 04→AC12–16); every AC has a runnable command or named evidence lane (AC17 inspection, AC18 owner lane). Anchors hold: `serve.go:108,136,139,143,145-154,282-315,317-324,339,389,397,406,409,414-420`; `loop.go:103,105,110,117-118,122,137,139,157-160,162-163,168,180,195,206-212`; `startup_failure.go:11,62,71,108-115,130`; `envelope.go:41-56,587,705,721` (only `cause` moves the pin; `stage` is already a union member); `config.go:81,97-104,381,384,433,576-592` (`single()` sets `not_checked`, so AC9 parity is achievable); `bounds.go:167-186` (`embedding.timeout: 3s` valid); `legacyStageVocabulary` has no bare `admission`; pin 130 at `config_envelope_test.go:166-170`. Envelope/effects match: state `writePaths` carry the two exact `internal/config` files (`:138-139`), T3 effects the same pair (`:296-297`), `allowedEffects` read/write/test (`:146`). Exactly-one and scan-skip semantics are oracled (AC14/AC8), and every exit path in `serve` has a named class.\n\nLimits: read-only; no tests, `effectCheck` or spec-lint executed; prior findings checked against text only.\n\n### Recommendation\nAPPROVE\n</output>\n</task-result>",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [
+      {
+        "index": 0,
+        "id": "ReviewConfigAdmissionSpecCR17",
+        "agent": "code-reviewer",
+        "agentSource": "user",
+        "task": "Complete assignment thoroughly:\n\nIndependently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r17 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr-r16.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "assignment": "Independently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r17 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr-r16.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "lastIntent": "Verifying holder discriminator API",
+        "exitCode": 0,
+        "output": "## Code Review Summary\nMode: specification; pass: repair. Candidate `config-admission-resilience-spec-r17` (sha256 `c193033c…` matches the state's `sha256` field). Inputs: spec, tickets 01–04, `review-cr-r16.txt`, `plan.json`, `execution-state.json`, cited source anchors (re-read here).\n\n**CT16 C9 (r17 delta) — substantively closed.** T2 `blockedBy` is `[\"T1\",\"T3\"]` in `plan.json` and in the canonical T2 entry; §6/§9/§10 state T1→T3→T2→T4; T2's post-T3 capture prerequisite and its AC10 gate are coherent.\n\n**Prior ledger `review-cr-r16.txt` — 0/5 closed** (all LOW; re-verified against r17 text):\n- [LOW][stale-citation] decision id: `spec.md:195,522` say `approve-complete-secret-inventory-authorization`; the artifact says `\"decision\":\"authorize-complete-secret-inventory\"` (`owner-secret-inventory-authorization.json`).\n- [LOW][stale-citation] `Config.resolved` anchors: `internal/config/config.go:67` (field) and `:456` (assignment), not `:68`/`:455`; wrong at `spec.md:177,197,216,255,311,411,441,493,499,514`.\n- [LOW][ac-not-falsifiable] AC1 (`spec.md:385`) observable includes the admission class, but its `-run` pattern omits `TestStartupAdmissionFailureClass`; `go test -run` exits 0 when absent (AC5 `:388` runs it, so coverage is only partial).\n- [LOW][statement-contradiction] AD4 (`spec.md:293`) makes `MCP_STRICT_CONFIG=1` strict; R4 (`:208`) says non-true keeps R3; AC13 (`:397`) tests only \"false\"/\"yes\"/\"0\" — no oracle for `1`.\n- [LOW][statement-contradiction] `spec.md:406` still says \"the only `internal/config` change is the widening-3 resolver pair\"; R8 (`:216`) and §10 name `ResolvedSecrets()` too.\n\n**New findings**\n- [MEDIUM][statement-contradiction] `spec.md:309` (AD20), `:204` (R2), `:401` (AC17) and §4.5 require the pre-fix capture on the **post-T3 build** and cite AD20 as its authority, while the artifact's recorded scope is \"running the **T1 build** against the live instance's actual config/state\" (`owner-ticket02-evidence.json`). r17 introduced this mismatch (pre-r17 the capture was on the T1 build, matching the artifact). Fix: record a fresh owner decision naming the post-T3 build, or capture on a T1-only build and stop attributing the post-T3 run to AD20.\n- [LOW][ledger-state-drift] `issues/02-…:8` still says \"Blocked by: 01\"; canonical T2 `blockedBy` is `[\"T1\",\"T3\"]`. §6 T2 names the T3 edge but, unlike ticket 03, records no ticket supersession. Fix: coordinator records it in ticket 02.\n- [LOW][stale-citation] `spec.md:187` (C9 row) claims the order changed \"everywhere it is stated … and the historical J1/K2 currency notes\"; `spec.md:11` and `:19` still state T1→T2→T3→T4. Fix: annotate both as superseded.\n- [LOW][ac-not-falsifiable] R7 (`:214`) forbids secrets in `config_loaded`; AC8 (`:392`) names negative oracles only for the copy and `config_degraded` (`TestLastKnownGoodCopyHasNoSecrets`, `TestConfigDegradedEventHasNoSecrets`); no fixture covers `config_loaded` (exposure bounded — both fields are paths).\n\n**Verified sound (independently re-read)**\nTickets 01–04 all map to R→AC (01→AC1–5, 02→AC17–19, 03→AC6–11, 04→AC12–16); every AC has a runnable command or named evidence lane (AC17 inspection, AC18 owner lane). Anchors hold: `serve.go:108,136,139,143,145-154,282-315,317-324,339,389,397,406,409,414-420`; `loop.go:103,105,110,117-118,122,137,139,157-160,162-163,168,180,195,206-212`; `startup_failure.go:11,62,71,108-115,130`; `envelope.go:41-56,587,705,721` (only `cause` moves the pin; `stage` is already a union member); `config.go:81,97-104,381,384,433,576-592` (`single()` sets `not_checked`, so AC9 parity is achievable); `bounds.go:167-186` (`embedding.timeout: 3s` valid); `legacyStageVocabulary` has no bare `admission`; pin 130 at `config_envelope_test.go:166-170`. Envelope/effects match: state `writePaths` carry the two exact `internal/config` files (`:138-139`), T3 effects the same pair (`:296-297`), `allowedEffects` read/write/test (`:146`). Exactly-one and scan-skip semantics are oracled (AC14/AC8), and every exit path in `serve` has a named class.\n\nLimits: read-only; no tests, `effectCheck` or spec-lint executed; prior findings checked against text only.\n\n### Recommendation\nAPPROVE",
+        "stderr": "",
+        "truncated": false,
+        "durationMs": 297624,
+        "tokens": 240650,
+        "requests": 36,
+        "contextTokens": 204136,
+        "contextWindow": 1048576,
+        "modelOverride": [
+          "openrouter/deepseek/deepseek-v4.1-flash-1017:high"
+        ],
+        "resolvedModel": "openrouter/deepseek/deepseek-v4.1-flash-1017:high",
+        "resolvedModelIdentity": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+        "resolvedThinkingLevel": "high",
+        "aborted": false,
+        "usage": {
+          "input": 194611,
+          "output": 46039,
+          "cacheRead": 4884480,
+          "cacheWrite": 0,
+          "totalTokens": 5125130,
+          "reasoningTokens": 38296,
+          "cost": {
+            "input": 0.005076038663692086,
+            "output": 0.012726308835048427,
+            "cacheRead": 0.03411139250125948,
+            "cacheWrite": 0,
+            "total": 0.05191374
+          }
+        },
+        "outputPath": "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR17.md",
+        "outputMeta": {
+          "lineCount": 25,
+          "charCount": 4178
+        }
+      }
+    ],
+    "totalDurationMs": 297633,
+    "usage": {
+      "input": 194611,
+      "output": 46039,
+      "cacheRead": 4884480,
+      "cacheWrite": 0,
+      "totalTokens": 5125130,
+      "reasoningTokens": 38296,
+      "cost": {
+        "input": 0.005076038663692086,
+        "output": 0.012726308835048427,
+        "cacheRead": 0.03411139250125948,
+        "cacheWrite": 0,
+        "total": 0.05191374
+      }
+    },
+    "outputPaths": [
+      "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR17.md"
+    ]
+  }
+}

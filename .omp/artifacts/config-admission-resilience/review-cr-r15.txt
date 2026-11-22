@@ -1,0 +1,25 @@
+<task-result id="ReviewConfigAdmissionSpecCR15-2" agent="code-reviewer" status="completed" duration="3m59s">
+
+<output>
+## Code Review Summary
+**Mode:** specification (not implementation); **pass:** repair, candidate `config-admission-resilience-spec-r15`.
+**Issues:** 3 (MEDIUM 1, LOW 2).
+
+**Prior CodeReviewer ledger closure (`review-cr-r14.txt`)**
+- **LOW1 closed.** Every LIVE canonical-state citation is now field-based (`spec.md:240` state bullet, `:479-481`, `:486-500`); grep finds no live `execution-state.json:<line>` — only preserved historical ledger rows keep pins.
+- **LOW2 closed.** AC1's command (`spec.md:367`) now includes `TestListenerRuntimeFailureClass`, matching its listener-runtime clause; AC2 (`:368`) keeps the producer+entry oracle.
+- **CT14 C8 closed substantively.** `resolveSecrets` (`internal/config/diagnostics.go:630-648`; walk `:271-448`) resolves every `{env:}`/`{file:}` mapping in the document, including `tool_metadata._meta` (`internal/config/tool_metadata.go:142-148`, which permits an arbitrary mapping); `Config.resolved` (`internal/config/config.go:68,384,455`) retains the values, so an in-file `ResolvedSecrets()` is implementable. `owner-secret-inventory-authorization.json` is origin/user, explicit, and scoped to the two approved files. AC8(v)/(vi) are named (`spec.md:374`) and falsifiable.
+
+**Issues**
+- **[MEDIUM][statement-contradiction]** The envelope scope still forbids what r15 requires. `spec.md:492` bounds T3's `internal/config/config.go` to "the exported `ResolvedClientTokens()` resolver; no other change"; `:388` says "the only `internal/config` change is the widening-3 resolver pair"; `:504`'s Widening/APPROVED roll-up omits `owner-secret-inventory-authorization.json`. R8 (`:198`), T3 (`:423`), AC8/AC10 (`:374-376`) and §10 Prohibited (`:500`) require/permit the r15 `ResolvedSecrets()` accessor. Consequence: an implementer or envelope auditor applying §10's write-set line literally must reject the accessor the ACs mandate. Fix: name the accessor and the r15 artifact in `:492`, `:388`, `:504`.
+- **[LOW][stale-citation]** r15 left eight scan-input enumerations at "server, embedding, or client-token", omitting `tool_metadata`: `spec.md:332` (§4.3 slot payload — the operative AD22 gate input), `:349`, `:353`, `:355`, `:452`, `:454`, `:464`, `:469`. A literal §4.3 payload contradicts AD22/AC8(v); AC8's oracle catches it only at test time. Fix: say "any `ResolvedSecrets()` match".
+- **[LOW][stale-citation]** `spec.md:177,237,421,481,496` call `internal/config/tool_metadata.go:140-148` the tool_metadata "reference-resolution machinery"; it is the `_meta` shape gate that permits an arbitrary mapping. Resolution is the generic walk (`diagnostics.go:271-448`). Substance true; anchor characterization inaccurate.
+
+**Verified sound (not re-raised):** tickets 01→AC1–5, 02→AC17–19 (owner lane, `owner-ticket02-evidence.json`), 03→AC6–11, 04→AC12–16; exactly-one emission holds against `internal/service/loop.go:105,110,122,139,159,168` and the emission-free `Published` (`loop.go:81`, `refresh.go:455`); listener producer is reachable (`serve.go:409,414-420`); F3 B is restart-only (`wiring.go:100-123`); `embedding.timeout: 3s` is valid (`bounds.go:167-186`); T2's widening is BLOCKED-with-evidence, not claimed; no ticket item is silently dropped.
+
+**Limits:** read-only; no tests, hashes or `effectCheck` executed; test names are proposals.
+
+### Recommendation
+REQUEST CHANGES
+</output>
+</task-result>

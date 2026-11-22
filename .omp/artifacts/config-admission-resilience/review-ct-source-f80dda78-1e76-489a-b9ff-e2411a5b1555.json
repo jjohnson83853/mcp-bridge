@@ -1,0 +1,117 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "config-admission-resilience-spec-r19",
+  "revision": "r19",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+      "sha256": "df338fdec5768fc3431b2d20791a30d6546356c3cf3829eacd4bcc203c48291f"
+    },
+    {
+      "path": ".scratch/config-admission-resilience/spec.md",
+      "sha256": "4aa2eaf1058baff1220a71942228533c48e0beab8b5ec8cebf49be571f13f51b"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/diagnostics_envelope.go",
+      "sha256": "27d30dd457e9747f57254ce77200e8f14dd739998171d2d4ec68c97ada3c842e"
+    },
+    {
+      "path": "cmd/mcp-bridge/example_config_test.go",
+      "sha256": "81f856efe04649d88aedc1ad156ff4b73de5aabebdc15d28810bfa1d494b0727"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/main.go",
+      "sha256": "3619aca22141501dd66bea0af885588ed4470d80d1f11318c50b5df3feb85945"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "sha256": "6f657d754dd13c9524476e0a51fbca4b8f36f7163e0f4de0c870cb3b172b606d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "internal/config/config_test.go",
+      "sha256": "a24161dee00df60d0c7a3578408729b1a3d3a6148ba058ca9e3f249d1609ec46"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR19",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "44192e5e2905aa097e9734d7be19e0416137838b5489044375e36870cada10ba",
+      "targetCandidateId": "config-admission-resilience-spec-r19",
+      "targetRevision": "r19",
+      "taskSha256": "b6e1c751376179ddd9b5cd8bd0c3987204e29fcaca3a0d2efb7769de3462d726",
+      "instructionsSha256": "fb116d56c004d7ff9cb77ae3d233fc718494e5fbb34c0c471916490543a38311"
+    },
+    {
+      "name": "ReviewConfigAdmissionSpecCT19",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "5b45c45c6c264b03db7dd253de83c2ffedff48f9ddf2b8b75359ac8a6bd35657",
+      "targetCandidateId": "config-admission-resilience-spec-r19",
+      "targetRevision": "r19",
+      "taskSha256": "e28a6f8c2f519e71e1014ef5619c83210b5decc6b4d2eea80876a1094a6e1e73",
+      "instructionsSha256": "fb116d56c004d7ff9cb77ae3d233fc718494e5fbb34c0c471916490543a38311"
+    }
+  ],
+  "output": "Spec ID: config-admission-resilience\nRevision: r19\nFindings by ID: C10\n\n- **[MEDIUM] C10 — Serialized stderr breaks the promised opposite-stream logging fallback. Confidence: high.**\n  Evidence: `spec.md:313,363,483` requires wrapping process sinks while keeping `WriteLoggingFailureFallback` unchanged and describes its destination as the opposite stream. However, `internal/observe/log.go:64–70` selects stdout **only when `output == os.Stderr`**. The serialized stderr wrapper cannot satisfy that comparison. Existing consumers pass their supplied writer directly (`cmd/mcp-bridge/startup_failure.go:130–131`, `diagnostics_envelope.go:12–13`).\n\n  **Counterexample:** the process’s stderr write fails. The startup writer now passes wrapped stderr to the fallback helper, which selects raw stderr again—not stdout. If stderr remains broken, both the actionable startup diagnostic and its failure notification disappear despite healthy stdout. This contradicts the retained contract at `docs/logging-contract.md:46–48,548–551` and §7’s failure-visibility claim.\n\n  **Minimal amendment:** specify stream-aware fallback routing through the serialization boundary without duplicate notifications or recursive retries. Add deterministic failed-write/short-write fixtures for both severity lanes, asserting one fallback on the opposite lane. Bind these to existing compatibility/observability acceptance coverage and reconcile any required source change with task fences before implementation.\n\n  This is a **new repair consequence** of moving existing exit/validation writers behind wrappers, not a reopening of the original normal-write H2 race. The relevant changed behavior is lost stream identity; the reason earlier reviews missed it is unknown.\n\n**Verified closures and coverage**\n- CR18’s conflicting `main.go` prohibition is removed; the owner artifact explicitly authorizes T3’s addition and AC21.\n- AC21’s compile-RED explanation matches the existing `shutdownTimeout` constant.\n- C9 remains closed: canonical T2 dependencies include T1/T3; the owner evidence amendment approves post-T3 local capture.\n- Independently checked bootstrap’s two-load window, post-publication success reports, admission discrimination, static-cause restrictions, retained parse-time secret resolution, task fences and observability exceptions.\n- T2 receives neither deployment/live-probe authority nor permission to edit diagnosis-dependent paths outside its four-file fence. AC18 remains owner/operator evidence.\n\n**Limits/readiness:** read-only source/specification review; no tests, live probes or independent digest recomputation. H2’s normal-write repair is supported structurally, not runtime-verified. C10 prevents technical PASS; a repaired candidate needs fresh bound review observations. Canonical authorization/reviews remain null—this verdict grants no execution permission.\n\n### Verdict\nREVISE\n",
+  "invocationId": "f80dda78-1e76-489a-b9ff-e2411a5b1555"
+}

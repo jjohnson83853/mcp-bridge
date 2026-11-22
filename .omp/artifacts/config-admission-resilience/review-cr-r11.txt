@@ -1,0 +1,28 @@
+<task-result id="ReviewConfigAdmissionSpecCR11" agent="code-reviewer" status="completed" duration="4m57s">
+
+<output>
+## Code Review Summary
+
+**Mode:** specification, repair pass — candidate `config-admission-resilience-spec-r11` (sha256 `ff749ef…` matches `.omp/plans/execution-state.json:5-9`). Read-only; no tests, hash recomputation, or `effectCheck` run.
+
+**Prior-ledger closure.** CR10 findings closed: (1) exact two-file envelope scope, §10 + `execution-state.json:138-139`; (2) AD24(a) `operatorLogf` routing — verified `wiring.go:432-433,517-521`, `serve.go:198`, `refresh.go:456`, `loop.go:206`; stdout residual disclosed; (3) AD23 admission stage — `loop.go:137/157-159/168` precede drivers `:177-186`, `admission` disjoint from `legacyStageVocabulary` (`httpdiagnostics.go:633-638`); (4) AC5 clean-start oracle named. CT10 C6/H2/C7 closed as claimed (RED split verified at `spec.md:352,377`).
+
+### Issues
+
+- [MEDIUM][ac-not-falsifiable] AC2’s admission clause is oracled only by a T3 fixture. `spec.md:319` requires `TestStartupAdmissionFailureClassifiesAdmission`, placed in `cmd/mcp-bridge/serve_edge_test.go` (`spec.md:375`) — a T3-only path (`execution-state.json:295-306`) — while AC2 is owned by T1 (`execution-state.json:214-222`, acceptance AC2 owner `T1`) and T1 is `blockedBy []`; T1’s mandated command omits it (`spec.md:355`). `go test -run` exits 0 when the named test is absent, so T1 can record AC2 with the admission clause silently unverified. Fix: re-own AC2 at T3, or move the end-to-end admission clause into a T3-owned AC and keep AC5’s unit entry for T1.
+
+- [MEDIUM][ac-not-falsifiable] T1’s RED bucket is unattainable as written. `spec.md:352` classes `TestStartupAdmissionFailureClass` as assertion-failure RED and permits compile-RED for “exactly these two … and no other T1 test”, yet that fixture exercises the capture-set branch of the new `startupFailureForStartExit(err,true)`/`admissionStartupFailure()` (`spec.md:245`, AD23(1)) — symbols absent pre-implementation, so it cannot compile. Fix: add it to the G3 carve-out (three tests) with the reason stated.
+
+- [LOW][ledger-state-drift] Stale canonical-state evidence. `spec.md:9,192,214,432` assert revision **r10** with the `internal/config` write ROOT; the state is r11 with the two exact files (`execution-state.json:4,138-139`). The UNKNOWN’s resolution step has already landed; a literal coordinator step would re-apply an unneeded amendment. Also `:291-292` should be `:293-294`.
+
+- [LOW][stale-citation] `spec.md:246`/§3 cite `main.go:83` as the raw `writeStartupFailure` caller; the calls are `main.go:41/45/58/60` (`:83` is inside `checkConfig`). The unwritable-`main.go` residual itself stands.
+
+- [LOW][ac-not-falsifiable] AC14’s “both carrying the storage directory” (degraded branch) has no named assertion: AC6(a) asserts `config_degraded` path/line/property/class (`spec.md:323`), and `TestDegradedStartOrderLoadedThenDegraded` is described only as the ordering fixture (`spec.md:377`), so ticket 04’s “still reports the resolved storage directory” clause can pass unverified. Fix: state the `resource.path` assertion in that fixture.
+
+### Verified sound
+Ticket 01–04 items map to R1–R6/AC1–AC19 (incl. ticket-03 persistence and client-token positives, AC8(iii); ticket-04 doc base within the three owned files). Exactly-one-event design is testable: bootstrap memo (AD21) + `success`-report lane, refresh/publication paths emit nothing. AD22 scan is feasible without touching `Parse`/resolution (`Config.ClientAuth` and `resolved` retained — `config.go:63,406,433`). T2’s diagnosis-dependent widening is honestly blocked-with-evidence (AD14/AD18), with no live effect claimed. Envelope effects permit exactly the specified work (canonical `writePaths`/task sets match §10).
+
+### Recommendation
+REQUEST CHANGES
+</output>
+</task-result>

@@ -1,0 +1,23 @@
+<task-result id="ReviewConfigAdmissionSpecCR18" agent="code-reviewer" status="completed" duration="8m3s">
+
+<output>
+Specification mode, repair pass; candidate r18 (sha256 `081a6451…` matches `execution-state.json`). The dispatched ledger `review-cr-r17.txt` is absent; the CR17 record is `review-cr-r17b.txt` (APPROVE, 13 LOWs). CT17 H2 is substantively closed by strategy A: the exit/check writers join the `runContext` pair, the unsupported atomicity claim is withdrawn (`internal/observe/log.go:47-66` is a bare `Write`), the drain-expiry race is serialized, and the two raw lanes are disclosed.
+
+- [HIGH] §10 both grants and prohibits `cmd/mcp-bridge/main.go`. T3's 12-path set includes it (`spec.md:443`, `:511`; `plan.json` T3; `execution-state.json:296`), but the §10 Prohibited enumeration still names it (`spec.md:519`). T3 is the only task that can land the CT17 H2 fix, and the contradiction makes its normative scope unsatisfiable as written. Fix: remove `cmd/mcp-bridge/main.go` from the `:519` prohibited list.
+
+- [MEDIUM] The r18 owner authorization is asserted but not recorded. `spec.md:5`, `:511`, `:523` call the main.go/AC21 (+ conditional `log.go`) grant owner-authorized, but no r18 owner artifact exists under `.omp/artifacts/config-admission-resilience/` (only the r3/r4/r9/r15 `owner-*.json` files), the Widening roll-up (`:523`) cites none for r18, and the state records `"authorization": null` and `"decisions": []` (`execution-state.json:105-108`). `plan.json`/state include main.go, so the scope is structurally inside the `cmd/mcp-bridge` write root, but the authority is unverifiable and AC21 adds an AC id (S15 owner-authorization class). Fix: cite/record the decision artifact; otherwise revert main.go/AC21 and reopen H2.
+
+- [MEDIUM] The new exit-write fixture's RED claim is unattainable. `spec.md:445` lists `TestFinalExitWriteSerializedAfterDrainTimeout` under behavioral RED ("must fail as assertion failures"), but AC21 (`:405`) has it shorten `shutdownTimeout` via the package var seam and T3 creates that seam by converting the const at `cmd/mcp-bridge/serve.go:29` (`spec.md:442`). Pre-implementation `shutdownTimeout = …` is a compile error; the T3 carve-out (`:445`) covers only the resolver/inventory tests. Fix: add this fixture to the carve-out with the const→var reason, or state it uses the default 10 s budget.
+
+- [LOW] Unclosed CR17 citation findings: decision id `approve-complete-secret-inventory-authorization` at `spec.md:195`/`:523` vs `authorize-complete-secret-inventory` in `owner-secret-inventory-authorization.json`; `Config.resolved` cited as `config.go:68,384,455` at `:392`/`:442`/`:494` but the field is `:67` and the assignment `:456` (`:68` is `clientTokenHashes`); `:268` cites the ticket-02 base "T1 build" scope, omitting the `amendments[0]` post-T3 authority AC17 (`:401`) relies on; `:407` still calls the widening-3 resolver pair the only `internal/config` change, omitting `ResolvedSecrets()` (R8 `:216`).
+
+- [LOW] Unclosed CR17 oracle findings: AC1's observable includes the admission class but its `-run` (`:385`) omits `TestStartupAdmissionFailureClass` (only AC2 `:387`/AC5 `:389` run it); R7 (`:214`) covers `config_loaded`, but AC8 (`:392`) asserts only "`config_loaded` still emitted", with no secret-free oracle; AD4 (`:293`) makes `MCP_STRICT_CONFIG=1` strict while R4 (`:208`) says non-true keeps R3 and AC13 (`:397`) tests only false/yes/0.
+
+- [LOW] Unclosed CR17 ledger/state findings: T2's Dependencies (`:429`) states canonical `["T1","T3"]` but does not record ticket 02's "Blocked by: 01" as superseded (contrast ticket 03 `:441`); `:11`/`:19` still state dispatch order T1→T2→T3→T4 while `:5`/§6 use T1→T3→T2→T4; `:7` still says the r15 review was "FIFTH and FINAL — no further review remains", contradicting `:5` and the r18 round.
+
+Verified sound: tickets 01–04 map completely (01→AC1–5, 02→AC17–19, 03→AC6–11, 04→AC12–16); every AC has a runnable command or named lane; anchors re-read (`serve.go:29,100-142,282-315,389-409,414-420`; `loop.go:103-172,180,195`; `startup_failure.go:108-130`; `envelope.go:11-37,592-721` — `stage` is already unioned, only `cause` moves 130→131; `config.go:67,81,433,456`; `bounds.go:167-186` — `embedding.timeout: 3s` valid); exactly-one loaded/degraded is reachable only through the `loop.go:122`/`:168` success reports; T2's diagnosis-dependent widening is honest (AD14/AD18/AC19, no deploy effect). Limits: read-only; no tests, `effectCheck`, spec-lint or runtime verification; test names are proposals.
+
+### Recommendation
+REQUEST CHANGES
+</output>
+</task-result>

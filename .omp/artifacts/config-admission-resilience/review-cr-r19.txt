@@ -1,0 +1,40 @@
+<task-result id="ReviewConfigAdmissionSpecCR19" agent="code-reviewer" status="completed" duration="4m35s">
+
+<output>
+## Code Review Summary
+
+**Mode:** specification, repair pass (candidate r19, `config-admission-resilience`, sha256 `4aa2eaf1…f51b`). **Files reviewed:** spec + 4 tickets + CR18 ledger + 4 owner artifacts + canonical state/plan + 12 source/test anchors.
+
+**Total issues:** 2 LOW (plus 1 open question). No CRITICAL/HIGH/MEDIUM.
+
+### Issues
+
+- [LOW][stale-citation] `spec.md:262` (log.go bullet) cites `WriteJSONLine` at `:47-66` and `type Logger` at `:31-36`; verified actual anchors are `internal/observe/log.go:43` (function) and `:29-30` (type + `mu`). The spec's own §9 exception cites `log.go:43` correctly (`spec.md:483`), so the two sites disagree for one symbol. Fix: use `:43` in both places (`:121`, `:85`, `:37` are correct).
+
+- [LOW][statement-contradiction] `spec.md:387` (AC2): "the publication sentinel keeps `publication`". `startup_failure.go:93-101` emits code `publication_failed` and no stage today; stage `publication` is *new* (§4.1), so nothing is "kept". A verifier could accept code `publication`. Fix: "stage `publication`, existing code `publication_failed` unchanged".
+
+### Open Questions
+
+- [MEDIUM][ac-not-falsifiable] Confidence LOW. AC10 names `TestStartupAdmissionFailureClassifiesAdmission` as the *wired serve drain tail* oracle (`spec.md:391`, `:404`), but a validated document has no obvious deterministic admission failure: `AdmitStartup` (`internal/service/reload.go:502-521`) and `newClient` (`cmd/mcp-bridge/wiring.go:147-186`) fail only on credential-fingerprint/limit/client-construction errors, all pre-validated by `Parse`. If no config-only seam exists, the fixture needs one named. Not raised as a defect absent decisive evidence.
+
+### Closure verification (prior CR18 ledger)
+
+- **HIGH closed** — `cmd/mcp-bridge/main.go` removed from §10 Prohibited (`spec.md:521`); T3's 12-path set (`:513`) equals canonical `execution-state.json` T3 `effects.paths` and `plan.json:17`.
+- **MEDIUM closed** — `owner-envelope-widening-4.json` verified: decision `authorize-h2-sink-fix`, `origin:"user"`, `explicit:true`, `recordedAt 2026-11-22T18:17:19Z`, delta `T3 + main.go`, acceptance `+AC21`; canonical state T3 `acceptanceIds` includes AC21 (`:275-284`, `:623`).
+- **MEDIUM closed** — `TestFinalExitWriteSerializedAfterDrainTimeout` is in the T3 compile-failure carve-out with the const→var reason (`spec.md:445`); `shutdownTimeout` is in a `const` block at `serve.go:29-31`.
+- CR18 LOW advisories are retained OPEN in `spec.md:500`; not re-enumerated.
+
+### Satisfied checks (independent)
+
+- Ticket mapping: 01→AC1–5, 02→AC17–19, 03→AC6–11, 04→AC12–16; every box has an AC and a runnable command or named owner/operator evidence method.
+- Startup paths: two pre-publication loads (`serve.go:139`, `loop.go:137`); success reports only at `loop.go:122`/`:168`; publication failure returns with no report (`:117-119`, `:164-166`); `reportReload` sites `:105/:110/:122/:139/:159/:168`; drain literal `serve.go:397`, classifier `:409`, raw `serveListener` `:414-420` — all match.
+- Contracts: `stage` already in `envelopeFieldNames`: `internal/observe/envelope.go:625`; `cause` absent; pin 130 at `config_envelope_test.go:167-169`; `legacyStageVocabulary` has no bare `admission` (`httpdiagnostics.go:632-638`); `config_read` parity includes `RemainingStages:"not_checked"` (`diagnostics.go:33,520-521`); `embedding.timeout:3s` valid (`bounds.go:167-186`).
+- Envelope: writePaths carry the two exact `internal/config` files plus roots; T1/T2/T3/T4 sets match `plan.json:15-18`.
+- T2 honesty: 4-path set, AD14/AD18/AC19 blocked-on-owner, no live effect; `owner-ticket02-evidence.json` `amendments[0]` approves the post-T3 build AC17 relies on.
+
+**Limits:** read-only; no tests, `effectCheck`, spec-lint or runtime verification; test names are proposals.
+
+### Recommendation
+APPROVE
+</output>
+</task-result>

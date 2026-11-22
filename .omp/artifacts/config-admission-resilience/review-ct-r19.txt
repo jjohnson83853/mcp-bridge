@@ -1,0 +1,29 @@
+<task-result id="ReviewConfigAdmissionSpecCT19" agent="critic" status="completed" duration="2m19s">
+
+<output>
+Spec ID: config-admission-resilience
+Revision: r19
+Findings by ID: C10
+
+- **[MEDIUM] C10 — Serialized stderr breaks the promised opposite-stream logging fallback. Confidence: high.**
+  Evidence: `spec.md:313,363,483` requires wrapping process sinks while keeping `WriteLoggingFailureFallback` unchanged and describes its destination as the opposite stream. However, `internal/observe/log.go:64–70` selects stdout **only when `output == os.Stderr`**. The serialized stderr wrapper cannot satisfy that comparison. Existing consumers pass their supplied writer directly (`cmd/mcp-bridge/startup_failure.go:130–131`, `diagnostics_envelope.go:12–13`).
+
+  **Counterexample:** the process’s stderr write fails. The startup writer now passes wrapped stderr to the fallback helper, which selects raw stderr again—not stdout. If stderr remains broken, both the actionable startup diagnostic and its failure notification disappear despite healthy stdout. This contradicts the retained contract at `docs/logging-contract.md:46–48,548–551` and §7’s failure-visibility claim.
+
+  **Minimal amendment:** specify stream-aware fallback routing through the serialization boundary without duplicate notifications or recursive retries. Add deterministic failed-write/short-write fixtures for both severity lanes, asserting one fallback on the opposite lane. Bind these to existing compatibility/observability acceptance coverage and reconcile any required source change with task fences before implementation.
+
+  This is a **new repair consequence** of moving existing exit/validation writers behind wrappers, not a reopening of the original normal-write H2 race. The relevant changed behavior is lost stream identity; the reason earlier reviews missed it is unknown.
+
+**Verified closures and coverage**
+- CR18’s conflicting `main.go` prohibition is removed; the owner artifact explicitly authorizes T3’s addition and AC21.
+- AC21’s compile-RED explanation matches the existing `shutdownTimeout` constant.
+- C9 remains closed: canonical T2 dependencies include T1/T3; the owner evidence amendment approves post-T3 local capture.
+- Independently checked bootstrap’s two-load window, post-publication success reports, admission discrimination, static-cause restrictions, retained parse-time secret resolution, task fences and observability exceptions.
+- T2 receives neither deployment/live-probe authority nor permission to edit diagnosis-dependent paths outside its four-file fence. AC18 remains owner/operator evidence.
+
+**Limits/readiness:** read-only source/specification review; no tests, live probes or independent digest recomputation. H2’s normal-write repair is supported structurally, not runtime-verified. C10 prevents technical PASS; a repaired candidate needs fresh bound review observations. Canonical authorization/reviews remain null—this verdict grants no execution permission.
+
+### Verdict
+REVISE
+</output>
+</task-result>

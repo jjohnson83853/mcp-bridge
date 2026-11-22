@@ -1,0 +1,105 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "config-admission-resilience-spec-r8",
+  "revision": "r8",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+      "sha256": "df338fdec5768fc3431b2d20791a30d6546356c3cf3829eacd4bcc203c48291f"
+    },
+    {
+      "path": ".scratch/config-admission-resilience/spec.md",
+      "sha256": "c481b894577126546c8fe67a1837f5815c86667143ba9843f2a76440983e7068"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/diagnostics_envelope.go",
+      "sha256": "27d30dd457e9747f57254ce77200e8f14dd739998171d2d4ec68c97ada3c842e"
+    },
+    {
+      "path": "cmd/mcp-bridge/example_config_test.go",
+      "sha256": "81f856efe04649d88aedc1ad156ff4b73de5aabebdc15d28810bfa1d494b0727"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "sha256": "6f657d754dd13c9524476e0a51fbca4b8f36f7163e0f4de0c870cb3b172b606d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR8",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "bed7a001c9b3b6cf44606a47a21495d8b01a5ec7f5ef752aad537f1e3724620d",
+      "targetCandidateId": "config-admission-resilience-spec-r8",
+      "targetRevision": "r8",
+      "taskSha256": "1690d29c9b6ae1a680dbfb9a5abc084e4547d1eee1c2078c25ea910a64f62149",
+      "instructionsSha256": "27315a95e67113aae00c3855be311c03bb54570431dac2e4d0034f85c1f7b041"
+    },
+    {
+      "name": "ReviewConfigAdmissionSpecCT8",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "5fc062c9a887e5552dcd802181b558d8156ab2c14ab843b56798bc8112b00ca0",
+      "targetCandidateId": "config-admission-resilience-spec-r8",
+      "targetRevision": "r8",
+      "taskSha256": "cf0edae24df3e730d11448a8a79f6232635f11018f8e6bcaeb11530c52faf342",
+      "instructionsSha256": "27315a95e67113aae00c3855be311c03bb54570431dac2e4d0034f85c1f7b041"
+    }
+  ],
+  "output": "Spec ID: config-admission-resilience\nRevision: r8\nFindings by ID: C4, C5\n\n- **[HIGH] C4 — Client-token refusal weakens the persistence contract without owner approval.** `spec.md:205,282,284` refuses persistence for every configured client token—even a clean, validated document containing only references. Ticket `issues/03-last-known-good-config-fallback.md:14` requires validated configurations to become last-known-good. Such instances can therefore never acquire a fallback and continue crash-looping after an invalid edit. AD20 approves only T2’s evidence lane, not this loss of resilience. **Amendment:** specify secret-safe persistence for clean client-token configurations, obtaining any necessary path authorization; alternatively obtain explicit affected-owner approval for the acceptance change. Add a clean-token positive persistence oracle alongside the leakage negative. Confidence: high. This is an r8 repair consequence, distinct from C2’s original leakage defect.\n\n- **[HIGH] C5 — T3 cannot reach GREEN before its dependent T4.** AC6(c)/AC8 require `config_loaded` and degraded emission (`spec.md:280,282`); T3 must execute those fixtures successfully (`:334-336,352`). However, the emission calls belong exclusively to T4 (`:247,341-345`), which is blocked by T3 (`:342`). The literal schedule therefore deadlocks, or forces an ownership violation/test weakening. **Amendment:** planner-reconcile implementation ownership, verification timing and canonical dependencies into an achievable acyclic sequence while preserving every final assertion. Confidence: high. The earlier review’s reason for missing this dependency conflict is unknown.\n\n**Verified coverage:** checked tickets 01–04, canonical R/AC/task bindings and write sets, repair ledgers and source anchors. The bootstrap memo/seam addresses C1; the refusal closes the client-token leakage example but introduces C4. E3’s owner decision and C3’s receipt-only recording boundary are verified. `loop.go:103-122,136-195` supports post-publication success reporting without refresh-originated emission. Static causes prohibit runtime error text; observability uses existing sinks with documented exceptions. T2 correctly grants neither deployment nor diagnosis-dependent extra paths.\n\n**Limits and routing:** read-only static review; no tests, live probes or hash recomputation. Escalate the security/acceptance tradeoff in C4 to configured non-OpenAI `spec_critic_escalated`. Amendments require fresh candidate-bound reviews; canonical authorization/reviews remain null. This verdict grants no execution permission.\n\n### Verdict\nREVISE\n",
+  "invocationId": "0825a31a-d85b-4ea6-bf9d-3c46d81cfefd"
+}

@@ -1,0 +1,30 @@
+<task-result id="ReviewConfigAdmissionSpecCR16" agent="code-reviewer" status="completed" duration="5m58s">
+
+<output>
+Prior-ledger closure verified first, then independent re-verification of the anchors the r16 text relies on.
+
+## Code Review Summary
+Mode: specification (not implementation); pass: repair; candidate `config-admission-resilience-spec-r16` (sha256 `e5cc6e13…` matches `.omp/plans/execution-state.json`).
+
+**Prior ledger (`review-cr-r15.txt`) closure — all three closed**
+- CR15 MEDIUM closed: §10 T3 header/annotions (`spec.md:502`), Prohibited (`:510`), R8 (`:208`), roll-up (`:514`) now name `ResolvedSecrets()` + `owner-secret-inventory-authorization.json`; envelope `writePaths` and T3 `effects` remain exactly `internal/config/config.go` + `internal/config/config_test.go` (canonical state).
+- CR15 LOW (scan enumerations) closed: the phrase "server, embedding, or client-token" survives only inside the M2 finding row; `:342,:359,:363,:365,:462,:464,:479,:489` all name the complete inventory.
+- CR15 LOW (tool-metadata anchor) closed: `_meta` gate at `internal/config/tool_metadata.go:141-148` (MappingNode only), resolution by the generic walk `internal/config/diagnostics.go:271-333` (result writes `:355,:423`), retained at `internal/config/config.go:456`.
+- CT14 C8 substantively closed: inventory implementable from `Config.resolved`; owner artifact's scope is the same two files.
+
+**Findings**
+- [LOW][ledger-state-drift] Decision id mismatch: `spec.md:187` and `:514` record `approve-complete-secret-inventory-authorization`, but `.omp/artifacts/config-admission-resilience/owner-secret-inventory-authorization.json` has `"decision":"authorize-complete-secret-inventory"`. Authority is still identified by path/`origin:"user"`/`explicit:true`. Fix: cite the artifact's actual field.
+- [LOW][stale-citation] `Config.resolved` anchor off by one: `spec.md:177,189,208,247,303,384,403,433,485,491,506` cite `config.go:68,384,455`; the assignment is `internal/config/config.go:456` (`:433` digest append verified correct; `:384` resolveSecrets call correct).
+- [LOW][ac-not-falsifiable] AC1 (`spec.md:377`) omits `TestStartupAdmissionFailureClass` though its observable includes the admission class; `go test -run` exits 0 when absent (only AC5 `:381` runs it). Fix: add it to AC1's pattern.
+- [LOW][statement-contradiction] AD4 (`spec.md:285`) makes `MCP_STRICT_CONFIG=1` strict-true, but R4 (`:200`) says "unset or non-true" keeps R3 and AC13 (`:389`) tests only false/yes/0 — the `1` alias has no oracle and R4 can be read as fallback-enabled. Fix: add a `1` strict case or drop the alias.
+- [LOW][stale-citation] M1-class wording survives at `spec.md:398` ("the only `internal/config` change is the widening-3 resolver pair"), naming no r16 accessor while R8/§10 now do.
+
+**Verified sound (not re-raised)**
+Ticket mapping complete 01→AC1–5, 02→AC17–19 (owner lane `owner-ticket02-evidence.json`: `approve`, explicit, r7), 03→AC6–11, 04→AC12–16 incl. degraded `resource.path`. Design anchors match exactly: `loop.go:103,105,110,117-118,122,137,139,157,159,162-163,168`; `serve.go:136,139,143,198,306,317,322,339,397,409,414`; `Start` returns nil post-publication, so `fromStartExit` cannot see a reload capture; `single()` sets `not_checked`, so AC9 parity is achievable; `bounds.go` admits `embedding.timeout: 3s`; `restartOnlyField` includes `storage.directory`; `WriteJSONLine` is unlocked (`log.go:47-66`); Envelope has no `Stage`/`Cause` (`envelope.go:12-28`); legacy vocabulary contains `unknown`, not `admission`. Exactly-one emission is testable (reportReload call set only), secret hygiene is testable (AC8(i)–(vi)), T2 widening is BLOCKED-with-evidence, and no ticket clause is dropped by non-goals.
+
+**Limits:** read-only; no tests, hashes, or `effectCheck` executed; test names are proposals.
+
+### Recommendation
+APPROVE
+</output>
+</task-result>

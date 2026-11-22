@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "feature": "config-admission-resilience",
+  "revision": "r3",
+  "decision": "approve-envelope-widening",
+  "origin": "user",
+  "explicit": true,
+  "timedOut": false,
+  "automatic": false,
+  "recordedAt": "2026-11-22T03:10:00Z",
+  "delta": {
+    "T1": { "add": ["internal/observe/log_test.go"] },
+    "T2": { "add": ["cmd/mcp-bridge/network_startup_recovery_test.go"] }
+  },
+  "scope": "No production source paths added; no R/AC/T ids changed; T4 README already granted.",
+  "evidence": [
+    ".omp/artifacts/config-admission-resilience/review-cr-r2.txt",
+    "internal/observe/log_test.go:46-79"
+  ]
+}

@@ -1,0 +1,25 @@
+<task-result id="ReviewConfigAdmissionSpecCR20" agent="code-reviewer" status="completed" duration="6m16s">
+
+<output>
+## Code Review Summary
+
+**Mode:** specification, repair pass; candidate r20 (`84c8995b…`), reviewed against `.omp/artifacts/config-admission-resilience/review-cr-r19.txt` and the CT19 C10 closure.
+
+### Findings
+
+- [MEDIUM][statement-contradiction] `spec.md:326` (§4 Approach) states "no `internal/observe/log.go` change (it is in NO task write set)", contradicting the r20 repair it authorizes: §4.4 serialized-sink design (`spec.md:371`), T3 allowed scope/expected files (`spec.md:452`), T3's 14-path set (`spec.md:523`), and canonical `execution-state.json` T3 `effects.paths` (`internal/observe/log.go` + `log_test.go`, revision r20, matching `plan.json`). `spec.md:452` also retains the r18-only phrase "the r18 owner authorization for `log.go` is recorded but NOT exercised". A task executor reading the design summary/allowed scope is told not to touch the file its fixtures and commands require. Fix: delete the prohibition; state the r20 unwrap routing is T3's and the conditional grant is exercised.
+- [MEDIUM][statement-contradiction] `spec.md:481` (§7 Loki) says "the raw exit/validation writers remain the disclosed exceptions (AD24(b)/(c))", contradicting §4.4 (`spec.md:371`), §7 Logging (`:479`) and Transport (`:489`), and AD24(c) as rewritten at r18 (exit lane joins the pair; AC21). Only the `wiring.go:485` reload-applied stdout line and the stream-aware fallback lane remain raw. Fix: name only those two lanes.
+- [LOW][stale-citation] CR19 (i) NOT closed: `spec.md:267` still cites `log.go:47-66`/`:31-36`; verified anchors are `internal/observe/log.go:43` (`WriteJSONLine`) and `:29` (`type Logger`). §9 cites `:43` correctly, so the sites disagree.
+- [LOW][statement-contradiction] CR19 (ii) NOT closed: `spec.md:394` (AC2) says "the publication sentinel keeps `publication`"; `startup_failure.go:92-93` emits code `publication_failed` and no stage today, so stage `publication` is new (E6). Fix: "stage `publication`, code `publication_failed` unchanged".
+
+### Closure verification
+
+- CT19 C10 is substantively closed: `internal/observe/log.go:64-70` still compares raw identity; the unwrap design is coherent; all named call sites exist (`startup_failure.go:131`, `diagnostics_envelope.go:13`, `main.go:84`, `wiring.go:520`). T3's 14 paths, the `internal/observe` write root, AC21, and T3/T2/T4 `blockedBy` (`["T1"]`, `["T1","T3"]`, `["T3"]`) match canonical r20 and `plan.json`.
+- Independently re-verified: tickets 01→AC1–AC5(+AC21), 02→AC17–19, 03→AC6–11, 04→AC12–16; every ticket item has an R and an AC with a runnable command or named owner/operator evidence. Read-error parity is constructible (`config.go:576-592`, `diagnostics.go:520-526`); AD7 defines emission-time `filepath.Abs`. Exactly-one emission rests on the single success-report sites (`loop.go:122/:168`) and the emission-free `Published` closure (`serve.go:307-309`). AD22/AC4/AC8 secret fixtures are constructible. Non-goals disclose AD19 (Dockerfile) and AD20 (ticket-02 lane) rather than silently dropping them.
+- **Open question (LOW confidence, not a finding):** AC10's `TestStartupAdmissionFailureClassifiesAdmission` names no deterministic admission-failure seam; `AdmitStartup` (`internal/service/reload.go:502-521`) and `newClient` (`cmd/mcp-bridge/wiring.go:147-186`) fail only on conditions `Parse` pre-validates, and the serve harness starts from file configs (`serve_edge_test.go:103`). Unchanged from CR19.
+- **Limits:** read-only; no tests, `effectCheck`, spec-lint or runtime execution; test names are proposals.
+
+### Recommendation
+REQUEST CHANGES
+</output>
+</task-result>

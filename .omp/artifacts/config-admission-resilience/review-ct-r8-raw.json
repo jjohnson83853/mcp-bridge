@@ -1,0 +1,72 @@
+{
+  "text": "<task-result id=\"ReviewConfigAdmissionSpecCT8\" agent=\"critic\" status=\"completed\" duration=\"2m57s\">\n\n<output>\nSpec ID: config-admission-resilience\nRevision: r8\nFindings by ID: C4, C5\n\n- **[HIGH] C4 — Client-token refusal weakens the persistence contract without owner approval.** `spec.md:205,282,284` refuses persistence for every configured client token—even a clean, validated document containing only references. Ticket `issues/03-last-known-good-config-fallback.md:14` requires validated configurations to become last-known-good. Such instances can therefore never acquire a fallback and continue crash-looping after an invalid edit. AD20 approves only T2’s evidence lane, not this loss of resilience. **Amendment:** specify secret-safe persistence for clean client-token configurations, obtaining any necessary path authorization; alternatively obtain explicit affected-owner approval for the acceptance change. Add a clean-token positive persistence oracle alongside the leakage negative. Confidence: high. This is an r8 repair consequence, distinct from C2’s original leakage defect.\n\n- **[HIGH] C5 — T3 cannot reach GREEN before its dependent T4.** AC6(c)/AC8 require `config_loaded` and degraded emission (`spec.md:280,282`); T3 must execute those fixtures successfully (`:334-336,352`). However, the emission calls belong exclusively to T4 (`:247,341-345`), which is blocked by T3 (`:342`). The literal schedule therefore deadlocks, or forces an ownership violation/test weakening. **Amendment:** planner-reconcile implementation ownership, verification timing and canonical dependencies into an achievable acyclic sequence while preserving every final assertion. Confidence: high. The earlier review’s reason for missing this dependency conflict is unknown.\n\n**Verified coverage:** checked tickets 01–04, canonical R/AC/task bindings and write sets, repair ledgers and source anchors. The bootstrap memo/seam addresses C1; the refusal closes the client-token leakage example but introduces C4. E3’s owner decision and C3’s receipt-only recording boundary are verified. `loop.go:103-122,136-195` supports post-publication success reporting without refresh-originated emission. Static causes prohibit runtime error text; observability uses existing sinks with documented exceptions. T2 correctly grants neither deployment nor diagnosis-dependent extra paths.\n\n**Limits and routing:** read-only static review; no tests, live probes or hash recomputation. Escalate the security/acceptance tradeoff in C4 to configured non-OpenAI `spec_critic_escalated`. Amendments require fresh candidate-bound reviews; canonical authorization/reviews remain null. This verdict grants no execution permission.\n\n### Verdict\nREVISE\n</output>\n</task-result>",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [
+      {
+        "index": 0,
+        "id": "ReviewConfigAdmissionSpecCT8",
+        "agent": "critic",
+        "agentSource": "user",
+        "task": "Complete assignment thoroughly:\n\nAct as the independent SpecDD gate for feature config-admission-resilience r8.\n\nAssess the specification ./.scratch/config-admission-resilience/spec.md against the tickets, the canonical requirements/AC set, and the project development workflow. Decide whether implementation may start: are the requirements complete, unambiguous and non-contradictory; do ACs prove them; are the tasks and envelope sufficient and bounded; are secret-safety, compatibility and no-silent-fallback conditions explicit; does the design avoid inventing authority (especially T2 deploy and diagnosis-dependent paths)?\n\nReport blocking findings first with severity and evidence. End with a heading exactly `### Verdict` followed on the next non-empty line by exactly PASS, REVISE, or BLOCKED. Use BLOCKED only when decisive evidence is missing and you cannot reach a judgement from the cited material.",
+        "assignment": "Act as the independent SpecDD gate for feature config-admission-resilience r8.\n\nAssess the specification ./.scratch/config-admission-resilience/spec.md against the tickets, the canonical requirements/AC set, and the project development workflow. Decide whether implementation may start: are the requirements complete, unambiguous and non-contradictory; do ACs prove them; are the tasks and envelope sufficient and bounded; are secret-safety, compatibility and no-silent-fallback conditions explicit; does the design avoid inventing authority (especially T2 deploy and diagnosis-dependent paths)?\n\nReport blocking findings first with severity and evidence. End with a heading exactly `### Verdict` followed on the next non-empty line by exactly PASS, REVISE, or BLOCKED. Use BLOCKED only when decisive evidence is missing and you cannot reach a judgement from the cited material.",
+        "lastIntent": "Confirming persistence acceptance anchor",
+        "exitCode": 0,
+        "output": "Spec ID: config-admission-resilience\nRevision: r8\nFindings by ID: C4, C5\n\n- **[HIGH] C4 — Client-token refusal weakens the persistence contract without owner approval.** `spec.md:205,282,284` refuses persistence for every configured client token—even a clean, validated document containing only references. Ticket `issues/03-last-known-good-config-fallback.md:14` requires validated configurations to become last-known-good. Such instances can therefore never acquire a fallback and continue crash-looping after an invalid edit. AD20 approves only T2’s evidence lane, not this loss of resilience. **Amendment:** specify secret-safe persistence for clean client-token configurations, obtaining any necessary path authorization; alternatively obtain explicit affected-owner approval for the acceptance change. Add a clean-token positive persistence oracle alongside the leakage negative. Confidence: high. This is an r8 repair consequence, distinct from C2’s original leakage defect.\n\n- **[HIGH] C5 — T3 cannot reach GREEN before its dependent T4.** AC6(c)/AC8 require `config_loaded` and degraded emission (`spec.md:280,282`); T3 must execute those fixtures successfully (`:334-336,352`). However, the emission calls belong exclusively to T4 (`:247,341-345`), which is blocked by T3 (`:342`). The literal schedule therefore deadlocks, or forces an ownership violation/test weakening. **Amendment:** planner-reconcile implementation ownership, verification timing and canonical dependencies into an achievable acyclic sequence while preserving every final assertion. Confidence: high. The earlier review’s reason for missing this dependency conflict is unknown.\n\n**Verified coverage:** checked tickets 01–04, canonical R/AC/task bindings and write sets, repair ledgers and source anchors. The bootstrap memo/seam addresses C1; the refusal closes the client-token leakage example but introduces C4. E3’s owner decision and C3’s receipt-only recording boundary are verified. `loop.go:103-122,136-195` supports post-publication success reporting without refresh-originated emission. Static causes prohibit runtime error text; observability uses existing sinks with documented exceptions. T2 correctly grants neither deployment nor diagnosis-dependent extra paths.\n\n**Limits and routing:** read-only static review; no tests, live probes or hash recomputation. Escalate the security/acceptance tradeoff in C4 to configured non-OpenAI `spec_critic_escalated`. Amendments require fresh candidate-bound reviews; canonical authorization/reviews remain null. This verdict grants no execution permission.\n\n### Verdict\nREVISE",
+        "stderr": "",
+        "truncated": false,
+        "durationMs": 177668,
+        "tokens": 124470,
+        "requests": 8,
+        "contextTokens": 123563,
+        "contextWindow": 500000,
+        "modelOverride": [
+          "openai-codex/gpt-6.1-sol:high"
+        ],
+        "resolvedModel": "openai-codex/gpt-6.1-sol:high",
+        "resolvedModelIdentity": "openai-codex/gpt-6.1-sol",
+        "resolvedThinkingLevel": "high",
+        "aborted": false,
+        "usage": {
+          "input": 119082,
+          "output": 5388,
+          "cacheRead": 571136,
+          "cacheWrite": 0,
+          "totalTokens": 695606,
+          "reasoningTokens": 2708,
+          "cost": {
+            "input": 0.238164,
+            "output": 0.05388000000000001,
+            "cacheRead": 0.05711360000000001,
+            "cacheWrite": 0,
+            "total": 0.3491576
+          }
+        },
+        "outputPath": "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCT8.md",
+        "outputMeta": {
+          "lineCount": 14,
+          "charCount": 2611
+        }
+      }
+    ],
+    "totalDurationMs": 177677,
+    "usage": {
+      "input": 119082,
+      "output": 5388,
+      "cacheRead": 571136,
+      "cacheWrite": 0,
+      "totalTokens": 695606,
+      "reasoningTokens": 2708,
+      "cost": {
+        "input": 0.238164,
+        "output": 0.05388000000000001,
+        "cacheRead": 0.05711360000000001,
+        "cacheWrite": 0,
+        "total": 0.3491576
+      }
+    },
+    "outputPaths": [
+      "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCT8.md"
+    ]
+  }
+}

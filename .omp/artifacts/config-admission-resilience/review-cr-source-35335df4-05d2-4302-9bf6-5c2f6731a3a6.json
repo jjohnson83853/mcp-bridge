@@ -1,0 +1,105 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "config-admission-resilience-spec-r4",
+  "revision": "r4",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+      "sha256": "df338fdec5768fc3431b2d20791a30d6546356c3cf3829eacd4bcc203c48291f"
+    },
+    {
+      "path": ".scratch/config-admission-resilience/spec.md",
+      "sha256": "979ec46f7ae1f3566e33e34e5a4b7a237c693c126a142f18f270c60f67bd70b3"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/diagnostics_envelope.go",
+      "sha256": "27d30dd457e9747f57254ce77200e8f14dd739998171d2d4ec68c97ada3c842e"
+    },
+    {
+      "path": "cmd/mcp-bridge/example_config_test.go",
+      "sha256": "81f856efe04649d88aedc1ad156ff4b73de5aabebdc15d28810bfa1d494b0727"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "sha256": "6f657d754dd13c9524476e0a51fbca4b8f36f7163e0f4de0c870cb3b172b606d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR4",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "1e2d981aa7dcef0be1f4c9b2797332531934f457ab8f307e8c338f96f8f78051",
+      "targetCandidateId": "config-admission-resilience-spec-r4",
+      "targetRevision": "r4",
+      "taskSha256": "6ce9a69748527b1b5dbbf753a002b9e1f1a28100a6d3067af02caf6054660e63",
+      "instructionsSha256": "75ab9770a370748044a038f711ddce48f7507bcb2886bbbf5ad16873155c9a97"
+    },
+    {
+      "name": "ReviewConfigAdmissionSpecCT4",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "07271a79f75d7c37c4fbb091886c8999d6a446b3b132a75d719f39e2924471ef",
+      "targetCandidateId": "config-admission-resilience-spec-r4",
+      "targetRevision": "r4",
+      "taskSha256": "c2810b4555aab460592d941f6c8cf8a083b6aee9884a90e9598d0b903b157065",
+      "instructionsSha256": "75ab9770a370748044a038f711ddce48f7507bcb2886bbbf5ad16873155c9a97"
+    }
+  ],
+  "output": "**Specification mode, repair pass** — candidate `config-admission-resilience-spec-r4`; prior ledger `.omp/artifacts/config-admission-resilience/review-cr-r3.txt`. Verified against this worktree.\n\nPrior-ledger closure: **D1** closed (T1 set includes `cmd/mcp-bridge/config_envelope_test.go`, count pin 130→131; §10 matches `execution-state.json` T1 exactly). **D2** closed (§10 T2 = four write paths, no live effect; `execution-state.json:145-159`). **D4** closed (`catalogLoopFailure()` at `serve.go:314`; AD17/AC2 name both sources). **D5** closed (projections first, cell cleared, AC14 failure case). **D6** closed (AC7 names the sha256 test). **D3 partially closed** — the pending cell exists, but not the guarantee (finding 1).\n\n- [HIGH][spec-feasibility] `config_loaded`/persist can fire for a reload admission rejects. §4.3 step 4 stages the cell inside `load` (`spec.md:163`) before `Runtime.Reload` (`loop.go:103,110`), keyed only by `candidate.Fingerprint()`. For an unchanged-content reload the staged fingerprint equals the published one, so a refresh publication — same closure, `loop.go:81`, `refresh.go:454-455` — matches the cell and emits/persists *after* the reload is rejected. This violates R5 “runtime admission … MUST emit no `config_loaded`” (`spec.md:61`) and AC11 (`spec.md:207`); §4.3’s “A pending outcome from a failed admission never matches a later refresh publication” (`spec.md:171`) is false for unchanged content, and AC14’s absolute “a refresh pass … emits NO `config_loaded`” (`spec.md:210`) contradicts the race §4.3 admits. Fix: gate consumption on an admission-issued identity (needs a service-side seam or explicit owner narrowing of R5/AC11), and test a runtime-admission rejection with an unchanged candidate.\n\n- [MEDIUM][spec-conformance] R6’s “operator docs” clause is unsatisfied. `Dockerfile:26-28` says `./data` resolves against the process working directory and state lives at `/app/data`; `internal/config/config.go:380-381` resolves against the config file’s directory (spec’s own live evidence: `/app/configs/data`). R6 (`spec.md:63`) and ticket 04 item 5 require one stated base; AC15 (`spec.md:211`) checks only example/README/logging-contract, and T4’s §10 set excludes `Dockerfile`, so T4 cannot correct the wrong operator-facing statement. Add `Dockerfile` via explicit owner widening and assert it, or record an owner-gated follow-up instead of claiming closure.\n\n- [MEDIUM][spec-conformance] Ticket 02 item 1 is restated without owner approval. The ticket requires stage/cause “recorded from the live instance, quoting the typed diagnostic produced by ticket 01” (`issues/02-…md:9`). R2 (`spec.md:55`) narrows this to “using the live instance’s own config and state layout”; AC17 (`spec.md:213`) makes the evidence a LOCAL reproduction and AC18 (`spec.md:214`) verifies live only after the fix, so the typed line never comes from the live instance. `owner-envelope-widening*.json` add file paths only. Schedule an owner-lane pre-fix capture or record explicit owner approval.\n\n- [LOW] R2 mandates a code fix (`spec.md:55`), while AC19 (`spec.md:215`) and the non-goals (`spec.md:69`) permit a configuration-only remedy; reconcile.\n\n- [LOW] Stale anchors: `serve.go:389` is cited for the drain literal (`spec.md:33,53,198`) but is at `serve.go:397`; AD2’s example `config-network.last-good.yaml` (`spec.md:116`) contradicts the normative `<basename>.last-good.yaml` (yields `config-network.yaml.last-good.yaml`).\n\n- [LOW] R1 (`spec.md:53`) requires `stage`/`cause` on the `startup_publication_failed` family; AC1 (`spec.md:197`) excludes publication failures and AC2 checks only its stage/code, so that record’s cause is unverified.\n\n### Recommendation\nREQUEST CHANGES\n",
+  "invocationId": "35335df4-05d2-4302-9bf6-5c2f6731a3a6"
+}

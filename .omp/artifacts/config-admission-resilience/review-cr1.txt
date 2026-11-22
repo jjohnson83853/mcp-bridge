@@ -1,0 +1,22 @@
+<task-result id="ReviewConfigAdmissionSpecCR1" agent="code-reviewer" status="completed" duration="3m21s">
+
+<output>
+**Spec review, initial pass** (candidate `config-admission-resilience-spec-r1`). All ticket 01–04 acceptance items map to an R and an AC; the storage-rejection omission matches ticket 04 and is documented (AD10), not silent.
+
+- [HIGH] Verification is vacuous. T1/T3/T4 commands and six AC cells use `\|` in `-run` (`spec.md:167,191,203,131,133,137,139,143,144`). Go `-run` is RE2, so `\|` is a literal pipe: no test matches and `go test` exits 0 with "no tests to run". Use `|` or separate commands.
+- [HIGH] `config_loaded` and persistence execute at validation, before the restart-only guard and admission. §4.3 branch 1 (`spec.md:101`) is "before the restart-only guard" (`:99`) inside `load`, whose order is parse→guard→stage (`cmd/mcp-bridge/serve.go:110-137`). A reload rejected by `restart_required` or `Runtime.Reload` (`internal/service/loop.go:102-112`) still logs info/success and overwrites the last-known-good, contradicting R5, I4 (`spec.md:106`), AD6 "admitted reloads" (`:68`) and ticket 03's "previous successful start". Emit/persist after admission (the `Published` callback) or gate on the guard.
+- [HIGH] Admission classification contradicts itself. §4.1 maps the `loopErr` drain to `catalogLoopFailure` (`spec.md:86`) and also maps `AdmitStartup` errors on that same drain to `admissionFailure` (`:87`). Both use the one `loopErr` channel (`serve.go:338-339,359`); the tail separates only `*config.Diagnostics` and the publication sentinel (`serve.go:398-401`). T1 forbids `internal/service` changes (`spec.md:163`), so no discriminator exists, and no AC tests `admission_failed`. Specify one and add an AC.
+- [HIGH] R2's configuration fix is unauthorized. R2/§4.5 allow "code or configuration" (`spec.md:14,104`), but T2 grants read-only binds and redeploy (`:176`), forbids writes outside repo fences (`:176,257`), and the live config is a host bind (`backlog.md` MB-008); AC19's "fails pre-fix" regression test (`:148`) presumes code. Authorize the host config write (owner-gated) or exclude configuration fixes and relax AC19.
+- [MEDIUM] Copy TOCTOU: persistence re-reads the file at write time (`spec.md:94`) after validation, so a concurrent edit persists never-validated bytes (possibly inline secrets), violating R7 and ticket 03 provenance. `config.Parse(data,path)` exists (`internal/config/config.go:97`); persist the parsed bytes.
+- [MEDIUM] Fallback triggers on read errors: branches 3/4 key off any `ParseFile` error (`spec.md:105`), including `config_read` for a missing/unreadable file (`config.go:576-589`, Key `<document>`, no line), but R3/AC6 (`spec.md:16,135`) require line/property attribution. Restrict to validation diagnostics or define read-error attribution.
+- [MEDIUM] §10 conditionally grants `internal/config/**` writes "where a required seam is identified and reported" (`spec.md:251`), contradicting Widening (`:261`), T1's prohibition (`:163`) and T3's "reported, not improvised" (`:187`). Require owner authorization.
+- [MEDIUM] The "closed" stage vocabulary is unenforced: AC1 checks only non-empty/bounded (`spec.md:130`), and AD8's disjointness is false — both vocabularies contain `unknown` (`internal/observe/httpdiagnostics.go:631-637,753`). Add a membership test.
+- [LOW] Stale/incorrect anchors: `load` is `serve.go:110-139` (spec `:39` says 107-131), the startup wrap is `:141` (says 151); `internal/config/bounds.go:167-175` caps `_timeout` keys at 120s, not the 30s stated at `spec.md:41`.
+- [LOW] AC13 has no runnable command (`spec.md:142`); AC14 names no reload-success test for R5 (`:143`); AD6's "one warn" (`:68`) becomes two records per start because both pre-admission loads persist.
+
+Positive: requirement/ticket coverage is complete, envelope field additions are additive, and the config/storage/bounds contracts are not otherwise contradicted.
+
+### Recommendation
+REQUEST CHANGES
+</output>
+</task-result>

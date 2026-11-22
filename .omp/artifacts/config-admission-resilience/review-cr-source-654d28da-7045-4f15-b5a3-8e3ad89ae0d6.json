@@ -1,0 +1,101 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "config-admission-resilience-spec-r2",
+  "revision": "r2",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+      "sha256": "df338fdec5768fc3431b2d20791a30d6546356c3cf3829eacd4bcc203c48291f"
+    },
+    {
+      "path": ".scratch/config-admission-resilience/spec.md",
+      "sha256": "a6628b5c5605339e5b9f15c1e1cabcb092634530c699618f0c324681bdf45819"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/diagnostics_envelope.go",
+      "sha256": "27d30dd457e9747f57254ce77200e8f14dd739998171d2d4ec68c97ada3c842e"
+    },
+    {
+      "path": "cmd/mcp-bridge/example_config_test.go",
+      "sha256": "81f856efe04649d88aedc1ad156ff4b73de5aabebdc15d28810bfa1d494b0727"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "sha256": "6f657d754dd13c9524476e0a51fbca4b8f36f7163e0f4de0c870cb3b172b606d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR2",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "310c50b7b4daacefcfe5fcbee0486f5ba5743a8a509784c58aeeff34e5f064f5",
+      "targetCandidateId": "config-admission-resilience-spec-r2",
+      "targetRevision": "r2",
+      "taskSha256": "df3f846c49447c38bfc4aba9ddbc29e3a4d9520a846fb30cde3af7c98dab64d8",
+      "instructionsSha256": "a876f27591ce804bf53127321aace9bfce70933b1a3d82c296c83f77a490771d"
+    },
+    {
+      "name": "ReviewConfigAdmissionSpecCT2",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "cdece2f2ddd99c700668c4cfe98a7724ebb7dcdfe022db11316f16ffdb07fee2",
+      "targetCandidateId": "config-admission-resilience-spec-r2",
+      "targetRevision": "r2",
+      "taskSha256": "d26e215228762ecb69bf1299683e7064fc7d5d80d514cb2bd412881b9138bf9e",
+      "instructionsSha256": "a876f27591ce804bf53127321aace9bfce70933b1a3d82c296c83f77a490771d"
+    }
+  ],
+  "output": "**Specification mode, repair pass** (candidate `config-admission-resilience-spec-r2`). Prior ledger: F1, F2, F4, F5, F6, F7, F8, F9, F10 verified closed in r2; F3 is **not** closed (new evidence below). Independently verified: `cause` must join `EnvelopeFieldNames` (`logging_contract_test.go:78-90,116`), the startup stage vocabulary is disjoint from `unknown` (`httpdiagnostics.go:631-638`), the timeout bounds claim (`bounds.go:171-190`), and the raw-byte secret premise for all credential families (`config.go:809-812,1078`; URL userinfo rejected at `config.go:613`).\n\n- [HIGH] T1 cannot pass its mandated validation under its bound effects. `spec.md:186` requires extending \"`internal/observe` manifest/log tests\"; adding `cause` to `EnvelopeFieldNames` (required by `spec.md:90` and `logging_contract_test.go:78-90,116`) fails the exact-union literal at `internal/observe/log_test.go:46-79`. T1's canonical effects omit `internal/observe/*_test.go` (`.omp/plans/execution-state.json` T1 `effects.paths`; `plan.json:15`), while §10 claims it (`spec.md:275`). T1's own BLOCKED rule (`spec.md:193`) would halt the task instead. Fix: add `internal/observe/log_test.go` to T1's effects by owner-authorized amendment, or align §10 with the state.\n\n- [HIGH] F3 not closed: `loopErr` classification still contradicts itself. R1 (`spec.md:27`) classifies admission errors as `unclassified`; §4.1 (`spec.md:109`) says \"the `loopErr` drain path classifies to [catalog_loop]\"; AC5 (`spec.md:158`) requires `unclassified`. One channel (`serve.go:338-339,398-401`) with `internal/service` changes forbidden makes AC2 and AC5 mutually unsatisfiable. Also `Loop.Start` returns nil after publication (`internal/service/loop.go:174-195`); the only `loopErr` values are load diagnostics, admission errors, and the publication sentinel — no distinct \"catalog-loop runtime\" class exists. Fix: classify only the drain's own \"did not drain\" error (`serve.go:389`) as `catalog_loop`, leave the rest unclassified, and correct R1/AC2.\n\n- [HIGH] T2 cannot land its mandatory regression test. T2's effects are only the ticket file, `serve.go`, `startup_failure.go` (`plan.json:16`; execution-state T2 `effects.paths`), but AC19 (`spec.md:172`), T2's RED step (`spec.md:201`), and \"Production/test writes land only inside the §10 fences\" (`spec.md:199`) require a test write. §10's `cmd/mcp-bridge/*_test.go` (`spec.md:275`) is not granted by the task. Fix: add the test path to T2's effects before dispatch, and replace `cmd/mcp-bridge/**` in `spec.md:199` with the bound list.\n\n- [MEDIUM] Ticket 04's \"operator docs\" clause is unverified. R6 (`spec.md:37`) and ticket `04:15` require the storage base in \"the operator docs\", but AC15 (`spec.md:168`) checks only `config.example.yaml` and the logging contract; T4's README write is conditioned \"only where it documents `storage.directory`\" (`spec.md:223`), and README contains no such documentation today. Fix: name a real operator doc, add it to T4's effects, and assert it in AC15 (or narrow R6 with owner acknowledgement).\n\n- [MEDIUM] The degraded-record attribution claim is false for document-level diagnostics. §4.4 (`spec.md:135`) says the record \"always carries line/property attribution\"; `config_too_large` is a readable-document validation diagnostic with `Key \"<document>\"` and no line (`config.go:97-103`), and the fallback trigger includes it. R3/AC6 (`spec.md:16,159`) require line/property. Fix: restrict the fallback to value-located diagnostics, or define document-level attribution and add an AC case.\n\n- [LOW] §4.3's read-error path (`spec.md:123`) must duplicate `ParseFile`'s unexported `config_read` mapping in cmd (`config.go:576-592`); the spec asserts identical shapes but AC9 (`spec.md:162`) does not assert `Key`/`Reason`/`Shape` parity. Fix: add a parity assertion, or an exported helper behind owner authorization.\n\n### Recommendation\nREQUEST CHANGES\n",
+  "invocationId": "654d28da-7045-4f15-b5a3-8e3ad89ae0d6"
+}

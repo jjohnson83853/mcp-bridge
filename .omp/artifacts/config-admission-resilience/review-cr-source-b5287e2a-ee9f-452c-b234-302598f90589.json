@@ -1,0 +1,113 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "config-admission-resilience-spec-r14",
+  "revision": "r14",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+      "sha256": "df338fdec5768fc3431b2d20791a30d6546356c3cf3829eacd4bcc203c48291f"
+    },
+    {
+      "path": ".scratch/config-admission-resilience/spec.md",
+      "sha256": "b1e8051d5940f3c6efdcfe5706d3ebe6e1ebf594777a751018a02f9913a4125d"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/diagnostics_envelope.go",
+      "sha256": "27d30dd457e9747f57254ce77200e8f14dd739998171d2d4ec68c97ada3c842e"
+    },
+    {
+      "path": "cmd/mcp-bridge/example_config_test.go",
+      "sha256": "81f856efe04649d88aedc1ad156ff4b73de5aabebdc15d28810bfa1d494b0727"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "sha256": "6f657d754dd13c9524476e0a51fbca4b8f36f7163e0f4de0c870cb3b172b606d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "internal/config/config_test.go",
+      "sha256": "a24161dee00df60d0c7a3578408729b1a3d3a6148ba058ca9e3f249d1609ec46"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR14",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "23a72c5b214cfc9190d803fce39ab74ecc6d672b044d6744d8052b7e3ed59edd",
+      "targetCandidateId": "config-admission-resilience-spec-r14",
+      "targetRevision": "r14",
+      "taskSha256": "69095a5c1ce2308a9cbda694f12469a5200f3a8d693cc03c1f741dee9204f479",
+      "instructionsSha256": "2a824ea0adc3d6d296855cc777739278a95f8cb9aa3b4167ebbaf169769f4238"
+    },
+    {
+      "name": "ReviewConfigAdmissionSpecCT14",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "64ef5ca8b0d33ae86835044f26659b9c22bca70ed987d78fbf5a0143ae75d138",
+      "targetCandidateId": "config-admission-resilience-spec-r14",
+      "targetRevision": "r14",
+      "taskSha256": "3c137a991d43db4b247b4dd4379c94efadc51a6de38a7384ef92df46cab87ca7",
+      "instructionsSha256": "2a824ea0adc3d6d296855cc777739278a95f8cb9aa3b4167ebbaf169769f4238"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** specification, repair pass. Candidate `config-admission-resilience-spec-r14` (sha256 `b1e8051d…`, bound at `.omp/plans/execution-state.json:4-9`). Read-only; no tests, hashes or `effectCheck` run.\n\n### Prior ledger closure — `.omp/artifacts/config-admission-resilience/review-cr-r13.txt`\n- **L1 (MEDIUM) closed.** `spec.md:356` (AC2) now names the producer oracle: `TestListenerRuntimeFailureClass` drives `serveListener` with a fake `net.Listener` whose `Accept` returns a deterministic non-temporary error, asserts the cmd-owned wrapper (name + address), then the `listener`/`listener_runtime` mapping. It lives in `cmd/mcp-bridge/startup_failure_test.go` (T1's 10-path set; file exists), is matched by both AC2's and T1's `-run` patterns, and the pass-through seam is real: `serve.go:409` classifies, `serve.go:414-420` returns `server.Serve`'s error raw today, so removing the wrapper fails the fixture. The compile-RED carve-out (three tests) remains consistent.\n- **L2 (LOW) closed.** No UNKNOWN entry claims `blockedBy: []`; the residual is rewritten RESOLVED (`spec.md:252`), and the bound state carries T3 `blockedBy: [\"T1\"]` (`.omp/plans/execution-state.json:288-289`). No re-apply step remains.\n\n### Issues\n- [LOW][stale-citation] `spec.md:228,469` cite the machine-state T3 `blockedBy` as `:286-287` and T3's two `internal/config` grants as `:293-294`. In the r14-bound state, `:286` is `\"id\": \"T3\"`, `blockedBy` is at `:288-289`, and the grants at `:295-296` (`.omp/plans/execution-state.json:288-289,295-296`). The semantic facts (binding `[\"T1\"]`, exact-file pair) are true; only the anchors drifted with the r14 projection, contradicting `spec.md:228`'s claim that line numbers are stable across transitions. Confidence: HIGH. Fix: cite the fields without line numbers, or re-anchor to `:288-289`/`:295-296`.\n- [LOW][ac-not-falsifiable] AC1's observable asserts the listener-runtime record (`spec.md:355`), but AC1's verification command runs only `TestStartupFailureStageCause|TestStartupStageVocabularyMembership|TestPublicationFailureCarriesStageAndCause`; the listener oracle is named only in AC2 (`spec.md:356`) and T1's task command. A verifier executing AC1's own command records AC1 with that clause unexercised. Confidence: HIGH. Fix: add `TestListenerRuntimeFailureClass` to AC1's `-run` pattern (no new oracle).\n\n### Verified sound (spot-checked)\nTickets 01–04 map to R1–R8/AC1–AC20 (ticket 04's degraded storage-directory clause → AC14's `TestDegradedStartOrderLoadedThenDegraded`; ticket 02's live items → owner-lane AC17/AC18 under `owner-ticket02-evidence.json`, answer `approve`). Exactly-one semantics hold against `internal/service/loop.go:105,110,122,139,159,168` and the consume-on-success/clear-on-rejected hook body (`spec.md:325-326`); the AD21 memo bypasses every post-publication load, so reloads still read disk (`spec.md:313`); `startup_failure.go` constructors vs `serve.go` exit paths are consistent; `stage` is already in `EnvelopeFieldNames` (`internal/observe/envelope.go:705`); T2's diagnosis-dependent widening is handled as BLOCKED-with-evidence, not claimed.\n\n### Positive Observations\nHonest RED splits, per-AC oracle ownership, and explicit lane/limit disclosure for evidence the packet cannot produce.\n\n**Limits:** test names are proposals; no execution evidence or hash recomputation taken.\n\n### Recommendation\nAPPROVE\n",
+  "invocationId": "b5287e2a-ee9f-452c-b234-302598f90589"
+}

@@ -1,0 +1,34 @@
+<task-result id="ReviewConfigAdmissionSpecCR21" agent="code-reviewer" status="completed" duration="5m33s">
+
+<output>
+## Code Review Summary
+
+**Mode:** specification, repair pass; candidate r21.
+**Reviewed:** spec.md, tickets 01–04, CR20 ledger, owner artifacts, cited source.
+
+### Findings
+
+- [MEDIUM][statement-contradiction] §10 still contradicts the r20 `internal/observe` exercise and the per-task `internal/observe` scopes. spec.md:531 says "every other `internal/observe` path stays prohibited for every task", but T1's write set (spec.md:519) requires `internal/observe/envelope.go` + `log_test.go`, T3's set (spec.md:523) includes `log_test.go`, and spec.md:523 places T3 inside the existing `internal/observe` envelope root. spec.md:535 also records `log.go` as "conditionally authorized and NOT exercised — strategy A needs no `internal/observe` edit", contradicting spec.md:452, :523, :531, and §4.4's required unwrap routing. Consequence: a T1/T3 executor can refuse the required envelope-field/fallback-routing writes, and the r21 STATUS's "contradictions removed" claim is false at these sites. Fix: scope the prohibition to paths outside the per-task sets and record the r20 exercise in the Widening roll-up (or delete "NOT exercised"/"needs no edit").
+
+### Closure of CR20
+- (2) closed: §7:481 names only wiring.go:485 and the stream-aware fallback lane.
+- (3) closed: §3:267 uses log.go:29/37/43/85/121-124, matching §9.
+- (4) closed: AC2:394 requires stage `publication`, code `publication_failed` unchanged (startup_failure.go:92-93 emits that code, no stage today). Note: the r21 STATUS calls this an "anchor" finding; CR20 recorded a statement-contradiction.
+- (1) partly closed: §4:326 and T3:452/:523 are fixed; §10:531/:535 remain.
+
+### Independently verified
+- Tickets 01–04 map to R1–R8/AC1–AC21; each AC has a runnable command or named evidence method.
+- Exactly-one: reportReload fires only at loop.go:105/:110/:122/:139/:159/:168; Start returns nil after publication (loop.go:180-190), so a reload admission capture cannot reach a start-exit classification.
+- Source: bounds.go:167-186 admits `embedding.timeout: 3s`; wiring.go:100-123 marks storage.directory restart-only; config.go:97-104/576-592 match AC6/AC9; diagnostics_envelope.go:41-56 maps PropertyPath verbatim; log.go:43 is unlocked and log.go:64-70 compares raw identity (the r20 target).
+- AC8's six secret fixtures and AC14's exactly-one fixtures are falsifiable; non-goals disclose AD19/AD20 rather than dropping ticket items.
+
+### Open question (LOW confidence)
+- AC10's `TestStartupAdmissionFailureClassifiesAdmission` must drive the real `serve` drain tail, but the direct `service.NewLoop` seam (serve_edge_test.go:172/:286) bypasses it and no config/state-driven admission failure is named (a durable-snapshot catalog collision is a candidate).
+
+### Positive observations
+- The bootstrap memo closes the C1 inter-load window deterministically; refresh publications are structurally emission-free; T2 diagnosis-dependent widening is BLOCKED-with-evidence, not silently widened.
+
+### Recommendation
+REQUEST CHANGES
+</output>
+</task-result>

@@ -1,0 +1,72 @@
+{
+  "text": "<task-result id=\"ReviewConfigAdmissionSpecCT6\" agent=\"critic\" status=\"completed\" duration=\"3m22s\">\n\n<output>\nSpec ID: config-admission-resilience\nRevision: r6\nFindings by ID: C1, C2, E3 (reopened), C3\n\n- **[HIGH] C1 — Bootstrap can admit a different configuration than its resources use.** `spec.md:201-207,344` omits the initial load at `cmd/mcp-bridge/serve.go:139`. That load configures storage/listeners (`:154,317-324`); `internal/service/loop.go:137` loads again while published settings remain nil. An intervening A→B edit can therefore admit, persist and report B while resources still use A. **Amendment:** define one consistent bootstrap snapshot, or reject incompatible changes between these loads; extend AC6/AC14 with normal/degraded inter-load mutation fixtures. Confidence: high.\n\n- **[HIGH] C2 — Raw-copy secret safety does not follow from credential-field validation.** `spec.md:124,152,193` assumes reference-only credentials prove the entire raw document secret-free. YAML comments remain accepted (`internal/config/fingerprint_test.go:83-91`); a valid document referencing an environment token can also contain that token in a comment. Exact-byte persistence copies it, violating R7 (`spec.md:91`), while AC8’s ordinary reference fixture can pass. **Amendment:** specify enforceable persistence safety covering comments and other noncredential text, with negative fixtures; do not weaken R7 without owner confirmation. Confidence: high. Coordinator should escalate this security disagreement to configured non-OpenAI `spec_critic_escalated`.\n\n- **[HIGH] E3 reopened — AC17 still cannot establish the approved live-evidence requirement.** Ticket `issues/02-diagnose-and-fix-network-startup-loop.md:9` requires the typed diagnostic **from the live instance**. `spec.md:81,170,252` permits local capture plus a PENDING interpretation marker instead. Acknowledging the conflict preserves provenance but does not close the acceptance mismatch. **Amendment:** require a bound owner decision, or schedule owner/operator pre-fix capture after T1 deployment as a prerequisite to satisfying R2. Do not grant T2 deployment authority. Confidence: high. This is the original E3 invariant, not a new finding; the earlier closure’s sufficiency was unsupported.\n\n- **[MEDIUM] C3 — T4 is instructed to write outside its fence.** `spec.md:169` explicitly says T4 writes the follow-up into ticket 04, but T4’s specification/canonical write sets exclude that ticket (`spec.md:305,363`; `.omp/plans/execution-state.json:319-334`). **Amendment:** return the follow-up through the receipt for an authorized coordinator record, or obtain explicit path authorization. Confidence: high.\n\nVerified: G1’s effective-candidate repair, G2’s oracle/path binding and G4’s property mapping; reload-success reporting follows publication and excludes refresh callbacks. T2’s diagnosis-dependent path escalation and live-effect prohibitions remain explicit.\n\nLimits: static read-only review; no tests, live verification or hash recomputation. Earlier APPROVE is not closure evidence. Amendments require fresh candidate-bound reviews; no execution permission is granted.\n\n### Verdict\nREVISE\n</output>\n</task-result>",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [
+      {
+        "index": 0,
+        "id": "ReviewConfigAdmissionSpecCT6",
+        "agent": "critic",
+        "agentSource": "user",
+        "task": "Complete assignment thoroughly:\n\nAct as the independent SpecDD gate for feature config-admission-resilience r6.\n\nAssess the specification ./.scratch/config-admission-resilience/spec.md against the tickets, the canonical requirements/AC set, and the project development workflow. Decide whether implementation may start: are the requirements complete, unambiguous and non-contradictory; do ACs prove them; are the tasks and envelope sufficient and bounded; are secret-safety, compatibility and no-silent-fallback conditions explicit; does the design avoid inventing authority (especially T2 deploy and diagnosis-dependent paths)?\n\nReport blocking findings first with severity and evidence. End with a heading exactly `### Verdict` followed on the next non-empty line by exactly PASS, REVISE, or BLOCKED. Use BLOCKED only when decisive evidence is missing and you cannot reach a judgement from the cited material.",
+        "assignment": "Act as the independent SpecDD gate for feature config-admission-resilience r6.\n\nAssess the specification ./.scratch/config-admission-resilience/spec.md against the tickets, the canonical requirements/AC set, and the project development workflow. Decide whether implementation may start: are the requirements complete, unambiguous and non-contradictory; do ACs prove them; are the tasks and envelope sufficient and bounded; are secret-safety, compatibility and no-silent-fallback conditions explicit; does the design avoid inventing authority (especially T2 deploy and diagnosis-dependent paths)?\n\nReport blocking findings first with severity and evidence. End with a heading exactly `### Verdict` followed on the next non-empty line by exactly PASS, REVISE, or BLOCKED. Use BLOCKED only when decisive evidence is missing and you cannot reach a judgement from the cited material.",
+        "lastIntent": "Locating shared state verification claims",
+        "exitCode": 0,
+        "output": "Spec ID: config-admission-resilience\nRevision: r6\nFindings by ID: C1, C2, E3 (reopened), C3\n\n- **[HIGH] C1 — Bootstrap can admit a different configuration than its resources use.** `spec.md:201-207,344` omits the initial load at `cmd/mcp-bridge/serve.go:139`. That load configures storage/listeners (`:154,317-324`); `internal/service/loop.go:137` loads again while published settings remain nil. An intervening A→B edit can therefore admit, persist and report B while resources still use A. **Amendment:** define one consistent bootstrap snapshot, or reject incompatible changes between these loads; extend AC6/AC14 with normal/degraded inter-load mutation fixtures. Confidence: high.\n\n- **[HIGH] C2 — Raw-copy secret safety does not follow from credential-field validation.** `spec.md:124,152,193` assumes reference-only credentials prove the entire raw document secret-free. YAML comments remain accepted (`internal/config/fingerprint_test.go:83-91`); a valid document referencing an environment token can also contain that token in a comment. Exact-byte persistence copies it, violating R7 (`spec.md:91`), while AC8’s ordinary reference fixture can pass. **Amendment:** specify enforceable persistence safety covering comments and other noncredential text, with negative fixtures; do not weaken R7 without owner confirmation. Confidence: high. Coordinator should escalate this security disagreement to configured non-OpenAI `spec_critic_escalated`.\n\n- **[HIGH] E3 reopened — AC17 still cannot establish the approved live-evidence requirement.** Ticket `issues/02-diagnose-and-fix-network-startup-loop.md:9` requires the typed diagnostic **from the live instance**. `spec.md:81,170,252` permits local capture plus a PENDING interpretation marker instead. Acknowledging the conflict preserves provenance but does not close the acceptance mismatch. **Amendment:** require a bound owner decision, or schedule owner/operator pre-fix capture after T1 deployment as a prerequisite to satisfying R2. Do not grant T2 deployment authority. Confidence: high. This is the original E3 invariant, not a new finding; the earlier closure’s sufficiency was unsupported.\n\n- **[MEDIUM] C3 — T4 is instructed to write outside its fence.** `spec.md:169` explicitly says T4 writes the follow-up into ticket 04, but T4’s specification/canonical write sets exclude that ticket (`spec.md:305,363`; `.omp/plans/execution-state.json:319-334`). **Amendment:** return the follow-up through the receipt for an authorized coordinator record, or obtain explicit path authorization. Confidence: high.\n\nVerified: G1’s effective-candidate repair, G2’s oracle/path binding and G4’s property mapping; reload-success reporting follows publication and excludes refresh callbacks. T2’s diagnosis-dependent path escalation and live-effect prohibitions remain explicit.\n\nLimits: static read-only review; no tests, live verification or hash recomputation. Earlier APPROVE is not closure evidence. Amendments require fresh candidate-bound reviews; no execution permission is granted.\n\n### Verdict\nREVISE",
+        "stderr": "",
+        "truncated": false,
+        "durationMs": 202882,
+        "tokens": 129723,
+        "requests": 8,
+        "contextTokens": 128622,
+        "contextWindow": 500000,
+        "modelOverride": [
+          "openai-codex/gpt-6.1-sol:high"
+        ],
+        "resolvedModel": "openai-codex/gpt-6.1-sol:high",
+        "resolvedModelIdentity": "openai-codex/gpt-6.1-sol",
+        "resolvedThinkingLevel": "high",
+        "aborted": false,
+        "usage": {
+          "input": 122975,
+          "output": 6748,
+          "cacheRead": 562560,
+          "cacheWrite": 0,
+          "totalTokens": 692283,
+          "reasoningTokens": 3896,
+          "cost": {
+            "input": 0.24594999999999997,
+            "output": 0.06748,
+            "cacheRead": 0.05625600000000001,
+            "cacheWrite": 0,
+            "total": 0.36968599999999996
+          }
+        },
+        "outputPath": "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCT6.md",
+        "outputMeta": {
+          "lineCount": 18,
+          "charCount": 3063
+        }
+      }
+    ],
+    "totalDurationMs": 202891,
+    "usage": {
+      "input": 122975,
+      "output": 6748,
+      "cacheRead": 562560,
+      "cacheWrite": 0,
+      "totalTokens": 692283,
+      "reasoningTokens": 3896,
+      "cost": {
+        "input": 0.24594999999999997,
+        "output": 0.06748,
+        "cacheRead": 0.05625600000000001,
+        "cacheWrite": 0,
+        "total": 0.36968599999999996
+      }
+    },
+    "outputPaths": [
+      "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCT6.md"
+    ]
+  }
+}

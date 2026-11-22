@@ -1,0 +1,113 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "config-admission-resilience-spec-r14",
+  "revision": "r14",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+      "sha256": "df338fdec5768fc3431b2d20791a30d6546356c3cf3829eacd4bcc203c48291f"
+    },
+    {
+      "path": ".scratch/config-admission-resilience/spec.md",
+      "sha256": "b1e8051d5940f3c6efdcfe5706d3ebe6e1ebf594777a751018a02f9913a4125d"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/diagnostics_envelope.go",
+      "sha256": "27d30dd457e9747f57254ce77200e8f14dd739998171d2d4ec68c97ada3c842e"
+    },
+    {
+      "path": "cmd/mcp-bridge/example_config_test.go",
+      "sha256": "81f856efe04649d88aedc1ad156ff4b73de5aabebdc15d28810bfa1d494b0727"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "sha256": "6f657d754dd13c9524476e0a51fbca4b8f36f7163e0f4de0c870cb3b172b606d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "internal/config/config_test.go",
+      "sha256": "a24161dee00df60d0c7a3578408729b1a3d3a6148ba058ca9e3f249d1609ec46"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR14",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "23a72c5b214cfc9190d803fce39ab74ecc6d672b044d6744d8052b7e3ed59edd",
+      "targetCandidateId": "config-admission-resilience-spec-r14",
+      "targetRevision": "r14",
+      "taskSha256": "69095a5c1ce2308a9cbda694f12469a5200f3a8d693cc03c1f741dee9204f479",
+      "instructionsSha256": "2a824ea0adc3d6d296855cc777739278a95f8cb9aa3b4167ebbaf169769f4238"
+    },
+    {
+      "name": "ReviewConfigAdmissionSpecCT14",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "64ef5ca8b0d33ae86835044f26659b9c22bca70ed987d78fbf5a0143ae75d138",
+      "targetCandidateId": "config-admission-resilience-spec-r14",
+      "targetRevision": "r14",
+      "taskSha256": "3c137a991d43db4b247b4dd4379c94efadc51a6de38a7384ef92df46cab87ca7",
+      "instructionsSha256": "2a824ea0adc3d6d296855cc777739278a95f8cb9aa3b4167ebbaf169769f4238"
+    }
+  ],
+  "output": "Spec ID: config-admission-resilience\nRevision: r14\nFindings by ID: C8\n\n- **[HIGH] C8 — AD22’s secret inventory is incomplete.** `.scratch/config-admission-resilience/spec.md:281,352` claims complete coverage using server credentials, embedding credentials and client tokens. However, `internal/config/tool_metadata.go:140-148` accepts arbitrary `_meta` mappings, and `internal/config/diagnostics.go:283-290,341-356` resolves nested `{env: NAME}` mappings as secrets. A valid document containing `tool_metadata.defaults._meta: {env: META_SECRET}` and that resolved value in a YAML comment therefore reaches persistence without that value entering the specified scan. The copy leaks resolved secret material, violating R7 (`spec.md:184`) and ticket 03.\n\n  **Minimal amendment:** reconcile AD22 and AC8 with the complete parse-time secret-reference inventory, preserving snapshot semantics. Add a deterministic metadata-reference/comment negative fixture and retain clean-config persistence. Obtain affected-owner authorization if this requires an accessor beyond the currently approved client-token resolver; do not invent that authority. This is a new instance of the earlier C2/F1 incomplete-inventory class, not a failure of their original server/client-token fixtures. Reason for the earlier miss: unknown. **Confidence: high; source-established, not executed.**\n\n**Verified coverage**\n- Tickets 01–04 and canonical R1–R8/AC1–AC20/task bindings were inspected.\n- CR13-L1 is repaired **in the specification**: the proposed listener oracle now drives producer → wrapper → classifier. L2’s T3 `blockedBy:[\"T1\"]` binding exists in canonical state.\n- `internal/service/loop.go:102-195` supports post-publication success reporting and driver ordering; the bootstrap memo addresses the two-load window.\n- Static causes prohibit runtime-error text. Strict/read-error/reload precedence and degraded attribution are explicit.\n- T2’s four-file fence, diagnosis-dependent blocking and owner/operator-only deployment/live verification preserve authority. The evidence-lane approval grants no live effects.\n- Section 7 uses existing logging infrastructure and documents observability exceptions; these do not excuse C8.\n\n**Limits and consequences:** read-only static review; no tests, live probes or hash recomputation. T3’s secret-safety acceptance remains unsatisfied; amendment requires fresh candidate-bound reviews. Canonical authorization/reviews are null, so this review grants no execution permission. Coordinator should escalate C8’s security/compatibility resolution to configured non-OpenAI `spec_critic_escalated`.\n\n### Verdict\nREVISE\n",
+  "invocationId": "e033896c-ef67-496b-8d9c-ca2398859240"
+}

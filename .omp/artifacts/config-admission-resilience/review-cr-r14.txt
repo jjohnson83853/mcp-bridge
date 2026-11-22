@@ -1,0 +1,27 @@
+<task-result id="ReviewConfigAdmissionSpecCR14" agent="code-reviewer" status="completed" duration="3m42s">
+
+<output>
+## Code Review Summary
+
+**Mode:** specification, repair pass. Candidate `config-admission-resilience-spec-r14` (sha256 `b1e8051d…`, bound at `.omp/plans/execution-state.json:4-9`). Read-only; no tests, hashes or `effectCheck` run.
+
+### Prior ledger closure — `.omp/artifacts/config-admission-resilience/review-cr-r13.txt`
+- **L1 (MEDIUM) closed.** `spec.md:356` (AC2) now names the producer oracle: `TestListenerRuntimeFailureClass` drives `serveListener` with a fake `net.Listener` whose `Accept` returns a deterministic non-temporary error, asserts the cmd-owned wrapper (name + address), then the `listener`/`listener_runtime` mapping. It lives in `cmd/mcp-bridge/startup_failure_test.go` (T1's 10-path set; file exists), is matched by both AC2's and T1's `-run` patterns, and the pass-through seam is real: `serve.go:409` classifies, `serve.go:414-420` returns `server.Serve`'s error raw today, so removing the wrapper fails the fixture. The compile-RED carve-out (three tests) remains consistent.
+- **L2 (LOW) closed.** No UNKNOWN entry claims `blockedBy: []`; the residual is rewritten RESOLVED (`spec.md:252`), and the bound state carries T3 `blockedBy: ["T1"]` (`.omp/plans/execution-state.json:288-289`). No re-apply step remains.
+
+### Issues
+- [LOW][stale-citation] `spec.md:228,469` cite the machine-state T3 `blockedBy` as `:286-287` and T3's two `internal/config` grants as `:293-294`. In the r14-bound state, `:286` is `"id": "T3"`, `blockedBy` is at `:288-289`, and the grants at `:295-296` (`.omp/plans/execution-state.json:288-289,295-296`). The semantic facts (binding `["T1"]`, exact-file pair) are true; only the anchors drifted with the r14 projection, contradicting `spec.md:228`'s claim that line numbers are stable across transitions. Confidence: HIGH. Fix: cite the fields without line numbers, or re-anchor to `:288-289`/`:295-296`.
+- [LOW][ac-not-falsifiable] AC1's observable asserts the listener-runtime record (`spec.md:355`), but AC1's verification command runs only `TestStartupFailureStageCause|TestStartupStageVocabularyMembership|TestPublicationFailureCarriesStageAndCause`; the listener oracle is named only in AC2 (`spec.md:356`) and T1's task command. A verifier executing AC1's own command records AC1 with that clause unexercised. Confidence: HIGH. Fix: add `TestListenerRuntimeFailureClass` to AC1's `-run` pattern (no new oracle).
+
+### Verified sound (spot-checked)
+Tickets 01–04 map to R1–R8/AC1–AC20 (ticket 04's degraded storage-directory clause → AC14's `TestDegradedStartOrderLoadedThenDegraded`; ticket 02's live items → owner-lane AC17/AC18 under `owner-ticket02-evidence.json`, answer `approve`). Exactly-one semantics hold against `internal/service/loop.go:105,110,122,139,159,168` and the consume-on-success/clear-on-rejected hook body (`spec.md:325-326`); the AD21 memo bypasses every post-publication load, so reloads still read disk (`spec.md:313`); `startup_failure.go` constructors vs `serve.go` exit paths are consistent; `stage` is already in `EnvelopeFieldNames` (`internal/observe/envelope.go:705`); T2's diagnosis-dependent widening is handled as BLOCKED-with-evidence, not claimed.
+
+### Positive Observations
+Honest RED splits, per-AC oracle ownership, and explicit lane/limit disclosure for evidence the packet cannot produce.
+
+**Limits:** test names are proposals; no execution evidence or hash recomputation taken.
+
+### Recommendation
+APPROVE
+</output>
+</task-result>

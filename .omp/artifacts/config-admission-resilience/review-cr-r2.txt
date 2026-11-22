@@ -1,0 +1,21 @@
+<task-result id="ReviewConfigAdmissionSpecCR2" agent="code-reviewer" status="completed" duration="4m30s">
+
+<output>
+**Specification mode, repair pass** (candidate `config-admission-resilience-spec-r2`). Prior ledger: F1, F2, F4, F5, F6, F7, F8, F9, F10 verified closed in r2; F3 is **not** closed (new evidence below). Independently verified: `cause` must join `EnvelopeFieldNames` (`logging_contract_test.go:78-90,116`), the startup stage vocabulary is disjoint from `unknown` (`httpdiagnostics.go:631-638`), the timeout bounds claim (`bounds.go:171-190`), and the raw-byte secret premise for all credential families (`config.go:809-812,1078`; URL userinfo rejected at `config.go:613`).
+
+- [HIGH] T1 cannot pass its mandated validation under its bound effects. `spec.md:186` requires extending "`internal/observe` manifest/log tests"; adding `cause` to `EnvelopeFieldNames` (required by `spec.md:90` and `logging_contract_test.go:78-90,116`) fails the exact-union literal at `internal/observe/log_test.go:46-79`. T1's canonical effects omit `internal/observe/*_test.go` (`.omp/plans/execution-state.json` T1 `effects.paths`; `plan.json:15`), while §10 claims it (`spec.md:275`). T1's own BLOCKED rule (`spec.md:193`) would halt the task instead. Fix: add `internal/observe/log_test.go` to T1's effects by owner-authorized amendment, or align §10 with the state.
+
+- [HIGH] F3 not closed: `loopErr` classification still contradicts itself. R1 (`spec.md:27`) classifies admission errors as `unclassified`; §4.1 (`spec.md:109`) says "the `loopErr` drain path classifies to [catalog_loop]"; AC5 (`spec.md:158`) requires `unclassified`. One channel (`serve.go:338-339,398-401`) with `internal/service` changes forbidden makes AC2 and AC5 mutually unsatisfiable. Also `Loop.Start` returns nil after publication (`internal/service/loop.go:174-195`); the only `loopErr` values are load diagnostics, admission errors, and the publication sentinel — no distinct "catalog-loop runtime" class exists. Fix: classify only the drain's own "did not drain" error (`serve.go:389`) as `catalog_loop`, leave the rest unclassified, and correct R1/AC2.
+
+- [HIGH] T2 cannot land its mandatory regression test. T2's effects are only the ticket file, `serve.go`, `startup_failure.go` (`plan.json:16`; execution-state T2 `effects.paths`), but AC19 (`spec.md:172`), T2's RED step (`spec.md:201`), and "Production/test writes land only inside the §10 fences" (`spec.md:199`) require a test write. §10's `cmd/mcp-bridge/*_test.go` (`spec.md:275`) is not granted by the task. Fix: add the test path to T2's effects before dispatch, and replace `cmd/mcp-bridge/**` in `spec.md:199` with the bound list.
+
+- [MEDIUM] Ticket 04's "operator docs" clause is unverified. R6 (`spec.md:37`) and ticket `04:15` require the storage base in "the operator docs", but AC15 (`spec.md:168`) checks only `config.example.yaml` and the logging contract; T4's README write is conditioned "only where it documents `storage.directory`" (`spec.md:223`), and README contains no such documentation today. Fix: name a real operator doc, add it to T4's effects, and assert it in AC15 (or narrow R6 with owner acknowledgement).
+
+- [MEDIUM] The degraded-record attribution claim is false for document-level diagnostics. §4.4 (`spec.md:135`) says the record "always carries line/property attribution"; `config_too_large` is a readable-document validation diagnostic with `Key "<document>"` and no line (`config.go:97-103`), and the fallback trigger includes it. R3/AC6 (`spec.md:16,159`) require line/property. Fix: restrict the fallback to value-located diagnostics, or define document-level attribution and add an AC case.
+
+- [LOW] §4.3's read-error path (`spec.md:123`) must duplicate `ParseFile`'s unexported `config_read` mapping in cmd (`config.go:576-592`); the spec asserts identical shapes but AC9 (`spec.md:162`) does not assert `Key`/`Reason`/`Shape` parity. Fix: add a parity assertion, or an exported helper behind owner authorization.
+
+### Recommendation
+REQUEST CHANGES
+</output>
+</task-result>

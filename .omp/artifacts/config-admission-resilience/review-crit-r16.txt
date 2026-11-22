@@ -1,0 +1,26 @@
+<task-result id="ReviewConfigAdmissionSpecCT16" agent="critic" status="completed" duration="2m15s">
+
+<output>
+Spec ID: config-admission-resilience
+Revision: r16
+Findings by ID: C9
+
+- **[HIGH] C9 — T2 runs before the admission diagnostic it needs exists.** `.scratch/config-admission-resilience/spec.md:407` explicitly leaves the real drain tail calling `startupFailureForError(err)` with admission capture **false until T3**. Yet `:420-421,454` require T1 → T2 → T3 and instruct T2 to diagnose using the post-T1 binary. Counterexample: startup admission rejects the network instance’s configuration. `internal/service/loop.go:157-160` reports `admission_failed` then returns the error; `cmd/mcp-bridge/serve.go:409` classifies it through the old entry. Under the specified post-T1 implementation, that entry delegates with false, producing `unclassified/internal_error`, not the required admission diagnosis. T1’s unit oracle cannot establish that T2’s executable emits the typed class.
+
+  **Consequence:** AC17’s failing-stage capture is unattainable for this expressly supported incident class at T2’s scheduled execution point. The downstream T3 repair cannot satisfy an upstream prerequisite retroactively.
+
+  **Minimal amendment:** make complete, wired R1 diagnostics a prerequisite of T2’s capture. Reconcile implementation ownership, total writer order and canonical dependencies accordingly, within existing fences; preserve the approved actual-layout/pre-fix evidence lane and owner/operator-only live effects. Require a behavioral oracle observing the wired admission diagnostic in the prerequisite build—not merely a classifier unit call.
+
+  **Confidence: high.** New cross-task instance of the lifecycle/dependency class, not reopening C6’s proposed classifier repair. Reason for the earlier miss: unknown.
+
+**Verified coverage and limits**
+- Inspected tickets 01–04, canonical R1–R8/AC1–AC20, task effects/dependencies, current CodeReviewer evidence and W09E.
+- Source supports the two-load bootstrap window, memo requirement, post-publication success-report lane and startup/reload discriminator.
+- C8’s proposed complete-inventory repair is supported by retained `Config.resolved` and the owner’s two-file authorization. Static causes exclude runtime-error text.
+- T2’s diagnosis-dependent path blocking and explicit prohibition on deployment/live probes preserve authority. Section 7 names existing logging infrastructure and justified observability exceptions.
+- Read-only static review: no tests, live probes or independent digest recomputation. T2 readiness remains unresolved; amend and obtain fresh candidate-bound observations. Canonical authorization/reviews are null; this report grants no execution permission.
+
+### Verdict
+REVISE
+</output>
+</task-result>

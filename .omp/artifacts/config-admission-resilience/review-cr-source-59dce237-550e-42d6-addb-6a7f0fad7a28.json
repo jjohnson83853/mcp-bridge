@@ -1,0 +1,105 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "config-admission-resilience-spec-r8",
+  "revision": "r8",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+      "sha256": "df338fdec5768fc3431b2d20791a30d6546356c3cf3829eacd4bcc203c48291f"
+    },
+    {
+      "path": ".scratch/config-admission-resilience/spec.md",
+      "sha256": "c481b894577126546c8fe67a1837f5815c86667143ba9843f2a76440983e7068"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/diagnostics_envelope.go",
+      "sha256": "27d30dd457e9747f57254ce77200e8f14dd739998171d2d4ec68c97ada3c842e"
+    },
+    {
+      "path": "cmd/mcp-bridge/example_config_test.go",
+      "sha256": "81f856efe04649d88aedc1ad156ff4b73de5aabebdc15d28810bfa1d494b0727"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "sha256": "6f657d754dd13c9524476e0a51fbca4b8f36f7163e0f4de0c870cb3b172b606d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR8",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "bed7a001c9b3b6cf44606a47a21495d8b01a5ec7f5ef752aad537f1e3724620d",
+      "targetCandidateId": "config-admission-resilience-spec-r8",
+      "targetRevision": "r8",
+      "taskSha256": "1690d29c9b6ae1a680dbfb9a5abc084e4547d1eee1c2078c25ea910a64f62149",
+      "instructionsSha256": "27315a95e67113aae00c3855be311c03bb54570431dac2e4d0034f85c1f7b041"
+    },
+    {
+      "name": "ReviewConfigAdmissionSpecCT8",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "5fc062c9a887e5552dcd802181b558d8156ab2c14ab843b56798bc8112b00ca0",
+      "targetCandidateId": "config-admission-resilience-spec-r8",
+      "targetRevision": "r8",
+      "taskSha256": "cf0edae24df3e730d11448a8a79f6232635f11018f8e6bcaeb11530c52faf342",
+      "instructionsSha256": "27315a95e67113aae00c3855be311c03bb54570431dac2e4d0034f85c1f7b041"
+    }
+  ],
+  "output": "**Mode:** specification (feasibility/correctness), repair pass; candidate `config-admission-resilience-spec-r8`; read-only, no tests executed.\n\n**Prior ledger (CR7 F1–F9): all nine verified closed; none re-raised.**\n- **F1** — `Config.ClientTokenHashes()` (internal/config/config.go:81) returns sha256 digests only; it is populated in the parse-time resolution pass (config.go:433), and a validated `client_auth.bearer_tokens` document always yields ≥1 digest (unresolvable → `reference_unresolved`, config.go:927-944). `len(candidate.ClientTokenHashes())>0` is therefore a sound exported refusal predicate; AC8(iii) added.\n- **F2** — deterministic seam now specified (spec.md:234, AD21-r8): cmd hook, nil in production, `t.Cleanup` reset, both memo-falsifiers. Feasible: tests already drive `serveWithToolPageSize` and SIGHUP (serve_hybrid_progressive_reveal_test.go:311; serve_hybrid_metadata_defaults_test.go:284).\n- **F3** — B changes `storage.directory`; guard rejects (wiring.go:115-116).\n- **F4/F5** — hook body split T3 persist/clear vs T4 emission (§6/§10, AC10); §10 readPaths/effects mirror `.omp/plans/execution-state.json:120-147`; whole-repo and build claims removed.\n- **F6–F9** — `-race` added; AC12's unobservable clause replaced by I5; settings via staged holder with `Load` unchanged (loop.go:103,137); fingerprint payload removed.\n\n**Scope/coverage.** T1/T2/T3/T4 = 10/4/9/10 paths, mirroring canonical; no `Dockerfile`, no `internal/config`, no T2 live effect; T2 diagnosis-dependence is BLOCKED-with-evidence plus owner-lane AC18 (honest). Tickets 01–04 each map to an R and a runnable oracle; AC15's named tests genuinely do not exist today. Exactly-one emission still holds on the verified call-site set (loop.go:105,110,122,139,159,168; refresh.go:455 never reports). AC14's E1 fixture is constructible: an identical candidate is rejected when `buildReload` discovery fails (reload.go:629-631), and `refresh_interval` admits positive sub-second values (bounds.go:188-196), so a refresh pass follows deterministically.\n\n**Findings (advisory; no HIGH/MEDIUM, no regression)**\n- [LOW][ac-not-falsifiable] R6 requires the contract to document \"the new events\" (three, spec.md:257), but AC15's oracle asserts only the `config_loaded` and `config_degraded` rows (spec.md:289); a missing `config_last_good_write_failed` row would still pass. Fix: require that row in `TestLoggingContractDocumentsConfigEventsAndStorageBase` (file is in T3/T4 sets).\n- [LOW][statement-contradiction] AD21's hook boolean is \"already memoized\" yet \"true exactly on the second pre-publication load\" (spec.md:96,198). The memo survives publication and AC14 keeps the hook armed until `t.Cleanup` while sending a later SIGHUP (spec.md:288), so a one-shot block would hang. Fix: define it as memoized ∧ `publishedSettings()==nil`, or specify a close-based release.\n- [LOW][undefined-term] AD22 layer 1 evaluates `len(candidate.ClientTokenHashes())>0` inside the persist hook (spec.md:204), but the enumerated slot/memo payloads carry only \"resolved credential values\" (spec.md:202,236); the refusal predicate has no defined carrier. Fix: name it in both payload lists and T3's annotation.\n- [LOW][stale-citation] spec.md:96,155,204 cite `config.go:433` as the exported predicate; the method is at config.go:81 — :433 is the digest-append line. Fix: cite :81 for `ClientTokenHashes()`, keep :433 for digest-only population.\n\n### Recommendation\nAPPROVE\n",
+  "invocationId": "59dce237-550e-42d6-addb-6a7f0fad7a28"
+}

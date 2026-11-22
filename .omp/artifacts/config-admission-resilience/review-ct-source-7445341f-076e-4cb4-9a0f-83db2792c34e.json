@@ -1,0 +1,113 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "config-admission-resilience-spec-r10",
+  "revision": "r10",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+      "sha256": "df338fdec5768fc3431b2d20791a30d6546356c3cf3829eacd4bcc203c48291f"
+    },
+    {
+      "path": ".scratch/config-admission-resilience/spec.md",
+      "sha256": "d5f57858b30332a1d9e7305427b349dcf159e014ae5962cc455608a3626e970f"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/diagnostics_envelope.go",
+      "sha256": "27d30dd457e9747f57254ce77200e8f14dd739998171d2d4ec68c97ada3c842e"
+    },
+    {
+      "path": "cmd/mcp-bridge/example_config_test.go",
+      "sha256": "81f856efe04649d88aedc1ad156ff4b73de5aabebdc15d28810bfa1d494b0727"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "sha256": "6f657d754dd13c9524476e0a51fbca4b8f36f7163e0f4de0c870cb3b172b606d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "internal/config/config_test.go",
+      "sha256": "a24161dee00df60d0c7a3578408729b1a3d3a6148ba058ca9e3f249d1609ec46"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR10",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "900c8668df88ac3299f9f9c26ffdc7977484c68eccd63b080f8d47d2c98cf1fa",
+      "targetCandidateId": "config-admission-resilience-spec-r10",
+      "targetRevision": "r10",
+      "taskSha256": "4304330202f06c77d374a5ed95aae60269eabc96a78b237eb58f3a3b5a8c8c34",
+      "instructionsSha256": "41533397d922fa9dfdcc5f5768192010d82b06536b732531352e62a085b76079"
+    },
+    {
+      "name": "ReviewConfigAdmissionSpecCT10",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "5ab46f8eb546ab3953d79a803ee3cc8fbce277a4c3c9fc16c3d167ece74f309f",
+      "targetCandidateId": "config-admission-resilience-spec-r10",
+      "targetRevision": "r10",
+      "taskSha256": "d2502c75927d55ac52d5cd054a108e9bfee3eba5297b615d286368bd32d301e5",
+      "instructionsSha256": "41533397d922fa9dfdcc5f5768192010d82b06536b732531352e62a085b76079"
+    }
+  ],
+  "output": "Spec ID: config-admission-resilience\nRevision: r10\nFindings by ID: C6, H2 (reopened), C7\n\n- **[HIGH] C6 — Known admission failures still violate ticket 01’s diagnostic contract.** `spec.md:125,299` requires every non-diagnostic exit to name its failing stage, but `:245,303` mandates `unclassified/internal_error` for the known `AdmitStartup` failure path (`internal/service/loop.go:157-160`). That path can retain precisely the undiagnosable class this feature must resolve. **Amendment:** reconcile R1/AC1/AC5 with stage-specific admission diagnostics, obtaining any required scope authorization; alternatively obtain explicit owner approval for the acceptance exception. Do not merely weaken AC1. Confidence: high.\n\n- **[MEDIUM] H2 reopened — The serialization repair omits concurrent writers.** `spec.md:218,396` incorrectly treats `wiring.go:519` as a sequential exit writer. `operatorLogf` receives raw stderr (`serve.go:198`); the refresher invokes it on publication failure (`refresh.go:455-459`), and it writes under its own unrelated mutex (`wiring.go:517-521`). A concurrent persist-warning emission therefore bypasses shared serialization, permitting buffer races/interleaved diagnostics. Additionally, drain-budget expiry (`serve.go:389-403`) does not establish that refresher writers stopped before the final raw startup diagnostic. **Amendment:** route concurrent operator writes through the shared sink in T3’s existing `serve.go` scope, reconcile remaining raw-writer exceptions, and extend AC10’s race fixtures to operator-warning and drain-timeout schedules. Obtain authority before touching additional files. This is H2’s original invariant remaining open, not a new finding. Confidence: high.\n\n- **[MEDIUM] C7 — T3’s required RED is unattainable for preserved behavior.** `spec.md:358` requires every listed fixture to fail before implementation, including `TestInvalidConfigWithoutFallbackFailsClosed` and read-error compatibility fixtures. Existing `serve.go:111-114,139-142` already rejects unreadable/invalid active configurations before listener binding; `main.go:52-66` already emits their diagnostics. Correct baseline-preservation tests can therefore pass. **Amendment:** distinguish GREEN-on-arrival compatibility fixtures from genuine behavioral RED fixtures, preserving every final assertion. Confidence: high. Earlier omission reasons for C6/C7 are unknown.\n\n**Verified coverage:** tickets, canonical R→AC→T bindings and task fences; bootstrap/report ordering; credential-scan inputs; owner-approved local T2 evidence and resolver scope; C4/C5 repair ownership; H1’s now-present canonical root and H3–H5 textual corrections. T2 grants neither deployment nor diagnosis-dependent extra paths.\n\n**Limits:** static, read-only review; no tests, live probes, hash recomputation or contract-validation execution. Authorization/reviews remain null. T1/T3 are not ready as written; amendments require fresh candidate-bound reviews. Schedule eligibility does not resolve these technical findings or authorize implementation.\n\n### Verdict\nREVISE\n",
+  "invocationId": "7445341f-076e-4cb4-9a0f-83db2792c34e"
+}

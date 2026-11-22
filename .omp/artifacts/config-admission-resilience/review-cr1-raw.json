@@ -1,0 +1,72 @@
+{
+  "text": "<task-result id=\"ReviewConfigAdmissionSpecCR1\" agent=\"code-reviewer\" status=\"completed\" duration=\"3m21s\">\n\n<output>\n**Spec review, initial pass** (candidate `config-admission-resilience-spec-r1`). All ticket 01–04 acceptance items map to an R and an AC; the storage-rejection omission matches ticket 04 and is documented (AD10), not silent.\n\n- [HIGH] Verification is vacuous. T1/T3/T4 commands and six AC cells use `\\|` in `-run` (`spec.md:167,191,203,131,133,137,139,143,144`). Go `-run` is RE2, so `\\|` is a literal pipe: no test matches and `go test` exits 0 with \"no tests to run\". Use `|` or separate commands.\n- [HIGH] `config_loaded` and persistence execute at validation, before the restart-only guard and admission. §4.3 branch 1 (`spec.md:101`) is \"before the restart-only guard\" (`:99`) inside `load`, whose order is parse→guard→stage (`cmd/mcp-bridge/serve.go:110-137`). A reload rejected by `restart_required` or `Runtime.Reload` (`internal/service/loop.go:102-112`) still logs info/success and overwrites the last-known-good, contradicting R5, I4 (`spec.md:106`), AD6 \"admitted reloads\" (`:68`) and ticket 03's \"previous successful start\". Emit/persist after admission (the `Published` callback) or gate on the guard.\n- [HIGH] Admission classification contradicts itself. §4.1 maps the `loopErr` drain to `catalogLoopFailure` (`spec.md:86`) and also maps `AdmitStartup` errors on that same drain to `admissionFailure` (`:87`). Both use the one `loopErr` channel (`serve.go:338-339,359`); the tail separates only `*config.Diagnostics` and the publication sentinel (`serve.go:398-401`). T1 forbids `internal/service` changes (`spec.md:163`), so no discriminator exists, and no AC tests `admission_failed`. Specify one and add an AC.\n- [HIGH] R2's configuration fix is unauthorized. R2/§4.5 allow \"code or configuration\" (`spec.md:14,104`), but T2 grants read-only binds and redeploy (`:176`), forbids writes outside repo fences (`:176,257`), and the live config is a host bind (`backlog.md` MB-008); AC19's \"fails pre-fix\" regression test (`:148`) presumes code. Authorize the host config write (owner-gated) or exclude configuration fixes and relax AC19.\n- [MEDIUM] Copy TOCTOU: persistence re-reads the file at write time (`spec.md:94`) after validation, so a concurrent edit persists never-validated bytes (possibly inline secrets), violating R7 and ticket 03 provenance. `config.Parse(data,path)` exists (`internal/config/config.go:97`); persist the parsed bytes.\n- [MEDIUM] Fallback triggers on read errors: branches 3/4 key off any `ParseFile` error (`spec.md:105`), including `config_read` for a missing/unreadable file (`config.go:576-589`, Key `<document>`, no line), but R3/AC6 (`spec.md:16,135`) require line/property attribution. Restrict to validation diagnostics or define read-error attribution.\n- [MEDIUM] §10 conditionally grants `internal/config/**` writes \"where a required seam is identified and reported\" (`spec.md:251`), contradicting Widening (`:261`), T1's prohibition (`:163`) and T3's \"reported, not improvised\" (`:187`). Require owner authorization.\n- [MEDIUM] The \"closed\" stage vocabulary is unenforced: AC1 checks only non-empty/bounded (`spec.md:130`), and AD8's disjointness is false — both vocabularies contain `unknown` (`internal/observe/httpdiagnostics.go:631-637,753`). Add a membership test.\n- [LOW] Stale/incorrect anchors: `load` is `serve.go:110-139` (spec `:39` says 107-131), the startup wrap is `:141` (says 151); `internal/config/bounds.go:167-175` caps `_timeout` keys at 120s, not the 30s stated at `spec.md:41`.\n- [LOW] AC13 has no runnable command (`spec.md:142`); AC14 names no reload-success test for R5 (`:143`); AD6's \"one warn\" (`:68`) becomes two records per start because both pre-admission loads persist.\n\nPositive: requirement/ticket coverage is complete, envelope field additions are additive, and the config/storage/bounds contracts are not otherwise contradicted.\n\n### Recommendation\nREQUEST CHANGES\n</output>\n</task-result>",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [
+      {
+        "index": 0,
+        "id": "ReviewConfigAdmissionSpecCR1",
+        "agent": "code-reviewer",
+        "agentSource": "user",
+        "task": "Complete assignment thoroughly:\n\nIndependently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r1 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\nEnd with the verdict contract from the wrapper instructions.",
+        "assignment": "Independently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r1 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\nEnd with the verdict contract from the wrapper instructions.",
+        "lastIntent": "Checking ticket 03 fallback provenance sentence",
+        "exitCode": 0,
+        "output": "**Spec review, initial pass** (candidate `config-admission-resilience-spec-r1`). All ticket 01–04 acceptance items map to an R and an AC; the storage-rejection omission matches ticket 04 and is documented (AD10), not silent.\n\n- [HIGH] Verification is vacuous. T1/T3/T4 commands and six AC cells use `\\|` in `-run` (`spec.md:167,191,203,131,133,137,139,143,144`). Go `-run` is RE2, so `\\|` is a literal pipe: no test matches and `go test` exits 0 with \"no tests to run\". Use `|` or separate commands.\n- [HIGH] `config_loaded` and persistence execute at validation, before the restart-only guard and admission. §4.3 branch 1 (`spec.md:101`) is \"before the restart-only guard\" (`:99`) inside `load`, whose order is parse→guard→stage (`cmd/mcp-bridge/serve.go:110-137`). A reload rejected by `restart_required` or `Runtime.Reload` (`internal/service/loop.go:102-112`) still logs info/success and overwrites the last-known-good, contradicting R5, I4 (`spec.md:106`), AD6 \"admitted reloads\" (`:68`) and ticket 03's \"previous successful start\". Emit/persist after admission (the `Published` callback) or gate on the guard.\n- [HIGH] Admission classification contradicts itself. §4.1 maps the `loopErr` drain to `catalogLoopFailure` (`spec.md:86`) and also maps `AdmitStartup` errors on that same drain to `admissionFailure` (`:87`). Both use the one `loopErr` channel (`serve.go:338-339,359`); the tail separates only `*config.Diagnostics` and the publication sentinel (`serve.go:398-401`). T1 forbids `internal/service` changes (`spec.md:163`), so no discriminator exists, and no AC tests `admission_failed`. Specify one and add an AC.\n- [HIGH] R2's configuration fix is unauthorized. R2/§4.5 allow \"code or configuration\" (`spec.md:14,104`), but T2 grants read-only binds and redeploy (`:176`), forbids writes outside repo fences (`:176,257`), and the live config is a host bind (`backlog.md` MB-008); AC19's \"fails pre-fix\" regression test (`:148`) presumes code. Authorize the host config write (owner-gated) or exclude configuration fixes and relax AC19.\n- [MEDIUM] Copy TOCTOU: persistence re-reads the file at write time (`spec.md:94`) after validation, so a concurrent edit persists never-validated bytes (possibly inline secrets), violating R7 and ticket 03 provenance. `config.Parse(data,path)` exists (`internal/config/config.go:97`); persist the parsed bytes.\n- [MEDIUM] Fallback triggers on read errors: branches 3/4 key off any `ParseFile` error (`spec.md:105`), including `config_read` for a missing/unreadable file (`config.go:576-589`, Key `<document>`, no line), but R3/AC6 (`spec.md:16,135`) require line/property attribution. Restrict to validation diagnostics or define read-error attribution.\n- [MEDIUM] §10 conditionally grants `internal/config/**` writes \"where a required seam is identified and reported\" (`spec.md:251`), contradicting Widening (`:261`), T1's prohibition (`:163`) and T3's \"reported, not improvised\" (`:187`). Require owner authorization.\n- [MEDIUM] The \"closed\" stage vocabulary is unenforced: AC1 checks only non-empty/bounded (`spec.md:130`), and AD8's disjointness is false — both vocabularies contain `unknown` (`internal/observe/httpdiagnostics.go:631-637,753`). Add a membership test.\n- [LOW] Stale/incorrect anchors: `load` is `serve.go:110-139` (spec `:39` says 107-131), the startup wrap is `:141` (says 151); `internal/config/bounds.go:167-175` caps `_timeout` keys at 120s, not the 30s stated at `spec.md:41`.\n- [LOW] AC13 has no runnable command (`spec.md:142`); AC14 names no reload-success test for R5 (`:143`); AD6's \"one warn\" (`:68`) becomes two records per start because both pre-admission loads persist.\n\nPositive: requirement/ticket coverage is complete, envelope field additions are additive, and the config/storage/bounds contracts are not otherwise contradicted.\n\n### Recommendation\nREQUEST CHANGES",
+        "stderr": "",
+        "truncated": false,
+        "durationMs": 201563,
+        "tokens": 179731,
+        "requests": 21,
+        "contextTokens": 172832,
+        "contextWindow": 1048576,
+        "modelOverride": [
+          "openrouter/deepseek/deepseek-v4.1-flash-1017:high"
+        ],
+        "resolvedModel": "openrouter/deepseek/deepseek-v4.1-flash-1017:high",
+        "resolvedModelIdentity": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+        "resolvedThinkingLevel": "high",
+        "aborted": false,
+        "usage": {
+          "input": 123902,
+          "output": 55829,
+          "cacheRead": 1883520,
+          "cacheWrite": 0,
+          "totalTokens": 2063251,
+          "reasoningTokens": 48728,
+          "cost": {
+            "input": 0.004460472,
+            "output": 0.027914500000000002,
+            "cacheRead": 0.018835200000000003,
+            "cacheWrite": 0,
+            "total": 0.051210172
+          }
+        },
+        "outputPath": "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR1.md",
+        "outputMeta": {
+          "lineCount": 17,
+          "charCount": 3856
+        }
+      }
+    ],
+    "totalDurationMs": 201588,
+    "usage": {
+      "input": 123902,
+      "output": 55829,
+      "cacheRead": 1883520,
+      "cacheWrite": 0,
+      "totalTokens": 2063251,
+      "reasoningTokens": 48728,
+      "cost": {
+        "input": 0.004460472,
+        "output": 0.027914500000000002,
+        "cacheRead": 0.018835200000000003,
+        "cacheWrite": 0,
+        "total": 0.051210172
+      }
+    },
+    "outputPaths": [
+      "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR1.md"
+    ]
+  }
+}

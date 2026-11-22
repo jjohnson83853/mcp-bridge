@@ -1,0 +1,121 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "config-admission-resilience-spec-r20",
+  "revision": "r20",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": ".scratch/config-admission-resilience/issues/02-diagnose-and-fix-network-startup-loop.md",
+      "sha256": "df338fdec5768fc3431b2d20791a30d6546356c3cf3829eacd4bcc203c48291f"
+    },
+    {
+      "path": ".scratch/config-admission-resilience/spec.md",
+      "sha256": "84c8995b7f2739ec5c467392ddcdfab535578988f7a4e4997eeeac39cdd41b1c"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "130e216bc47a3ef8ff9053445c9d748602722c3fb847ded54b52600bf299c448"
+    },
+    {
+      "path": "README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "cmd/mcp-bridge/config_envelope_test.go",
+      "sha256": "772e861e27af63b94f64e4760f4b1313cbc3edeb5d0297db4baf2d0561beda2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/diagnostics_envelope.go",
+      "sha256": "27d30dd457e9747f57254ce77200e8f14dd739998171d2d4ec68c97ada3c842e"
+    },
+    {
+      "path": "cmd/mcp-bridge/example_config_test.go",
+      "sha256": "81f856efe04649d88aedc1ad156ff4b73de5aabebdc15d28810bfa1d494b0727"
+    },
+    {
+      "path": "cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "cmd/mcp-bridge/main.go",
+      "sha256": "3619aca22141501dd66bea0af885588ed4470d80d1f11318c50b5df3feb85945"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve.go",
+      "sha256": "feba65e78022448509ea0d8315199dfd351d15d104bf4e53bcc158ec123b637a"
+    },
+    {
+      "path": "cmd/mcp-bridge/serve_edge_test.go",
+      "sha256": "e82d77a734e3fb1c3619f7edce436f7f81577fb8b584f19a62de31b952f0f178"
+    },
+    {
+      "path": "cmd/mcp-bridge/snapshot_recovery_test.go",
+      "sha256": "660a25bb9608b592c1c4a1259a145f47a8945975b36ea78c8d7b30a56b09d2d2"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure.go",
+      "sha256": "4a3d17501a7064cabea1db8e0d82723daf03e0d9f5ea94f2fef39d2764af815f"
+    },
+    {
+      "path": "cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "136f302730393cb16a0aa8b6cde7433c626ce13a3253a0b9061c9e9ad6365204"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "sha256": "6f657d754dd13c9524476e0a51fbca4b8f36f7163e0f4de0c870cb3b172b606d"
+    },
+    {
+      "path": "docs/logging-contract.md",
+      "sha256": "97605607b4505f4a9842bbca9ce1873daf5bf59b7ef993584e2253089bba99af"
+    },
+    {
+      "path": "internal/config/config.go",
+      "sha256": "c3429d77af0cde1e367081a62d4dad39abc79bea5056c0f7885642f37f1bf72a"
+    },
+    {
+      "path": "internal/config/config_test.go",
+      "sha256": "a24161dee00df60d0c7a3578408729b1a3d3a6148ba058ca9e3f249d1609ec46"
+    },
+    {
+      "path": "internal/observe/envelope.go",
+      "sha256": "c0c9cb820d068670024e38895b3d5d8fe18284517c4758b1661929901037a3df"
+    },
+    {
+      "path": "internal/observe/log.go",
+      "sha256": "82d7e60e0190dc4b165cc922c4848f8d012a6733f96a02bc6acf266659ad5a96"
+    },
+    {
+      "path": "internal/observe/log_test.go",
+      "sha256": "88a646441b281200a4325f830ce44accf5fe6a951a782ea792bbb5bca58d5fec"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewConfigAdmissionSpecCR20",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "e070751eb9d987e4fa18a54f54862491839aa81e956ad1bbfc17602595caef17",
+      "targetCandidateId": "config-admission-resilience-spec-r20",
+      "targetRevision": "r20",
+      "taskSha256": "b1bdc106d8475660350f1502101a1465c7407cdd44c823ef87804f54894a6721",
+      "instructionsSha256": "08fb8ac8920337c7bdf4d9e9a8725b9c5e64354d1c59f082ab643f094855dd3d"
+    },
+    {
+      "name": "ReviewConfigAdmissionSpecCT20",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "e7d43e3f6412e63077a49b3642971fa3b5b37b06e101a7819efea06d1c13fc5a",
+      "targetCandidateId": "config-admission-resilience-spec-r20",
+      "targetRevision": "r20",
+      "taskSha256": "b9157dd3a1a7ede352e7dd5294b07285a03d20f54e072c54de485983d5888e68",
+      "instructionsSha256": "08fb8ac8920337c7bdf4d9e9a8725b9c5e64354d1c59f082ab643f094855dd3d"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** specification, repair pass; candidate r20 (`84c8995b…`), reviewed against `.omp/artifacts/config-admission-resilience/review-cr-r19.txt` and the CT19 C10 closure.\n\n### Findings\n\n- [MEDIUM][statement-contradiction] `spec.md:326` (§4 Approach) states \"no `internal/observe/log.go` change (it is in NO task write set)\", contradicting the r20 repair it authorizes: §4.4 serialized-sink design (`spec.md:371`), T3 allowed scope/expected files (`spec.md:452`), T3's 14-path set (`spec.md:523`), and canonical `execution-state.json` T3 `effects.paths` (`internal/observe/log.go` + `log_test.go`, revision r20, matching `plan.json`). `spec.md:452` also retains the r18-only phrase \"the r18 owner authorization for `log.go` is recorded but NOT exercised\". A task executor reading the design summary/allowed scope is told not to touch the file its fixtures and commands require. Fix: delete the prohibition; state the r20 unwrap routing is T3's and the conditional grant is exercised.\n- [MEDIUM][statement-contradiction] `spec.md:481` (§7 Loki) says \"the raw exit/validation writers remain the disclosed exceptions (AD24(b)/(c))\", contradicting §4.4 (`spec.md:371`), §7 Logging (`:479`) and Transport (`:489`), and AD24(c) as rewritten at r18 (exit lane joins the pair; AC21). Only the `wiring.go:485` reload-applied stdout line and the stream-aware fallback lane remain raw. Fix: name only those two lanes.\n- [LOW][stale-citation] CR19 (i) NOT closed: `spec.md:267` still cites `log.go:47-66`/`:31-36`; verified anchors are `internal/observe/log.go:43` (`WriteJSONLine`) and `:29` (`type Logger`). §9 cites `:43` correctly, so the sites disagree.\n- [LOW][statement-contradiction] CR19 (ii) NOT closed: `spec.md:394` (AC2) says \"the publication sentinel keeps `publication`\"; `startup_failure.go:92-93` emits code `publication_failed` and no stage today, so stage `publication` is new (E6). Fix: \"stage `publication`, code `publication_failed` unchanged\".\n\n### Closure verification\n\n- CT19 C10 is substantively closed: `internal/observe/log.go:64-70` still compares raw identity; the unwrap design is coherent; all named call sites exist (`startup_failure.go:131`, `diagnostics_envelope.go:13`, `main.go:84`, `wiring.go:520`). T3's 14 paths, the `internal/observe` write root, AC21, and T3/T2/T4 `blockedBy` (`[\"T1\"]`, `[\"T1\",\"T3\"]`, `[\"T3\"]`) match canonical r20 and `plan.json`.\n- Independently re-verified: tickets 01→AC1–AC5(+AC21), 02→AC17–19, 03→AC6–11, 04→AC12–16; every ticket item has an R and an AC with a runnable command or named owner/operator evidence. Read-error parity is constructible (`config.go:576-592`, `diagnostics.go:520-526`); AD7 defines emission-time `filepath.Abs`. Exactly-one emission rests on the single success-report sites (`loop.go:122/:168`) and the emission-free `Published` closure (`serve.go:307-309`). AD22/AC4/AC8 secret fixtures are constructible. Non-goals disclose AD19 (Dockerfile) and AD20 (ticket-02 lane) rather than silently dropping them.\n- **Open question (LOW confidence, not a finding):** AC10's `TestStartupAdmissionFailureClassifiesAdmission` names no deterministic admission-failure seam; `AdmitStartup` (`internal/service/reload.go:502-521`) and `newClient` (`cmd/mcp-bridge/wiring.go:147-186`) fail only on conditions `Parse` pre-validates, and the serve harness starts from file configs (`serve_edge_test.go:103`). Unchanged from CR19.\n- **Limits:** read-only; no tests, `effectCheck`, spec-lint or runtime execution; test names are proposals.\n\n### Recommendation\nREQUEST CHANGES\n",
+  "invocationId": "f620aa42-3fad-4b75-b112-922a951ca640"
+}

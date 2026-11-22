@@ -1,0 +1,72 @@
+{
+  "text": "<task-result id=\"ReviewConfigAdmissionSpecCR5\" agent=\"code-reviewer\" status=\"completed\" duration=\"6m38s\">\n\n<output>\n## Code Review Summary — Specification mode, repair pass\n\n**Candidate:** `config-admission-resilience-spec-r5` (sha256 f4d6… as bound; not recomputed — no shell tool). **Prior ledger:** `.omp/artifacts/config-admission-resilience/review-cr-r4.txt`. Reviewed spec, tickets 01–04, backlog MB-007/8/9, canonical `.omp/plans/execution-state.json`, and all cited source. No tests executed.\n\n### Prior-ledger closure\n- **E1 (HIGH) closed.** AD12 r5 moves emission/persistence to `LoopOptions.ReloadMetrics`, whose only call sites are `internal/service/loop.go:105,110,122,139,159,168` (definition `:242`); the Refresher uses `Published`/`OnRejected` (`loop.go:81`, `refresh.go:455`, `wiring.go:394-397`) and never it. A `rejected` report clears the slot (`spec.md:189-196`). The unchanged-content reject→refresh case therefore emits/persists nothing — verified in source, not just prose.\n- **E2/E3 resolved as findings** by removing the false closure: `spec.md:9,59,60,154,237` mark AD19/AD20 PENDING and claim no completion. The underlying ticket-04 Dockerfile clause and ticket-02 live pre-fix quote remain **unmet pending owner decisions** (correctly not re-raised as defects).\n- **E4/E5/E6 closed:** `spec.md:61-63`; `serve.go:397`, `loop.go:117-122,162-168` and AD2 filename verified; AC1 now covers the publication family's stage+cause (`startup_failure.go:90,109-110`).\n\n### Findings\n- [MEDIUM][statement-contradiction] The degraded branch's effective candidate/return is undefined. `spec.md:186` stages `copyCandidate`/`copySettings`, but `spec.md:187` stages `candidate, settings` for \"Valid active (or admitted degraded copy)\" and never says the fallback returns the copy. The existing closure returns the active parse result (`cmd/mcp-bridge/serve.go:107-142`), which is nil after a parse failure; `Loop.Start` then calls `AdmitStartup(candidate)` (`loop.go:137-159`) and exits. A literal implementation cannot satisfy R3/AC6. **Fix:** state `candidate, settings = copyCandidate, copySettings` on the fallback branch, return them, and make step 4 stage the effective candidate.\n- [MEDIUM][ac-not-falsifiable] AC15's logging-contract clauses have no oracle. `spec.md:235` requires `docs/logging-contract.md` to state the storage base and document the new events; the command runs only `TestExampleConfigDocumentsStorageBase|TestReadmeDocumentsStorageBase|TestLoggingContract`. `cmd/mcp-bridge/logging_contract_test.go:195-223` has no `config_loaded` required string, the doc has no `config_loaded` row today, and T4's write set (`spec.md:348`) excludes `logging_contract_test.go`. AC15 can pass with the clause unmet. **Fix:** add a T4-writable `TestLoggingContract…` assertion (the `-run` regex is unanchored) or owner-widen T4.\n- [LOW] T1's RED claim \"each fails as an assertion failure … not a compile error\" (`spec.md:255`) is unattainable for `TestCatalogLoopDrainSentinelClass`/`TestListenerRuntimeFailureClass`, which must reference `errCatalogLoopDidNotDrain` and the new listener typed error (neither exists: `serve.go:397,414`). Allow build-failure RED or name behavior-only seams.\n- [LOW] AD15 (`spec.md:150`) sets `ConfigInfo.PropertyPath=\"document\"`, while the same diagnostic maps `record.Key=\"<document>\"` in `cmd/mcp-bridge/diagnostics_envelope.go:44-56` (diagnostic at `internal/config/config.go:97-104`). State the mapping explicitly so AC6 and the contract agree.\n\n### Verified coverage\nTickets 01–04 map to R1–R6/AC1–AC19; AC17/AC18 are named evidence methods; per-task write sets (`spec.md:342-348`) equal canonical T1–T4 effects exactly; raw-copy secret safety holds because all credential families require references (`config.go:809,930-932,1078`); exactly-one-event semantics are testable via AC6/AC14; every AC has a command or named evidence lane; no non-goal silently drops a requirement.\n\n### Recommendation\nREQUEST CHANGES\n</output>\n</task-result>",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [
+      {
+        "index": 0,
+        "id": "ReviewConfigAdmissionSpecCR5",
+        "agent": "code-reviewer",
+        "agentSource": "user",
+        "task": "Complete assignment thoroughly:\n\nIndependently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r5 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr-r4.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "assignment": "Independently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r5 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr-r4.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "lastIntent": "Locating T4 write set line in spec",
+        "exitCode": 0,
+        "output": "## Code Review Summary — Specification mode, repair pass\n\n**Candidate:** `config-admission-resilience-spec-r5` (sha256 f4d6… as bound; not recomputed — no shell tool). **Prior ledger:** `.omp/artifacts/config-admission-resilience/review-cr-r4.txt`. Reviewed spec, tickets 01–04, backlog MB-007/8/9, canonical `.omp/plans/execution-state.json`, and all cited source. No tests executed.\n\n### Prior-ledger closure\n- **E1 (HIGH) closed.** AD12 r5 moves emission/persistence to `LoopOptions.ReloadMetrics`, whose only call sites are `internal/service/loop.go:105,110,122,139,159,168` (definition `:242`); the Refresher uses `Published`/`OnRejected` (`loop.go:81`, `refresh.go:455`, `wiring.go:394-397`) and never it. A `rejected` report clears the slot (`spec.md:189-196`). The unchanged-content reject→refresh case therefore emits/persists nothing — verified in source, not just prose.\n- **E2/E3 resolved as findings** by removing the false closure: `spec.md:9,59,60,154,237` mark AD19/AD20 PENDING and claim no completion. The underlying ticket-04 Dockerfile clause and ticket-02 live pre-fix quote remain **unmet pending owner decisions** (correctly not re-raised as defects).\n- **E4/E5/E6 closed:** `spec.md:61-63`; `serve.go:397`, `loop.go:117-122,162-168` and AD2 filename verified; AC1 now covers the publication family's stage+cause (`startup_failure.go:90,109-110`).\n\n### Findings\n- [MEDIUM][statement-contradiction] The degraded branch's effective candidate/return is undefined. `spec.md:186` stages `copyCandidate`/`copySettings`, but `spec.md:187` stages `candidate, settings` for \"Valid active (or admitted degraded copy)\" and never says the fallback returns the copy. The existing closure returns the active parse result (`cmd/mcp-bridge/serve.go:107-142`), which is nil after a parse failure; `Loop.Start` then calls `AdmitStartup(candidate)` (`loop.go:137-159`) and exits. A literal implementation cannot satisfy R3/AC6. **Fix:** state `candidate, settings = copyCandidate, copySettings` on the fallback branch, return them, and make step 4 stage the effective candidate.\n- [MEDIUM][ac-not-falsifiable] AC15's logging-contract clauses have no oracle. `spec.md:235` requires `docs/logging-contract.md` to state the storage base and document the new events; the command runs only `TestExampleConfigDocumentsStorageBase|TestReadmeDocumentsStorageBase|TestLoggingContract`. `cmd/mcp-bridge/logging_contract_test.go:195-223` has no `config_loaded` required string, the doc has no `config_loaded` row today, and T4's write set (`spec.md:348`) excludes `logging_contract_test.go`. AC15 can pass with the clause unmet. **Fix:** add a T4-writable `TestLoggingContract…` assertion (the `-run` regex is unanchored) or owner-widen T4.\n- [LOW] T1's RED claim \"each fails as an assertion failure … not a compile error\" (`spec.md:255`) is unattainable for `TestCatalogLoopDrainSentinelClass`/`TestListenerRuntimeFailureClass`, which must reference `errCatalogLoopDidNotDrain` and the new listener typed error (neither exists: `serve.go:397,414`). Allow build-failure RED or name behavior-only seams.\n- [LOW] AD15 (`spec.md:150`) sets `ConfigInfo.PropertyPath=\"document\"`, while the same diagnostic maps `record.Key=\"<document>\"` in `cmd/mcp-bridge/diagnostics_envelope.go:44-56` (diagnostic at `internal/config/config.go:97-104`). State the mapping explicitly so AC6 and the contract agree.\n\n### Verified coverage\nTickets 01–04 map to R1–R6/AC1–AC19; AC17/AC18 are named evidence methods; per-task write sets (`spec.md:342-348`) equal canonical T1–T4 effects exactly; raw-copy secret safety holds because all credential families require references (`config.go:809,930-932,1078`); exactly-one-event semantics are testable via AC6/AC14; every AC has a command or named evidence lane; no non-goal silently drops a requirement.\n\n### Recommendation\nREQUEST CHANGES",
+        "stderr": "",
+        "truncated": false,
+        "durationMs": 398074,
+        "tokens": 273946,
+        "requests": 29,
+        "contextTokens": 275394,
+        "contextWindow": 1048576,
+        "modelOverride": [
+          "openrouter/deepseek/deepseek-v4.1-flash-1017:high"
+        ],
+        "resolvedModel": "openrouter/deepseek/deepseek-v4.1-flash-1017:high",
+        "resolvedModelIdentity": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+        "resolvedThinkingLevel": "high",
+        "aborted": false,
+        "usage": {
+          "input": 181800,
+          "output": 92146,
+          "cacheRead": 4638464,
+          "cacheWrite": 0,
+          "totalTokens": 4912410,
+          "reasoningTokens": 83096,
+          "cost": {
+            "input": 0.006544800000000001,
+            "output": 0.046073,
+            "cacheRead": 0.04638463999999999,
+            "cacheWrite": 0,
+            "total": 0.09900244
+          }
+        },
+        "outputPath": "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR5.md",
+        "outputMeta": {
+          "lineCount": 20,
+          "charCount": 3855
+        }
+      }
+    ],
+    "totalDurationMs": 398082,
+    "usage": {
+      "input": 181800,
+      "output": 92146,
+      "cacheRead": 4638464,
+      "cacheWrite": 0,
+      "totalTokens": 4912410,
+      "reasoningTokens": 83096,
+      "cost": {
+        "input": 0.006544800000000001,
+        "output": 0.046073,
+        "cacheRead": 0.04638463999999999,
+        "cacheWrite": 0,
+        "total": 0.09900244
+      }
+    },
+    "outputPaths": [
+      "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR5.md"
+    ]
+  }
+}

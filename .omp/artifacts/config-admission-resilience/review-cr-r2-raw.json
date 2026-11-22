@@ -1,0 +1,72 @@
+{
+  "text": "<task-result id=\"ReviewConfigAdmissionSpecCR2\" agent=\"code-reviewer\" status=\"completed\" duration=\"4m30s\">\n\n<output>\n**Specification mode, repair pass** (candidate `config-admission-resilience-spec-r2`). Prior ledger: F1, F2, F4, F5, F6, F7, F8, F9, F10 verified closed in r2; F3 is **not** closed (new evidence below). Independently verified: `cause` must join `EnvelopeFieldNames` (`logging_contract_test.go:78-90,116`), the startup stage vocabulary is disjoint from `unknown` (`httpdiagnostics.go:631-638`), the timeout bounds claim (`bounds.go:171-190`), and the raw-byte secret premise for all credential families (`config.go:809-812,1078`; URL userinfo rejected at `config.go:613`).\n\n- [HIGH] T1 cannot pass its mandated validation under its bound effects. `spec.md:186` requires extending \"`internal/observe` manifest/log tests\"; adding `cause` to `EnvelopeFieldNames` (required by `spec.md:90` and `logging_contract_test.go:78-90,116`) fails the exact-union literal at `internal/observe/log_test.go:46-79`. T1's canonical effects omit `internal/observe/*_test.go` (`.omp/plans/execution-state.json` T1 `effects.paths`; `plan.json:15`), while §10 claims it (`spec.md:275`). T1's own BLOCKED rule (`spec.md:193`) would halt the task instead. Fix: add `internal/observe/log_test.go` to T1's effects by owner-authorized amendment, or align §10 with the state.\n\n- [HIGH] F3 not closed: `loopErr` classification still contradicts itself. R1 (`spec.md:27`) classifies admission errors as `unclassified`; §4.1 (`spec.md:109`) says \"the `loopErr` drain path classifies to [catalog_loop]\"; AC5 (`spec.md:158`) requires `unclassified`. One channel (`serve.go:338-339,398-401`) with `internal/service` changes forbidden makes AC2 and AC5 mutually unsatisfiable. Also `Loop.Start` returns nil after publication (`internal/service/loop.go:174-195`); the only `loopErr` values are load diagnostics, admission errors, and the publication sentinel — no distinct \"catalog-loop runtime\" class exists. Fix: classify only the drain's own \"did not drain\" error (`serve.go:389`) as `catalog_loop`, leave the rest unclassified, and correct R1/AC2.\n\n- [HIGH] T2 cannot land its mandatory regression test. T2's effects are only the ticket file, `serve.go`, `startup_failure.go` (`plan.json:16`; execution-state T2 `effects.paths`), but AC19 (`spec.md:172`), T2's RED step (`spec.md:201`), and \"Production/test writes land only inside the §10 fences\" (`spec.md:199`) require a test write. §10's `cmd/mcp-bridge/*_test.go` (`spec.md:275`) is not granted by the task. Fix: add the test path to T2's effects before dispatch, and replace `cmd/mcp-bridge/**` in `spec.md:199` with the bound list.\n\n- [MEDIUM] Ticket 04's \"operator docs\" clause is unverified. R6 (`spec.md:37`) and ticket `04:15` require the storage base in \"the operator docs\", but AC15 (`spec.md:168`) checks only `config.example.yaml` and the logging contract; T4's README write is conditioned \"only where it documents `storage.directory`\" (`spec.md:223`), and README contains no such documentation today. Fix: name a real operator doc, add it to T4's effects, and assert it in AC15 (or narrow R6 with owner acknowledgement).\n\n- [MEDIUM] The degraded-record attribution claim is false for document-level diagnostics. §4.4 (`spec.md:135`) says the record \"always carries line/property attribution\"; `config_too_large` is a readable-document validation diagnostic with `Key \"<document>\"` and no line (`config.go:97-103`), and the fallback trigger includes it. R3/AC6 (`spec.md:16,159`) require line/property. Fix: restrict the fallback to value-located diagnostics, or define document-level attribution and add an AC case.\n\n- [LOW] §4.3's read-error path (`spec.md:123`) must duplicate `ParseFile`'s unexported `config_read` mapping in cmd (`config.go:576-592`); the spec asserts identical shapes but AC9 (`spec.md:162`) does not assert `Key`/`Reason`/`Shape` parity. Fix: add a parity assertion, or an exported helper behind owner authorization.\n\n### Recommendation\nREQUEST CHANGES\n</output>\n</task-result>",
+  "details": {
+    "projectAgentsDir": null,
+    "results": [
+      {
+        "index": 0,
+        "id": "ReviewConfigAdmissionSpecCR2",
+        "agent": "code-reviewer",
+        "agentSource": "user",
+        "task": "Complete assignment thoroughly:\n\nIndependently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r2 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr1.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "assignment": "Independently review the specification ./.scratch/config-admission-resilience/spec.md for feature config-admission-resilience r2 as a specification feasibility and correctness review (not implementation review).\n\nCheck: (a) every owner-confirmed ticket acceptance item in .scratch/config-admission-resilience/issues/01..04 maps to a requirement and an observable AC; (b) each AC has a concrete verification command or evidence method that a verifier can run without reading intent; (c) the design resolves the real startup paths in cmd/mcp-bridge/serve.go, cmd/mcp-bridge/startup_failure.go, internal/observe/envelope.go, internal/config/config.go and bounds.go without contradicting existing contracts; (d) the envelope write paths and task effects actually permit the specified work and nothing wider, and T2 diagnosis-dependent widening is handled honestly; (e) secret hygiene and exactly-one-event semantics are testable; (f) non-goals do not silently drop a ticket requirement.\n\nRead the cited source files and verify each claim rather than trusting the prose. Report specification defects only; do not report implementation quality. Use severity labels with file:line evidence.\n\n\nThis is a repair review of a revised candidate. Verify each finding in the prior CodeReviewer ledger .omp/artifacts/config-admission-resilience/review-cr1.txt is actually closed by the revised text, and do not re-raise a resolved finding absent new evidence.\nEnd with the verdict contract from the wrapper instructions.",
+        "lastIntent": "Checking observe event enumeration",
+        "exitCode": 0,
+        "output": "**Specification mode, repair pass** (candidate `config-admission-resilience-spec-r2`). Prior ledger: F1, F2, F4, F5, F6, F7, F8, F9, F10 verified closed in r2; F3 is **not** closed (new evidence below). Independently verified: `cause` must join `EnvelopeFieldNames` (`logging_contract_test.go:78-90,116`), the startup stage vocabulary is disjoint from `unknown` (`httpdiagnostics.go:631-638`), the timeout bounds claim (`bounds.go:171-190`), and the raw-byte secret premise for all credential families (`config.go:809-812,1078`; URL userinfo rejected at `config.go:613`).\n\n- [HIGH] T1 cannot pass its mandated validation under its bound effects. `spec.md:186` requires extending \"`internal/observe` manifest/log tests\"; adding `cause` to `EnvelopeFieldNames` (required by `spec.md:90` and `logging_contract_test.go:78-90,116`) fails the exact-union literal at `internal/observe/log_test.go:46-79`. T1's canonical effects omit `internal/observe/*_test.go` (`.omp/plans/execution-state.json` T1 `effects.paths`; `plan.json:15`), while §10 claims it (`spec.md:275`). T1's own BLOCKED rule (`spec.md:193`) would halt the task instead. Fix: add `internal/observe/log_test.go` to T1's effects by owner-authorized amendment, or align §10 with the state.\n\n- [HIGH] F3 not closed: `loopErr` classification still contradicts itself. R1 (`spec.md:27`) classifies admission errors as `unclassified`; §4.1 (`spec.md:109`) says \"the `loopErr` drain path classifies to [catalog_loop]\"; AC5 (`spec.md:158`) requires `unclassified`. One channel (`serve.go:338-339,398-401`) with `internal/service` changes forbidden makes AC2 and AC5 mutually unsatisfiable. Also `Loop.Start` returns nil after publication (`internal/service/loop.go:174-195`); the only `loopErr` values are load diagnostics, admission errors, and the publication sentinel — no distinct \"catalog-loop runtime\" class exists. Fix: classify only the drain's own \"did not drain\" error (`serve.go:389`) as `catalog_loop`, leave the rest unclassified, and correct R1/AC2.\n\n- [HIGH] T2 cannot land its mandatory regression test. T2's effects are only the ticket file, `serve.go`, `startup_failure.go` (`plan.json:16`; execution-state T2 `effects.paths`), but AC19 (`spec.md:172`), T2's RED step (`spec.md:201`), and \"Production/test writes land only inside the §10 fences\" (`spec.md:199`) require a test write. §10's `cmd/mcp-bridge/*_test.go` (`spec.md:275`) is not granted by the task. Fix: add the test path to T2's effects before dispatch, and replace `cmd/mcp-bridge/**` in `spec.md:199` with the bound list.\n\n- [MEDIUM] Ticket 04's \"operator docs\" clause is unverified. R6 (`spec.md:37`) and ticket `04:15` require the storage base in \"the operator docs\", but AC15 (`spec.md:168`) checks only `config.example.yaml` and the logging contract; T4's README write is conditioned \"only where it documents `storage.directory`\" (`spec.md:223`), and README contains no such documentation today. Fix: name a real operator doc, add it to T4's effects, and assert it in AC15 (or narrow R6 with owner acknowledgement).\n\n- [MEDIUM] The degraded-record attribution claim is false for document-level diagnostics. §4.4 (`spec.md:135`) says the record \"always carries line/property attribution\"; `config_too_large` is a readable-document validation diagnostic with `Key \"<document>\"` and no line (`config.go:97-103`), and the fallback trigger includes it. R3/AC6 (`spec.md:16,159`) require line/property. Fix: restrict the fallback to value-located diagnostics, or define document-level attribution and add an AC case.\n\n- [LOW] §4.3's read-error path (`spec.md:123`) must duplicate `ParseFile`'s unexported `config_read` mapping in cmd (`config.go:576-592`); the spec asserts identical shapes but AC9 (`spec.md:162`) does not assert `Key`/`Reason`/`Shape` parity. Fix: add a parity assertion, or an exported helper behind owner authorization.\n\n### Recommendation\nREQUEST CHANGES",
+        "stderr": "",
+        "truncated": false,
+        "durationMs": 270408,
+        "tokens": 212468,
+        "requests": 29,
+        "contextTokens": 214617,
+        "contextWindow": 1048576,
+        "modelOverride": [
+          "openrouter/deepseek/deepseek-v4.1-flash-1017:high"
+        ],
+        "resolvedModel": "openrouter/deepseek/deepseek-v4.1-flash-1017:high",
+        "resolvedModelIdentity": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+        "resolvedThinkingLevel": "high",
+        "aborted": false,
+        "usage": {
+          "input": 150214,
+          "output": 62254,
+          "cacheRead": 3288832,
+          "cacheWrite": 0,
+          "totalTokens": 3501300,
+          "reasoningTokens": 54350,
+          "cost": {
+            "input": 0.005407703999999999,
+            "output": 0.031127000000000005,
+            "cacheRead": 0.03288832,
+            "cacheWrite": 0,
+            "total": 0.06942302399999999
+          }
+        },
+        "outputPath": "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR2.md",
+        "outputMeta": {
+          "lineCount": 16,
+          "charCount": 3908
+        }
+      }
+    ],
+    "totalDurationMs": 270417,
+    "usage": {
+      "input": 150214,
+      "output": 62254,
+      "cacheRead": 3288832,
+      "cacheWrite": 0,
+      "totalTokens": 3501300,
+      "reasoningTokens": 54350,
+      "cost": {
+        "input": 0.005407703999999999,
+        "output": 0.031127000000000005,
+        "cacheRead": 0.03288832,
+        "cacheWrite": 0,
+        "total": 0.06942302399999999
+      }
+    },
+    "outputPaths": [
+      "/home/opencode/.omp/agent/sessions/-projects-default-mcp-bridge/2026-11-22T02-21-02-827Z_01a2010e-95eb-74e8-a026-6ea2ea0bd02f/ReviewConfigAdmissionSpecCR2.md"
+    ]
+  }
+}
