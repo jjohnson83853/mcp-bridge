@@ -12,6 +12,18 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   diagnostics. The README and [logging contract](docs/logging-contract.md)
   document the application field union, collector boundary, and query examples.
 
+- **Typed startup failure diagnostics.** Startup errors now carry optional
+  closed-enum `startup_stage` and `startup_cause` fields while retaining
+  `schema_version: 1`; unknown failures and pre-existing classifications omit
+  both fields. Quarantined-unrecoverable snapshot exits are classified as
+  `snapshot_recovery` instead of `state_directory`; non-publication,
+  non-diagnostic `loop.Start` errors, including admission/persist refusal, as
+  `catalog_loop_start` instead of `internal_error`; drain-budget expiry as
+  `catalog_loop_drain` instead of `internal_error`; and non-`ErrServerClosed`
+  listener serve errors as `listener_serve` instead of `internal_error`. The
+  [logging contract](docs/logging-contract.md) documents the enum values and
+  operator actions.
+
 - **Structured logging r8 refresh diagnostics.** Refresh lifecycle and discovery
   records, per-pin blocker details, successful reload attribution, and a
   minimal opposite-lane logger-write fallback were added as optional

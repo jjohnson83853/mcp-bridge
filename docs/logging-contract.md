@@ -218,11 +218,13 @@ auth_mode
  session_ref
  session_ref_state
  session_state
- slots
- stage
- static_configured
- status_state
- timing_scope
+slots
+stage
+startup_cause
+startup_stage
+static_configured
+status_state
+timing_scope
  tool
  tools_discovered
  tools_published
@@ -253,6 +255,19 @@ correlation ID), `generation`, `duration_ms`, and safe `server` identity.
   are `diagnostics_incomplete` and `remaining_stages`.
 - `resource` carries only the configured `path`, `listener` (`inbound` or
   `operations`), and configured `address` when applicable.
+- `startup_stage` is an optional closed enum: `snapshot_recovery`,
+  `catalog_loop_start`, `catalog_loop_drain`, or `listener_serve`; it is omitted
+  for every non-stage startup classification.
+- `startup_cause` is an optional closed enum with stage-specific values:
+  `snapshot_recovery` uses `snapshot_unrecoverable`; `catalog_loop_start` uses
+  `admission_persist_failed` or `generic_loop_start`; `catalog_loop_drain` uses
+  `drain_budget_exceeded`; and `listener_serve` uses `listener_serve_failed`.
+  `publication_wrap_failed` is reserved for the documented domain, but
+  publication errors are intercepted before stage classification. The field
+  is omitted for every non-stage startup classification.
+- The `snapshot_recovery`, `catalog_loop_start`, `catalog_loop_drain`, and
+  `listener_serve` full-path records are compared with the rows below through
+  `loggingContractClassRow`.
 - Event-specific shared-lane values include counts and shapes (`count`, `slots`,
   `catalog_tools`, content counts, and upstream/final shapes), the four
   `*_presence` values (`unknown`, `present`, or `absent`), validated 32-hex
@@ -334,10 +349,29 @@ Startup and CLI errors use a typed `error` object and static remediation:
 | `startup_failed` | `error` | `startup` | `failure` | `embedding_provider` | `dependency` | `false` | `fix the embedding provider configuration or credentials` | `application startup failed` |
 | `startup_failed` | `error` | `startup` | `failure` | `tool_surface` | `internal` | `false` | `report this failure; the tool surface failed to initialize` | `application startup failed` |
 | `startup_failed` | `error` | `startup` | `failure` | `catalog_loop` | `internal` | `false` | `report this failure; the catalog loop failed to start` | `application startup failed` |
+| `startup_failed` | `error` | `startup` | `failure` | `snapshot_recovery` | `resource` | `false` | `report this failure; startup snapshot recovery failed` | `application startup failed` |
+| `startup_failed` | `error` | `startup` | `failure` | `catalog_loop_start` | `internal` | `false` | `report this failure; the catalog loop failed to start or persist its startup snapshot` | `application startup failed` |
+| `startup_failed` | `error` | `startup` | `failure` | `catalog_loop_drain` | `internal` | `false` | `report this failure; the catalog loop did not drain within the shutdown budget` | `application startup failed` |
+| `startup_failed` | `error` | `startup` | `failure` | `listener_serve` | `internal` | `false` | `report this failure; the listener stopped serving` | `application startup failed` |
 | `startup_failed` | `error` | `startup` | `failure` | `listener_bind` | `resource` | `true` | `free the configured address or change the listen setting` | `application startup failed` |
 | `startup_failed` | `error` | `startup` | `failure` | `internal_error` | `internal` | `false` | `report this failure; no specific class matched` | `application startup failed` |
 | `startup_publication_failed` | `error` | `startup` | `failure` | `publication_failed` | `internal` | `true` | `verify the startup catalog and restart the service` | `startup publication failed` |
 | `cli_usage_failed` | `error` | `cli` | `failure` | `cli_usage` | `usage` | `false` | `use valid flags and arguments; run mcp-bridge --help for usage` | `command-line arguments are invalid` |
+
+The stage/code association is: `snapshot_recovery` → stage `snapshot_recovery`
+for a quarantined-unrecoverable startup exit; `catalog_loop_start` → stage
+`catalog_loop_start` for a non-publication, non-diagnostic `loop.Start` error;
+`catalog_loop_drain` → stage `catalog_loop_drain` when the drain budget expires;
+and `listener_serve` → stage `listener_serve` for a non-`ErrServerClosed`
+listener serve failure. The two optional fields are omitted for every
+pre-existing classification. These additions keep `schema_version` at 1.
+
+Compatibility notes: quarantined-unrecoverable startup exits move from
+`state_directory` to `snapshot_recovery`; non-publication, non-diagnostic
+`loop.Start` errors (including admission/persist refusal) move from
+`internal_error` to `catalog_loop_start`; drain-budget expiry moves from
+`internal_error` to `catalog_loop_drain`; and non-`ErrServerClosed` listener
+serve errors move from `internal_error` to `listener_serve`.
 
 The `resource` object is included only for state-directory path or listener
 and configured-address attribution. `--help` is intentionally human-readable
