@@ -30,6 +30,7 @@ const (
 )
 
 var testServeNow func() time.Time
+var serveListenerFn = serveListener
 
 func sessionAdmissionEnabled(value string) bool {
 	return strings.EqualFold(value, "true") || value == "1"
@@ -37,26 +38,6 @@ func sessionAdmissionEnabled(value string) bool {
 
 func quarantineEnabled(value string) bool {
 	return !strings.EqualFold(value, "off")
-}
-
-type recoveryStateDirectoryError struct {
-	failure startupFailure
-	cause   error
-}
-
-func (err recoveryStateDirectoryError) Error() string {
-	return err.failure.Error()
-}
-
-func (err recoveryStateDirectoryError) Unwrap() []error {
-	return []error{err.failure, err.cause}
-}
-
-func recoveryStateDirectoryFailure(directory string, cause error) error {
-	return recoveryStateDirectoryError{
-		failure: stateDirectoryFailure(directory),
-		cause:   cause,
-	}
 }
 
 func emitRecoveryRecords(logger *observe.Logger, stateDir string, result *storage.RecoveryResult) {
@@ -91,7 +72,6 @@ func emitRecoveryRecords(logger *observe.Logger, stateDir string, result *storag
 		})
 	}
 }
-
 
 // serve is the composition root: it turns one operator document into the
 // serving bridge of plan §4.2 — the inbound edge with its bounds and tokens,
@@ -162,7 +142,7 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 		emitRecoveryRecords(logger, settings.StorageDirectory, result)
 		if recoveryErr != nil {
 			if errors.Is(recoveryErr, storage.ErrSnapshotUnrecoverable) {
-				return recoveryStateDirectoryFailure(settings.StorageDirectory, recoveryErr)
+				return snapshotRecoveryFailure(settings.StorageDirectory)
 			}
 			return recoveryErr
 		}
@@ -336,20 +316,24 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 	}
 
 	loopErr := make(chan error, 1)
-	go func() { loopErr <- loop.Start(ctx) }()
+	go func() { loopErr <- carryStartupStage(loop.Start(ctx), startupStageCatalogLoopStart, "", "") }()
 	listenerErr := make(chan error, 2)
 	for _, running := range []struct {
+		name     string
 		server   *http.Server
 		listener net.Listener
+		address  string
 	}{
-		{inboundServer, inboundListener},
-		{operationsServer, operationsListener},
+		{name: "inbound", server: inboundServer, listener: inboundListener, address: settings.HTTPListen},
+		{name: "operations", server: operationsServer, listener: operationsListener, address: settings.OperationsListen},
 	} {
 		go func(running struct {
+			name     string
 			server   *http.Server
 			listener net.Listener
+			address  string
 		}) {
-			listenerErr <- serveListener(running.server, running.listener)
+			listenerErr <- carryStartupStage(serveListenerFn(running.server, running.listener), startupStageListenerServe, running.name, running.address)
 		}(running)
 	}
 
@@ -394,7 +378,7 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 			case err := <-loopErr:
 				failure = firstError(failure, err)
 			case <-drainCtx.Done():
-				failure = firstError(failure, errors.New("the catalog loop did not drain"))
+				failure = firstError(failure, carryStartupStage(errors.New("the catalog loop did not drain"), startupStageCatalogLoopDrain, "", ""))
 			}
 		}()
 	}

@@ -165,8 +165,8 @@ func TestPinCeilingBoundaryStillAccepts128Pins(t *testing.T) {
 
 func TestEnvelopeFieldNamesAreSortedAndUnique(t *testing.T) {
 	names := observe.EnvelopeFieldNames()
-	if len(names) != 130 {
-		t.Fatalf("field count = %d, want 130", len(names))
+	if len(names) != 132 {
+		t.Fatalf("field count = %d, want 132", len(names))
 	}
 	if !sort.StringsAreSorted(names) {
 		t.Fatal("field names are not sorted")

@@ -1,22 +1,22 @@
-package observe_test
+package observe
 
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
-
-	"github.com/jjohnson83853/mcp-bridge/internal/observe"
+	"time"
 )
 
 func TestLoggerEmitsSafeCorrelationAndServer(t *testing.T) {
 	var output bytes.Buffer
-	logger := observe.NewLogger(&output, &output)
-	id := observe.CorrelationID("not-a-valid-id")
+	logger := NewLogger(&output, &output)
+	id := CorrelationID("not-a-valid-id")
 	if len(id) != 32 {
 		t.Fatalf("correlation id length=%d", len(id))
 	}
@@ -25,7 +25,7 @@ func TestLoggerEmitsSafeCorrelationAndServer(t *testing.T) {
 			t.Fatalf("correlation id=%q", id)
 		}
 	}
-	logger.Log(observe.Entry{
+	logger.Log(Entry{
 		Level: "info", Event: "backend_complete", RequestID: id, Server: "alpha",
 		Operation: "call_tool", Outcome: "success", Fields: map[string]any{"tool": "alpha__read"},
 	})
@@ -70,12 +70,12 @@ func TestEnvelopeFieldNamesMatchesIndependentR8Union(t *testing.T) {
 		"retained_age_ms", "retained_generation", "route", "route_outcome", "schema_version",
 		"scope_required", "scope_state", "server", "servers_discovered", "service",
 		"session_binding", "session_header", "session_ref", "session_ref_state", "session_state",
-		"slots", "stage", "static_configured", "status_state", "timing_scope",
+		"slots", "stage", "startup_cause", "startup_stage", "static_configured", "status_state", "timing_scope",
 		"tool", "tools_discovered", "tools_published", "trigger", "upstream_content_count",
 		"upstream_shape", "upstream_state", "upstream_structured_presence",
 		"upstream_text_presence",
 	}
-	if got := observe.EnvelopeFieldNames(); !reflect.DeepEqual(got, want) {
+	if got := EnvelopeFieldNames(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("EnvelopeFieldNames() = %v; want the independent r8 vocabulary %v", got, want)
 	}
 }
@@ -115,10 +115,10 @@ func TestDiscoveryFailureEnvelopeSanitizesEndpointAndRecoveryFields(t *testing.T
 			if test.nextAttempt != 0 {
 				fields["next_attempt_ms"] = test.nextAttempt
 			}
-			observe.NewLogger(&stdout, &stderr).Log(observe.Entry{
+			NewLogger(&stdout, &stderr).Log(Entry{
 				Level: "warn", Event: "upstream_discovery_failed", Server: "alpha",
 				Operation: "refresh", Outcome: "failure",
-				Error: observe.RuntimeErrorInfo(test.errorCode), Fields: fields,
+				Error: RuntimeErrorInfo(test.errorCode), Fields: fields,
 			})
 
 			var record map[string]any
@@ -156,10 +156,10 @@ func TestDiscoveryFailureEnvelopeSanitizesEndpointAndRecoveryFields(t *testing.T
 
 func TestLoggerEmitsTypedEnvelopeToSeverityStream(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	logger := observe.NewLogger(&stdout, &stderr)
-	logger.Log(observe.Entry{
+	logger := NewLogger(&stdout, &stderr)
+	logger.Log(Entry{
 		Level: "error", Event: "backend_complete", Operation: "call_tool", Outcome: "failure",
-		Error: observe.RuntimeErrorInfo("backend_unavailable"),
+		Error: RuntimeErrorInfo("backend_unavailable"),
 	})
 	if stdout.Len() != 0 || stderr.Len() == 0 {
 		t.Fatalf("severity routing stdout=%q stderr=%q", stdout.String(), stderr.String())
@@ -213,24 +213,210 @@ func (w failingWriter) Write([]byte) (int, error) {
 	return 0, w.err
 }
 
-type shortWriter struct{}
+type shortLogWriter struct{}
 
-func (shortWriter) Write(p []byte) (int, error) {
+func (shortLogWriter) Write(p []byte) (int, error) {
 	return len(p) - 1, nil
 }
 
 func TestWriteJSONLineReturnsWriteFailures(t *testing.T) {
 	writeErr := errors.New("write failed")
-	if err := observe.WriteJSONLine(failingWriter{err: writeErr}, struct{}{}); !errors.Is(err, writeErr) {
+	if err := WriteJSONLine(failingWriter{err: writeErr}, struct{}{}); !errors.Is(err, writeErr) {
 		t.Fatalf("failing writer error = %v; want %v", err, writeErr)
 	}
-	if err := observe.WriteJSONLine(shortWriter{}, struct{}{}); !errors.Is(err, io.ErrShortWrite) {
+	if err := WriteJSONLine(shortLogWriter{}, struct{}{}); !errors.Is(err, io.ErrShortWrite) {
 		t.Fatalf("short writer error = %v; want %v", err, io.ErrShortWrite)
 	}
-	if err := observe.WriteJSONLine(nil, struct{}{}); err == nil {
+	if err := WriteJSONLine(nil, struct{}{}); err == nil {
 		t.Fatal("nil output returned no error")
 	}
-	if err := observe.WriteJSONLine(io.Discard, make(chan int)); err == nil {
+	if err := WriteJSONLine(io.Discard, make(chan int)); err == nil {
 		t.Fatal("marshal failure returned no error")
+	}
+}
+
+func TestLoggerHandlesNilAndOppositeStreamFailures(t *testing.T) {
+	const fallbackLine = `{"schema_version":1,"level":"warn","service":"mcp-bridge","event":"logging_write_failed","message":"logging write failed","operation":"logging","outcome":"failure"}` + "\n"
+	var fallback bytes.Buffer
+	logger := NewLogger(nil, &fallback)
+	logger.Log(Entry{Level: "info", Event: "backend_complete", Operation: "call_tool", Outcome: "success"})
+	if fallback.String() != fallbackLine {
+		t.Fatalf("nil stdout fallback=%q", fallback.String())
+	}
+
+	var stdout bytes.Buffer
+	logger = NewLogger(&stdout, failingWriter{err: errors.New("closed stderr")})
+	logger.Log(Entry{Level: "error", Event: "backend_complete", Operation: "call_tool", Outcome: "failure", Error: RuntimeErrorInfo("backend_unavailable")})
+	if stdout.String() != fallbackLine {
+		t.Fatalf("failed stderr did not fall back to stdout: %q", stdout.String())
+	}
+
+	logger = NewLogger(failingWriter{err: errors.New("closed stdout")}, &fallback)
+	logger.Log(Entry{Level: "info", Event: "backend_complete", Operation: "call_tool", Outcome: "success"})
+	if strings.Count(fallback.String(), `"event":"logging_write_failed"`) != 2 {
+		t.Fatalf("failed stdout did not fall back to stderr: %q", fallback.String())
+	}
+
+	var discarded bytes.Buffer
+	NewLogger(&discarded, &discarded).Log(Entry{})
+	if strings.Count(discarded.String(), `"event":"logging_write_failed"`) != 1 {
+		t.Fatalf("invalid envelope fallback=%q", discarded.String())
+	}
+	var nilLogger *Logger
+	nilLogger.Log(Entry{})
+}
+
+func TestCorrelationIDAcceptsOnlyCanonicalHeaders(t *testing.T) {
+	for _, header := range []string{"0123456789abcdef0123456789abcdef", "ffffffffffffffffffffffffffffffff"} {
+		if got := CorrelationID(header); got != header {
+			t.Errorf("CorrelationID(%q) = %q; want unchanged header", header, got)
+		}
+	}
+	for _, header := range []string{"", "0123456789ABCDEF0123456789ABCDEF", " 0123456789abcdef0123456789abcdef"} {
+		if got := CorrelationID(header); got == header || !validHexID(got) {
+			t.Errorf("CorrelationID(%q) = %q; want a fresh canonical identifier", header, got)
+		}
+	}
+}
+
+func TestFiniteLogValuesUseClosedFallbacks(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		got  string
+		want string
+	}{
+		{name: "outcome known", got: finiteOutcome("success"), want: "success"},
+		{name: "outcome unknown", got: finiteOutcome("NaN"), want: "unknown"},
+		{name: "reason known", got: finiteReason("backend_unavailable"), want: "backend_unavailable"},
+		{name: "reason unknown", got: finiteReason("-1"), want: "unknown"},
+		{name: "finite known", got: finite("allowed", "fallback", "allowed", "other"), want: "allowed"},
+		{name: "finite invalid", got: finite("+Inf", "fallback", "allowed", "other"), want: "fallback"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if test.got != test.want {
+				t.Fatalf("got %q; want %q", test.got, test.want)
+			}
+		})
+	}
+}
+
+func TestSafeServerAcceptsAndRejectsBoundedNames(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		value string
+		want  bool
+	}{
+		{name: "bridge", value: "_bridge", want: true},
+		{name: "lowercase", value: "alpha", want: true},
+		{name: "digits and dash", value: "alpha-2", want: true},
+		{name: "empty", value: ""},
+		{name: "too long", value: strings.Repeat("a", 33)},
+		{name: "uppercase", value: "Alpha"},
+		{name: "leading digit", value: "2alpha"},
+		{name: "invalid character", value: "alpha_name"},
+	} {
+		if got := safeServer(test.value); got != test.want {
+			t.Errorf("safeServer(%q) = %t; want %t", test.value, got, test.want)
+		}
+	}
+}
+
+func TestSensitiveKeyMatchingNormalizesSeparatorsAndCase(t *testing.T) {
+	for key, want := range map[string]bool{
+		"Authorization": true,
+		"api-key":       true,
+		"session_token": true,
+		"tool":          false,
+		"duration_ms":   false,
+	} {
+		if got := sensitive(key); got != want {
+			t.Errorf("sensitive(%q) = %t; want %t", key, got, want)
+		}
+	}
+}
+
+func TestLogHTTPUsesTypedDiagnosticsDecisionAndFailurePaths(t *testing.T) {
+	status := 401
+	valid := Entry{
+		Level: "info", Event: "http_complete", RequestID: testID, Operation: "request",
+		Duration: 5 * time.Millisecond, Outcome: "failure",
+		HTTP: &HTTPDiagnostic{
+			LegacyStage: "client_auth", Operation: "request", ClientFamily: "openai",
+			HTTPBytes: 0, HTTPStatus: &status, HTTPMethod: "POST", Route: "mcp",
+			HTTPOutcome: "failure", HTTPBytesBucket: "le_1k", StatusState: "observed",
+			CorrelationState: CorrelationAvailable, RequestID: testID, DiagSchema: "oauth_diag_v1",
+			BuildState: "unavailable", ProcessState: "available", ProcessID: testID, OperationRelation: "single",
+			OperationIDState: "available", OperationID: testID, PathClass: "mcp", RouteOutcome: "oauth_protected",
+			DiagDurationMS: 5, FailureStage: "outer_oauth", FailureReason: "credentials_missing",
+			AuthMode: "oauth", CredentialState: "missing", ScopeState: "not_evaluated",
+			SessionHeader: "absent", SessionState: "not_evaluated", BindingRelation: "not_evaluated",
+			SessionRefState: "available", SessionRef: testID, ChallengeKind: "none", ChallengeTarget: "none",
+			MetadataTargetRegistered:     "not_applicable",
+			DiagnosticPolicyRevision:     "oauth-diag-policy-v1",
+			EffectivePolicyRevisionState: "unavailable", PolicySource: "unavailable",
+			ResourcePathMode: "unavailable", SessionBinding: "unavailable",
+			UpstreamState: "not_attempted", ErrorDetailState: "included",
+			ErrorDetail: &HTTPDiagnosticErrorDetail{Class: "validation", Code: "credentials_missing", Retry: "not_attempted"},
+		},
+	}
+	t.Run("valid typed record reaches stdout", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+		NewLogger(&stdout, &stderr).logHTTP(valid)
+		if stdout.Len() == 0 || stderr.Len() != 0 {
+			t.Fatalf("typed diagnostic streams stdout=%q stderr=%q", stdout.String(), stderr.String())
+		}
+	})
+	t.Run("wrong event is omitted", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+		entry := valid
+		entry.Event = "backend_complete"
+		NewLogger(&stdout, &stderr).logHTTP(entry)
+		if stdout.Len() != 0 || stderr.Len() != 0 {
+			t.Fatalf("non-terminal HTTP event emitted: stdout=%q stderr=%q", stdout.String(), stderr.String())
+		}
+	})
+	t.Run("invalid core records fallback", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+		entry := valid
+		entry.HTTP = &HTTPDiagnostic{}
+		NewLogger(&stdout, &stderr).logHTTP(entry)
+		if stdout.Len() != 0 || !strings.Contains(stderr.String(), `"event":"logging_write_failed"`) {
+			t.Fatalf("invalid typed record fallback stdout=%q stderr=%q", stdout.String(), stderr.String())
+		}
+	})
+}
+
+func TestLoggerRoutesWarningAndShortWritesToFallback(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	NewLogger(&stdout, &stderr).Log(Entry{Level: "warn", Event: "backend_complete", Operation: "call_tool", Outcome: "failure"})
+	if stdout.Len() != 0 || stderr.Len() == 0 {
+		t.Fatalf("warn routing stdout=%q stderr=%q", stdout.String(), stderr.String())
+	}
+
+	var fallback bytes.Buffer
+	NewLogger(shortLogWriter{}, &fallback).Log(Entry{Level: "info", Event: "backend_complete", Operation: "call_tool", Outcome: "success"})
+	if !strings.Contains(fallback.String(), `"event":"logging_write_failed"`) {
+		t.Fatalf("short stdout write did not use fallback: %q", fallback.String())
+	}
+}
+
+func TestWriteLoggingFailureFallbackUsesOppositeStandardStream(t *testing.T) {
+	capture, err := os.CreateTemp(t.TempDir(), "stdout-*.log")
+	if err != nil {
+		t.Fatal(err)
+	}
+	originalStdout := os.Stdout
+	os.Stdout = capture
+	WriteLoggingFailureFallback(os.Stderr)
+	os.Stdout = originalStdout
+	if err := capture.Close(); err != nil {
+		t.Fatal(err)
+	}
+	contents, err := os.ReadFile(capture.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(contents) != string(loggingWriteFailedLine) {
+		t.Fatalf("opposite-stream fallback = %q; want %q", contents, loggingWriteFailedLine)
 	}
 }

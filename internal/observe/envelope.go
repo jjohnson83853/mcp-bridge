@@ -27,6 +27,8 @@ type Envelope struct {
 	Server         string        `json:"server,omitempty"`
 	ConfigRevision string        `json:"config_revision,omitempty"`
 	Trigger        string        `json:"trigger,omitempty"`
+	StartupStage   string        `json:"startup_stage,omitempty"`
+	StartupCause   string        `json:"startup_cause,omitempty"`
 }
 
 // ErrorInfo contains the stable, queryable classification of a failed event.
@@ -703,6 +705,8 @@ var envelopeFieldNames = [...]string{
 	"session_state",
 	"slots",
 	"stage",
+	"startup_cause",
+	"startup_stage",
 	"static_configured",
 	"status_state",
 	"timing_scope",

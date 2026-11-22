@@ -306,7 +306,7 @@ func TestEmitRecoveryRecords(t *testing.T) {
 	for i, reason := range reasons {
 		recoveries = append(recoveries, storage.Recovery{
 			Family: storage.FamilySnapshot, Reason: reason,
-			OriginalPath: filepath.Join(t.TempDir(), fmt.Sprintf("original-%d", i)),
+			OriginalPath:   filepath.Join(t.TempDir(), fmt.Sprintf("original-%d", i)),
 			QuarantinePath: filepath.Join(t.TempDir(), fmt.Sprintf("snapshot-%d.corrupt.json", i)),
 		})
 	}
@@ -399,7 +399,7 @@ func TestSnapshotRecoveryBothCorrupt(t *testing.T) {
 		t.Fatalf("quarantine paths are not distinct: %v", paths)
 	}
 	for path, want := range map[string][]byte{
-		filepath.Join(harness.stateDir, storage.SnapshotFile): snapshotBytes,
+		filepath.Join(harness.stateDir, storage.SnapshotFile):       snapshotBytes,
 		filepath.Join(harness.stateDir, storage.PromptSnapshotFile): promptBytes,
 	} {
 		family := strings.TrimSuffix(filepath.Base(path), ".json")
@@ -459,7 +459,7 @@ func TestSnapshotQuarantineOptOutAndDefaults(t *testing.T) {
 			records := recoveryLogRecords(t, stderr)
 			warnings := recoveryEvents(records, "startup_snapshot_rejected")
 			failures := recoveryEvents(records, "startup_failed")
-			if len(warnings) != 1 || len(failures) == 0 {
+			if len(warnings) != 1 || len(failures) != 1 {
 				t.Fatalf("disabled recovery records=%#v", records)
 			}
 			if _, ok := warnings[0]["failure_reason"]; ok {
@@ -468,9 +468,14 @@ func TestSnapshotQuarantineOptOutAndDefaults(t *testing.T) {
 			if _, ok := warnings[0]["quarantine_path"]; ok {
 				t.Fatalf("disabled Durable record has quarantine path: %#v", warnings[0])
 			}
-			failureInfo := failures[0]["error"].(map[string]any)
-			if failureInfo["code"] != "internal_error" || len(recoveryEvents(records, "snapshot_retention_failed")) != 0 {
+			failure := failures[0]
+			info := failure["error"].(map[string]any)
+			if info["code"] != "catalog_loop_start" || failure["startup_stage"] != "catalog_loop_start" || failure["startup_cause"] != "admission_persist_failed" || len(recoveryEvents(records, "snapshot_retention_failed")) != 0 {
 				t.Fatalf("disabled failure records=%#v", records)
+			}
+			assertStartupFailureContractRow(t, readLoggingContract(t), failure, "catalog_loop_start")
+			if len(records) != 2 || failures[0]["schema_version"] != float64(1) {
+				t.Fatalf("disabled recovery emitted unexpected lines: %#v", records)
 			}
 		})
 	}
@@ -925,9 +930,10 @@ func TestSnapshotRecoveryFatalDirectoryPaths(t *testing.T) {
 				t.Fatalf("directory fatal records=%#v", records)
 			}
 			resource := failures[0]["resource"].(map[string]any)
-			if resource["path"] != harness.stateDir || failures[0]["error"].(map[string]any)["code"] != "state_directory" {
+			if resource["path"] != harness.stateDir || failures[0]["error"].(map[string]any)["code"] != "snapshot_recovery" || failures[0]["startup_stage"] != "snapshot_recovery" || failures[0]["startup_cause"] != "snapshot_unrecoverable" {
 				t.Fatalf("directory fatal record=%#v", failures[0])
 			}
+			assertStartupFailureContractRow(t, readLoggingContract(t), failures[0], "snapshot_recovery")
 			if counts := recoveryQuarantineCounts(t, harness.stateDir); counts["snapshot"] != 0 || counts["prompts"] != 0 {
 				t.Fatalf("directory fatal created quarantine: %v", counts)
 			}
@@ -961,4 +967,14 @@ func TestSnapshotRecoverySelfMovedExactlyOnce(t *testing.T) {
 	}
 	assertDirectPromptSaveAndLoads(t, harness)
 	restartSnapshotRecoveryNoop(t, harness)
+}
+
+func TestEmitRecoveryRecordsSkipsNilAndEmptyResults(t *testing.T) {
+	var stderr bytes.Buffer
+	logger := observe.NewLogger(&bytes.Buffer{}, &stderr)
+	emitRecoveryRecords(logger, "/state", nil)
+	emitRecoveryRecords(logger, "/state", &storage.RecoveryResult{})
+	if stderr.Len() != 0 {
+		t.Fatalf("empty recovery results emitted records: %q", stderr.String())
+	}
 }

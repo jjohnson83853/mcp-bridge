@@ -6,6 +6,7 @@ import (
 
 	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
+	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
 
 type startupFailure struct {
@@ -18,7 +19,33 @@ type startupFailure struct {
 	retryable   bool
 	remediation string
 	message     string
+	stage       string
+	cause       string
 	resource    map[string]string
+}
+
+const (
+	startupStageCatalogLoopStart = "catalog_loop_start"
+	startupStageCatalogLoopDrain = "catalog_loop_drain"
+	startupStageListenerServe    = "listener_serve"
+)
+
+type startupStageError struct {
+	stage    string
+	listener string
+	address  string
+	cause    error
+}
+
+func (err *startupStageError) Error() string { return err.cause.Error() }
+
+func (err *startupStageError) Unwrap() []error { return []error{err.cause} }
+
+func carryStartupStage(err error, stage, listener, address string) error {
+	if err == nil {
+		return nil
+	}
+	return &startupStageError{stage: stage, listener: listener, address: address, cause: err}
 }
 
 func (failure startupFailure) Error() string { return failure.message }
@@ -68,6 +95,48 @@ func catalogLoopFailure() startupFailure {
 	}
 }
 
+func snapshotRecoveryFailure(path string) startupFailure {
+	return startupFailure{
+		event: "startup_failed", operation: "startup", level: "error", outcome: "failure",
+		code: "snapshot_recovery", kind: "resource", retryable: false,
+		remediation: "report this failure; startup snapshot recovery failed",
+		message:     "application startup failed", stage: "snapshot_recovery", cause: "snapshot_unrecoverable",
+		resource: map[string]string{"path": path},
+	}
+}
+
+func catalogLoopStartFailure(err error) startupFailure {
+	cause := "generic_loop_start"
+	if errors.Is(err, storage.ErrCorrupt) {
+		cause = "admission_persist_failed"
+	}
+	return startupFailure{
+		event: "startup_failed", operation: "startup", level: "error", outcome: "failure",
+		code: startupStageCatalogLoopStart, kind: "internal", retryable: false,
+		remediation: "report this failure; the catalog loop failed to start or persist its startup snapshot",
+		message:     "application startup failed", stage: startupStageCatalogLoopStart, cause: cause,
+	}
+}
+
+func catalogLoopDrainFailure() startupFailure {
+	return startupFailure{
+		event: "startup_failed", operation: "startup", level: "error", outcome: "failure",
+		code: startupStageCatalogLoopDrain, kind: "internal", retryable: false,
+		remediation: "report this failure; the catalog loop did not drain within the shutdown budget",
+		message:     "application startup failed", stage: startupStageCatalogLoopDrain, cause: "drain_budget_exceeded",
+	}
+}
+
+func listenerServeFailure(listener, address string) startupFailure {
+	return startupFailure{
+		event: "startup_failed", operation: "startup", level: "error", outcome: "failure",
+		code: startupStageListenerServe, kind: "internal", retryable: false,
+		remediation: "report this failure; the listener stopped serving",
+		message:     "application startup failed", stage: startupStageListenerServe, cause: "listener_serve_failed",
+		resource: map[string]string{"listener": listener, "address": address},
+	}
+}
+
 func listenerBindFailure(listener, address string) startupFailure {
 	return startupFailure{
 		event: "startup_failed", operation: "startup", level: "error", outcome: "failure",
@@ -109,6 +178,19 @@ func startupFailureForError(err error) startupFailure {
 	if errors.Is(err, service.ErrPublicationFailed) {
 		return startupPublicationFailure()
 	}
+	var stageErr *startupStageError
+	if errors.As(err, &stageErr) {
+		switch stageErr.stage {
+		case startupStageCatalogLoopStart:
+			return catalogLoopStartFailure(err)
+		case startupStageCatalogLoopDrain:
+			return catalogLoopDrainFailure()
+		case startupStageListenerServe:
+			return listenerServeFailure(stageErr.listener, stageErr.address)
+		default:
+			return fallbackStartupFailure()
+		}
+	}
 	return fallbackStartupFailure()
 }
 
@@ -127,6 +209,8 @@ func writeStartupFailure(output io.Writer, failure startupFailure) {
 			Address:  failure.resource["address"],
 		}
 	}
+	envelope.StartupStage = failure.stage
+	envelope.StartupCause = failure.cause
 	if err := observe.WriteJSONLine(output, envelope); err != nil {
 		observe.WriteLoggingFailureFallback(output)
 	}

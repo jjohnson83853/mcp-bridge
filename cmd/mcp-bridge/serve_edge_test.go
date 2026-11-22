@@ -531,10 +531,11 @@ func TestSnapshotRecoveryFatalEntriesServeEdge(t *testing.T) {
 			if len(failures) != 1 || len(recoveryEvents(records, "startup_snapshot_rejected")) != 0 {
 				t.Fatalf("fatal state entry records=%#v", records)
 			}
-			if failures[0]["error"].(map[string]any)["code"] != "state_directory" ||
+			if failures[0]["error"].(map[string]any)["code"] != "snapshot_recovery" || failures[0]["startup_stage"] != "snapshot_recovery" || failures[0]["startup_cause"] != "snapshot_unrecoverable" ||
 				failures[0]["resource"].(map[string]any)["path"] != harness.stateDir {
 				t.Fatalf("fatal state entry record=%#v", failures[0])
 			}
+			assertStartupFailureContractRow(t, readLoggingContract(t), failures[0], "snapshot_recovery")
 			if _, err := os.Lstat(path); err != nil {
 				t.Fatalf("fatal state entry was moved: %v", err)
 			}
