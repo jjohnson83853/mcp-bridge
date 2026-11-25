@@ -1,0 +1,772 @@
+{
+  "schemaVersion": 2,
+  "feature": "token-efficient-tool-responses",
+  "revision": "r5",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+    "sha256": "85fcc4c9c3a4c225fa3195348df35b59f9b2507acaf0245bf7bebd2500c37449",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r5",
+        "sha256": "7fb7113c45b4f5d73e00d5e6b7cb02415fc0e6c42249279b3439bd5b9edcfde1"
+      },
+      "design": {
+        "revision": "r5",
+        "sha256": "0a2ff0778fe53e36aa8a518b1d704505943a4a16092f00f17010f38833db4505"
+      },
+      "tasks": {
+        "revision": "r5",
+        "sha256": "2fac4488f09e0461ec571b372f7804b399c605269324a191ceda9b445ef93838"
+      },
+      "envelope": {
+        "revision": "r5",
+        "sha256": "acec4babbdffdd3675042097d0d34f412a56cd43dfd134e1bf8636b06daaa883"
+      }
+    }
+  },
+  "packet": {
+    "digest": "6905d4d45e14c1e5f6750702c7200add9ea0665b1d7832f11ab18ed53f7647af",
+    "branches": [
+      {
+        "id": "token-efficient-tool-responses-ticket01-r5",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T1",
+          "T2",
+          "T3",
+          "T4",
+          "T5",
+          "T6",
+          "T7"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r5",
+            "sha256": "7fb7113c45b4f5d73e00d5e6b7cb02415fc0e6c42249279b3439bd5b9edcfde1"
+          },
+          "design": {
+            "revision": "r5",
+            "sha256": "0a2ff0778fe53e36aa8a518b1d704505943a4a16092f00f17010f38833db4505"
+          },
+          "tasks": {
+            "revision": "r5",
+            "sha256": "2fac4488f09e0461ec571b372f7804b399c605269324a191ceda9b445ef93838"
+          },
+          "envelope": {
+            "revision": "r5",
+            "sha256": "acec4babbdffdd3675042097d0d34f412a56cd43dfd134e1bf8636b06daaa883"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": null
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Over-ceiling results deliver a bounded preview (<=1536 bytes) plus an opaque handle reporting total_bytes and paging_required"
+    },
+    {
+      "id": "R2",
+      "summary": "Results at or below the 8192-byte ceiling are delivered byte-identically to today; 8193 pages"
+    },
+    {
+      "id": "R3",
+      "summary": "Each page is <=8192 serialized bytes and reports page, total_pages, remaining_pages, total_bytes, remaining_bytes"
+    },
+    {
+      "id": "R4",
+      "summary": "Concatenated pages reproduce the unbounded serialized result byte-exactly and are stable until expiry or eviction"
+    },
+    {
+      "id": "R5",
+      "summary": "Pages are valid UTF-8 across boundaries and the ceiling measures post-escape serialized bytes"
+    },
+    {
+      "id": "R6",
+      "summary": "The retrieval surface, parameters and preview/page contract are documented and require no output-shape prediction"
+    },
+    {
+      "id": "R7",
+      "summary": "Handles are crypto-random, content-independent and incarnation-bound; unknown, tampered or foreign handles are rejected indistinguishably"
+    },
+    {
+      "id": "R8",
+      "summary": "Expired and evicted handles fail with distinct typed codes, never an empty or partial success"
+    },
+    {
+      "id": "R9",
+      "summary": "Retained storage is bounded per session and in aggregate with deterministic eviction and no cross-session eviction"
+    },
+    {
+      "id": "R10",
+      "summary": "Oversized isError results keep error status and code; bridge dispatch failures keep their small typed shape"
+    },
+    {
+      "id": "R11",
+      "summary": "The ceiling applies identically to call_tool, directly invoked projected tools, search_tools and describe_tool"
+    },
+    {
+      "id": "R12",
+      "summary": "Durable behavioral tests cover R1-R11 including boundary, reconstruction, UTF-8, isolation, expiry, eviction and serialization bounds"
+    }
+  ],
+  "authorization": null,
+  "reviews": null,
+  "sources": [
+    {
+      "id": "src-owner-kickoff",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
+        "sha256": "b2502c19180b6a53bd3c1565861e4776c8a0b3d62c414e11065d83de1cbcf0fd"
+      },
+      "locator": "owner prompt: review bridge token waste, file tickets, start the first ticket (RULES.md S14 backlog authority)",
+      "recordedAt": "2026-11-25T17:42:18.344Z"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D-OD1",
+      "inputDigest": "653398516c85e6cc81703e1c1de2dc9091e97ad9decc22ab5f20376f7a2c3c7b",
+      "kind": "technical",
+      "status": "resolved",
+      "question": "Which caller-visible surface should retrievable results use?",
+      "answer": "A fourth first-class built-in tool `retrieve_result` (planner recommendation OD1-A). Existing stored schemas are unchanged and the contract stays explicit.",
+      "rationale": "RULES.md S06: adopt the conservative documented recommendation of the planning specialist rather than leaving a reversible default open.",
+      "sourceIds": [
+        "src-owner-kickoff"
+      ],
+      "affects": [
+        "R6",
+        "T3",
+        "AC6"
+      ]
+    },
+    {
+      "id": "D-OD2",
+      "inputDigest": "9231bb5069888087f5120035bb3347fb881ef9d71d5b6e0f5b66c7ea5790d8de",
+      "kind": "technical",
+      "status": "resolved",
+      "question": "What retained-result storage bounds apply by default?",
+      "answer": "Planner recommendation OD2-A: 16 entries and 8 MiB per session, 64 MiB aggregate, 8 MiB max retained result, 1h TTL.",
+      "rationale": "RULES.md S06: adopt the conservative documented recommendation of the planning specialist rather than leaving a reversible default open.",
+      "sourceIds": [
+        "src-owner-kickoff"
+      ],
+      "affects": [
+        "R9",
+        "T2",
+        "AC9"
+      ]
+    },
+    {
+      "id": "D-OD3",
+      "inputDigest": "5f182f8f37848575039eda4883055a5fe24fa4d15d0f734583927473ae7343c1",
+      "kind": "technical",
+      "status": "resolved",
+      "question": "What handle expiry policy applies?",
+      "answer": "Planner recommendation OD3-A: fixed 1h handle_ttl plus purge on session idle-retire/delete.",
+      "rationale": "RULES.md S06: adopt the conservative documented recommendation of the planning specialist rather than leaving a reversible default open.",
+      "sourceIds": [
+        "src-owner-kickoff"
+      ],
+      "affects": [
+        "R8",
+        "T2",
+        "AC8"
+      ]
+    }
+  ],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "CR1",
+      "CT1",
+      "T1",
+      "T2",
+      "T3",
+      "T4",
+      "T5",
+      "T6",
+      "T7"
+    ],
+    "readPaths": [
+      ".scratch/token-efficient-tool-responses/spec.md",
+      ".scratch/token-efficient-tool-responses/issues/01-bounded-results-with-paging.md",
+      ".scratch/token-efficient-tool-responses/map.md",
+      ".omp/artifacts/token-efficiency-ticket01-refinement.md",
+      ".omp/artifacts/token-efficiency-ticket01-review-packet.md",
+      ".omp/plans/decisions.md",
+      "README.md",
+      "CHANGELOG.md",
+      "docs/agents",
+      ".omp/RULES.md",
+      "internal/service",
+      "internal/config",
+      "internal/catalog",
+      "cmd/mcp-bridge",
+      "internal/observe"
+    ],
+    "writePaths": [
+      "internal/service/result_measure.go",
+      "internal/service/result_handle.go",
+      "internal/service/bounded_delivery.go",
+      "internal/service/tools.go",
+      "internal/service/direct_execution.go",
+      "internal/service/session_exposure.go",
+      "internal/service/inbound.go",
+      "internal/config",
+      "internal/catalog/schema.go",
+      "README.md",
+      "CHANGELOG.md",
+      "internal/service/tools_test.go",
+      "internal/service/progressive_session_test.go",
+      "internal/service/progressive_concurrency_lifecycle_test.go",
+      "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+      "cmd/mcp-bridge/serve_hybrid_reload_test.go",
+      "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+      "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+      "cmd/mcp-bridge/serve_oauth_test.go",
+      ".omp/artifacts/coverage-ticket01.out",
+      "internal/observe/metrics.go",
+      "internal/service/tool_metadata_test.go",
+      "internal/service/tools_publish_atomic_test.go",
+      "cmd/mcp-bridge/serve_test.go",
+      "docs/logging-contract.md"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [
+        "D-OD1",
+        "D-OD2",
+        "D-OD3"
+      ],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "CR1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/spec.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "CT1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [
+        "CR1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/spec.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "critic"
+      ]
+    },
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/result_measure.go",
+          "internal/service/result_measure_test.go",
+          "internal/config"
+        ]
+      },
+      "acceptanceIds": [
+        "AC2",
+        "AC5"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T2",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/result_handle.go",
+          "internal/service/result_handle_test.go",
+          "internal/config",
+          "internal/service/inbound.go",
+          "internal/observe/metrics.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC7",
+        "AC8",
+        "AC9",
+        "AC14"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T3",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T2"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/catalog/schema.go",
+          "internal/service/tools.go",
+          "internal/service/session_exposure.go",
+          "internal/service/retrieve_result_test.go",
+          "internal/service/tools_test.go",
+          "internal/service/progressive_session_test.go",
+          "internal/service/progressive_concurrency_lifecycle_test.go",
+          "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+          "cmd/mcp-bridge/serve_hybrid_reload_test.go",
+          "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+          "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+          "cmd/mcp-bridge/serve_oauth_test.go",
+          "internal/service/tool_metadata_test.go",
+          "internal/service/tools_publish_atomic_test.go",
+          "cmd/mcp-bridge/serve_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC3",
+        "AC4",
+        "AC6",
+        "AC7",
+        "AC8",
+        "AC15",
+        "AC17"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T4",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1",
+        "T2",
+        "T3"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/bounded_delivery.go",
+          "internal/service/bounded_delivery_test.go",
+          "internal/service/tools.go",
+          "internal/service/direct_execution.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC1",
+        "AC2",
+        "AC10",
+        "AC11",
+        "AC13",
+        "AC16"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T5",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/tools.go",
+          "internal/service/discovery_bounded_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC11",
+        "AC2",
+        "AC13"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T6",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T3",
+        "T4",
+        "T5"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "README.md",
+          "CHANGELOG.md",
+          "docs/logging-contract.md"
+        ]
+      },
+      "acceptanceIds": [
+        "AC6"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T7",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T2",
+        "T3",
+        "T4",
+        "T5"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          ".omp/artifacts/coverage-ticket01.out"
+        ]
+      },
+      "acceptanceIds": [
+        "AC12"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC1",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2",
+      "requirementIds": [
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T1",
+        "T4",
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC3",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC4",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC5",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T1",
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC6",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T3",
+        "T6"
+      ],
+      "method": "inspection",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC7",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T2",
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC8",
+      "requirementIds": [
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T2",
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC9",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC10",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC11",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T4",
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC12",
+      "requirementIds": [
+        "R12",
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R6",
+        "R7",
+        "R8",
+        "R9",
+        "R10",
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T7"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC13",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T4",
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC14",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC15",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC16",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC17",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.superpowers/sdd/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}

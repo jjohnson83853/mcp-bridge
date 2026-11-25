@@ -1,0 +1,63 @@
+{
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+      "sha256": "4eed4835a9fc8b688e1dda7f5add5cd85ac56c804db304b268af27c2f540d9a3"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/issues/01-bounded-results-with-paging.md",
+      "sha256": "997d15667fcd9346ff146230b43b858f5e40d9d970b6f6ea67b47296f16b5b01"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-efficiency-ticket01-review-packet.md",
+      "sha256": "4e8624a319e91aa7f35a1f01a9b285dd03350fe955fd91f94e1693e5787111b5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-efficiency-ticket01-refinement.md",
+      "sha256": "eac715304b2b204ad54ff212900d2d8bafea718c9ffaab035bb3e2505616aa15"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
+      "sha256": "aab232f8297fdef724acac300ebfd3f46fe18eb340aaf5c78c2bccc9418e6094"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "a2fc976285ebae717a0d1283cd67406bcc699b63ce9023fe418fbc3628642172"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "38ac2ee5dfc44918a67fcf48ec7c05b67a1822f7c8b722b1aee91d634de6039d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/session_exposure.go",
+      "sha256": "e6f8e6cc7ec479f13eebb0750e87b6b0fda8f964e775506176588aa3bdb64da2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/projection.go",
+      "sha256": "5c9a90712dd572575690a982f6df1e15d2190abc55c4253cfe76adeb8dbbf474"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/cursor.go",
+      "sha256": "f5883817347e499aa2b3b66af5d7dbd64cc649fec5e73b37fe0dfe2f65ab3616"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "1e49b633a9a9c6dfdec31ccb9f916cb5320d16dbdb66fd5b2042fbefa7abad21"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "9abca6709fddcaed4b00e9cbbff44481475c0221ee4ca495877e74febac22335"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/RULES.md",
+      "sha256": "b32cd836184cbae854d78e8a429c5c3497228b29221fa6e917e4b2849c289a2f"
+    }
+  ],
+  "contextSha256": "2bda02f3320b909b893740ec444b543dfa4a1728e984f887df926372dc9c43ab",
+  "taskCodeReviewerSha256": "0d6e5e340769a3888a5c465930aaf910ff13be04a056281b45732124f8e6d8b3",
+  "taskCriticSha256": "ececec2b3cbd4ef179147fa745596e630024d44afed1ba4de2388382d7c00961"
+}

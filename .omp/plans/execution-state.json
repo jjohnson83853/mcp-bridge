@@ -1,63 +1,69 @@
 {
   "schemaVersion": 2,
-  "feature": "upstream-breaker-recovery",
+  "feature": "token-efficient-tool-responses",
   "revision": "r5",
   "projectRoot": "/home/opencode/projects/default/mcp-bridge",
   "spec": {
-    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-breaker-recovery/spec.md",
-    "sha256": "412b6f9a6cd2bb600a7f22502a0b5b78f84008fdbc03d16f24df0a4743236138",
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+    "sha256": "85fcc4c9c3a4c225fa3195348df35b59f9b2507acaf0245bf7bebd2500c37449",
     "sectionBindings": {
       "requirements": {
         "revision": "r5",
-        "sha256": "4025fe5de905077a5c708173de6737669e03f3013d1a726019180dec9a6d287b"
+        "sha256": "7fb7113c45b4f5d73e00d5e6b7cb02415fc0e6c42249279b3439bd5b9edcfde1"
       },
       "design": {
         "revision": "r5",
-        "sha256": "fdbae99f99ffb4d965eb9b6f794b84f0d603aa55fa96f4aa0f40b9a1349cff61"
+        "sha256": "0a2ff0778fe53e36aa8a518b1d704505943a4a16092f00f17010f38833db4505"
       },
       "tasks": {
         "revision": "r5",
-        "sha256": "ba1bde0b627526dde79789c90d309da0e6cbbf545d51835069bfcdbebd545e59"
+        "sha256": "2fac4488f09e0461ec571b372f7804b399c605269324a191ceda9b445ef93838"
       },
       "envelope": {
         "revision": "r5",
-        "sha256": "9033682b13468c4a828d5c7cf7f6f46bac5e5ba057548ba724563aef1f006891"
+        "sha256": "acec4babbdffdd3675042097d0d34f412a56cd43dfd134e1bf8636b06daaa883"
       }
     }
   },
   "packet": {
-    "digest": "ed6494642e6806cbacf96541e0a2637b06d43a747a67076570a766240ba7398f",
-    "selectedBranchId": "upstream-breaker-recovery-r5",
+    "digest": "6905d4d45e14c1e5f6750702c7200add9ea0665b1d7832f11ab18ed53f7647af",
     "branches": [
       {
-        "id": "upstream-breaker-recovery-r5",
+        "id": "token-efficient-tool-responses-ticket01-r5",
         "answerIds": [],
         "taskIds": [
           "CR1",
           "CT1",
-          "T1"
+          "T1",
+          "T2",
+          "T3",
+          "T4",
+          "T5",
+          "T6",
+          "T7"
         ],
         "envelopeId": "env-1",
         "sectionBindings": {
           "requirements": {
             "revision": "r5",
-            "sha256": "4025fe5de905077a5c708173de6737669e03f3013d1a726019180dec9a6d287b"
+            "sha256": "7fb7113c45b4f5d73e00d5e6b7cb02415fc0e6c42249279b3439bd5b9edcfde1"
           },
           "design": {
             "revision": "r5",
-            "sha256": "fdbae99f99ffb4d965eb9b6f794b84f0d603aa55fa96f4aa0f40b9a1349cff61"
+            "sha256": "0a2ff0778fe53e36aa8a518b1d704505943a4a16092f00f17010f38833db4505"
           },
           "tasks": {
             "revision": "r5",
-            "sha256": "ba1bde0b627526dde79789c90d309da0e6cbbf545d51835069bfcdbebd545e59"
+            "sha256": "2fac4488f09e0461ec571b372f7804b399c605269324a191ceda9b445ef93838"
           },
           "envelope": {
             "revision": "r5",
-            "sha256": "9033682b13468c4a828d5c7cf7f6f46bac5e5ba057548ba724563aef1f006891"
+            "sha256": "acec4babbdffdd3675042097d0d34f412a56cd43dfd134e1bf8636b06daaa883"
           }
         }
       }
-    ]
+    ],
+    "selectedBranchId": null
   },
   "actors": {
     "plannerId": "planner",
@@ -68,84 +74,177 @@
   "requirements": [
     {
       "id": "R1",
-      "summary": "Latched-open per-server circuit breaker regains reachable close path via non-executing discovery probe"
+      "summary": "Over-ceiling results deliver a bounded preview (<=1536 bytes) plus an opaque handle reporting total_bytes and paging_required"
     },
     {
       "id": "R2",
-      "summary": "Dedicated.Discover claims half-open probe via ServerClient.BeginProbe and completes once on discovery outcome"
+      "summary": "Results at or below the 8192-byte ceiling are delivered byte-identically to today; 8193 pages"
     },
     {
       "id": "R3",
-      "summary": "AdmitCall and CallTool do not claim, complete, or replay probes; tool calls stay rejected while open or probing"
+      "summary": "Each page is <=8192 serialized bytes and reports page, total_pages, remaining_pages, total_bytes, remaining_bytes"
     },
     {
       "id": "R4",
-      "summary": "Probe reuses existing Discover acquisition verbatim (stateless:true opens fresh ephemeral connection)"
+      "summary": "Concatenated pages reproduce the unbounded serialized result byte-exactly and are stable until expiry or eviction"
     },
     {
       "id": "R5",
-      "summary": "Periodic refresh and SIGHUP/reload invoke same Discover close path without process restart"
+      "summary": "Pages are valid UTF-8 across boundaries and the ceiling measures post-escape serialized bytes"
     },
     {
       "id": "R6",
-      "summary": "At most one probe in flight per server; concurrent discovery runs plain without mutating breaker"
+      "summary": "The retrieval surface, parameters and preview/page contract are documented and require no output-shape prediction"
     },
     {
       "id": "R7",
-      "summary": "Observability reuses existing signals without new metric series, label, or custom event"
+      "summary": "Handles are crypto-random, content-independent and incarnation-bound; unknown, tampered or foreign handles are rejected indistinguishably"
     },
     {
       "id": "R8",
-      "summary": "Stateless probe boundary documented; stateful cached session limitation preserved for ticket 2"
+      "summary": "Expired and evicted handles fail with distinct typed codes, never an empty or partial success"
+    },
+    {
+      "id": "R9",
+      "summary": "Retained storage is bounded per session and in aggregate with deterministic eviction and no cross-session eviction"
+    },
+    {
+      "id": "R10",
+      "summary": "Oversized isError results keep error status and code; bridge dispatch failures keep their small typed shape"
+    },
+    {
+      "id": "R11",
+      "summary": "The ceiling applies identically to call_tool, directly invoked projected tools, search_tools and describe_tool"
+    },
+    {
+      "id": "R12",
+      "summary": "Durable behavioral tests cover R1-R11 including boundary, reconstruction, UTF-8, isolation, expiry, eviction and serialization bounds"
     }
   ],
   "authorization": null,
   "reviews": null,
   "sources": [
     {
-      "id": "src-user-kickoff",
+      "id": "src-owner-kickoff",
       "kind": "user-message",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-breaker-recovery/backlog.md",
-        "sha256": "3d3642aabe4c34c2cde34f80319e4991a5314f30ee6c6d92bea82f12680b1ce5"
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
+        "sha256": "b2502c19180b6a53bd3c1565861e4776c8a0b3d62c414e11065d83de1cbcf0fd"
       },
-      "locator": "user conversation message kickoff upstream-breaker-recovery backlog under RULES.md S14",
-      "recordedAt": "2026-11-19T22:30:00.000Z"
+      "locator": "owner prompt: review bridge token waste, file tickets, start the first ticket (RULES.md S14 backlog authority)",
+      "recordedAt": "2026-11-25T17:42:18.344Z"
     }
   ],
-  "decisions": [],
+  "decisions": [
+    {
+      "id": "D-OD1",
+      "inputDigest": "653398516c85e6cc81703e1c1de2dc9091e97ad9decc22ab5f20376f7a2c3c7b",
+      "kind": "technical",
+      "status": "resolved",
+      "question": "Which caller-visible surface should retrievable results use?",
+      "answer": "A fourth first-class built-in tool `retrieve_result` (planner recommendation OD1-A). Existing stored schemas are unchanged and the contract stays explicit.",
+      "rationale": "RULES.md S06: adopt the conservative documented recommendation of the planning specialist rather than leaving a reversible default open.",
+      "sourceIds": [
+        "src-owner-kickoff"
+      ],
+      "affects": [
+        "R6",
+        "T3",
+        "AC6"
+      ]
+    },
+    {
+      "id": "D-OD2",
+      "inputDigest": "9231bb5069888087f5120035bb3347fb881ef9d71d5b6e0f5b66c7ea5790d8de",
+      "kind": "technical",
+      "status": "resolved",
+      "question": "What retained-result storage bounds apply by default?",
+      "answer": "Planner recommendation OD2-A: 16 entries and 8 MiB per session, 64 MiB aggregate, 8 MiB max retained result, 1h TTL.",
+      "rationale": "RULES.md S06: adopt the conservative documented recommendation of the planning specialist rather than leaving a reversible default open.",
+      "sourceIds": [
+        "src-owner-kickoff"
+      ],
+      "affects": [
+        "R9",
+        "T2",
+        "AC9"
+      ]
+    },
+    {
+      "id": "D-OD3",
+      "inputDigest": "5f182f8f37848575039eda4883055a5fe24fa4d15d0f734583927473ae7343c1",
+      "kind": "technical",
+      "status": "resolved",
+      "question": "What handle expiry policy applies?",
+      "answer": "Planner recommendation OD3-A: fixed 1h handle_ttl plus purge on session idle-retire/delete.",
+      "rationale": "RULES.md S06: adopt the conservative documented recommendation of the planning specialist rather than leaving a reversible default open.",
+      "sourceIds": [
+        "src-owner-kickoff"
+      ],
+      "affects": [
+        "R8",
+        "T2",
+        "AC8"
+      ]
+    }
+  ],
   "envelope": {
     "id": "env-1",
     "root": "/home/opencode/projects/default/mcp-bridge",
     "allowedTaskIds": [
       "CR1",
       "CT1",
-      "T1"
+      "T1",
+      "T2",
+      "T3",
+      "T4",
+      "T5",
+      "T6",
+      "T7"
     ],
     "readPaths": [
-      ".scratch/upstream-breaker-recovery/spec.md",
-      ".scratch/upstream-breaker-recovery/issues/01-breaker-discovery-probe-recovery.md",
-      ".scratch/upstream-breaker-recovery/backlog.md",
-      ".scratch/upstream-breaker-recovery/incident-2026-11-14.md",
-      "docs/agents/domain.md",
-      "docs/agents/issue-tracker.md",
-      "internal/upstream/runtime.go",
-      "internal/upstream/runtime_test.go",
-      "internal/upstream/runtime_edge_test.go",
-      "internal/upstream/dedicated.go",
-      "internal/upstream/dedicated_test.go",
-      "internal/service/refresh.go",
-      "internal/service/reload.go",
-      "cmd/mcp-bridge/wiring.go",
-      "internal/observe/log.go",
-      "internal/observe/envelope.go",
-      "internal/observe/metrics.go",
-      ".omp/artifacts/breaker-planner-r5-412b6f9a6cd2-20261120T030413662Z.md"
+      ".scratch/token-efficient-tool-responses/spec.md",
+      ".scratch/token-efficient-tool-responses/issues/01-bounded-results-with-paging.md",
+      ".scratch/token-efficient-tool-responses/map.md",
+      ".omp/artifacts/token-efficiency-ticket01-refinement.md",
+      ".omp/artifacts/token-efficiency-ticket01-review-packet.md",
+      ".omp/plans/decisions.md",
+      "README.md",
+      "CHANGELOG.md",
+      "docs/agents",
+      ".omp/RULES.md",
+      "internal/service",
+      "internal/config",
+      "internal/catalog",
+      "cmd/mcp-bridge",
+      "internal/observe"
     ],
     "writePaths": [
-      "internal/upstream/dedicated.go",
-      "internal/upstream/dedicated_test.go",
-      "internal/upstream/breaker_probe_recovery_test.go"
+      "internal/service/result_measure.go",
+      "internal/service/result_handle.go",
+      "internal/service/bounded_delivery.go",
+      "internal/service/tools.go",
+      "internal/service/direct_execution.go",
+      "internal/service/session_exposure.go",
+      "internal/service/inbound.go",
+      "internal/config",
+      "internal/catalog/schema.go",
+      "README.md",
+      "CHANGELOG.md",
+      "internal/service/tools_test.go",
+      "internal/service/progressive_session_test.go",
+      "internal/service/progressive_concurrency_lifecycle_test.go",
+      "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+      "cmd/mcp-bridge/serve_hybrid_reload_test.go",
+      "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+      "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+      "cmd/mcp-bridge/serve_oauth_test.go",
+      ".omp/artifacts/coverage-ticket01.out",
+      "internal/observe/metrics.go",
+      "internal/service/tool_metadata_test.go",
+      "internal/service/tools_publish_atomic_test.go",
+      "cmd/mcp-bridge/serve_test.go",
+      "docs/logging-contract.md"
     ],
     "allowedEffects": [
       "read",
@@ -161,7 +260,11 @@
       "infrastructure"
     ],
     "decisionPolicy": {
-      "technicalDecisionIds": [],
+      "technicalDecisionIds": [
+        "D-OD1",
+        "D-OD2",
+        "D-OD3"
+      ],
       "ownerCategories": []
     },
     "retryPolicy": {
@@ -182,7 +285,7 @@
       "effects": {
         "kind": "read",
         "paths": [
-          ".scratch/upstream-breaker-recovery/spec.md"
+          ".scratch/token-efficient-tool-responses/spec.md"
         ]
       },
       "acceptanceIds": [],
@@ -195,12 +298,14 @@
       "id": "CT1",
       "stage": "research",
       "status": "pending",
-      "blockedBy": [],
+      "blockedBy": [
+        "CR1"
+      ],
       "requires": [],
       "effects": {
         "kind": "read",
         "paths": [
-          ".scratch/upstream-breaker-recovery/spec.md"
+          ".scratch/token-efficient-tool-responses/spec.md"
         ]
       },
       "acceptanceIds": [],
@@ -218,23 +323,195 @@
       "effects": {
         "kind": "write",
         "paths": [
-          "internal/upstream/dedicated.go",
-          "internal/upstream/dedicated_test.go",
-          "internal/upstream/breaker_probe_recovery_test.go"
+          "internal/service/result_measure.go",
+          "internal/service/result_measure_test.go",
+          "internal/config"
+        ]
+      },
+      "acceptanceIds": [
+        "AC2",
+        "AC5"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T2",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/result_handle.go",
+          "internal/service/result_handle_test.go",
+          "internal/config",
+          "internal/service/inbound.go",
+          "internal/observe/metrics.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC7",
+        "AC8",
+        "AC9",
+        "AC14"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T3",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T2"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/catalog/schema.go",
+          "internal/service/tools.go",
+          "internal/service/session_exposure.go",
+          "internal/service/retrieve_result_test.go",
+          "internal/service/tools_test.go",
+          "internal/service/progressive_session_test.go",
+          "internal/service/progressive_concurrency_lifecycle_test.go",
+          "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+          "cmd/mcp-bridge/serve_hybrid_reload_test.go",
+          "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+          "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+          "cmd/mcp-bridge/serve_oauth_test.go",
+          "internal/service/tool_metadata_test.go",
+          "internal/service/tools_publish_atomic_test.go",
+          "cmd/mcp-bridge/serve_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC3",
+        "AC4",
+        "AC6",
+        "AC7",
+        "AC8",
+        "AC15",
+        "AC17"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T4",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1",
+        "T2",
+        "T3"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/bounded_delivery.go",
+          "internal/service/bounded_delivery_test.go",
+          "internal/service/tools.go",
+          "internal/service/direct_execution.go"
         ]
       },
       "acceptanceIds": [
         "AC1",
         "AC2",
-        "AC3",
-        "AC4",
-        "AC5",
-        "AC6",
-        "AC7",
-        "AC8",
-        "AC9",
         "AC10",
         "AC11",
+        "AC13",
+        "AC16"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T5",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/tools.go",
+          "internal/service/discovery_bounded_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC11",
+        "AC2",
+        "AC13"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T6",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T3",
+        "T4",
+        "T5"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "README.md",
+          "CHANGELOG.md",
+          "docs/logging-contract.md"
+        ]
+      },
+      "acceptanceIds": [
+        "AC6"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T7",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T2",
+        "T3",
+        "T4",
+        "T5"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          ".omp/artifacts/coverage-ticket01.out"
+        ]
+      },
+      "acceptanceIds": [
         "AC12"
       ],
       "evidenceIds": [],
@@ -248,12 +525,10 @@
     {
       "id": "AC1",
       "requirementIds": [
-        "R1",
-        "R2",
-        "R4"
+        "R1"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T4"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -263,12 +538,12 @@
     {
       "id": "AC2",
       "requirementIds": [
-        "R1",
-        "R2",
-        "R5"
+        "R2"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T1",
+        "T4",
+        "T5"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -278,11 +553,10 @@
     {
       "id": "AC3",
       "requirementIds": [
-        "R1",
-        "R2"
+        "R3"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T3"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -292,10 +566,10 @@
     {
       "id": "AC4",
       "requirementIds": [
-        "R3"
+        "R4"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T3"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -305,11 +579,11 @@
     {
       "id": "AC5",
       "requirementIds": [
-        "R1",
         "R5"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T1",
+        "T3"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -319,12 +593,13 @@
     {
       "id": "AC6",
       "requirementIds": [
-        "R4"
+        "R6"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T3",
+        "T6"
       ],
-      "method": "test",
+      "method": "inspection",
       "requiredEvidenceKinds": [
         "test"
       ]
@@ -332,10 +607,11 @@
     {
       "id": "AC7",
       "requirementIds": [
-        "R1"
+        "R7"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T2",
+        "T3"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -345,10 +621,11 @@
     {
       "id": "AC8",
       "requirementIds": [
-        "R6"
+        "R8"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T2",
+        "T3"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -358,11 +635,10 @@
     {
       "id": "AC9",
       "requirementIds": [
-        "R2",
-        "R6"
+        "R9"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T2"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -372,10 +648,10 @@
     {
       "id": "AC10",
       "requirementIds": [
-        "R7"
+        "R10"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T4"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -385,10 +661,11 @@
     {
       "id": "AC11",
       "requirementIds": [
-        "R8"
+        "R11"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T4",
+        "T5"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -398,11 +675,87 @@
     {
       "id": "AC12",
       "requirementIds": [
+        "R12",
         "R1",
-        "R3"
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R6",
+        "R7",
+        "R8",
+        "R9",
+        "R10",
+        "R11"
       ],
       "ownerTaskIds": [
-        "T1"
+        "T7"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC13",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T4",
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC14",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC15",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC16",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC17",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T3"
       ],
       "method": "test",
       "requiredEvidenceKinds": [

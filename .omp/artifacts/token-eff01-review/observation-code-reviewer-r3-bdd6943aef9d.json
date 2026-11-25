@@ -1,0 +1,109 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket01-spec",
+  "revision": "r3",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+      "sha256": "aa26b1525508082f65d0bab04d62d1029a8256fc32c4cf84eec10a20e8085941"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/issues/01-bounded-results-with-paging.md",
+      "sha256": "997d15667fcd9346ff146230b43b858f5e40d9d970b6f6ea67b47296f16b5b01"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-efficiency-ticket01-review-packet.md",
+      "sha256": "4e8624a319e91aa7f35a1f01a9b285dd03350fe955fd91f94e1693e5787111b5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-efficiency-ticket01-refinement.md",
+      "sha256": "eac715304b2b204ad54ff212900d2d8bafea718c9ffaab035bb3e2505616aa15"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round1.md",
+      "sha256": "3d97e9a7cd855710e9a9e7f21a59eada2ba6b1cc763185b90c7396c321058d2f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round2.md",
+      "sha256": "239fc9dccd1f5a4338fa964f098682e7bd7ab2d609a12a46766e8b98d3e67a8a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
+      "sha256": "b2502c19180b6a53bd3c1565861e4776c8a0b3d62c414e11065d83de1cbcf0fd"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/CHANGELOG.md",
+      "sha256": "4ede091062752a1ecfd6b1991331ada96ddea2c3dba3dedbd30fdd85aed07ecc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/RULES.md",
+      "sha256": "b32cd836184cbae854d78e8a429c5c3497228b29221fa6e917e4b2849c289a2f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "a2fc976285ebae717a0d1283cd67406bcc699b63ce9023fe418fbc3628642172"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "38ac2ee5dfc44918a67fcf48ec7c05b67a1822f7c8b722b1aee91d634de6039d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/session_exposure.go",
+      "sha256": "e6f8e6cc7ec479f13eebb0750e87b6b0fda8f964e775506176588aa3bdb64da2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/projection.go",
+      "sha256": "5c9a90712dd572575690a982f6df1e15d2190abc55c4253cfe76adeb8dbbf474"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/inbound.go",
+      "sha256": "7c313195991180357ab3c877c5ad3fb8f00d9183ff7c2d0daacd82376187959a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/cursor.go",
+      "sha256": "f5883817347e499aa2b3b66af5d7dbd64cc649fec5e73b37fe0dfe2f65ab3616"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "1e49b633a9a9c6dfdec31ccb9f916cb5320d16dbdb66fd5b2042fbefa7abad21"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "9abca6709fddcaed4b00e9cbbff44481475c0221ee4ca495877e74febac22335"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SpecReviewPaging",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "targetCandidateId": "token-efficient-tool-responses-ticket01-spec",
+      "targetRevision": "r3",
+      "requestSha256": "3d7f20d491d1706376ee4c8df1f05aac18ac5df08f8cb7e987f5466804adc5b9",
+      "taskSha256": "0d6e5e340769a3888a5c465930aaf910ff13be04a056281b45732124f8e6d8b3",
+      "instructionsSha256": "a9302e498b5662d52bde185789fa0400412edec4dfc1316dc59aa190a1c44535"
+    },
+    {
+      "name": "SpecGatePaging",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "targetCandidateId": "token-efficient-tool-responses-ticket01-spec",
+      "targetRevision": "r3",
+      "requestSha256": "6d23845b1b211403b26b4feb1344a2272f656871833ca53b59a4f1a6132a7b8e",
+      "taskSha256": "ececec2b3cbd4ef179147fa745596e630024d44afed1ba4de2388382d7c00961",
+      "instructionsSha256": "a9302e498b5662d52bde185789fa0400412edec4dfc1316dc59aa190a1c44535"
+    }
+  ],
+  "output": "<task-result id=\"SpecReviewPaging-3\" agent=\"code-reviewer\" status=\"completed\" duration=\"10m43s\">\n\n<output>\nVERDICT: REVISE\n\nMode: specification, repair pass. Reviewed the on-disk spec, which declares STATUS `ticket01-bounded-results-v3` (r3); the packet's pinned digest/44 287 B describes superseded v1, so no digest pins what I reviewed. Grounding sources read only; nothing executed.\n\n**H1 [HIGH][regression/planning] R11, R12; T3–T5, T7; §3 facts; §6 write roots.** Adding `retrieve_result` breaks exact-built-in-surface assertions in `cmd/mcp-bridge` that are neither write roots nor named in T3: `serve_hybrid_exposure_test.go:201` (want 4), `serve_hybrid_reload_test.go:225,238,262` (4/5/4), `serve_hybrid_progressive_reveal_lifecycle_test.go:278-286,492` and `serve_hybrid_progressive_reveal_test.go:352-390` (exact name sets), `serve_oauth_test.go:449,500` (`exposed_tools==3`). Every task's mandated `go test ./cmd/mcp-bridge/` regression therefore fails, so T3 blocks inside its own envelope. §3 lists only three internal tests. Invariant to state: the complete exact-surface assertion set is enumerated and owned by a task root.\n\n**H2 [MEDIUM] R7, AC17, §4.3 step 1.** Session-less retrieval is claimed rejected by exposure admission; `admitExposureRequest` (`session_exposure.go:105-120`) admits session-less requests to the publisher projection, exactly as `describe_tool` does. The observable is `invalid_handle` in the publisher namespace, not rejection, so AC17/`TestRetrieveResultRequiresExposure` cannot pass as written.\n\n**H3 [MEDIUM] R6, T6, README inventory (reopens R-05).** The changed-claim list omits `README.md:288` (\"All three declare…\"), `:338` (\"search_tools includes the revision at the response root\"), `:443` (\"exactly the three bridge built-ins\"). T6's greps pass while those documented claims remain false.\n\n**H4 [MEDIUM] R1, R3 vs §4.5 (reopens F15).** R1/R3 assert absolutes (1536, 8192) while §4.5 makes both ceilings configurable; with `delivery_ceiling_bytes=4096` a 4097-byte result is not \"over the ceiling\" yet pages may still reach 8192. State that preview/page bounds *are* the configured ceilings (defaults 1536/8192).\n\n**H5 [MEDIUM] R12, AC oracles, T1–T4.** Oracles run by no task command: AC1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 14. AC2 is attached to T1, which is prohibited from wiring handlers yet asserts delivery behavior. Each AC oracle must appear in its owning task's `-run`.\n\n**H6 [MEDIUM] R7, AC7, §4.3.** \"zero content\" is false: `errorResult` (`tools.go:1037-1048`) always emits one TextContent message and is the reused shape. Require zero retained-result/page bytes and assert that, not zero content blocks.\n\n**LOW**\n- L1 (R3/AC3): `remaining_pages`/`remaining_bytes` arithmetic is undefined; \"internally consistent\" admits any convention.\n- L2 (R6): preview/page shapes cannot appear in a stored input schema; AC6 does not test that clause.\n- L3 (§4.5): the config-validation list omits `handle_ttl`; zero/negative is accepted and instantly expires every handle.\n- L4 (T7): validation writes `coverage.out` while T7 prohibits any write and no write root covers it.\n\nClosures verified: R-01, R-02, R-03, R-04 (ownership), R-06, R-07, R-08, R-09; round-1 F1, F2, F4, F6, F8, F9, F10, F12, F14.\n\nAdequate: K1 (SDK `CallToolResult.MarshalJSON` form, per-occurrence duplicate counting, one oracle for preview and pages; wrapper exclusion settled by F12); K2 (no recursive paging, termination stated); K3 (CSPRNG handles, epoch namespace, one rejection shape); K4 (FIFO, creating-session-only eviction, atomic admission); K5 (dispatch failures stay small); K6 (fourth tool, `additionalProperties:false`, no `full` knob); K7 (seam after `commitDiscovery`, apart from H1/H4); K8 (UTF-8-safe slices, byte-exact concatenation). K9/K10 have findings above.\n\n### Recommendation\nREQUEST CHANGES\n</output>\n</task-result>\n",
+  "invocationId": "SpecReviewPaging-3"
+}

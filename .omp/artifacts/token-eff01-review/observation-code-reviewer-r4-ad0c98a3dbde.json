@@ -1,0 +1,109 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket01-spec",
+  "revision": "r4",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+      "sha256": "bc78b3c34e4b31190e244ec79e604eb1d1e2a921af489d3b06f59702fe8dfbcb"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/issues/01-bounded-results-with-paging.md",
+      "sha256": "997d15667fcd9346ff146230b43b858f5e40d9d970b6f6ea67b47296f16b5b01"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-efficiency-ticket01-review-packet.md",
+      "sha256": "4e8624a319e91aa7f35a1f01a9b285dd03350fe955fd91f94e1693e5787111b5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-efficiency-ticket01-refinement.md",
+      "sha256": "eac715304b2b204ad54ff212900d2d8bafea718c9ffaab035bb3e2505616aa15"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round1.md",
+      "sha256": "3d97e9a7cd855710e9a9e7f21a59eada2ba6b1cc763185b90c7396c321058d2f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round2.md",
+      "sha256": "239fc9dccd1f5a4338fa964f098682e7bd7ab2d609a12a46766e8b98d3e67a8a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
+      "sha256": "b2502c19180b6a53bd3c1565861e4776c8a0b3d62c414e11065d83de1cbcf0fd"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/CHANGELOG.md",
+      "sha256": "4ede091062752a1ecfd6b1991331ada96ddea2c3dba3dedbd30fdd85aed07ecc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/RULES.md",
+      "sha256": "b32cd836184cbae854d78e8a429c5c3497228b29221fa6e917e4b2849c289a2f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "a2fc976285ebae717a0d1283cd67406bcc699b63ce9023fe418fbc3628642172"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "38ac2ee5dfc44918a67fcf48ec7c05b67a1822f7c8b722b1aee91d634de6039d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/session_exposure.go",
+      "sha256": "e6f8e6cc7ec479f13eebb0750e87b6b0fda8f964e775506176588aa3bdb64da2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/projection.go",
+      "sha256": "5c9a90712dd572575690a982f6df1e15d2190abc55c4253cfe76adeb8dbbf474"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/inbound.go",
+      "sha256": "7c313195991180357ab3c877c5ad3fb8f00d9183ff7c2d0daacd82376187959a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/cursor.go",
+      "sha256": "f5883817347e499aa2b3b66af5d7dbd64cc649fec5e73b37fe0dfe2f65ab3616"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "1e49b633a9a9c6dfdec31ccb9f916cb5320d16dbdb66fd5b2042fbefa7abad21"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "9abca6709fddcaed4b00e9cbbff44481475c0221ee4ca495877e74febac22335"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SpecReviewPaging",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "targetCandidateId": "token-efficient-tool-responses-ticket01-spec",
+      "targetRevision": "r4",
+      "requestSha256": "2d2b0155c4f60670d9b054fe511767ec669cea3f34c913322e1b2fc17e8f0d43",
+      "taskSha256": "ea4f8ddf0bb9b30e8a39355de0f2798bb1c0e706d53697d1ccbb24d438a2a297",
+      "instructionsSha256": "a9302e498b5662d52bde185789fa0400412edec4dfc1316dc59aa190a1c44535"
+    },
+    {
+      "name": "SpecGatePaging",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "targetCandidateId": "token-efficient-tool-responses-ticket01-spec",
+      "targetRevision": "r4",
+      "requestSha256": "90f44feafd06e264fa67e7cb3239cd2383780ea79a1c833180a26b335fc10061",
+      "taskSha256": "0fdfaec8b9ddd301720e6d980c140e46d12073256d9ac5e1b6b08e9a5f2eafb4",
+      "instructionsSha256": "a9302e498b5662d52bde185789fa0400412edec4dfc1316dc59aa190a1c44535"
+    }
+  ],
+  "output": "<task-result id=\"SpecReviewPaging-4\" agent=\"code-reviewer\" status=\"completed\" duration=\"7m54s\">\n\n<output>\nVERDICT: REVISE\n\nMode: specification; pass: repair (round 4). Candidate: on-disk `.scratch/token-efficient-tool-responses/spec.md` (declares r4).\n\n### Findings\n\n**R1 [HIGH][ledger-state-drift] — H1 reopened: inventory is not complete.** Affected: R11/R12, T3, §3 inventory, §6 T3, §7 write roots. §3's \"complete\" 8-file built-in-surface inventory misses exact-set/count assertions in three files that are neither inventoried nor writable: `internal/service/tool_metadata_test.go:108-120` (3-name want map, `len(got)!=3`), `internal/service/tools_publish_atomic_test.go:50-57` (3 names + `alpha__good`, `len(got)!=4`), `cmd/mcp-bridge/serve_test.go:618` (`len(listed.Tools)!=3`). Consequence: T3's mandated `go test ./internal/service/ ./cmd/mcp-bridge/` fails in files it may not edit → T3 BLOCKED. Invariant to state: the inventory is repo-complete and every hit is a write root.\n\n**R2 [HIGH][bound-unproven] — unbounded `upstream_code` defeats both ceilings.** Affected: R1/R3/R10, §4.2, §4.3 page partition, §4.4. The preview and every page copy the upstream's top-level string `code` verbatim into the metadata envelope, while the maximal-fill partition assumes an envelope varying only by digit count; there is no length bound, truncation rule, or termination rule. Consequence: a long upstream code makes the preview exceed 1536 (R1 false) or forces truncation (R10's \"its own upstream_code\" false); a page whose envelope alone ≥8192 has no feasible prefix and becomes an over-ceiling payload with no re-paging rule.\n\n**R3 [MEDIUM][statement-contradiction] — out-of-range page cannot be pre-store.** Affected: R7, AC15 vs §4.3 steps 2/5. R7/AC15 reject an out-of-range page \"before any store access\", but `total_pages` requires the owner-namespaced lookup; AC15 also treats an absent page as a violation though `page` is optional (default 1). Consequence: R7 false as written, AC15's oracle cannot verify ordering, implementer must choose. State: pre-store = handle shape + page type/minimum; post-lookup = `page > total_pages`.\n\n**R4 [MEDIUM][ledger-state-drift] — §8 has no allowed write path.** Affected: §8 (T2/T4/T5), §7, T2 expected files. The four metrics require `internal/observe/metrics.go` (registry struct/tests) and new events require `docs/logging-contract.md` (\"complete application-owned vocabulary\"); neither is a write root or task expected file, yet §8 ties metric scraping to AC9/T2. Consequence: T2 either writes outside the envelope (forbidden) or fails its §8 verification.\n\n**R5 [MEDIUM][ac-not-falsifiable] — R6 description clause unverified.** Affected: R6, AC6, T3/T6. R6 requires preview/page shapes in the tool description; AC6 checks only the stored input schema and README; no task deliverable covers description text. Consequence: R6 is enforced but cannot fail; a description omitting paging passes AC6/T6.\n\n**R6 [MEDIUM][contract-hole] — unretainable preview underspecified.** Affected: R1/R10, AC13/AC16, §4.2. The unretainable branch specifies no `Content` prefix and omits the retainable/page rule \"MCP `isError` = original\"; R10 names only the structured `is_error`. Consequence: AC13 passes with a metadata-only preview (no result bytes, no handle), and an unretainable upstream error can ship with MCP `isError` false — a failure mistaken for success by protocol-level consumers.\n\n**R7 [LOW][statement-contradiction] — invalidation list incomplete.** Affected: R9/§4.5, T2. \"Invalidated only by TTL, eviction, session retirement (DELETE/idle), or restart\" omits the verified SDK-session-loss/rehydration retirement (`inbound.go:800-816` deletes the record and retires the owner; `:850/:921` issue a new epoch), while T2 names only \"reaper purge\". Consequence: if purge attaches to the reaper rather than the shared retirement cleanup, unreachable old-incarnation entries hold `max_bytes_aggregate` until TTL → avoidable `capacity` rejections. State: every owner-retirement seam purges.\n\n**R8 [LOW][verification-proxy] — T6 negative greps contradict preserved claims.** Affected: T6, §6 README claims. The greps forbid 'complete upstream result', 'is the complete original', and 'includes the revision at the response root', which §6 requires documenting as still true at/below the ceiling. Consequence: T6 blocks truthful qualified wording or forces deleting a true claim.\n\n### Closure evidence (round-3 ledger)\nH2 closed (`session_exposure.go:105-120`; publisher projection published at `tools.go:205`). H3 closed (README 279/287/325/337/443/468 verified; six greps). H4 closed (configured ceilings, defaults stated in R1/R3/§4.2/§4.4/§4.5). H5 closed (AC1–AC17 oracles all present in their task `-run`). H6 closed (\"zero retained-result/page bytes\"). L1–L4 closed. Earlier closures F1/F2/F8/F12/F15 intact. H1 not closed (R1). No implementation-mode diagnostics claimed; no tests run (read-only).\n\n### Verified adequate\n- **Byte accounting:** one oracle for both the 8192 delivery/page bound and the 1536 preview; SDK-marshaled `CallToolResult` (content+structuredContent+isError); duplicates counted per occurrence; wrapper exclusion argued; AC1/AC3 assert the same form.\n- **Non-nesting:** retrieval stated never paged, pages ≤ ceiling by partition — sound only within bounded metadata (R2).\n- **Handles:** 32-byte CSPRNG, 43-char base64url pattern, `{sessionID,epoch}` binding, one `invalid_handle` shape for unknown/tampered/foreign/other-incarnation/session-less, malformed→`invalid_arguments` pre-store; epoch is server-injected and rotated on rehydration.\n- **Storage:** per-session entry/byte + aggregate cap, FIFO, creating-session-only eviction, atomic reserve-then-insert, serialized reads returning a complete page or typed error.\n- **Errors:** retainable preview/pages carry `is_error`+`upstream_code`; dispatch failures retain `errorResult`; no paged failure.\n- **Compatibility:** §4.3 schema is a first-class tool with `additionalProperties:false`, `handle`/`page` only; no `full` (05) or `truncated` (02) collision.\n- **Regression:** seam after `commitDiscovery` (`tools.go:462,629`); exposure/epoch/catalog admission unchanged; exact-count tests named (see R1).\n- **Ledger:** T1–T7 acyclic, RED+validation per task; T7 coverage gate present.\n- **Docs:** changed/preserved README claim set complete apart from R8's grep conflict.\n</output>\n</task-result>\n",
+  "invocationId": "SpecReviewPaging-4"
+}

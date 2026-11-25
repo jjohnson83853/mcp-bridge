@@ -1,36 +1,36 @@
 {
   "schemaVersion": 2,
   "feature": "upstream-breaker-recovery",
-  "revision": "r4",
+  "revision": "r5",
   "projectRoot": "/home/opencode/projects/default/mcp-bridge",
   "spec": {
     "path": "/home/opencode/projects/default/mcp-bridge/.scratch/upstream-breaker-recovery/spec.md",
-    "sha256": "fbb2a29353ef1a20db7d97a6cab2f81e1c89cb4193dd7bcc83674c69d826a1b2",
+    "sha256": "412b6f9a6cd2bb600a7f22502a0b5b78f84008fdbc03d16f24df0a4743236138",
     "sectionBindings": {
       "requirements": {
-        "sha256": "4025fe5de905077a5c708173de6737669e03f3013d1a726019180dec9a6d287b",
-        "revision": "r4"
+        "revision": "r5",
+        "sha256": "4025fe5de905077a5c708173de6737669e03f3013d1a726019180dec9a6d287b"
       },
       "design": {
-        "sha256": "8bf8ce0a30f7b3a2c2f4bc50b58b0c212062b51dac6d1933f8a66a7d084ad4cb",
-        "revision": "r4"
+        "revision": "r5",
+        "sha256": "fdbae99f99ffb4d965eb9b6f794b84f0d603aa55fa96f4aa0f40b9a1349cff61"
       },
       "tasks": {
-        "sha256": "93e9d0ac927e95fa090752e934daab9f079e5fc7a084fa73915c7c6e55b70e77",
-        "revision": "r4"
+        "revision": "r5",
+        "sha256": "ba1bde0b627526dde79789c90d309da0e6cbbf545d51835069bfcdbebd545e59"
       },
       "envelope": {
-        "sha256": "9033682b13468c4a828d5c7cf7f6f46bac5e5ba057548ba724563aef1f006891",
-        "revision": "r4"
+        "revision": "r5",
+        "sha256": "9033682b13468c4a828d5c7cf7f6f46bac5e5ba057548ba724563aef1f006891"
       }
     }
   },
   "packet": {
-    "digest": "3e514849aaaf84e5fa2a707e6fd27b04bbf12dd5283e77158cb9f5cc9a122bac",
-    "selectedBranchId": "upstream-breaker-recovery-r4",
+    "digest": "ed6494642e6806cbacf96541e0a2637b06d43a747a67076570a766240ba7398f",
+    "selectedBranchId": "upstream-breaker-recovery-r5",
     "branches": [
       {
-        "id": "upstream-breaker-recovery-r4",
+        "id": "upstream-breaker-recovery-r5",
         "answerIds": [],
         "taskIds": [
           "CR1",
@@ -40,20 +40,20 @@
         "envelopeId": "env-1",
         "sectionBindings": {
           "requirements": {
-            "sha256": "4025fe5de905077a5c708173de6737669e03f3013d1a726019180dec9a6d287b",
-            "revision": "r4"
+            "revision": "r5",
+            "sha256": "4025fe5de905077a5c708173de6737669e03f3013d1a726019180dec9a6d287b"
           },
           "design": {
-            "sha256": "8bf8ce0a30f7b3a2c2f4bc50b58b0c212062b51dac6d1933f8a66a7d084ad4cb",
-            "revision": "r4"
+            "revision": "r5",
+            "sha256": "fdbae99f99ffb4d965eb9b6f794b84f0d603aa55fa96f4aa0f40b9a1349cff61"
           },
           "tasks": {
-            "sha256": "93e9d0ac927e95fa090752e934daab9f079e5fc7a084fa73915c7c6e55b70e77",
-            "revision": "r4"
+            "revision": "r5",
+            "sha256": "ba1bde0b627526dde79789c90d309da0e6cbbf545d51835069bfcdbebd545e59"
           },
           "envelope": {
-            "sha256": "9033682b13468c4a828d5c7cf7f6f46bac5e5ba057548ba724563aef1f006891",
-            "revision": "r4"
+            "revision": "r5",
+            "sha256": "9033682b13468c4a828d5c7cf7f6f46bac5e5ba057548ba724563aef1f006891"
           }
         }
       }
@@ -140,7 +140,7 @@
       "internal/observe/log.go",
       "internal/observe/envelope.go",
       "internal/observe/metrics.go",
-      ".omp/artifacts/upstream-breaker-recovery-planner-r1.md"
+      ".omp/artifacts/breaker-planner-r5-412b6f9a6cd2-20261120T030413662Z.md"
     ],
     "writePaths": [
       "internal/upstream/dedicated.go",

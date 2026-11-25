@@ -1,0 +1,105 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket01-spec",
+  "revision": "r2",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+      "sha256": "834d6bf9c4eedaaf97d6efa6268ab5e6de7ee0f281184459c7b045f729cd5cd2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/issues/01-bounded-results-with-paging.md",
+      "sha256": "997d15667fcd9346ff146230b43b858f5e40d9d970b6f6ea67b47296f16b5b01"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-efficiency-ticket01-review-packet.md",
+      "sha256": "4e8624a319e91aa7f35a1f01a9b285dd03350fe955fd91f94e1693e5787111b5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-efficiency-ticket01-refinement.md",
+      "sha256": "eac715304b2b204ad54ff212900d2d8bafea718c9ffaab035bb3e2505616aa15"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round1.md",
+      "sha256": "3d97e9a7cd855710e9a9e7f21a59eada2ba6b1cc763185b90c7396c321058d2f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
+      "sha256": "b2502c19180b6a53bd3c1565861e4776c8a0b3d62c414e11065d83de1cbcf0fd"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/CHANGELOG.md",
+      "sha256": "4ede091062752a1ecfd6b1991331ada96ddea2c3dba3dedbd30fdd85aed07ecc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/RULES.md",
+      "sha256": "b32cd836184cbae854d78e8a429c5c3497228b29221fa6e917e4b2849c289a2f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "a2fc976285ebae717a0d1283cd67406bcc699b63ce9023fe418fbc3628642172"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "38ac2ee5dfc44918a67fcf48ec7c05b67a1822f7c8b722b1aee91d634de6039d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/session_exposure.go",
+      "sha256": "e6f8e6cc7ec479f13eebb0750e87b6b0fda8f964e775506176588aa3bdb64da2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/projection.go",
+      "sha256": "5c9a90712dd572575690a982f6df1e15d2190abc55c4253cfe76adeb8dbbf474"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/inbound.go",
+      "sha256": "7c313195991180357ab3c877c5ad3fb8f00d9183ff7c2d0daacd82376187959a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/cursor.go",
+      "sha256": "f5883817347e499aa2b3b66af5d7dbd64cc649fec5e73b37fe0dfe2f65ab3616"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "1e49b633a9a9c6dfdec31ccb9f916cb5320d16dbdb66fd5b2042fbefa7abad21"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "9abca6709fddcaed4b00e9cbbff44481475c0221ee4ca495877e74febac22335"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SpecReviewPaging",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "targetCandidateId": "token-efficient-tool-responses-ticket01-spec",
+      "targetRevision": "r2",
+      "requestSha256": "1ff3862dff683807df42fff01ac520fe2fe7a2227074fcf167e8d408d2101d2c",
+      "taskSha256": "0d6e5e340769a3888a5c465930aaf910ff13be04a056281b45732124f8e6d8b3",
+      "instructionsSha256": "2bda02f3320b909b893740ec444b543dfa4a1728e984f887df926372dc9c43ab"
+    },
+    {
+      "name": "SpecGatePaging",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "targetCandidateId": "token-efficient-tool-responses-ticket01-spec",
+      "targetRevision": "r2",
+      "requestSha256": "aa995d720743ad329ef5d54698801515584a7606850330f47caed0b6ef11c6f3",
+      "taskSha256": "ececec2b3cbd4ef179147fa745596e630024d44afed1ba4de2388382d7c00961",
+      "instructionsSha256": "2bda02f3320b909b893740ec444b543dfa4a1728e984f887df926372dc9c43ab"
+    }
+  ],
+  "output": "<task-result id=\"SpecReviewPaging-2\" agent=\"code-reviewer\" status=\"completed\" duration=\"8m38s\">\n\n<output>\nVERDICT: REVISE\n\nMode/pass: specification, repair. The on-disk file declares `ticket01-bounded-results-v2` (r2 repair) and carries the round-1 closure ledger, while the batch context names r1 and sha256 `4eed…`; I reviewed the on-disk bytes. Read-only toolset has no shell, so the digest/byte count could not be re-computed. Worktree untouched.\n\nFindings (severity · affected R/T · anchor · defect → consequence):\n\nR-01 HIGH · R10/AC10 · §4.2 unretainable branch. An unretainable upstream `isError` result is given `code:\"result_too_large\"` and no second code field, so R10's \"upstream's own top-level `code` … visible in the preview\" is false → oversized upstream failures lose their error class, and AC10 has no unretainable-error fixture. Fix: keep the upstream code in a distinct field (or state an explicit R10 carve-out) plus an AC.\n\nR-02 MED · R1/AC13 · §4.1, §4.5 eviction (reopens F3). §4.5 defines a third `result_too_large` cause — aggregate cap exceeded and the creating session's own handles insufficient — which R1's exhaustive exception list and AC13 omit → R1 is false on a reachable branch that has no oracle. Fix: add the cause to R1 and AC13, with precedence versus `max_retained_result_bytes`.\n\nR-03 MED · R6/R7, AC6/AC7 · §4.3, §4.5. The claim that pattern-violating handles and `page<1` are rejected \"by schema validation … before the handler\" is false for built-ins: the SDK delegates argument validation to the caller (`go-sdk mcp/server.go:306-308`) and bridge handlers only `decodeStrict` (`internal/service/tools.go:1074-1081`), which enforces neither `pattern` nor `minimum` → `invalid_arguments` has no producer for those inputs, and the malformed-vs-unrecognized split is unimplementable as stated and untested. Fix: require handler-side shape validation before any store access, plus an AC.\n\nR-04 MED · R7/T3 · §4.3. T3's expected files and allowed scope omit `internal/service/session_exposure.go`, so the `requiresExposure` registration §4.3 relies on has no owning task and no AC; the function defaults to \"not exposure-relevant\" (`session_exposure.go:60-83`) → `retrieve_result` bypasses the stated admission path and \"inherits the session+epoch invariant\" is neither built nor verified. Fix: move that edit and an admission-rejection AC into T3.\n\nR-05 MED · R6/AC6/T6 · §6 README claims. T6's checks are positive greps only, so they pass while README still says \"three tools\" and \"complete upstream result\"; the changed-claim inventory also omits `README.md:322-325` (search/describe response shape), which is no longer delivered over-ceiling → silent public-contract drift. Fix: add negative content checks and the discovery-shape paragraph.\n\nR-06 LOW · R11 · §4.6. No rule exists for retained handles across a catalog reload (handle key carries no revision; only restart and session retirement are addressed) although §4.6 asserts catalog-revision admission is not bypassed → a stale describe/search snapshot stays retrievable after reload on an undefined contract, with no AC. Fix: state the reload rule and its typed outcome.\n\nR-07 LOW · AC12/T1–T6 · §5, §6. AC12's oracle is the ≥90% full-suite gate, but no task runs `go test ./...` or the coverage check → R12 coverage is not task-verifiable.\n\nR-08 LOW · R7/AC14 · §4.5/§5. AC14's \"no handle equals a content/session digest\" cannot fail for any CSPRNG output or salted digest → non-derivation is asserted, not falsifiable; the testable property is uniqueness.\n\nR-09 LOW · R11/AC11 · §4.2. R11/AC11 reference a \"full-content request\" that this ticket forbids and no fixture defines → untestable clause and an invitation to add the ticket-05 `full` knob; reword as forward compatibility or drop.\n\nVerified adequate:\nK1 — §4.4 names the measured form (full `CallToolResult` value, transport codec), counts each duplicate occurrence (content, `structuredContent`, `upstream_result`), and both 8192 and 1536 use that one oracle (AC1/AC3). The excluded JSON-RPC wrapper is constant/non-scaling (bounded deviation from the intake wording). Caution: T1's oracle must call the SDK `MarshalJSON`, not hand-count fields, else `_meta`/`resultType` escape.\nK2 — §4.5 last bullet plus decision 3 and AC3: `retrieve_result` is never paged; metadata-aware maximal fill.\nK3 — 32-byte crypto/rand; `{sessionID, epoch}` namespace; one `invalid_handle` for unknown/foreign/other-incarnation; expiry/eviction only inside the caller's namespace. Incarnation is bridge-owned: inbound strips client epoch (`inbound.go:481`) then injects the recorded epoch (`:596/:632/:664`), and rehydration mints a new SDK ID/owner (`progressive_session_test.go:447-465`).\nK4 — per-session entry/byte bounds, aggregate cap, FIFO, aggregate overflow evicts only the creating session, atomic create/admission, serialized reads, lazy+sweep expiry, retirement purge.\nK5 — preview/page `isError`, page `code`, `errorResult` pass-through (apart from R-01).\nK6 — fourth tool with `additionalProperties:false` and exactly two properties; no existing schema change; no `full` (apart from R-03/R-09).\nK7 — seam after `commitDiscovery`; four surfaces; counts 3/53/1053 verified at `tools_test.go:519-552`, `progressive_session_test.go:180-183`, `progressive_concurrency_lifecycle_test.go:700-731`.\nK8 — R5/AC5 plus UTF-8-safe slicing; post-escape accounting.\nK9 — T1–T6 dependencies acyclic, each with RED step, validation and blocked reporting (except R-04/R-07); AC11's single oracle is split across T4/T5 — the owning files should be named.\nK10 — four README claims, annotations row and changelog identified (except R-05).\nClosure: F1, F2, F4, F6, F8, F9, F10, F12, F14, F15 verified closed; F3, F13, F16 not (R-02, R-08, R-03); F5 and F7 partial (R-07, R-05).\n</output>\n</task-result>\n",
+  "invocationId": "SpecReviewPaging-2"
+}
