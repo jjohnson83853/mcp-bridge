@@ -14,3 +14,14 @@ Allow a latched open circuit breaker on an upstream server to recover when the u
 - [ ] AC-5: In a full service lifecycle test, after 3 transport failures latch the breaker and `openDuration` elapses, a subsequent catalog refresh pass (`Refresher.runPass()`) successfully probes the upstream, closes the breaker, and allows subsequent tool calls to succeed without a process restart.
 - [ ] AC-6: When `stateless: true` (the production default), the discovery probe creates a clean ephemeral connection and does not rely on a potentially poisoned session.
 - [ ] AC-7: Full repository test suite passes clean (`go test -race -p 1 ./...`) and aggregate coverage gate meets >= 90.0%.
+
+## Comments
+
+- **2026-11-25 — paused mid-review, no implementation.** Spec advanced to r5 and installed as the
+  canonical feature state. CodeReviewer round 5 returned REQUEST CHANGES with 4 MEDIUM
+  harness-feasibility findings (Discover adapter signature, missing `ModelIdentityDigest`,
+  missing `Now`/`current` in refresh deps, unpinned `Stateless`); 3 LOW advisory findings.
+  Completed CodeReviewer rounds are now 5 (r1–r5), exhausting the default S15 planning budget,
+  so implementation is blocked on an owner decision (more repair rounds/residual register, or
+  reshape the ticket). Full state, exact artifacts and the pending review-binding record:
+  `.omp/artifacts/upstream-breaker-recovery-progress-r5.md`.
