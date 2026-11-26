@@ -5,7 +5,9 @@ A01 MUST follow .omp/RULES.md for implementation ownership, stalls, bounded disp
 
 ### Issue tracker
 
-Local Markdown specs and tickets live under `.scratch/<feature-slug>/`. See `docs/agents/issue-tracker.md`.
+GitHub issues are the tracker: one `type:spec` parent issue per feature and one
+`type:ticket` issue per ticket, with a `status:*` triage label; `.scratch/` is the
+retired migration source. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
