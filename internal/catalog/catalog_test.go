@@ -37,7 +37,7 @@ func assertSchema(t *testing.T, name string, schema map[string]any, required ...
 }
 
 func TestSearchToolsSchemaMatchesContract(t *testing.T) {
-	properties := assertSchema(t, "search_tools", catalog.SearchToolsInputSchema(), "query")
+	properties := assertSchema(t, "search_tools", catalog.SearchToolsInputSchema(3, 4), "query")
 
 	query := properties["query"].(map[string]any)
 	if query["type"] != "string" || query["minLength"] != 1 || query["maxLength"] != catalog.QueryMaxLength {
@@ -45,8 +45,8 @@ func TestSearchToolsSchemaMatchesContract(t *testing.T) {
 	}
 	topK := properties["top_k"].(map[string]any)
 	if topK["type"] != "integer" || topK["minimum"] != 1 ||
-		topK["maximum"] != catalog.TopKMaximum || topK["default"] != catalog.TopKDefault {
-		t.Fatalf("search_tools top_k = %v; want bounded integer", topK)
+		topK["maximum"] != 4 || topK["default"] != 3 {
+		t.Fatalf("search_tools top_k = %v; want bounded integer (default 3, maximum 4)", topK)
 	}
 	servers := properties["servers"].(map[string]any)
 	if servers["type"] != "array" || servers["uniqueItems"] != true {
@@ -65,6 +65,22 @@ func TestSearchToolsSchemaMatchesContract(t *testing.T) {
 	// The removed namespace field must never reappear.
 	if _, present := properties["namespace"]; present {
 		t.Fatalf("search_tools advertises a namespace field: %v", properties)
+	}
+}
+
+func TestSearchToolsSchemaHonorsBounds(t *testing.T) {
+	for _, tc := range []struct {
+		topKDefault int
+		topKMax     int
+	}{
+		{topKDefault: 3, topKMax: 4},
+		{topKDefault: 1, topKMax: 1},
+	} {
+		properties := assertSchema(t, "search_tools", catalog.SearchToolsInputSchema(tc.topKDefault, tc.topKMax), "query")
+		topK := properties["top_k"].(map[string]any)
+		if topK["default"] != tc.topKDefault || topK["maximum"] != tc.topKMax {
+			t.Errorf("search_tools top_k for bounds (%d, %d) = %v", tc.topKDefault, tc.topKMax, topK)
+		}
 	}
 }
 
@@ -127,11 +143,11 @@ func TestCatalogRevisionPatterns(t *testing.T) {
 
 // TestSchemasAreIndependent guards callers from sharing mutable schema state.
 func TestSchemasAreIndependent(t *testing.T) {
-	first := catalog.SearchToolsInputSchema()
+	first := catalog.SearchToolsInputSchema(3, 4)
 	first["type"] = "mutated"
 	properties := first["properties"].(map[string]any)
 	properties["query"].(map[string]any)["maxLength"] = 1
-	if second := catalog.SearchToolsInputSchema(); second["type"] != "object" ||
+	if second := catalog.SearchToolsInputSchema(3, 4); second["type"] != "object" ||
 		second["properties"].(map[string]any)["query"].(map[string]any)["maxLength"] != catalog.QueryMaxLength {
 		t.Fatalf("SearchToolsInputSchema returned shared mutable state: %v", second)
 	}

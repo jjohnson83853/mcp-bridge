@@ -260,9 +260,9 @@ func searchPayload(t *testing.T, ctx context.Context, session *mcp.ClientSession
 	return structuredContent(t, callTool(t, ctx, session, catalog.ToolSearchTools, map[string]any{"query": query}))
 }
 
-// catalogRevisionAndTool finds one server's advertised tool and the revision
+// catalogRevisionAndTool finds one expected public tool name and the revision
 // that must be echoed back to admit a call.
-func catalogRevisionAndTool(t *testing.T, payload map[string]any, serverID string) (string, string) {
+func catalogRevisionAndTool(t *testing.T, payload map[string]any, want string) (string, string) {
 	t.Helper()
 	revision, ok := payload["catalog_revision"].(string)
 	if !ok || revision == "" {
@@ -277,7 +277,7 @@ func catalogRevisionAndTool(t *testing.T, payload map[string]any, serverID strin
 		if !ok {
 			continue
 		}
-		if row["server"] == serverID {
+		if row["tool_name"] == want {
 			name, ok := row["tool_name"].(string)
 			if !ok || name == "" {
 				t.Fatalf("search result tool_name = %v", row["tool_name"])
@@ -285,7 +285,7 @@ func catalogRevisionAndTool(t *testing.T, payload map[string]any, serverID strin
 			return revision, name
 		}
 	}
-	t.Fatalf("catalog revision %s has no tool of server %q: %v", revision, serverID, results)
+	t.Fatalf("catalog revision %s has no tool named %q: %v", revision, want, results)
 	return "", ""
 }
 
@@ -631,7 +631,7 @@ func TestServeCompositionRootServesCatalogAndSurvivesReload(t *testing.T) {
 		if !ok || len(results) == 0 {
 			return false
 		}
-		revision, readName = catalogRevisionAndTool(t, payload, "alpha")
+		revision, readName = catalogRevisionAndTool(t, payload, "alpha__read")
 		return revision != "" && readName == "alpha__read"
 	})
 
@@ -682,10 +682,10 @@ func TestServeCompositionRootServesCatalogAndSurvivesReload(t *testing.T) {
 		}
 		for _, entry := range results {
 			row, ok := entry.(map[string]any)
-			if !ok || row["server"] != "beta" {
+			if !ok || row["tool_name"] != "beta__list" {
 				continue
 			}
-			betaRevision, betaName = catalogRevisionAndTool(t, payload, "beta")
+			betaRevision, betaName = catalogRevisionAndTool(t, payload, "beta__list")
 			return true
 		}
 		return false
@@ -879,12 +879,12 @@ func TestServeCatalogErgonomicsLiveWire(t *testing.T) {
 	foundSearchTool := false
 	for _, item := range results {
 		row, ok := item.(map[string]any)
-		if !ok || row["server"] != "alpha" || row["upstream_name"] != "read" {
+		if !ok || row["tool_name"] != "alpha__read" {
 			continue
 		}
 		foundSearchTool = true
-		if row["tool_name"] != wireToolName || row["availability"] != "available" {
-			t.Errorf("search row = %v; want tool_name=%q and availability=available", row, wireToolName)
+		if row["tool_name"] != wireToolName {
+			t.Errorf("search row = %v; want tool_name=%q", row, wireToolName)
 		}
 	}
 	if !foundSearchTool {

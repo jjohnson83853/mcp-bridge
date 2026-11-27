@@ -512,11 +512,11 @@ func TestToolSurfaceCallCatalogRevisionAdmission(t *testing.T) {
 
 // The bridge advertises its four built-ins with the exact schemas, plus its configured
 // pin (PR-R7/PR-AC1).
-func assertAdvertisedBuiltinsAndPin(t *testing.T, tools []*mcp.Tool, pinName string) {
+func assertAdvertisedBuiltinsAndPin(t *testing.T, tools []*mcp.Tool, pinName string, topKDefault, topKMax int) {
 	t.Helper()
 
 	wantBuiltins := map[string]map[string]any{
-		catalog.ToolSearchTools:  catalog.SearchToolsInputSchema(),
+		catalog.ToolSearchTools:  catalog.SearchToolsInputSchema(topKDefault, topKMax),
 		catalog.ToolDescribeTool: catalog.DescribeToolInputSchema(),
 		catalog.ToolCallTool:     catalog.CallToolInputSchema(),
 		catalog.ToolRetrieveResult: map[string]any{
@@ -567,7 +567,7 @@ func TestToolSurfaceAdvertisesExactlyItsFourTools(t *testing.T) {
 	if err != nil {
 		t.Fatalf("tools/list: %v", err)
 	}
-	assertAdvertisedBuiltinsAndPin(t, listed.Tools, config.WireToolName("alpha", "read"))
+	assertAdvertisedBuiltinsAndPin(t, listed.Tools, config.WireToolName("alpha", "read"), 3, 4)
 }
 
 // call_tool wraps exactly one upstream execution in the provenance envelope and
@@ -808,8 +808,8 @@ func TestToolSurfaceDescribeToolServesExactStoredSchema(t *testing.T) {
 	}
 }
 
-// search_tools answers from the durable snapshot: keyword ranking with the
-// pinned flag and provenance, and an explicit degradation without a provider.
+// search_tools answers from the durable snapshot: keyword ranking and an
+// explicit degradation without a provider.
 func TestToolSurfaceSearchToolsReturnsRankedProvenance(t *testing.T) {
 	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")
 	t.Setenv("TOOLS_CLIENT_TOKEN", "client-token")
@@ -850,13 +850,12 @@ func TestToolSurfaceSearchToolsReturnsRankedProvenance(t *testing.T) {
 	if !ok || len(results) != 2 {
 		t.Fatalf("results = %v; want both matching tools", payload["results"])
 	}
-	match, _ := results[0].(map[string]any)
-	// Search results use semantic wire names for both pinned and discovered tools.
-	if match["tool_name"] != "alpha__read" || match["server"] != "alpha" || match["upstream_name"] != "read" {
-		t.Fatalf("first result provenance = %v; want the read tool first under its wire name", match)
+	match, ok := results[0].(map[string]any)
+	if !ok {
+		t.Fatalf("first search result = %T; want an object", results[0])
 	}
-	if match["pinned"] != true {
-		t.Fatalf("result pinned = %v; want true", match["pinned"])
+	if match["tool_name"] != "alpha__read" {
+		t.Fatalf("first result tool_name = %v; want alpha__read first under its wire name", match["tool_name"])
 	}
 	for _, key := range []string{"catalog_revision", "mode", "degraded_reasons", "results"} {
 		if _, ok := payload[key]; !ok {
@@ -871,19 +870,19 @@ func TestToolSurfaceSearchToolsReturnsRankedProvenance(t *testing.T) {
 		if !ok {
 			t.Fatalf("search result = %T; want an object", result)
 		}
-		for _, key := range []string{"tool_name", "server", "upstream_name", "description", "score", "pinned", "availability"} {
+		for _, key := range []string{"tool_name", "description", "score"} {
 			if _, ok := row[key]; !ok {
 				t.Fatalf("search result is missing required field %q: %v", key, row)
 			}
+		}
+		score, ok := row["score"].(float64)
+		if !ok || score <= 0 {
+			t.Fatalf("search result score = %v; want a positive score", row["score"])
 		}
 		for _, key := range []string{"last_success_at", "catalog_status", "catalog_revision"} {
 			if _, ok := row[key]; ok {
 				t.Fatalf("search result unexpectedly contains pruned field %q: %v", key, row)
 			}
-		}
-		availability, ok := row["availability"].(string)
-		if !ok || (availability != "available" && availability != "unavailable") {
-			t.Fatalf("search result availability = %v; want available or unavailable", row["availability"])
 		}
 	}
 
@@ -895,6 +894,7 @@ func TestToolSurfaceSearchToolsReturnsRankedProvenance(t *testing.T) {
 		t.Fatalf("filter rejection code = %v; want %q", code, search.CodeInvalidFilter)
 	}
 }
+
 func TestToolSurfaceSearchToolsUsesWireBoundaryAndFallbackNames(t *testing.T) {
 	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")
 	t.Setenv("TOOLS_CLIENT_TOKEN", "client-token")
@@ -918,26 +918,359 @@ func TestToolSurfaceSearchToolsUsesWireBoundaryAndFallbackNames(t *testing.T) {
 	if !ok || len(results) != 3 {
 		t.Fatalf("search results = %v; want the invalid, long, and boundary tools", structured(t, result)["results"])
 	}
-	expected := map[string]string{
-		"read.v2":       core.PublicName("alpha", "read.v2"),
-		longRawName:     core.PublicName("alpha", longRawName),
-		boundaryRawName: "alpha__" + boundaryRawName,
+	expected := map[string]struct{}{
+		core.PublicName("alpha", "read.v2"): {},
+		core.PublicName("alpha", longRawName): {},
+		"alpha__" + boundaryRawName: {},
 	}
 	for _, item := range results {
 		entry, ok := item.(map[string]any)
 		if !ok {
 			t.Fatalf("search result = %T; want an object", item)
 		}
-		rawName, _ := entry["upstream_name"].(string)
-		want, found := expected[rawName]
-		if !found || entry["tool_name"] != want {
-			t.Errorf("search result for %q has tool_name %v; want fallback %q", rawName, entry["tool_name"], want)
+		toolName, ok := entry["tool_name"].(string)
+		if !ok {
+			t.Errorf("search result tool_name = %v; want a string", entry["tool_name"])
+			continue
 		}
-		delete(expected, rawName)
+		if _, found := expected[toolName]; !found {
+			t.Errorf("search returned unexpected tool_name %q", toolName)
+			continue
+		}
+		delete(expected, toolName)
 	}
 	if len(expected) != 0 {
-		t.Errorf("search omitted fallback targets: %v", expected)
+		t.Errorf("search omitted fallback tool names: %v", expected)
 	}
+}
+func matchingSearchDefinitions(term string, count int) []core.ToolDefinition {
+	definitions := []core.ToolDefinition{
+		{RawName: "read", Description: "pinned read", InputSchema: json.RawMessage(toolReadSchema)},
+	}
+	for index := range count {
+		definitions = append(definitions, core.ToolDefinition{
+			RawName:     fmt.Sprintf("%s_%d", term, index),
+			Description: term,
+			InputSchema: json.RawMessage(toolReadSchema),
+		})
+	}
+	return definitions
+}
+
+func newCompactSearchHarness(t *testing.T, definitions []core.ToolDefinition, cfg search.Config) *toolHarness {
+	t.Helper()
+	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")
+	t.Setenv("TOOLS_CLIENT_TOKEN", "client-token")
+	return newToolHarnessWithDefinitions(t, parseReloadConfig(t, toolSurfaceConfig), service.ToolSurfaceConfig{
+		Search: cfg,
+		Model:  search.ModelIdentity{Provider: "openai", Model: "embed-1", Dimensions: 4, FormatVersion: "v1"},
+	}, definitions)
+}
+
+func TestToolSurfaceSearchToolsCompactHitFields(t *testing.T) {
+	h := newCompactSearchHarness(t, []core.ToolDefinition{
+		{RawName: "read", Description: "pinned read", InputSchema: json.RawMessage(toolReadSchema)},
+		{RawName: "compact", Description: "first line\nsecond\tline", InputSchema: json.RawMessage(toolReadSchema)},
+	}, search.Config{})
+
+	payload := structured(t, h.call(t, catalog.ToolSearchTools, map[string]any{"query": "compact"}))
+	results, ok := payload["results"].([]any)
+	if !ok || len(results) != 1 {
+		t.Fatalf("search results = %v; want one compact hit", payload["results"])
+	}
+	row, ok := results[0].(map[string]any)
+	if !ok {
+		t.Fatalf("search hit = %T; want an object", results[0])
+	}
+	if len(row) != 3 {
+		t.Fatalf("search hit fields = %v; want exactly description, score, tool_name", row)
+	}
+	for _, key := range []string{"description", "score", "tool_name"} {
+		if _, ok := row[key]; !ok {
+			t.Fatalf("search hit is missing %q: %v", key, row)
+		}
+	}
+	if row["description"] != "first line second line" {
+		t.Fatalf("search hit description = %q; want normalized one-line text", row["description"])
+	}
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("marshal search payload: %v", err)
+	}
+	for _, key := range []string{"input_schema", "output_schema"} {
+		if strings.Contains(string(encoded), key) {
+			t.Fatalf("search payload contains schema field %q: %s", key, encoded)
+		}
+	}
+}
+
+func TestToolSurfaceSearchToolsDefaultCount(t *testing.T) {
+	h := newCompactSearchHarness(t, matchingSearchDefinitions("needle", 5), search.Config{
+		TopKDefault: 5,
+		TopKMax:     20,
+	})
+
+	result := h.call(t, catalog.ToolSearchTools, map[string]any{"query": "needle"})
+	if result.IsError {
+		t.Fatalf("search_tools reported an error: %s", canonical(t, structured(t, result)))
+	}
+	payload := structured(t, result)
+	results, ok := payload["results"].([]any)
+	if !ok || len(results) != 3 {
+		t.Fatalf("default search result count = %v; want 3", payload["results"])
+	}
+}
+
+func TestToolSurfaceSearchToolsRejectsTopKAboveCap(t *testing.T) {
+	h := newCompactSearchHarness(t, matchingSearchDefinitions("needle", 5), search.Config{
+		TopKDefault: 5,
+		TopKMax:     20,
+	})
+
+	result := h.call(t, catalog.ToolSearchTools, map[string]any{"query": "needle", "top_k": 5})
+	if !result.IsError {
+		t.Fatal("search_tools accepted top_k=5 above the bridge cap")
+	}
+	payload := structured(t, result)
+	if payload["code"] != "invalid_arguments" {
+		t.Fatalf("top_k=5 error code = %v; want invalid_arguments", payload["code"])
+	}
+	if _, ok := payload["results"]; ok {
+		t.Fatalf("rejected search unexpectedly returned results: %v", payload)
+	}
+}
+
+func TestToolSurfaceSearchToolsClipMetadata(t *testing.T) {
+	definitions := matchingSearchDefinitions("needle", 6)
+	definitions = append(definitions,
+		core.ToolDefinition{RawName: "few_a", Description: "few", InputSchema: json.RawMessage(toolReadSchema)},
+		core.ToolDefinition{RawName: "few_b", Description: "few", InputSchema: json.RawMessage(toolReadSchema)},
+	)
+	h := newCompactSearchHarness(t, definitions, search.Config{TopKDefault: 3, TopKMax: 4})
+
+	clipped := structured(t, h.call(t, catalog.ToolSearchTools, map[string]any{"query": "needle", "top_k": 4}))
+	results, ok := clipped["results"].([]any)
+	if !ok || len(results) != 4 {
+		t.Fatalf("clipped result count = %v; want 4", clipped["results"])
+	}
+	if clipped["match_count"] != float64(6) || clipped["truncated"] != true {
+		t.Fatalf("clipped metadata = match_count:%v truncated:%v; want 6/true", clipped["match_count"], clipped["truncated"])
+	}
+
+	unclipped := structured(t, h.call(t, catalog.ToolSearchTools, map[string]any{"query": "few", "top_k": 4}))
+	unclippedResults, ok := unclipped["results"].([]any)
+	if !ok || len(unclippedResults) != 2 {
+		t.Fatalf("unclipped result count = %v; want 2", unclipped["results"])
+	}
+	for _, key := range []string{"match_count", "truncated"} {
+		if _, ok := unclipped[key]; ok {
+			t.Fatalf("unclipped payload unexpectedly contains %q: %v", key, unclipped)
+		}
+	}
+}
+
+func TestToolSurfaceSearchToolsDescriptionBounded(t *testing.T) {
+	cases := []struct {
+		name      string
+		input     string
+		want      string
+		truncated bool
+	}{
+		{
+			name:      "controls",
+			input:     strings.Repeat("verbose ", 8) + "\t\n\x00\x1f\x7f\u0085\u2028\u2029" + strings.Repeat(" suffix", 8),
+			want:      strings.Repeat("verbose ", 4) + "v…",
+			truncated: true,
+		},
+		{name: "quotes", input: strings.Repeat("\"", 24), want: strings.Repeat("\"", 16) + "…", truncated: true},
+		{name: "exact", input: strings.Repeat("\"", 18), want: strings.Repeat("\"", 18)},
+		{name: "over", input: strings.Repeat("a", 37), want: strings.Repeat("a", 33) + "…", truncated: true},
+		{name: "unicode", input: "漢", want: "漢"},
+		{name: "empty", input: "", want: ""},
+		{name: "fitting", input: "alpha\nbeta", want: "alpha beta"},
+	}
+	definitions := []core.ToolDefinition{
+		{RawName: "read", Description: "pinned read", InputSchema: json.RawMessage(toolReadSchema)},
+	}
+	for _, test := range cases {
+		definitions = append(definitions, core.ToolDefinition{
+			RawName:     test.name,
+			Description: test.input,
+			InputSchema: json.RawMessage(toolReadSchema),
+		})
+	}
+	h := newCompactSearchHarness(t, definitions, search.Config{})
+
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			query := test.name
+			result := h.call(t, catalog.ToolSearchTools, map[string]any{"query": query})
+			if result.IsError {
+				t.Fatalf("search_tools reported an error: %s", canonical(t, structured(t, result)))
+			}
+			payload := structured(t, result)
+			results, ok := payload["results"].([]any)
+			if !ok || len(results) != 1 {
+				t.Fatalf("search results = %v; want one hit for %q", payload["results"], query)
+			}
+			row, ok := results[0].(map[string]any)
+			if !ok {
+				t.Fatalf("search hit = %T; want an object", results[0])
+			}
+			description, ok := row["description"].(string)
+			if !ok {
+				t.Fatalf("search description = %T; want a string", row["description"])
+			}
+			if description != test.want {
+				t.Fatalf("search description = %q; want %q", description, test.want)
+			}
+			encoded, err := json.Marshal(description)
+			if err != nil {
+				t.Fatalf("marshal search description: %v", err)
+			}
+			encodedBytes := len(encoded) - 2
+			if encodedBytes > 36 {
+				t.Fatalf("encoded description bytes = %d; want <=36 (%q)", encodedBytes, description)
+			}
+			if got := strings.HasSuffix(description, "…"); got != test.truncated {
+				t.Fatalf("description truncated = %v; want %v (%q)", got, test.truncated, description)
+			}
+			if test.name == "controls" {
+				for _, r := range description {
+					if r <= 0x1f || (r >= 0x7f && r <= 0x9f) || r == '\u2028' || r == '\u2029' {
+						t.Fatalf("normalized description contains control/line-separator U+%04X: %q", r, description)
+					}
+				}
+				repeated, ok := structured(t, h.call(t, catalog.ToolSearchTools, map[string]any{"query": query}))["results"].([]any)
+				if !ok || len(repeated) != 1 {
+					t.Fatalf("repeated search results = %v; want one hit", repeated)
+				}
+				repeatedRow, _ := repeated[0].(map[string]any)
+				if repeatedRow["description"] != description {
+					t.Fatalf("normalized description changed across calls: %q != %q", repeatedRow["description"], description)
+				}
+			}
+		})
+	}
+}
+
+func TestToolSurfaceSearchToolsByteBudget(t *testing.T) {
+	tests := []struct {
+		name                 string
+		matchCount           int
+		inputDescription     string
+		wantDescription      string
+		encodedDescriptionBy int
+		clipped              bool
+	}{
+		{
+			name:                 "exact max unmarked escape",
+			matchCount:           4,
+			inputDescription:     strings.Repeat("\"", 18),
+			wantDescription:      strings.Repeat("\"", 18),
+			encodedDescriptionBy: 36,
+		},
+		{
+			name:                 "clipped degraded unmarked escape",
+			matchCount:           6,
+			inputDescription:     strings.Repeat("\"", 18),
+			wantDescription:      strings.Repeat("\"", 18),
+			encodedDescriptionBy: 36,
+			clipped:              true,
+		},
+		{
+			name:                 "clipped degraded truncated escape",
+			matchCount:           6,
+			inputDescription:     strings.Repeat("\"", 24),
+			wantDescription:      strings.Repeat("\"", 16) + "…",
+			encodedDescriptionBy: 35,
+			clipped:              true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			definitions := []core.ToolDefinition{
+				{RawName: "read", Description: "pinned read", InputSchema: json.RawMessage(toolReadSchema)},
+			}
+			for index := range test.matchCount {
+				definitions = append(definitions, core.ToolDefinition{
+					RawName:     fmt.Sprintf("needle_%d_%s", index, strings.Repeat("x", 48)),
+					Description: test.inputDescription,
+					InputSchema: json.RawMessage(toolReadSchema),
+				})
+			}
+			h := newCompactSearchHarness(t, definitions, search.Config{TopKDefault: 4, TopKMax: 4})
+
+			result := h.call(t, catalog.ToolSearchTools, map[string]any{"query": "needle", "top_k": 4})
+			if result.IsError {
+				t.Fatalf("search_tools reported an error: %s", canonical(t, structured(t, result)))
+			}
+			payload := structured(t, result)
+			results, ok := payload["results"].([]any)
+			if !ok || len(results) != 4 {
+				t.Fatalf("search result count = %v; want 4", payload["results"])
+			}
+			if test.clipped {
+				if payload["match_count"] != float64(test.matchCount) || payload["truncated"] != true {
+					t.Fatalf("clip metadata = match_count:%v truncated:%v; want %d/true", payload["match_count"], payload["truncated"], test.matchCount)
+				}
+				if payload["mode"] != search.ModeKeyword {
+					t.Fatalf("search mode = %v; want degraded keyword mode", payload["mode"])
+				}
+				reasons, ok := payload["degraded_reasons"].([]any)
+				if !ok || len(reasons) == 0 {
+					t.Fatalf("degraded_reasons = %v; want a degradation reason", payload["degraded_reasons"])
+				}
+			} else {
+				for _, key := range []string{"match_count", "truncated"} {
+					if _, ok := payload[key]; ok {
+						t.Fatalf("unclipped payload unexpectedly contains %q: %v", key, payload)
+					}
+				}
+			}
+
+			for _, rawResult := range results {
+				row, ok := rawResult.(map[string]any)
+				if !ok {
+					t.Fatalf("search hit = %T; want an object", rawResult)
+				}
+				toolName, ok := row["tool_name"].(string)
+				if !ok || len(toolName) != 64 {
+					t.Fatalf("search hit tool_name = %v; want a 64-character wire name", row["tool_name"])
+				}
+				description, ok := row["description"].(string)
+				if !ok || description != test.wantDescription {
+					t.Fatalf("search hit description = %q; want %q", row["description"], test.wantDescription)
+				}
+				encodedDescription, err := json.Marshal(description)
+				if err != nil {
+					t.Fatalf("marshal search description: %v", err)
+				}
+				if got := len(encodedDescription) - 2; got != test.encodedDescriptionBy {
+					t.Fatalf("encoded description bytes = %d; want %d", got, test.encodedDescriptionBy)
+				}
+			}
+
+			measured, err := measureResult(result)
+			if err != nil {
+				t.Fatalf("measure full CallToolResult: %v", err)
+			}
+			if measured > 2048 {
+				t.Fatalf("serialized CallToolResult = %d bytes; want <=2048", measured)
+			}
+		})
+	}
+}
+
+// measureResult mirrors the service package's package-private helper for this
+// external-package end-to-end test.
+func measureResult(result *mcp.CallToolResult) (int, error) {
+	encoded, err := json.Marshal(result)
+	if err != nil {
+		return 0, err
+	}
+	return len(encoded), nil
 }
 
 // The advertised tool list remains stable across reload, with one of each built-in
@@ -959,7 +1292,7 @@ func TestToolSurfaceSurvivesReloadWithoutDuplicatingTools(t *testing.T) {
 	if !reflect.DeepEqual(before.Tools, after.Tools) {
 		t.Fatal("the advertised tool list changed without a reload")
 	}
-	assertAdvertisedBuiltinsAndPin(t, after.Tools, config.WireToolName("alpha", "read"))
+	assertAdvertisedBuiltinsAndPin(t, after.Tools, config.WireToolName("alpha", "read"), 3, 4)
 }
 func TestToolSurfaceDescribeToolReturnsTextContent(t *testing.T) {
 	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")

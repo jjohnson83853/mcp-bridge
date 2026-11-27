@@ -29,8 +29,8 @@ func endpointFingerprintOf(endpoint string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// serverAdvertises reports whether one search payload row names serverID with
-// the expected public tool name.
+// serverAdvertises reports whether any search hit row has the expected public
+// tool name.
 func serverAdvertises(payload map[string]any, serverID, want string) bool {
 	results, ok := payload["results"].([]any)
 	if !ok {
@@ -38,15 +38,15 @@ func serverAdvertises(payload map[string]any, serverID, want string) bool {
 	}
 	for _, entry := range results {
 		row, ok := entry.(map[string]any)
-		if !ok || row["server"] != serverID {
+		if !ok || row["tool_name"] != want {
 			continue
 		}
-		return row["tool_name"] == want
+		return true
 	}
 	return false
 }
 
-// searchFindsTool searches once and reports whether serverID advertises want.
+// searchFindsTool searches once and reports whether the results include want.
 func searchFindsTool(t *testing.T, ctx context.Context, session *mcp.ClientSession, query, serverID, want string) bool {
 	t.Helper()
 	return serverAdvertises(searchPayload(t, ctx, session, query), serverID, want)

@@ -405,7 +405,7 @@ func TestToolSurfaceUsesOnlyCurrentDurableVectors(t *testing.T) {
 			durable := durableSnapshot(t, base, alphaDurableServer(test.digest), betaDurableServer(test.digest))
 			cfg := parseReloadConfig(t, toolSurfaceConfig)
 			h := newAdmittedToolHarness(t, cfg, service.ToolSurfaceConfig{
-				Search:   search.Config{MaxQueryLength: 128, TopKDefault: 5, TopKMax: 20},
+				Search:   search.Config{MaxQueryLength: 128, TopKDefault: 3, TopKMax: 4},
 				Provider: durableProvider{},
 				Model:    model,
 			}, durable, model.Digest())

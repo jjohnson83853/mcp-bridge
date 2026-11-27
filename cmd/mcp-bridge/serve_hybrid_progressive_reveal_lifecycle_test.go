@@ -194,16 +194,14 @@ func progressiveRevealWriteName(t *testing.T, envelope progressiveRevealWireEnve
 	}
 	var result struct {
 		Results []struct {
-			ToolName     string `json:"tool_name"`
-			Server       string `json:"server"`
-			UpstreamName string `json:"upstream_name"`
+			ToolName string `json:"tool_name"`
 		} `json:"results"`
 	}
 	if err := json.Unmarshal([]byte(envelope.Result.Content[0].Text), &result); err != nil {
 		t.Fatalf("decode search_tools results: %v", err)
 	}
 	for _, target := range result.Results {
-		if target.Server == "alpha" && target.UpstreamName == "write" && target.ToolName != "" {
+		if target.ToolName == "alpha__write" {
 			return target.ToolName
 		}
 	}

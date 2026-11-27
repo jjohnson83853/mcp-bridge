@@ -214,7 +214,8 @@ func (t *ToolSurface) ensureOwnerProjection(owner projectionOwner) (*toolProject
 			coordinator.publicationMu.Unlock()
 			continue
 		}
-		projection, err := prepareProjection(owner, nil, 0, nil, nil)
+		topKDefault, topKMax := t.searchBounds()
+		projection, err := prepareProjection(owner, nil, 0, nil, nil, topKDefault, topKMax)
 		var delta registryDelta
 		if err == nil {
 			delta, err = coordinator.replaceProjectionLocked(owner, projection)

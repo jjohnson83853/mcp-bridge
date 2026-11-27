@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -50,6 +52,9 @@ type ToolSurface struct {
 	processSecret [32]byte
 	pageSize      int
 
+	searchTopKDefault int
+	searchTopKMax     int
+
 	cached   *search.Searcher
 	cacheKey string
 	results  *resultStore
@@ -74,7 +79,15 @@ func NewToolSurface(runtime *Runtime, cfg ToolSurfaceConfig) (*ToolSurface, erro
 		return nil, errors.New("service: tool surface needs the embedding model dimensions")
 	}
 
-	surface := &ToolSurface{runtime: runtime, cfg: cfg, logger: cfg.Logger}
+	topKDefault, topKMax := cfg.Search.EffectiveBounds()
+
+	surface := &ToolSurface{
+		runtime:           runtime,
+		cfg:               cfg,
+		logger:            cfg.Logger,
+		searchTopKDefault: topKDefault,
+		searchTopKMax:     topKMax,
+	}
 	if _, err := rand.Read(surface.processSecret[:]); err != nil {
 		return nil, fmt.Errorf("service: process secret initialization: %w", err)
 	}
@@ -86,11 +99,18 @@ func NewToolSurface(runtime *Runtime, cfg ToolSurfaceConfig) (*ToolSurface, erro
 	return surface, nil
 }
 
+func (t *ToolSurface) searchBounds() (topKDefault, topKMax int) {
+	if t.searchTopKDefault != 0 && t.searchTopKMax != 0 {
+		return t.searchTopKDefault, t.searchTopKMax
+	}
+	return t.cfg.Search.EffectiveBounds()
+}
+
 // boolPtr returns a fresh pointer for an advisory hint literal, so callers
 // never share a mutable hint value.
 func boolPtr(value bool) *bool { return &value }
 
-func renderBuiltinDescriptors(resolvedPins []core.ResolvedPin) []*mcp.Tool {
+func renderBuiltinDescriptors(resolvedPins []core.ResolvedPin, topKDefault, topKMax int) []*mcp.Tool {
 	pinnedNames := make([]string, 0, len(resolvedPins))
 	for _, pin := range resolvedPins {
 		if pin.Binding == nil {
@@ -100,9 +120,9 @@ func renderBuiltinDescriptors(resolvedPins []core.ResolvedPin) []*mcp.Tool {
 	}
 	sort.Strings(pinnedNames)
 
-	searchDescription := "Search the bridge's indexed tools. Tools declared in your tools list MUST be invoked directly instead of searching. Unpinned tools remain discoverable through this tool."
+	searchDescription := "Search the bridge's indexed tools. Search results contain tool_name, a one-line bounded description, and score; full schemas are available only via describe_tool. Tools declared in your tools list MUST be invoked directly instead of searching. Unpinned tools remain discoverable through this tool."
 	if len(pinnedNames) > 0 {
-		searchDescription = "Search the bridge's indexed tools. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: " +
+		searchDescription = "Search the bridge's indexed tools. Search results contain tool_name, a one-line bounded description, and score; full schemas are available only via describe_tool. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: " +
 			strings.Join(pinnedNames, ", ") +
 			". Unpinned tools remain discoverable through this tool."
 	}
@@ -111,7 +131,7 @@ func renderBuiltinDescriptors(resolvedPins []core.ResolvedPin) []*mcp.Tool {
 		{
 			Name:        catalog.ToolSearchTools,
 			Description: searchDescription,
-			InputSchema: catalog.SearchToolsInputSchema(),
+			InputSchema: catalog.SearchToolsInputSchema(topKDefault, topKMax),
 			Annotations: &mcp.ToolAnnotations{
 				ReadOnlyHint:    true,
 				DestructiveHint: boolPtr(false),
@@ -210,7 +230,8 @@ func (t *ToolSurface) Register(server *mcp.Server) error {
 	if err := c.attachServer(server); err != nil {
 		return err
 	}
-	descriptors := renderBuiltinDescriptors(nil)
+	topKDefault, topKMax := t.searchBounds()
+	descriptors := renderBuiltinDescriptors(nil, topKDefault, topKMax)
 	t.mu.Lock()
 	t.server = server
 	t.builtinTools = descriptors
@@ -1004,29 +1025,96 @@ func effectiveWireName(serverID, rawName string) string {
 	return wire
 }
 
+const (
+	searchDescriptionMaxBytes             = 36
+	searchDescriptionTruncationMarker      = "…"
+	searchDescriptionTruncationPrefixBytes = searchDescriptionMaxBytes - len(searchDescriptionTruncationMarker)
+)
+
+func normalizeSearchDescription(description string) string {
+	var normalized strings.Builder
+	normalizedStarted := false
+	pendingSpace := false
+	for offset, r := range description {
+		if r == ' ' || unicode.IsControl(r) || r == '\u2028' || r == '\u2029' {
+			if !normalizedStarted {
+				normalized.Grow(len(description))
+				normalized.WriteString(description[:offset])
+				normalizedStarted = true
+			}
+			pendingSpace = normalized.Len() > 0
+			continue
+		}
+		if !normalizedStarted {
+			continue
+		}
+		if pendingSpace {
+			normalized.WriteByte(' ')
+			pendingSpace = false
+		}
+		normalized.WriteRune(r)
+	}
+	if !normalizedStarted {
+		return description
+	}
+	return normalized.String()
+}
+
+func boundSearchDescription(description string) string {
+	encodedBytes := 0
+	prefixBytes := 0
+	for offset := 0; offset < len(description); {
+		r, size := utf8.DecodeRuneInString(description[offset:])
+		encodedBytes += searchDescriptionJSONRuneBytes(r)
+		if encodedBytes <= searchDescriptionTruncationPrefixBytes {
+			prefixBytes = offset + size
+		}
+		offset += size
+	}
+	if encodedBytes <= searchDescriptionMaxBytes {
+		return description
+	}
+	return description[:prefixBytes] + searchDescriptionTruncationMarker
+}
+
+func searchDescriptionJSONRuneBytes(r rune) int {
+	switch r {
+	case '"', '\\', '\b', '\f', '\n', '\r', '\t':
+		return 2
+	case '<', '>', '&', '\u2028', '\u2029':
+		return 6
+	}
+	if r < 0x20 {
+		return 6
+	}
+	return utf8.RuneLen(r)
+}
+
 // searchPayload renders one search response with the §4.4 field names.
 func searchPayload(response search.Response) map[string]any {
 	results := make([]map[string]any, 0, len(response.Results))
 	for _, result := range response.Results {
 		toolName := effectiveWireName(result.Server, result.UpstreamName)
+		description := boundSearchDescription(normalizeSearchDescription(result.Description))
 		results = append(results, map[string]any{
-			"tool_name":     toolName,
-			"server":        result.Server,
-			"upstream_name": result.UpstreamName,
-			"description":   result.Description,
-			"score":         result.Score,
-			"pinned":        result.Pinned,
-			"availability":  result.Availability,
+			"tool_name":   toolName,
+			"description": description,
+			"score":       result.Score,
 		})
 	}
 	reasons := make([]string, 0, len(response.DegradedReasons))
 	reasons = append(reasons, response.DegradedReasons...)
-	return map[string]any{
+	payload := map[string]any{
 		"catalog_revision": response.CatalogRevision,
 		"mode":             response.Mode,
 		"degraded_reasons": reasons,
 		"results":          results,
 	}
+	if response.MatchCount > len(response.Results) {
+		payload["match_count"] = response.MatchCount
+		payload["truncated"] = true
+	}
+	return payload
 }
 
 // Bridge tool-layer error codes beyond the core dispatch set.

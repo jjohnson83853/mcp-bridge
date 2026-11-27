@@ -56,8 +56,8 @@ func (p *countingProvider) Embed(_ context.Context, inputs []string) ([][]float6
 
 func testConfig() search.Config {
 	return search.Config{
-		TopKDefault:    10,
-		TopKMax:        50,
+		TopKDefault:    3,
+		TopKMax:        4,
 		KeywordWeight:  0.5,
 		VectorWeight:   0.5,
 		RRFConstant:    60,
@@ -67,6 +67,70 @@ func testConfig() search.Config {
 		CacheTTL:       time.Minute,
 		EmbedTimeout:   time.Second,
 		MaxQueryLength: 2048,
+	}
+}
+
+func TestConfigEffectiveBoundsCaps(t *testing.T) {
+	tests := []struct {
+		name        string
+		config      search.Config
+		wantDefault int
+		wantMaximum int
+	}{
+		{name: "zero", config: search.Config{}, wantDefault: 3, wantMaximum: 4},
+		{name: "operator values 10/50", config: search.Config{TopKDefault: 10, TopKMax: 50}, wantDefault: 3, wantMaximum: 4},
+		{name: "valid pair at one", config: search.Config{TopKDefault: 1, TopKMax: 1}, wantDefault: 1, wantMaximum: 1},
+		{name: "operator values 5/20", config: search.Config{TopKDefault: 5, TopKMax: 20}, wantDefault: 3, wantMaximum: 4},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			topKDefault, topKMaximum := tc.config.EffectiveBounds()
+			if topKDefault != tc.wantDefault || topKMaximum != tc.wantMaximum {
+				t.Fatalf("EffectiveBounds() = (%d, %d); want (%d, %d)", topKDefault, topKMaximum, tc.wantDefault, tc.wantMaximum)
+			}
+			if topKDefault > topKMaximum {
+				t.Fatalf("EffectiveBounds() = (%d, %d); default exceeds maximum for a valid config", topKDefault, topKMaximum)
+			}
+		})
+	}
+}
+
+func TestSearchResponseMatchCountPrecedesClip(t *testing.T) {
+	for _, tc := range []struct {
+		population  int
+		wantResults int
+	}{
+		{population: 6, wantResults: 4},
+		{population: 2, wantResults: 2},
+	} {
+		t.Run(fmt.Sprintf("population_%d", tc.population), func(t *testing.T) {
+			documents := make([]search.Document, tc.population)
+			for i := range documents {
+				name := fmt.Sprintf("tool_%d", i)
+				documents[i] = search.Document{
+					ServerID:    "server",
+					RawName:     name,
+					PublicName:  name,
+					Description: "populationmatch",
+				}
+			}
+			searcher := newSearcher(t, search.Snapshot{
+				Revision:  strings.Repeat("a", 64),
+				Model:     model(),
+				Documents: documents,
+				Backends:  []search.Backend{{Server: "server"}},
+			}, nil, testConfig())
+			response, err := searcher.Search(context.Background(), search.Request{Query: "populationmatch", TopK: 4})
+			if err != nil {
+				t.Fatalf("Search: %v", err)
+			}
+			if response.MatchCount != tc.population {
+				t.Fatalf("MatchCount = %d; want %d", response.MatchCount, tc.population)
+			}
+			if len(response.Results) != tc.wantResults {
+				t.Fatalf("results = %d; want %d", len(response.Results), tc.wantResults)
+			}
+		})
 	}
 }
 

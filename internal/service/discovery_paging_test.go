@@ -72,13 +72,26 @@ func newPagingTestObservation(t *testing.T, surfaceName string, logger *observe.
 	case "search_tools", "describe_tool":
 		harness := newProgressiveSessionHarness(t)
 		description := "needle " + text
+		searchDescription := "needle " + strings.Repeat("d", 29)
+		definitions := []core.ToolDefinition{{
+			RawName:     "old",
+			Description: description,
+			InputSchema: json.RawMessage(`{"type":"object"}`),
+		}}
+		if surfaceName == "search_tools" {
+			definitions[0].Description = "old tool"
+			for _, suffix := range []string{"a", "b", "c", "d"} {
+				rawName := strings.Repeat("x", 56) + suffix
+				definitions = append(definitions, core.ToolDefinition{
+					RawName:     rawName,
+					Description: searchDescription,
+					InputSchema: json.RawMessage(`{"type":"object"}`),
+				})
+			}
+		}
 		deps := progressiveTestDeps(&progressiveTestUpstream{})
 		deps.Discover = func(config.Server) ([]core.ToolDefinition, error) {
-			return []core.ToolDefinition{{
-				RawName:     "old",
-				Description: description,
-				InputSchema: json.RawMessage(`{"type":"object"}`),
-			}}, nil
+			return definitions, nil
 		}
 		assembly, err := harness.surface.runtime.Reload(progressiveTestConfig(t, "old"), deps)
 		if err != nil {
@@ -91,9 +104,23 @@ func newPagingTestObservation(t *testing.T, surfaceName string, logger *observe.
 		configurePagingTestSurface(harness, logger)
 		sessionID := harness.initialize(t)
 		if surfaceName == "search_tools" {
-			response := harness.send(t, http.MethodPost, sessionID, pagingToolCallBody(catalog.ToolSearchTools, `{"query":"needle"}`), nil)
-			payload := fmt.Sprintf(`{"catalog_revision":%q,"degraded_reasons":["embed_provider_unavailable"],"mode":"keyword","results":[{"availability":"available","description":%q,"pinned":true,"score":0.00819672131147541,"server":"alpha","tool_name":"alpha__old","upstream_name":"old"}]}`, assembly.CatalogRevision(), description)
-			return harness, sessionID, decodePagingToolResult(t, response), pagingTextResultGolden(payload)
+			response := harness.send(t, http.MethodPost, sessionID, pagingToolCallBody(catalog.ToolSearchTools, `{"query":"needle","top_k":4}`), nil)
+			hits := make([]string, 0, 4)
+			// Equal BM25 scores tie-break on stable core.PublicName hashes, not wire-name order.
+			suffixes := []string{"c", "a", "d", "b"}
+			scores := []string{"0.00819672131147541", "0.008064516129032258", "0.007936507936507936", "0.0078125"}
+			for index, suffix := range suffixes {
+				rawName := strings.Repeat("x", 56) + suffix
+				hits = append(hits, fmt.Sprintf(`{"description":%q,"score":%s,"tool_name":%q}`, searchDescription,
+					scores[index], "alpha__"+rawName))
+			}
+			payload := fmt.Sprintf(`{"catalog_revision":%q,"degraded_reasons":["embed_provider_unavailable"],"mode":"keyword","results":[%s]}`,
+				assembly.CatalogRevision(), strings.Join(hits, ","))
+			golden := pagingTextResultGolden(payload)
+			if len(golden) <= 1024 {
+				t.Fatalf("search paging fixture bytes = %d; want more than the 1024-byte test ceiling", len(golden))
+			}
+			return harness, sessionID, decodePagingToolResult(t, response), golden
 		}
 
 		arguments := `{"tool_name":"alpha__old"}`
@@ -108,7 +135,7 @@ func newPagingTestObservation(t *testing.T, surfaceName string, logger *observe.
 
 func configurePagingTestSurface(harness *progressiveSessionHarness, logger *observe.Logger) {
 	bounds := resultStoreBounds()
-	bounds.DeliveryCeilingBytes = 8192
+	bounds.DeliveryCeilingBytes = 1024
 	bounds.PreviewCeilingBytes = 512
 	bounds.MaxRetainedResultBytes = 1 << 20
 	bounds.MaxBytesPerNamespace = 1 << 20

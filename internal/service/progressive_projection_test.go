@@ -506,7 +506,7 @@ func TestProgressiveMetadataUnionReferences(t *testing.T) {
 			projected := previous.byName[descriptor.Name]
 			specs = append(specs, projectionToolSpec{name: descriptor.Name, binding: projected.binding})
 		}
-		projection, err := prepareProjection(owner, previous, older.Generation(), specs, ownerInterests)
+		projection, err := prepareProjection(owner, previous, older.Generation(), specs, ownerInterests, 3, 4)
 		if err != nil {
 			t.Fatalf("prepare owner discovery interests: %v", err)
 		}
@@ -857,7 +857,7 @@ func TestProgressiveMetadataDepartureInterestRemoval(t *testing.T) {
 	interests := map[logicalToolTarget]struct{}{target: {}}
 
 	for _, owner := range []projectionOwner{first, remaining} {
-		projection, err := prepareProjection(owner, nil, 1, nil, interests)
+		projection, err := prepareProjection(owner, nil, 1, nil, interests, 3, 4)
 		if err != nil {
 			t.Fatalf("prepare owner interest: %v", err)
 		}
@@ -869,7 +869,7 @@ func TestProgressiveMetadataDepartureInterestRemoval(t *testing.T) {
 		}
 	}
 
-	departed, err := prepareProjection(first, coordinator.ownerProjection(first), 1, nil, nil)
+	departed, err := prepareProjection(first, coordinator.ownerProjection(first), 1, nil, nil, 3, 4)
 	if err != nil {
 		t.Fatalf("prepare departure projection: %v", err)
 	}
@@ -988,7 +988,7 @@ func TestProgressiveMetadataUnpinPreservesEffectiveMetadata(t *testing.T) {
 		t.Fatalf("create interested owner: %v", err)
 	}
 	target := logicalToolTarget{serverID: "alpha", rawName: "read"}
-	interest, err := prepareProjection(owner, nil, initial.Generation(), nil, map[logicalToolTarget]struct{}{target: {}})
+	interest, err := prepareProjection(owner, nil, initial.Generation(), nil, map[logicalToolTarget]struct{}{target: {}}, 3, 4)
 	if err != nil {
 		t.Fatalf("prepare interested owner projection: %v", err)
 	}
@@ -1075,7 +1075,7 @@ func TestProgressiveMetadataRegisteredCallRejectsUnownedSession(t *testing.T) {
 	oldProjection, err := prepareProjection(owner, nil, oldAssembly.Generation(), []projectionToolSpec{{
 		name:    registeredName,
 		binding: oldBinding,
-	}}, nil)
+	}}, nil, 3, 4)
 	if err != nil {
 		t.Fatalf("prepare initial projection: %v", err)
 	}
@@ -1093,7 +1093,7 @@ func TestProgressiveMetadataRegisteredCallRejectsUnownedSession(t *testing.T) {
 	newProjection, err := prepareProjection(owner, oldProjection, newAssembly.Generation(), []projectionToolSpec{{
 		name:    registeredName,
 		binding: newBinding,
-	}}, nil)
+	}}, nil, 3, 4)
 	if err != nil {
 		t.Fatalf("prepare newer projection: %v", err)
 	}

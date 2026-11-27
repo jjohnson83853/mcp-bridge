@@ -142,10 +142,7 @@ func TestServeHybridCoexistence(t *testing.T) {
 		var searchResponse struct {
 			CatalogRevision string `json:"catalog_revision"`
 			Results         []struct {
-				ToolName     string `json:"tool_name"`
-				Server       string `json:"server"`
-				UpstreamName string `json:"upstream_name"`
-				Pinned       bool   `json:"pinned"`
+				ToolName string `json:"tool_name"`
 			} `json:"results"`
 		}
 		if err := json.Unmarshal([]byte(text), &searchResponse); err != nil {
@@ -156,32 +153,42 @@ func TestServeHybridCoexistence(t *testing.T) {
 		}
 		catalogRevision = searchResponse.CatalogRevision
 
-		var foundRead, foundWrite bool
+		foundNames := make(map[string]bool, len(searchResponse.Results))
 		for _, result := range searchResponse.Results {
-			if result.Server == "alpha" && result.UpstreamName == "read" {
-				foundRead = true
-				if !result.Pinned {
-					t.Errorf("alpha/read result pinned = false; want true")
-				}
-				if result.ToolName != "alpha__read" {
-					t.Errorf("alpha/read result tool_name = %q; want %q", result.ToolName, "alpha__read")
-				}
-			}
-			if result.Server == "alpha" && result.UpstreamName == "write" {
-				foundWrite = true
-				if result.Pinned {
-					t.Errorf("alpha/write result pinned = true; want false")
-				}
-				if result.ToolName != "alpha__write" {
-					t.Errorf("alpha/write result tool_name = %q; want %q", result.ToolName, "alpha__write")
-				}
+			foundNames[result.ToolName] = true
+		}
+		for _, name := range []string{"alpha__read", "alpha__write"} {
+			if !foundNames[name] {
+				t.Errorf("search_tools results missing %s (text=%q)", name, text)
 			}
 		}
-		if !foundRead {
-			t.Errorf("search_tools results missing alpha/read (text=%q)", text)
+
+		response, body = mcpSend(t, ctx, client, httpURL, session, `{"jsonrpc":"2.0","id":4,"method":"tools/list","params":{}}`)
+		if response.StatusCode != http.StatusOK {
+			t.Fatalf("tools/list status = %d; want 200 (body=%s)", response.StatusCode, body)
 		}
-		if !foundWrite {
-			t.Errorf("search_tools results missing alpha/write (text=%q)", text)
+		var listed struct {
+			Result *struct {
+				Tools []struct {
+					Name        string `json:"name"`
+					Description string `json:"description"`
+				} `json:"tools"`
+			} `json:"result"`
+		}
+		if err := json.Unmarshal(extractSSEData(t, body), &listed); err != nil {
+			t.Fatalf("tools/list response not JSON: %v (body=%s)", err, body)
+		}
+		if listed.Result == nil {
+			t.Fatalf("tools/list response omitted result (body=%s)", body)
+		}
+		var searchGuidance string
+		for _, tool := range listed.Result.Tools {
+			if tool.Name == "search_tools" {
+				searchGuidance = tool.Description
+			}
+		}
+		if !strings.Contains(searchGuidance, "alpha__read") || strings.Contains(searchGuidance, "alpha__write") {
+			t.Errorf("tools/list search guidance = %q; want pinned alpha__read but not unpinned alpha__write", searchGuidance)
 		}
 	})
 

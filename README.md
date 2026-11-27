@@ -319,14 +319,21 @@ identifier characters, the bridge uses the deterministic fallback `t_` plus
 unpadded lowercase base32 of `SHA-256([server_id, raw_name])` (RFC 4648 §6).
 A schema change moves the catalog revision without moving the public name.
 
-Discovery responses are intentionally pruned: `search_tools` returns the
-catalog revision once at the root and keeps per-tool `availability`, but omits
-the `backends` cluster-health dump and redundant per-result health/revision
-fields. `describe_tool` also retains `availability` while omitting
-`last_success_at` and `catalog_status`. `call_tool` keeps its outer provenance
-envelope and prunes discovery-health fields; an over-ceiling result is
-delivered as a bounded preview plus a handle whose pages reconstruct the
-retained bytes byte-for-byte.
+`search_tools` returns a compact index. Each hit contains only `tool_name`,
+`description`, and `score`; `server`, `upstream_name`, `pinned`, and
+`availability` are omitted. When results are clipped, the root adds
+`match_count` (the number of ranked matches before count clipping) and
+`truncated: true`; both fields are absent otherwise. Its effective default is
+`min(default_top_k, 3)` and its caller-visible maximum is `min(max_top_k, 4)`;
+existing valid operator configurations remain valid. Descriptions are
+normalized to one line and bounded to 36 JSON-encoded bytes, with `…` appended
+if truncated. The serialized `CallToolResult` target is at most 2048 bytes,
+including the structured payload and duplicated text block. `describe_tool`
+is the only path that returns input/output schemas. It retains `availability`
+while omitting `last_success_at` and `catalog_status`. `call_tool` keeps its
+outer provenance envelope and prunes discovery-health fields; an over-ceiling
+result is delivered as a bounded preview plus a handle whose pages reconstruct
+the retained bytes byte-for-byte.
 
 The catalog revision is **global**: it hashes the sorted bound server identities
 and their exact definitions (schemas compared whitespace-insensitively), plus

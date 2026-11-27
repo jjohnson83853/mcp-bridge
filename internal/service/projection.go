@@ -222,8 +222,8 @@ func (c *projectionCoordinator) superseded(generation uint64) bool {
 	return c.acceptedKnown && c.acceptedGeneration > generation
 }
 
-func prepareProjection(owner projectionOwner, previous *toolProjection, runtimeGeneration uint64, specs []projectionToolSpec, interests map[logicalToolTarget]struct{}) (*toolProjection, error) {
-	builtinTools := renderBuiltinDescriptors(nil)
+func prepareProjection(owner projectionOwner, previous *toolProjection, runtimeGeneration uint64, specs []projectionToolSpec, interests map[logicalToolTarget]struct{}, topKDefault, topKMax int) (*toolProjection, error) {
+	builtinTools := renderBuiltinDescriptors(nil, topKDefault, topKMax)
 	if previous != nil {
 		builtinTools = previous.builtinTools
 	}
@@ -294,7 +294,7 @@ func cloneInterests(source map[logicalToolTarget]struct{}) map[logicalToolTarget
 	return interests
 }
 
-func preparePinProjection(owner projectionOwner, previous *toolProjection, assembly *Assembly, catalogBindings map[logicalToolTarget]*core.Binding) (*toolProjection, error) {
+func preparePinProjection(owner projectionOwner, previous *toolProjection, assembly *Assembly, catalogBindings map[logicalToolTarget]*core.Binding, topKDefault, topKMax int) (*toolProjection, error) {
 	if assembly == nil {
 		return nil, errors.New("service: progressive publication needs an assembly")
 	}
@@ -343,7 +343,7 @@ func preparePinProjection(owner projectionOwner, previous *toolProjection, assem
 			}
 		}
 	}
-	return prepareProjectionWithBuiltinTools(owner, previous, assembly.Generation(), specs, interests, renderBuiltinDescriptors(resolvedPins))
+	return prepareProjectionWithBuiltinTools(owner, previous, assembly.Generation(), specs, interests, renderBuiltinDescriptors(resolvedPins, topKDefault, topKMax))
 }
 
 func (t *ToolSurface) discoveryOwnerValid(owner projectionOwner, assembly *Assembly) bool {
@@ -414,7 +414,8 @@ func (t *ToolSurface) commitDiscovery(owner projectionOwner, assembly *Assembly,
 	}
 	base := *previous
 	base.interests = interests
-	next, err := preparePinProjection(owner, &base, assembly, catalogBindings)
+	topKDefault, topKMax := t.searchBounds()
+	next, err := preparePinProjection(owner, &base, assembly, catalogBindings, topKDefault, topKMax)
 	if err != nil {
 		return err
 	}
@@ -936,11 +937,12 @@ func (t *ToolSurface) publishProjection(owner projectionOwner, assembly *Assembl
 	previousInterestReferences := c.interestReferences
 	c.barrier.Unlock()
 
+	topKDefault, topKMax := t.searchBounds()
 	next := make(map[projectionOwner]*toolProjection, len(owners))
 	changedDescriptors := make(map[string]*mcp.Tool)
 	needsReconcile := false
 	for _, liveOwner := range owners {
-		projection, err := preparePinProjection(liveOwner, previous[liveOwner], assembly, catalogBindings)
+		projection, err := preparePinProjection(liveOwner, previous[liveOwner], assembly, catalogBindings, topKDefault, topKMax)
 		if err != nil {
 			return err
 		}

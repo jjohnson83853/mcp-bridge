@@ -378,7 +378,7 @@ func TestPromptPassThroughCT07(t *testing.T) {
 
 	// Phase 5: a prompt-only change must not invalidate a tool catalog revision.
 	payload := searchPayload(t, ctx, session, "read")
-	toolRevision, readName := catalogRevisionAndTool(t, payload, "alpha")
+	toolRevision, readName := catalogRevisionAndTool(t, payload, "alpha__read")
 	baselineNotifications := changed.count()
 	alpha.addPrompt("added-later", "alpha second prompt", "alpha second body")
 	waitFor(t, "the added prompt to be published", func() bool {
@@ -392,7 +392,7 @@ func TestPromptPassThroughCT07(t *testing.T) {
 	}
 	// The tool catalog of this run is byte-identical, so the revision a client
 	// already holds stays admissible.
-	afterRevision, _ := catalogRevisionAndTool(t, searchPayload(t, ctx, session, "read"), "alpha")
+	afterRevision, _ := catalogRevisionAndTool(t, searchPayload(t, ctx, session, "read"), "alpha__read")
 	if afterRevision != toolRevision {
 		t.Fatalf("prompt change moved the tool revision: %s -> %s", toolRevision, afterRevision)
 	}
@@ -481,7 +481,7 @@ func TestPromptPassThroughCT07(t *testing.T) {
 		t.Fatalf("restored prompts = %v; want the persisted public names %q and %q", restored, alphaPublicName, betaPublicName)
 	}
 	darkPayload := searchPayload(t, ctx, darkSession, "read")
-	darkRevision, _ := catalogRevisionAndTool(t, darkPayload, "alpha")
+	darkRevision, _ := catalogRevisionAndTool(t, darkPayload, "alpha__read")
 	if darkRevision == "" {
 		t.Fatal("a dark restart lost the persisted tool catalog")
 	}
@@ -513,7 +513,7 @@ func TestPromptPassThroughCT07(t *testing.T) {
 	oldSession := connectBridgePrompts(t, ctx, old.httpURL+"/mcp", nil)
 	defer oldSession.Close()
 	oldPayload := searchPayload(t, ctx, oldSession, "read")
-	if revision, _ := catalogRevisionAndTool(t, oldPayload, "alpha"); revision == "" {
+	if revision, _ := catalogRevisionAndTool(t, oldPayload, "alpha__read"); revision == "" {
 		t.Fatal("an old tool-only snapshot did not serve its cached tool")
 	}
 	if names := listPromptNames(t, ctx, oldSession); len(names) != 0 {

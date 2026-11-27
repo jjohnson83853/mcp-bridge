@@ -146,7 +146,7 @@ func TestServeHybridMetadataBuiltinAnnotations(t *testing.T) {
 		}
 	}
 	wantDescriptions := map[string]string{
-		"search_tools":  "Search the bridge's indexed tools. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: alpha__read. Unpinned tools remain discoverable through this tool.",
+		"search_tools":  "Search the bridge's indexed tools. Search results contain tool_name, a one-line bounded description, and score; full schemas are available only via describe_tool. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: alpha__read. Unpinned tools remain discoverable through this tool.",
 		"describe_tool": "Describe one indexed tool with its exact stored schema. DO NOT use this tool to discover input schemas for tools that are already declared in your tools list; invoke those tools directly. Use this tool only to inspect tool metadata, provenance, or unpinned tools.",
 		"call_tool":     "Call one indexed upstream tool through the bridge. Directly declared tools in your active tools list MUST be invoked directly instead of calling this multiplexer. Use this tool only to invoke unpinned upstream tools discovered via search_tools.",
 	}
@@ -446,12 +446,12 @@ func TestServeHybridMetadataReloadUpdatesGuidance(t *testing.T) {
 		assertDescription(phase, want)
 	}
 
-	assertDescription("initial two-pin guidance", "Search the bridge's indexed tools. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: alpha__read, alpha__write. Unpinned tools remain discoverable through this tool.")
+	assertDescription("initial two-pin guidance", "Search the bridge's indexed tools. Search results contain tool_name, a one-line bounded description, and score; full schemas are available only via describe_tool. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: alpha__read, alpha__write. Unpinned tools remain discoverable through this tool.")
 
 	rewriteHybridReloadPins(t, configPath, httpAddress, operationsAddress, filepath.Join(directory, "state"), embeddings.URL, servers,
 		[]string{"beta/read", "beta/write"})
-	reloadAndAssert("guidance for the reloaded beta pins", "Search the bridge's indexed tools. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: beta__read, beta__write. Unpinned tools remain discoverable through this tool.")
+	reloadAndAssert("guidance for the reloaded beta pins", "Search the bridge's indexed tools. Search results contain tool_name, a one-line bounded description, and score; full schemas are available only via describe_tool. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: beta__read, beta__write. Unpinned tools remain discoverable through this tool.")
 
 	rewriteHybridReloadPins(t, configPath, httpAddress, operationsAddress, filepath.Join(directory, "state"), embeddings.URL, servers, nil)
-	reloadAndAssert("zero-pin guidance after reload", "Search the bridge's indexed tools. Tools declared in your tools list MUST be invoked directly instead of searching. Unpinned tools remain discoverable through this tool.")
+	reloadAndAssert("zero-pin guidance after reload", "Search the bridge's indexed tools. Search results contain tool_name, a one-line bounded description, and score; full schemas are available only via describe_tool. Tools declared in your tools list MUST be invoked directly instead of searching. Unpinned tools remain discoverable through this tool.")
 }

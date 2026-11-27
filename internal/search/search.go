@@ -25,6 +25,8 @@ const (
 
 	DefaultTopK          = 10
 	DefaultTopKMax       = 50
+	IndexTopKDefault     = 3
+	IndexTopKMax         = 4
 	DefaultKeywordWeight = 0.5
 	DefaultVectorWeight  = 0.5
 	DefaultRRFConstant   = 60.0
@@ -73,6 +75,13 @@ func (c Config) withDefaults() Config {
 	if c.TopKMax == 0 {
 		c.TopKMax = DefaultTopKMax
 	}
+
+	if c.TopKDefault > IndexTopKDefault {
+		c.TopKDefault = IndexTopKDefault
+	}
+	if c.TopKMax > IndexTopKMax {
+		c.TopKMax = IndexTopKMax
+	}
 	if c.KeywordWeight == 0 {
 		c.KeywordWeight = DefaultKeywordWeight
 	}
@@ -101,6 +110,13 @@ func (c Config) withDefaults() Config {
 		c.MaxQueryLength = DefaultMaxQueryRunes
 	}
 	return c
+}
+
+// EffectiveBounds returns the default and maximum top_k values after applying
+// the compact-index caps.
+func (c Config) EffectiveBounds() (topKDefault, topKMax int) {
+	c = c.withDefaults()
+	return c.TopKDefault, c.TopKMax
 }
 
 func (c Config) validate() error {
@@ -286,6 +302,7 @@ type Response struct {
 	CatalogRevision string
 	Mode            string
 	DegradedReasons []string
+	MatchCount      int
 	Results         []Result
 	Backends        []Backend
 }
@@ -423,6 +440,7 @@ func (s *Searcher) Search(ctx context.Context, request Request) (Response, error
 	}
 
 	fused := fuse(eligible, lists, weights, s.cfg.RRFConstant)
+	response.MatchCount = len(fused)
 	limit := request.TopK
 	if limit > len(fused) {
 		limit = len(fused)

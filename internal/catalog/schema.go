@@ -21,18 +21,15 @@ const (
 	ServerIDPattern                 = "^[a-z][a-z0-9-]{0,31}$"
 )
 
-// Bounds fixed by r8 §4.2/§4.4 for the bridge's own parameters.
+// Fixed bounds for the bridge's own parameters.
 const (
 	QueryMaxLength    = 2048
-	TopKDefault       = 10
-	TopKMaximum       = 50
 	ServerFilterMax   = 32
 	MaxServerIdentity = 1024
 )
 
-// SearchToolsInputSchema returns the exact search_tools inputSchema (r8 §4.4).
-// Effective default/max are narrowed from config at runtime.
-func SearchToolsInputSchema() map[string]any {
+// SearchToolsInputSchema returns the search_tools input schema with effective top_k bounds.
+func SearchToolsInputSchema(topKDefault, topKMax int) map[string]any {
 	return map[string]any{
 		"type":                 "object",
 		"additionalProperties": false,
@@ -46,8 +43,8 @@ func SearchToolsInputSchema() map[string]any {
 			"top_k": map[string]any{
 				"type":    "integer",
 				"minimum": 1,
-				"maximum": TopKMaximum,
-				"default": TopKDefault,
+				"maximum": topKMax,
+				"default": topKDefault,
 			},
 			"servers": map[string]any{
 				"type":        "array",

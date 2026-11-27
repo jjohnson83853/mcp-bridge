@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	searchToolsBaselineDescription  = "Search the bridge's indexed tools. Tools declared in your tools list MUST be invoked directly instead of searching. Unpinned tools remain discoverable through this tool."
+	searchToolsBaselineDescription  = "Search the bridge's indexed tools. Search results contain tool_name, a one-line bounded description, and score; full schemas are available only via describe_tool. Tools declared in your tools list MUST be invoked directly instead of searching. Unpinned tools remain discoverable through this tool."
 	describeToolGuidanceDescription = "Describe one indexed tool with its exact stored schema. DO NOT use this tool to discover input schemas for tools that are already declared in your tools list; invoke those tools directly. Use this tool only to inspect tool metadata, provenance, or unpinned tools."
 	callToolGuidanceDescription     = "Call one indexed upstream tool through the bridge. Directly declared tools in your active tools list MUST be invoked directly instead of calling this multiplexer. Use this tool only to invoke unpinned upstream tools discovered via search_tools."
 )
@@ -52,7 +52,7 @@ func TestRetrievalContractDocumented(t *testing.T) {
 
 func expectedBuiltinGuidanceDescriptions() map[string]string {
 	return map[string]string{
-		"search_tools":    "Search the bridge's indexed tools. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: alpha__read, zeta__write. Unpinned tools remain discoverable through this tool.",
+		"search_tools":    "Search the bridge's indexed tools. Search results contain tool_name, a one-line bounded description, and score; full schemas are available only via describe_tool. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: alpha__read, zeta__write. Unpinned tools remain discoverable through this tool.",
 		"describe_tool":   describeToolGuidanceDescription,
 		"call_tool":       callToolGuidanceDescription,
 		"retrieve_result": "Retrieve a retained result page by handle and page number (default 1). The response identifies total_pages; over-ceiling results arrive as a bounded preview plus a handle whose pages reconstruct the retained bytes byte-for-byte when concatenated.",
@@ -62,7 +62,7 @@ func expectedBuiltinGuidanceDescriptions() map[string]string {
 
 func TestBuiltinGuidanceDynamicPinInventory(t *testing.T) {
 	got := publishedBuiltinGuidance(t, guidanceAssembly())["search_tools"]
-	want := "Search the bridge's indexed tools. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: alpha__read, zeta__write. Unpinned tools remain discoverable through this tool."
+	want := "Search the bridge's indexed tools. Search results contain tool_name, a one-line bounded description, and score; full schemas are available only via describe_tool. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: alpha__read, zeta__write. Unpinned tools remain discoverable through this tool."
 	if got != want {
 		t.Fatalf("search_tools description = %q; want %q", got, want)
 	}

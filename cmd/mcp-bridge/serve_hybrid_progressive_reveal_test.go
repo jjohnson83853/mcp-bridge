@@ -90,9 +90,7 @@ func TestServeHybridProgressiveRevealDiscovery(t *testing.T) {
 	var found struct {
 		CatalogRevision string `json:"catalog_revision"`
 		Results         []struct {
-			ToolName     string `json:"tool_name"`
-			Server       string `json:"server"`
-			UpstreamName string `json:"upstream_name"`
+			ToolName string `json:"tool_name"`
 		} `json:"results"`
 	}
 	if err := json.Unmarshal([]byte(searchResult.Result.Content[0].Text), &found); err != nil {
@@ -103,13 +101,22 @@ func TestServeHybridProgressiveRevealDiscovery(t *testing.T) {
 	}
 	targets := make(map[string]string, len(found.Results))
 	for _, result := range found.Results {
-		if result.Server == "alpha" {
-			targets[result.UpstreamName] = result.ToolName
+		switch result.ToolName {
+		case "alpha__read":
+			targets["read"] = result.ToolName
+		case "alpha__write":
+			targets["write"] = result.ToolName
 		}
 	}
-	for _, upstreamName := range []string{"read", "write"} {
-		if targets[upstreamName] == "" {
-			t.Fatalf("search_tools omitted alpha/%s identity: %+v", upstreamName, found.Results)
+	for _, target := range []struct {
+		upstreamName string
+		toolName     string
+	}{
+		{upstreamName: "read", toolName: "alpha__read"},
+		{upstreamName: "write", toolName: "alpha__write"},
+	} {
+		if targets[target.upstreamName] != target.toolName {
+			t.Fatalf("search_tools omitted alpha/%s identity: %+v", target.upstreamName, found.Results)
 		}
 	}
 
