@@ -1,0 +1,26 @@
+{
+  "baseSha64hex": "1e572d47d2e04e50598e4ac8f0a8ed154f851809098d19d7cb4a08888bd59437",
+  "taskId": "T2",
+  "evidence": [
+    {
+      "id": "ev-t2-search-bounds",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/evidence-t2-search-bounds.txt"
+      },
+      "acceptanceIds": [],
+      "outcome": "pass",
+      "observedAt": "2026-11-27T14:59:37.621Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test -count=1 ./internal/catalog ./internal/service",
+        "exitCode": 0
+      },
+      "declaredInputs": [
+        "internal/catalog/schema.go",
+        "internal/service/tools.go",
+        "internal/service/projection.go"
+      ]
+    }
+  ]
+}

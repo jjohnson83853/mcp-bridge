@@ -1,0 +1,22 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "token-efficient-tool-responses-ticket02-r6",
+  "revision": "r6",
+  "requests": [
+    {
+      "name": "ImplementSearchCaps",
+      "taskId": "T1",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/search/search.go",
+          "internal/search/search_test.go",
+          "internal/search/edge_test.go"
+        ]
+      }
+    }
+  ]
+}

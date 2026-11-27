@@ -1,0 +1,112 @@
+{
+  "binding": {
+    "candidateId": "token-efficient-tool-responses-ticket02-spec-r5",
+    "reviewerId": "code-reviewer",
+    "authorIds": [
+      "planner"
+    ],
+    "inputs": [
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket02-spec-r5.md",
+        "sha256": "02d685ccdc7baacf9a318802b32d39b479fc5806a4f21e2789d4e8e1918455ab"
+      },
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/issue-116.md",
+        "sha256": "fa11fb39956a9f27742e57b670b715d330274999330e2cd8a374851df7149501"
+      },
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/refinement.md",
+        "sha256": "0859a7238aaf2dff1a22651de1a6f363d95ef0e0d3868f64a6a9b5cdf16697fc"
+      },
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/ledger.md",
+        "sha256": "24fefcd91b9c60f7f60f4e97c4cd3491aa4edee949282789df48df70be168f3d"
+      },
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket02-spec.md",
+        "sha256": "4c7630007f8685675abf7dbbb9a1f3e36d083a1c6336275c9b8c5bbf67fa71e8"
+      },
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket02-spec-r3.md",
+        "sha256": "89229fd0082a7807cd0ed1421a38da577f67ed0049757117b1fc0d0b53c6bee1"
+      },
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket02-spec-r4.md",
+        "sha256": "177684a58df1f8b24366e5b7db8e71f5e2a9dcec67bab93c29053a60c6400ae9"
+      },
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+        "sha256": "37dd21cee4cebdd8c5e4771741e05e594feb01292e43269ace89ee11d35ad686"
+      },
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
+        "sha256": "5ed67dab601ea5360d693bda93df2fdb740426e33c5a36306f19b9ba58fda52c"
+      },
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/decisions.md",
+        "sha256": "7e9a099c5ad29a6b996d3d91eabda639d3752ae4ebb28c69f64dc07f1d99fb17"
+      }
+    ],
+    "dispatches": [
+      {
+        "name": "SpecReviewCompactIndexR5",
+        "taskId": "CR1",
+        "agent": "code-reviewer",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/token-efficient-tool-responses/ticket02-spec-r5.md"
+          ]
+        },
+        "targetCandidateId": "token-efficient-tool-responses-ticket02-spec-r5",
+        "targetRevision": "r5",
+        "reviewerId": "code-reviewer",
+        "taskSha256": "edd07c6971a7942e431330c305a0172a875f0734b9c7066f4ea74a3ef7219bce",
+        "instructionsSha256": "b0108e31c10be92f8d4c9782336fcdc2544bb0553b2b0f8a313eab4b6405482a",
+        "requestSha256": "d39df28f9640e37ceca433e0e31847c491a5369dfb48981b647dce8261c78a02"
+      },
+      {
+        "name": "CriticCompactIndexR5",
+        "taskId": "CT1",
+        "agent": "critic",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/token-efficient-tool-responses/ticket02-spec-r5.md"
+          ]
+        },
+        "targetCandidateId": "token-efficient-tool-responses-ticket02-spec-r5",
+        "targetRevision": "r5",
+        "reviewerId": "critic",
+        "taskSha256": "c4eee4550f6565017f81ed33863668f3dcbb0603b0eced21d5cce9dabd09aa36",
+        "instructionsSha256": "b0108e31c10be92f8d4c9782336fcdc2544bb0553b2b0f8a313eab4b6405482a",
+        "requestSha256": "122631fff44307077c8f13a58b0cd0b7265aa4d4be199877cb73851f59ec2bf7"
+      }
+    ],
+    "verdict": "APPROVE",
+    "findings": [
+      {
+        "id": "CR5-1",
+        "severity": "LOW",
+        "class": "stale-citation",
+        "anchor": "twelve line ranges across §3/§4/AD12/R2/R3/R5/T1-T3/§9",
+        "fix": "Correct cited ranges; re-qualify the byte-verified bullet wording. No behavioral consequence."
+      }
+    ],
+    "format": "installed",
+    "source": {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/review-cr-r5-source-3acaf4bc.json",
+      "sha256": "7cd590d345b219e12f2e36d07e7f470e26bd57b3b282b1533d18f08c047fbd21"
+    },
+    "recordedAt": "2026-11-27T14:10:13.821Z"
+  },
+  "runBinding": {
+    "candidateId": "token-efficient-tool-responses-ticket02-spec-r5",
+    "invocationId": "3acaf4bc-fab9-4220-bb6d-ec2c4b57b72c",
+    "fingerprint": "8fbb9a9721abf396a392f36b4c96a44fca119a52a49a9e790d10aacc91deb9a0",
+    "reviewerId": "code-reviewer",
+    "role": "code-reviewer",
+    "revision": "r5"
+  },
+  "status": "succeeded"
+}

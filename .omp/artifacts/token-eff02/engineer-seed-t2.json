@@ -1,0 +1,44 @@
+{
+  "intent": "Implement advertised search bounds",
+  "instructions": "Bounded engineer implementation for ticket #116 T2. Edit only the listed files. Report RED then GREEN with exact commands and exit codes. No commits or state edits.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses-ticket02-r6",
+    "revision": "r6",
+    "requests": [
+      {
+        "name": "ImplementSearchBounds",
+        "taskId": "T2",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/catalog/schema.go",
+            "internal/catalog/catalog_test.go",
+            "internal/service/tools.go",
+            "internal/service/projection.go",
+            "internal/service/session_exposure.go",
+            "internal/service/tools_test.go",
+            "internal/service/progressive_projection_test.go",
+            "internal/service/builtin_guidance_test.go",
+            "internal/service/tool_metadata_test.go",
+            "internal/service/service_edge_test.go",
+            "internal/service/tools_publish_atomic_test.go",
+            "internal/service/bounded_delivery_test.go",
+            "internal/service/retrieve_result_test.go"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ImplementSearchBounds",
+      "agent": "engineer",
+      "task": "# Goal\nImplement T2 of ticket #116 spec r6: advertised search schema reflects effective bounds.\nRead `.scratch/token-efficient-tool-responses/ticket02-spec-r6.md` AD12, AC3/AC6/AC8 and T2 first.\n\n# Files (exact write scope)\n- internal/catalog/schema.go\n- internal/catalog/catalog_test.go\n- internal/service/tools.go\n- internal/service/projection.go\n- internal/service/session_exposure.go\n- internal/service/tools_test.go\n- internal/service/progressive_projection_test.go\n- internal/service/builtin_guidance_test.go\n- internal/service/tool_metadata_test.go\n- internal/service/service_edge_test.go\n- internal/service/tools_publish_atomic_test.go\n- internal/service/bounded_delivery_test.go\n- internal/service/retrieve_result_test.go\n\n# Required implementation\n- internal/catalog/schema.go: SearchToolsInputSchema(topKDefault, topKMax int); remove static TopKDefault/TopKMaximum consts; update comment; top_k default/maximum use parameters.\n- internal/service/tools.go: renderBuiltinDescriptors(resolvedPins, topKDefault, topKMax int); pass through at the descriptor call; ToolSurface gains stored bounds in NewToolSurface via cfg.Search.EffectiveBounds() and an unexported searchBounds() accessor returning stored pair when both nonzero else cfg.Search.EffectiveBounds() (zero-value cfg → 3/4); all advertisement readers use searchBounds().\n- projection.go: prepareProjection and preparePinProjection gain the two bounds params; their call sites pass surface.searchBounds(). session_exposure.go likewise.\n- Update the ten direct-literal &ToolSurface sites ONLY if RED, preserving each original scenario. Update catalog test and service tests with fixture-consistent bounds. Remove no zero-bounds fallback.\n- Add RED TestSearchToolsSchemaHonorsBounds: (3,4) → default=3/maximum=4; (1,1) → 1/1. No degenerate-config oracle.\n\n# Prohibited\nDo not change describe/call/retrieve schemas; do not narrow operator config bounds; no degenerate-config advertisement assertions; keep the zero-bounds fallback; no unrelated files; no commits.\n\n# Verify\nRun `go test -count=1 ./internal/catalog ./internal/service`, report exact command, exit code, and output. If a production call site cannot reach the surface bounds, or a test cannot pass without weakening its scenario, STOP and report BLOCKED with exact site and failure.",
+      "solutionSpace": "one implementation: parameterize advertised search schema and thread effective bounds with zero-value fallback"
+    }
+  ]
+}

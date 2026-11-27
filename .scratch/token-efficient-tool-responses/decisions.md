@@ -277,3 +277,23 @@
 - **No reduction:** no authorized path was removed anywhere; the amendment only widens the write surface to the spec's statement.
 - **Safety:** `packet.digest` covers `feature/projectRoot/sectionBindings/branches` only, so authorization and review bindings are unaffected; `check` returns `ready` with frontier `CR1, CT1, T2`.
 - **Also recorded:** the T1 review's finding 2 (maximal envelope omits outer `CallToolResult.IsError`, +14–15 B beyond the checked envelope) is a spec-level pin and stays open for the planner before T3 sizes real previews.
+
+## 2026-11-27 — Ticket 02 planner AUTO-DECISIONS (SPEC-TET02-R1)
+
+Persisted from planner handoff for #116; planner-owned technical decisions under RULES.md S06.
+
+- **[AUTO-DECISION] AD1:** default 3 / caller-visible max 4 — smallest numbers keeping the AC5 worst-case envelope ≤2048 with ≥60-byte margin; operators above the caps are clamped, knobs remain meaningful at/below the caps.
+- **[AUTO-DECISION] AD2:** description budget measured in JSON-encoded bytes (48), not raw characters — `json.Marshal` HTML-escapes `<>&` and control characters (≤6 bytes each); a raw-character budget would let escape-heavy descriptions inflate hits.
+- **[AUTO-DECISION] AD3:** marker `…` (U+2026, 3 encoded bytes), appended only when a suffix is dropped; budget includes the marker.
+- **[AUTO-DECISION] AD4:** `match_count`/`truncated` present only when clipped — AC4's literal wording; absence means `match_count == len(results)`.
+- **[AUTO-DECISION] AD5:** min-clamp inside `search.Config.withDefaults` — preserves existing 10/50 config validity, prevents operators from defeating the token budget, adds no config key/diagnostic. Consequence: a previously-invalid default>max config becomes valid post-clamp.
+- **[AUTO-DECISION] AD6:** remove per-hit `server`/`upstream_name`/`pinned`/`availability` — call_tool needs only `tool_name`; pinned inventory remains in dynamic guidance; internal discovery identity untouched.
+- **[AUTO-DECISION] AD7:** parameterize `SearchToolsInputSchema(topKDefault, topKMax)` and thread effective bounds through descriptor/projection rendering so the advertised maximum equals the enforced maximum; three production call sites plus tests.
+- **[AUTO-DECISION] AD8:** ticket-01 discovery paging search fixture lowers `DeliveryCeilingBytes` to 1024 (preview 512 unchanged) so the search paging seam stays covered after compaction; production ceilings unchanged.
+
+## 2026-11-27 — Owner budget increase (ticket 02)
+
+Owner directive, verbatim: "add 10 to your budge".
+
+- Planning review budget for ticket 02 is 20 completed CodeReviewer reviews (prior 10 + 10). Count remains cumulative per workflow-policy/orchestration-continuation.md; Critic consumes no unit.
+- No scope, acceptance, authorization or retry limit is changed by this directive.

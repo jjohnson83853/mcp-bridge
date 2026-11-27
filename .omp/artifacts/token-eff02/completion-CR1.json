@@ -1,0 +1,20 @@
+{
+  "baseSha64hex": "94760695457eeb03e535eaf646c8162a83fb80852cfad2889320c788938f2ae0",
+  "taskId": "CR1",
+  "evidence": [
+    {
+      "id": "ev-cr1",
+      "kind": "fact",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/review-cr-r6c-source-1a166dc3.json"
+      },
+      "acceptanceIds": [],
+      "outcome": "pass",
+      "observedAt": "2026-11-27T15:27:41.685Z",
+      "producer": "reviewer",
+      "details": {
+        "locator": "CodeReviewer APPROVE for candidate r6c"
+      }
+    }
+  ]
+}

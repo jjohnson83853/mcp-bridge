@@ -1,0 +1,85 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket02-spec-r3",
+  "revision": "r3",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket02-spec-r3.md",
+      "sha256": "89229fd0082a7807cd0ed1421a38da577f67ed0049757117b1fc0d0b53c6bee1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/issue-116.md",
+      "sha256": "fa11fb39956a9f27742e57b670b715d330274999330e2cd8a374851df7149501"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/refinement.md",
+      "sha256": "0859a7238aaf2dff1a22651de1a6f363d95ef0e0d3868f64a6a9b5cdf16697fc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/ledger.md",
+      "sha256": "504c4acac756f8424f425873a67bdffdc603fbc767dbb8681a4864be6da842fc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket02-spec.md",
+      "sha256": "4c7630007f8685675abf7dbbb9a1f3e36d083a1c6336275c9b8c5bbf67fa71e8"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket02-spec-r2.md",
+      "sha256": "576bcd3e6b0f05543e371d5c6f5249d313bb9b1e3730559ab1b95f527dd73494"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+      "sha256": "37dd21cee4cebdd8c5e4771741e05e594feb01292e43269ace89ee11d35ad686"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
+      "sha256": "5ed67dab601ea5360d693bda93df2fdb740426e33c5a36306f19b9ba58fda52c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/decisions.md",
+      "sha256": "7e9a099c5ad29a6b996d3d91eabda639d3752ae4ebb28c69f64dc07f1d99fb17"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SpecReviewCompactIndexR3",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket02-spec-r3.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket02-spec-r3",
+      "targetRevision": "r3",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "1742bf7f06777db774d87bfc8fa6103e6cc5775ab9683bb7cecc9cc702dd22e9",
+      "instructionsSha256": "aaadce4d4e712a8e3a4e6d16ee275d71dfd1de70e5d027f3584fb626e6014511",
+      "requestSha256": "ac2df0f29913317bb34ddaabb9d3c6a6db104c3792ad2531cc9b009e102f8654"
+    },
+    {
+      "name": "CriticCompactIndexR3",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket02-spec-r3.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket02-spec-r3",
+      "targetRevision": "r3",
+      "reviewerId": "critic",
+      "taskSha256": "1008140a77513d69543eea65cb664ee6398fa9549ece8723d2bac1882df04bb1",
+      "instructionsSha256": "aaadce4d4e712a8e3a4e6d16ee275d71dfd1de70e5d027f3584fb626e6014511",
+      "requestSha256": "30ab38e3a544f6d1127010a138d54653211bafaab3f026ee4f152e3c3293b961"
+    }
+  ],
+  "invocationId": "4a4e3336-5c0e-4d68-9108-df20a9ed03f3",
+  "output": "## Code Review Summary\n\n**Subject:** specification mode — `ticket02-spec-r3.md`, revision r3, repair round for F1–F6.\n**Files reviewed:** 1 candidate + 14 source/test anchors (all re-read).\n**Issues:** 7 — CRITICAL 0 · HIGH 1 · MEDIUM 4 · LOW 2.\n**Limit:** no hashing/shell tool is granted, so the supplied sha256 could not be recomputed; content was reviewed at the bound path.\n\n### Issues\n\n**N1 [HIGH][statement-contradiction]** Fast path bypasses the encoded-length invariant.\nAnchor: spec:80 vs R1 spec:20, AC2(b) spec:105. A description of 24 `\"` has no W-class char and 24 bytes ≤36, so the fast path returns it unmarked at 48 encoded bytes — AC2(b) fails. Four 36-quote hits take the envelope to ≈2221 B > 2048. Fix: delete the fast path, or gate it on bytes free of `\"` `\\` `<` `>` `&`, controls and ≥0x80; otherwise measure encoded length. Confidence HIGH.\n\n**N2 [MEDIUM][statement-contradiction]** Degenerate-config claims are false.\nAnchor: spec:22/R2, spec:54, spec:78, spec:91, spec:153/§8 (\"fail every search\", \"behave exactly as before\"). T1's clamp (spec:121) in `withDefaults` (search.go:88-110), used by `NewSearcher` (:328-331) and `DecodeRequest` (:143-146), turns default 10/max 5 into 3/4, which now validates — searches succeed where all previously failed. Fix: state the real subset rule (`min(d,3) ≤ min(m,4)` admits; `m<3` or `min(d,3)>min(m,4)` still fails at validate), drop \"unchanged\", note #165's premise is partly superseded. Confidence HIGH.\n\n**N3 [MEDIUM][r-ac-coverage-gap]** F3 inventory is not exact; residual citations are wrong.\nAnchor: spec:64, spec:126-130. Unlisted per-hit readers in the claimed file: `serve_test.go:265-289` (`catalogRevisionAndTool` reads `row[\"server\"]`; used :629,:688) and `:685` (`row[\"server\"]!=\"beta\"`). The residual instruction \"serve_test.go :653/:971 rows (drop per-hit availability)\" points at call_tool envelope must-not-contain loops — acting on it deletes AC6 coverage. Fix: name :265-289 and :685 as tool_name-only rewrites; correct the :653/:971 cites. Confidence HIGH.\n\n**N4 [MEDIUM][statement-contradiction]** Advertised vs enforced bounds can diverge.\nAnchor: spec:78 (\"cannot diverge\"), T2 spec:123. Five tests build `&ToolSurface{...}` bypassing `NewToolSurface`: builtin_guidance_test.go:164, tool_metadata_test.go:89, service_edge_test.go:559, tools_publish_atomic_test.go:17, bounded_delivery_test.go:377. Stored-bounds design renders `SearchToolsInputSchema(0,0)` (default 0/maximum 0 vs `minimum:1`) while admission enforces 3/4. Fix: bounds accessor falls back to `cfg.Search.EffectiveBounds()` when zero; add these sites to T2. Confidence HIGH.\n\n**N5 [MEDIUM][statement-contradiction]** §4 arithmetic undercounts.\nAnchor: spec:85-87, AD2 spec:53. Recomputed with the stated components: root 204 (not 202), payload 871, total 61+871+(871+58+144) = 2005 → margin 43, not 2001/47. General form 1573+12B ⇒ B ≤ 39; \"≤42\" and \"≥43 violate\" are wrong. 36 remains safe. Fix: correct totals/margin/threshold or delete the sensitivity sentence. Confidence HIGH.\n\n**N6 [LOW][statement-contradiction]** W omits U+2028/U+2029 (Zl/Zp).\nAnchor: spec:20, spec:54. `alpha\\u2028beta` survives normalization; decoded description contains a line separator, falsifying \"never … a line break\"/\"always one-line\"; AC1's `\\n` oracle cannot fail. Fix: add U+2028/U+2029 to W (escape cost already in D) or narrow the claim to Cc/ASCII breaks. Confidence HIGH.\n\n**N7 [LOW][stale-citation]** spec:109 says \"five new service tests\" but AC1–AC5 define six (AC3 counts two) plus T4 ByteBudget; `searchPayload` cited :1005-1032, actual :1008. Fix: correct count/anchors.\n\n### Closure of supplied findings\nF1 CLOSED — mechanism + AC1/AC2(a) oracles; ingestion claim removed (no `max_description_bytes` consumer confirmed). F2 CLOSED in substance — D≤36/hit term and 36 budget verified; totals wrong (N5). F3 NOT CLOSED (N3). F4 deferral structurally right (#165 OPEN, matching scope, no clamp/degenerate tests) but its rationale is false (N2). F5 CLOSED — AC2(c)–(g) present and falsifiable. F6 CLOSED — R5/T4/AC9/§8 carry no rollback-tolerance deliverable.\n\n### Open Questions\n[HIGH] §9.2's \"operator lowers max at reload\" counterexample: no production path reassigns `surface.cfg.Search` after `NewToolSurface` (only service_edge_test.go:707); bounds are process-frozen, so state that instead. Confidence MEDIUM.\n\n### Positive Observations\nNormalization-before-measurement is wire-only and deterministic; `match_count = len(fused)` is verified post-filter/pre-slice (search.go:421-435); AC3↔AC6 reconciliation is explicit; T1–T4 write paths are concrete; F6 removal is clean.\n\n### Recommendation\nREQUEST CHANGES\n"
+}

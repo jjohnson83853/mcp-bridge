@@ -1,0 +1,26 @@
+{
+  "baseSha64hex": "5ef1b28a34d80851d088e27552ef7bedd58a08cc6bb199397b89388141f569b6",
+  "taskId": "T1",
+  "evidence": [
+    {
+      "id": "ev-t1-search",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/evidence-t1-search.txt"
+      },
+      "acceptanceIds": [],
+      "outcome": "pass",
+      "observedAt": "2026-11-27T14:56:12.181Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test -count=1 ./internal/search",
+        "exitCode": 0
+      },
+      "declaredInputs": [
+        "internal/search/search.go",
+        "internal/search/search_test.go",
+        "internal/search/edge_test.go"
+      ]
+    }
+  ]
+}

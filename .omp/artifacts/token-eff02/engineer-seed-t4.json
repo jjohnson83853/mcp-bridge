@@ -1,0 +1,35 @@
+{
+  "intent": "Implement byte budget guidance docs",
+  "instructions": "Bounded engineer implementation for ticket #116 T4. Edit only the listed files. Report RED then GREEN and full-suite/build results with exact commands and exit codes. No commits or state edits.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses-ticket02-r6",
+    "revision": "r6",
+    "requests": [
+      {
+        "name": "ImplementByteBudgetDocs",
+        "taskId": "T4",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/service/tools.go",
+            "internal/service/tools_test.go",
+            "internal/service/builtin_guidance_test.go",
+            "README.md"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ImplementByteBudgetDocs",
+      "agent": "engineer",
+      "task": "# Goal\nImplement T4 of ticket #116 spec r6: byte-bound enforcement test, search guidance strings, and README compact-index contract.\nRead `.scratch/token-efficient-tool-responses/ticket02-spec-r6.md` R4/R5, AC5/AC8/AC9, AD8/AD13 and T4 first.\n\n# Files (exact write scope)\n- internal/service/tools.go\n- internal/service/tools_test.go\n- internal/service/builtin_guidance_test.go\n- README.md\n\n# Required implementation\n- internal/service/tools_test.go: add RED TestToolSurfaceSearchToolsByteBudget. Use measureResult on the full CallToolResult. Assert ≤2048 for exact-max unclipped AND clipped+degraded max-count responses with 64-char wire names. Variant split: maximum escape term uses fitting UNMARKED all-quote descriptions (18 quotes = 36 encoded bytes, D=36); over-budget all-quote input (24 quotes → 16 quotes + ellipsis = 35 encoded, D=32) verifies truncation/marker inside the envelope. Do not widen 2048/36/3/4.\n- internal/service/tools.go: search guidance strings gain the compact-index sentence — hits carry tool_name, one-line bounded description, score; full schemas only via describe_tool; leave pinned-inventory sentence unchanged.\n- internal/service/builtin_guidance_test.go: update expected guidance constants/strings to match.\n- README.md Tool-surface section: rewrite the \"Discovery responses are intentionally pruned\" paragraph into the compact-index contract: hit fields, removals, match_count/truncated semantics, 3/4 effective caps over operator keys with existing configs valid, 36-encoded-byte budget with ellipsis and one-line normalization, ≤2048 serialized CallToolResult target, describe_tool as the only schema path. NO rollback-tolerance sentence and NO degenerate-config coherence statement.\n\n# Prohibited\nNo instrumentation/metrics/events; no widening constants; no rollback or degenerate-config docs; no silent fixture narrowing; no unrelated files; no commits.\n\n# Verify\nRun `go test -count=1 ./internal/service ./internal/catalog ./internal/search ./cmd/mcp-bridge`, then `go test ./...` and `go build ./...`; report exact commands, exit codes, and any failure. If the AC5 byte test cannot pass within the §4 envelope, STOP and report BLOCKED (planner revision required), do not widen.",
+      "solutionSpace": "one implementation: byte-budget oracle + guidance strings + README contract, no constant widening"
+    }
+  ]
+}

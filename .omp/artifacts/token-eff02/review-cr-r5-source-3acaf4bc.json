@@ -1,0 +1,89 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket02-spec-r5",
+  "revision": "r5",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket02-spec-r5.md",
+      "sha256": "02d685ccdc7baacf9a318802b32d39b479fc5806a4f21e2789d4e8e1918455ab"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/issue-116.md",
+      "sha256": "fa11fb39956a9f27742e57b670b715d330274999330e2cd8a374851df7149501"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/refinement.md",
+      "sha256": "0859a7238aaf2dff1a22651de1a6f363d95ef0e0d3868f64a6a9b5cdf16697fc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/ledger.md",
+      "sha256": "24fefcd91b9c60f7f60f4e97c4cd3491aa4edee949282789df48df70be168f3d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket02-spec.md",
+      "sha256": "4c7630007f8685675abf7dbbb9a1f3e36d083a1c6336275c9b8c5bbf67fa71e8"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket02-spec-r3.md",
+      "sha256": "89229fd0082a7807cd0ed1421a38da577f67ed0049757117b1fc0d0b53c6bee1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket02-spec-r4.md",
+      "sha256": "177684a58df1f8b24366e5b7db8e71f5e2a9dcec67bab93c29053a60c6400ae9"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+      "sha256": "37dd21cee4cebdd8c5e4771741e05e594feb01292e43269ace89ee11d35ad686"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
+      "sha256": "5ed67dab601ea5360d693bda93df2fdb740426e33c5a36306f19b9ba58fda52c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/decisions.md",
+      "sha256": "7e9a099c5ad29a6b996d3d91eabda639d3752ae4ebb28c69f64dc07f1d99fb17"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SpecReviewCompactIndexR5",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket02-spec-r5.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket02-spec-r5",
+      "targetRevision": "r5",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "edd07c6971a7942e431330c305a0172a875f0734b9c7066f4ea74a3ef7219bce",
+      "instructionsSha256": "b0108e31c10be92f8d4c9782336fcdc2544bb0553b2b0f8a313eab4b6405482a",
+      "requestSha256": "d39df28f9640e37ceca433e0e31847c491a5369dfb48981b647dce8261c78a02"
+    },
+    {
+      "name": "CriticCompactIndexR5",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket02-spec-r5.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket02-spec-r5",
+      "targetRevision": "r5",
+      "reviewerId": "critic",
+      "taskSha256": "c4eee4550f6565017f81ed33863668f3dcbb0603b0eced21d5cce9dabd09aa36",
+      "instructionsSha256": "b0108e31c10be92f8d4c9782336fcdc2544bb0553b2b0f8a313eab4b6405482a",
+      "requestSha256": "122631fff44307077c8f13a58b0cd0b7265aa4d4be199877cb73851f59ec2bf7"
+    }
+  ],
+  "invocationId": "3acaf4bc-fab9-4220-bb6d-ec2c4b57b72c",
+  "output": "## Code Review Summary\n\n**Mode:** specification · **Pass:** repair · **Candidate:** `ticket02-spec-r5.md` (r5). Hash recomputation unavailable (read-only profile has no shell/hash tool); I read the exact r5 path and all cited code bytes. Review limit: no independent sha256 check.\n\n**Files reviewed:** 18 (spec, ticket #116, and cited sources under `internal/`, `cmd/mcp-bridge/`, `README.md`).\n\n### By Severity\n- CRITICAL: 0 · HIGH: 0 · MEDIUM: 0 · LOW: 1\n\n### Closure evidence (independently verified)\n\n- **C1 CLOSED.** `serve_endpoint_rebind_test.go:34-47` is exactly as described: `:41` `row[\"server\"] != serverID`, `:44` `return row[\"tool_name\"] == want`; the file's only per-hit map read. Callers `:219/:283/:286/:332` all pass wire names. The proposed rewrite (`row[\"tool_name\"] != want` + `return true`, signature/doc kept) preserves every Fatalf (`:283` old-name-gone, `:286`, `:290`, `:332`). Inventory is complete: repo-wide grep found no other per-hit `server/upstream_name/pinned/availability` map or struct reader in `cmd/mcp-bridge` (coexistence `:144-172` residual; defaults/exceptions/source are `ToolName`-only; `serve_logging_concurrent:350` reads a `backend_complete` record, not a hit). Six-site count consistent; `:653/:971` untouched.\n- **C2 CLOSED.** `searchTools` (`:458-505`) has no `t.logger.Log`; logs at `671/702/820/835/885/927` are describe/retrieve/call (operation fields `675/706/825/839/890/931` — matches the spec's anchors). `assertToolOperationLogs` callers are only `:433/:442/:496/:508`. `\"tools_call\"` vocabulary `metrics.go:50`; `inboundOperation:1254-1275`; HTTP-status outcome `inbound.go:399-403`; `search_tools` appears in `httpdiagnostics:662-665` and `schema.go:7` with no emitter anywhere. Response-only exception stated; no new instrumentation.\n- **C3 CLOSED.** `wiring.go:105` + `:121-122` return `\"search\"`; `serve.go:100-113` rejects with the typed `restart_required` record before apply. Restart-only contract stated; no live reload.\n- **C4 CLOSED substantively.** \"zero-value cfg\", no nil branch, fallback retained in AD12/§4/T2, prohibition reworded to zero-bounds — all present; `cfg ToolSurfaceConfig` is a value field and cannot be nil.\n- **Arithmetic sound:** root 204, hit 166, payload 871, total 2005, margin 43; B=39 → 2041, B=40 → 2053. `match_count = len(fused)` is post-`servers`-filter (`:425-430`). R→AC→T complete; AC8 counts six tests; AC3↔AC6 separation explicit. AD8 feasible: 4 max hits ⇒ `measureResult` ≈1861–2005 > 1024, payload 871 ⇒ ≥2 pages. No new scope, keys, metrics or fixtures beyond the authorized C1–C4 corrections.\n\n### Issues\n\n**[LOW][stale-citation] (Confidence: HIGH) Consolidated line-anchor drift, including entries inside the \"byte-verified\" bullet**\nFile: `.scratch/token-efficient-tool-responses/ticket02-spec-r5.md` (§3 CR bullet, §4 comp 3, AD12, R2/R3/R5, T1–T3, §9 C4 row)\nID: CR5-1\nIssue: Semantic claims are all true, but these anchors do not match the bytes: `cfg` field is `tools.go:48` (not `:44`; `:44` is a comment line; `ToolSurface` starts `:46`, `ToolSurfaceConfig` `:29-41`); `fuse` is `search.go:425`, slice loop `:430-433` (not `:421`, `:423-430`); const block is `:22-37` (not `:22-34`); `withDefaults`/`validate` calls are `:144-145` (not `:145-146`); R2's rejection path is `:169-173` (not `:150-171`, which starts at the wire struct field); R5 guidance is `:103-108` (not `:96-105`); `searchTools` is `:458-505` (not `:457-506`); `searchPayload` is `:1008-1031` (T3 `:1032`, R3 `:1034`); `Response` `:285-291`; `DecodeRequest` `:143-185`; `catalogRevisionAndTool` `:265-291`; fallback test `:898-944`; `searchResultNames` `:56-73` (not `:56-70`).\nConsequence: none behavioral — symbol names disambiguate every insertion point (C1's rewrite lines `:34/:41/:44/:50/:56/:219/:283/:286/:332` and C2's operation lines are exact). The \"byte-verified\" label overstates these twelve ranges.\nFix: correct the ranges; re-qualify that bullet's \"byte-verified\" wording. No structural change required.\n\n### Open Questions (low confidence)\n- **AD8 ceiling knob not named.** T3 says \"1024 ceiling\", but `configurePagingTestSurface` sets a shared `DeliveryCeilingBytes = 8192` for all four surfaces; the task doesn't say which line changes or how other surfaces keep ≥2 pages. Feasibility holds (payload 871 ⇒ ≥2 pages) and production ceilings are untouched — the planner should name the exact edit during implementation.\n- **go-sdk `isError:false` serialization:** if emitted non-omitempty, total becomes 2021 (still ≤2048). Already carried as §9's highest-risk assumption with AC5 as oracle.\n\n### Positive Observations\n- N3's reopened inventory was genuinely re-audited: sixth site exact, residual list corrected, `:653/:971` protected.\n- §7 now accurately reports generic `tools_call`/HTTP-status coverage and states the response-only exception instead of inventing a terminal record.\n- C3 replaced an impossible oracle with the verified restart-only lifecycle.\n- Byte arithmetic is self-consistent and conservative in every term checked.\n\n### Recommendation\n\nAPPROVE\n"
+}

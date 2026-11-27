@@ -1,0 +1,131 @@
+{
+  "binding": {
+    "candidateId": "token-efficient-tool-responses-ticket02-spec",
+    "reviewerId": "code-reviewer",
+    "authorIds": [
+      "planner"
+    ],
+    "inputs": [
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket02-spec.md",
+        "sha256": "4c7630007f8685675abf7dbbb9a1f3e36d083a1c6336275c9b8c5bbf67fa71e8"
+      },
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/issue-116.md",
+        "sha256": "fa11fb39956a9f27742e57b670b715d330274999330e2cd8a374851df7149501"
+      },
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/refinement.md",
+        "sha256": "0859a7238aaf2dff1a22651de1a6f363d95ef0e0d3868f64a6a9b5cdf16697fc"
+      },
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+        "sha256": "37dd21cee4cebdd8c5e4771741e05e594feb01292e43269ace89ee11d35ad686"
+      },
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
+        "sha256": "5ed67dab601ea5360d693bda93df2fdb740426e33c5a36306f19b9ba58fda52c"
+      },
+      {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/decisions.md",
+        "sha256": "9038c77b18988b3ba230bbf6bd2a2cd419771c74b37c24db8da4fd1f3617039c"
+      }
+    ],
+    "dispatches": [
+      {
+        "name": "SpecReviewCompactIndex",
+        "taskId": "CR1",
+        "agent": "code-reviewer",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/token-efficient-tool-responses/ticket02-spec.md"
+          ]
+        },
+        "targetCandidateId": "token-efficient-tool-responses-ticket02-spec",
+        "targetRevision": "r1",
+        "reviewerId": "code-reviewer",
+        "taskSha256": "1f4a4aab2b7904dde33b2c3ed2a8564f114c7e7201cb5b6001b6ac71784c99c0",
+        "instructionsSha256": "68b49ea4e038e4d37ef25b4c124e05e7a1eaf15767fde0c9ccbc9195cfd397e1",
+        "requestSha256": "9f1e22d83c07aa6d8e7c668e4578d7aaeaa63f83924dd03e6935fdbffc6bdf3e"
+      },
+      {
+        "name": "CriticCompactIndex",
+        "taskId": "CT1",
+        "agent": "critic",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/token-efficient-tool-responses/ticket02-spec.md"
+          ]
+        },
+        "targetCandidateId": "token-efficient-tool-responses-ticket02-spec",
+        "targetRevision": "r1",
+        "reviewerId": "critic",
+        "taskSha256": "03c43522846e84226a68e3ebe250e230cbe1d0cac068dec661eebd904832064c",
+        "instructionsSha256": "68b49ea4e038e4d37ef25b4c124e05e7a1eaf15767fde0c9ccbc9195cfd397e1",
+        "requestSha256": "7c7d1b3fb9792f182955b408685090170f403050b5e6a09e8d76843eb27845c8"
+      }
+    ],
+    "verdict": "REQUEST CHANGES",
+    "findings": [
+      {
+        "id": "F1",
+        "severity": "HIGH",
+        "class": "ac-not-falsifiable",
+        "anchor": "spec §2 R1, §5 AC1/AC2; §4 ingestion-validation claim",
+        "fix": "Add deterministic one-line normalization (CR/LF/TAB/control → space, collapse, trim) to R1; add a multiline-description AC1/AC2 oracle; delete the false ingestion-validation claim."
+      },
+      {
+        "id": "F2",
+        "severity": "MEDIUM",
+        "class": "statement-contradiction",
+        "anchor": "spec §4 byte arithmetic; R4; tools.go:498-503 duplicate text",
+        "fix": "Add the per-hit escaping term (2 bytes per raw quote/backslash in the duplicated text copy) to the byte arithmetic; lower the description budget or normalize quotes; add a quote-heavy AC5 case."
+      },
+      {
+        "id": "F3",
+        "severity": "MEDIUM",
+        "class": "r-ac-coverage-gap",
+        "anchor": "spec §6 T3 test inventory; cmd/mcp-bridge discovery fixtures",
+        "fix": "Enumerate exact cmd fixture files/lines that decode removed per-hit fields (serve_hybrid_progressive_reveal_test.go:92-114, serve_hybrid_progressive_reveal_lifecycle_test.go:196-210, serve_test.go:886-892) and prescribe tool_name-only rewrites."
+      },
+      {
+        "id": "F4",
+        "severity": "LOW",
+        "class": "statement-contradiction",
+        "anchor": "spec R2, AD7; internal/config has no default≤max check",
+        "fix": "EffectiveBounds must clamp default to effective max (or surface construction must reject); add schema-consistency test for settings{2,1}."
+      },
+      {
+        "id": "F5",
+        "severity": "LOW",
+        "class": "ac-not-falsifiable",
+        "anchor": "spec §9 risk 7; AC2/T3",
+        "fix": "Add exactly-48-byte, 1-rune and empty description cases to AC2/T3."
+      },
+      {
+        "id": "F6",
+        "severity": "LOW",
+        "class": "statement-contradiction",
+        "anchor": "spec §8 rollback tolerance vs R5/T4 README scope",
+        "fix": "Add rollback tolerance documentation to T4 or drop the parenthetical."
+      }
+    ],
+    "format": "installed",
+    "source": {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/review-cr-r1-source-ff14a51a.json",
+      "sha256": "729c2ef3d19f6c8fc16807551da6a03c1288b02d8c483dce8d55c5bbf715f978"
+    },
+    "recordedAt": "2026-11-27T13:01:53.485Z"
+  },
+  "runBinding": {
+    "candidateId": "token-efficient-tool-responses-ticket02-spec",
+    "invocationId": "ff14a51a-c826-4c6f-a00d-2ea143d939d1",
+    "fingerprint": "24155f892b59969944dd928cdaf25ba48b620ec29a1875ac1f2d63aad8ff9d9d",
+    "reviewerId": "code-reviewer",
+    "role": "code-reviewer",
+    "revision": "r1"
+  },
+  "status": "succeeded"
+}

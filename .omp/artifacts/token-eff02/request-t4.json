@@ -1,0 +1,23 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "token-efficient-tool-responses-ticket02-r6",
+  "revision": "r6",
+  "requests": [
+    {
+      "name": "ImplementByteBudgetDocs",
+      "taskId": "T4",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/tools.go",
+          "internal/service/tools_test.go",
+          "internal/service/builtin_guidance_test.go",
+          "README.md"
+        ]
+      }
+    }
+  ]
+}

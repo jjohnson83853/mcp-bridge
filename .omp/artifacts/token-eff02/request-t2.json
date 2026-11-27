@@ -1,0 +1,32 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "token-efficient-tool-responses-ticket02-r6",
+  "revision": "r6",
+  "requests": [
+    {
+      "name": "ImplementSearchBounds",
+      "taskId": "T2",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/catalog/schema.go",
+          "internal/catalog/catalog_test.go",
+          "internal/service/tools.go",
+          "internal/service/projection.go",
+          "internal/service/session_exposure.go",
+          "internal/service/tools_test.go",
+          "internal/service/progressive_projection_test.go",
+          "internal/service/builtin_guidance_test.go",
+          "internal/service/tool_metadata_test.go",
+          "internal/service/service_edge_test.go",
+          "internal/service/tools_publish_atomic_test.go",
+          "internal/service/bounded_delivery_test.go",
+          "internal/service/retrieve_result_test.go"
+        ]
+      }
+    }
+  ]
+}

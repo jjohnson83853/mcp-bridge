@@ -1,0 +1,44 @@
+{
+  "intent": "Implement compact search payload",
+  "instructions": "Bounded engineer implementation for ticket #116 T3. Edit only the listed files. Report RED then GREEN with exact commands and exit codes. No commits or state edits.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses-ticket02-r6",
+    "revision": "r6",
+    "requests": [
+      {
+        "name": "ImplementCompactSearchPayload",
+        "taskId": "T3",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/service/tools.go",
+            "internal/service/tools_test.go",
+            "internal/service/discovery_paging_test.go",
+            "internal/service/durable_test.go",
+            "cmd/mcp-bridge/serve_hybrid_coexistence_test.go",
+            "cmd/mcp-bridge/serve_test.go",
+            "cmd/mcp-bridge/serve_hybrid_metadata_defaults_test.go",
+            "cmd/mcp-bridge/serve_hybrid_metadata_exceptions_test.go",
+            "cmd/mcp-bridge/serve_hybrid_metadata_source_test.go",
+            "cmd/mcp-bridge/prompts_acceptance_test.go",
+            "cmd/mcp-bridge/serve_endpoint_rebind_test.go",
+            "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+            "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ImplementCompactSearchPayload",
+      "agent": "engineer",
+      "task": "# Goal\nImplement T3 of ticket #116 spec r6: compact search_tools payload projection, description normalization/bounding, clip metadata, and coupled test rewrites.\nRead `.scratch/token-efficient-tool-responses/ticket02-spec-r6.md` R1, AD2/AD3/AD8, AC1/AC2/AC3/AC4/AC6/AC7/AC8 and T3 before editing.\n\n# Files (exact write scope)\n- internal/service/tools.go\n- internal/service/tools_test.go\n- internal/service/discovery_paging_test.go\n- internal/service/durable_test.go\n- cmd/mcp-bridge/serve_hybrid_coexistence_test.go\n- cmd/mcp-bridge/serve_test.go\n- cmd/mcp-bridge/serve_hybrid_metadata_defaults_test.go\n- cmd/mcp-bridge/serve_hybrid_metadata_exceptions_test.go\n- cmd/mcp-bridge/serve_hybrid_metadata_source_test.go\n- cmd/mcp-bridge/prompts_acceptance_test.go\n- cmd/mcp-bridge/serve_endpoint_rebind_test.go\n- cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go\n- cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go\n\n# Required implementation\n- internal/service/tools.go: searchPayload emits per-hit keys EXACTLY {description, score, tool_name}; root adds match_count and truncated ONLY when Response.MatchCount > len(Results). Add searchDescriptionMaxBytes=36, the truncation marker, and normalizeSearchDescription/boundSearchDescription per R1/AD2/AD3. Normalize every description (whitespace/Cc/U+2028/U+2029 runs → single space, trim), then bound by the JSON-ENCODED byte length for EVERY description — NO raw-byte fast path; truncation must not split escapes; append the marker when over budget.\n- internal/service/tools_test.go: update TestToolSurfaceSearchToolsReturnsRankedProvenance (keep ranking/score/mode/reason/filter/revision asserts; prune removed hit-field asserts) and TestToolSurfaceSearchToolsUsesWireBoundaryAndFallbackNames (assert exact tool_name set; remove per-hit upstream_name read; keep fallback scenario/failure power). Add RED tests: CompactHitFields with multiline fixture, DefaultCount, RejectsTopKAboveCap, ClipMetadata, DescriptionBounded (AC2 cases a–g; 24 quotes → 16 quotes + ellipsis = 35 encoded bytes).\n- internal/service/discovery_paging_test.go: update golden to compact alphabetical payload with ≤36-byte description; AD8 search-branch fixture 4 matching tools, 64-char wire names, 36-encoded-byte descriptions so the full response exceeds the 1024 test ceiling and the paging seam fires; preview 512 unchanged; production ceiling untouched; update total_bytes/golden.\n- internal/service/durable_test.go: cfg 5/20 → effective 3/4.\n- cmd exact rewrites (keep each Fatalf): progressive_reveal_test :92-114 ToolName-only, assert alpha__read and alpha__write; progressive_reveal_lifecycle :196-210 ToolName-only alpha__write; serve_test :880-892 tool_name==alpha__read, drop availability per-hit assert, keep foundSearchTool/wireToolName; serve_test :265-289 catalogRevisionAndTool matches row[\"tool_name\"]==want (drop server compare), callers alpha__read/beta__list; serve_test :683-689 row gate tool_name != beta__list; serve_endpoint_rebind :34-47 serverAdvertises matches tool_name != want then return true, signature/doc/callers kept.\n- Residual files: update only per-hit removed-field reads to tool_name-only or tools/list guidance inventory, preserving scenarios. DO NOT modify serve_test.go:653 or :971 call_tool envelope must-not-contain loops.\n\n# Prohibited\nDo not touch searchDiscoveryTargets/commitDiscovery inputs, describe_tool payload, ranking, stored/embedded descriptions, :653/:971 loops, or unrelated files. No raw-byte fast path. No commits.\n\n# Verify\nRun `go test -count=1 ./internal/service ./cmd/mcp-bridge`; report exact command, exit code, output, and any additional per-hit server/upstream_name/pinned/availability reader found (file:line). If a cmd fixture cannot assert its original scenario within the cap without weakening, STOP and report BLOCKED with the fixture.",
+      "solutionSpace": "one implementation: compact projection + bounded one-line descriptions + clip metadata + exact coupled test rewrites"
+    }
+  ]
+}

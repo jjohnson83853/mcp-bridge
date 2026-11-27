@@ -1,0 +1,519 @@
+{
+  "schemaVersion": 2,
+  "feature": "token-efficient-tool-responses-ticket02-r5",
+  "revision": "r5",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket02-spec-r5.md",
+    "sha256": "02d685ccdc7baacf9a318802b32d39b479fc5806a4f21e2789d4e8e1918455ab",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r5",
+        "sha256": "6a18fc0c9beba33147097ac77984408862f14fced7ba018bb6eb19450b49b8c8"
+      },
+      "design": {
+        "revision": "r5",
+        "sha256": "15f1c41d76e388cb307c2d172e785d3cf9e0d83c4fc98d14c41ddd2cc4d4f388"
+      },
+      "tasks": {
+        "revision": "r5",
+        "sha256": "54b986923c3fff781c0242b32adfd690833d7bdd66bbe0557cadf7d1c4e8e6a7"
+      },
+      "envelope": {
+        "revision": "r5",
+        "sha256": "4a848327140f73be2cec14de78ebf30e55632904dd002a67168310124469522c"
+      }
+    }
+  },
+  "packet": {
+    "digest": "0fe3d2f33f298b5eae0d50ff38776b72d72b447c1b2cd26d88d1c0b97482347e",
+    "branches": [
+      {
+        "id": "token-efficient-tool-responses-ticket02-r5",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r5",
+            "sha256": "6a18fc0c9beba33147097ac77984408862f14fced7ba018bb6eb19450b49b8c8"
+          },
+          "design": {
+            "revision": "r5",
+            "sha256": "15f1c41d76e388cb307c2d172e785d3cf9e0d83c4fc98d14c41ddd2cc4d4f388"
+          },
+          "tasks": {
+            "revision": "r5",
+            "sha256": "54b986923c3fff781c0242b32adfd690833d7bdd66bbe0557cadf7d1c4e8e6a7"
+          },
+          "envelope": {
+            "revision": "r5",
+            "sha256": "4a848327140f73be2cec14de78ebf30e55632904dd002a67168310124469522c"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": null
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Compact index hits — exactly tool_name, normalized bounded one-line description, score; no schema content; describe_tool remains the only schema path."
+    },
+    {
+      "id": "R2",
+      "summary": "Small enforced limits — effective default min(operator default,3) and max min(operator max,4) for valid operator configs; above-max top_k rejected; advertised schema equals enforced caps."
+    },
+    {
+      "id": "R3",
+      "summary": "Root envelope preserved; match_count and truncated added only when clipped; ranking, filters, degradation and revision behavior unchanged."
+    },
+    {
+      "id": "R4",
+      "summary": "Byte target and tests — complete serialized CallToolResult <=2048 bytes including duplicated text re-escaping; default, cap, clip, normalization/bounding and byte-bound tests."
+    },
+    {
+      "id": "R5",
+      "summary": "Documentation — README and live guidance document compact fields, removals, additions, caps, 36-byte budget, <=2048 target and describe_tool-only schemas (ticket Notes only)."
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "AC1",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC3",
+      "requirementIds": [
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC4",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC5",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC6",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC7",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC8",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC9",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "CR1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket02-spec-r5.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "CT1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket02-spec-r5.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "critic"
+      ]
+    },
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/search/search.go",
+          "internal/search/search_test.go",
+          "internal/search/edge_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC3"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T2",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/catalog/schema.go",
+          "internal/catalog/catalog_test.go",
+          "internal/service/tools.go",
+          "internal/service/projection.go",
+          "internal/service/session_exposure.go",
+          "internal/service/tools_test.go",
+          "internal/service/progressive_projection_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC3"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T3",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1",
+        "T2"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/tools.go",
+          "internal/service/tools_test.go",
+          "internal/service/discovery_paging_test.go",
+          "internal/service/durable_test.go",
+          "cmd/mcp-bridge/serve_hybrid_coexistence_test.go",
+          "cmd/mcp-bridge/serve_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_defaults_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_exceptions_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_source_test.go",
+          "cmd/mcp-bridge/prompts_acceptance_test.go",
+          "cmd/mcp-bridge/serve_endpoint_rebind_test.go",
+          "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+          "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC6",
+        "AC7"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T4",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T3"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/tools.go",
+          "internal/service/tools_test.go",
+          "internal/service/builtin_guidance_test.go",
+          "README.md"
+        ]
+      },
+      "acceptanceIds": [
+        "AC5",
+        "AC8",
+        "AC9"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "CR1",
+      "CT1",
+      "T1",
+      "T2",
+      "T3",
+      "T4"
+    ],
+    "readPaths": [
+      ".scratch/token-efficient-tool-responses/ticket02-spec-r5.md",
+      ".scratch/token-efficient-tool-responses/ticket02-spec.md",
+      ".scratch/token-efficient-tool-responses/ticket02-spec-r2.md",
+      ".omp/artifacts/token-eff02/refinement.md",
+      ".omp/artifacts/token-eff02/issue-116.md",
+      ".omp/artifacts/token-eff02/ledger.md",
+      ".scratch/token-efficient-tool-responses/map.md",
+      ".scratch/token-efficient-tool-responses/spec.md",
+      ".scratch/token-efficient-tool-responses/decisions.md",
+      "README.md",
+      "docs",
+      ".omp/RULES.md",
+      "internal/service",
+      "internal/search",
+      "internal/catalog",
+      "internal/config",
+      "cmd/mcp-bridge"
+    ],
+    "writePaths": [
+      "README.md",
+      "cmd/mcp-bridge/prompts_acceptance_test.go",
+      "cmd/mcp-bridge/serve_endpoint_rebind_test.go",
+      "cmd/mcp-bridge/serve_hybrid_coexistence_test.go",
+      "cmd/mcp-bridge/serve_hybrid_metadata_defaults_test.go",
+      "cmd/mcp-bridge/serve_hybrid_metadata_exceptions_test.go",
+      "cmd/mcp-bridge/serve_hybrid_metadata_source_test.go",
+      "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+      "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+      "cmd/mcp-bridge/serve_test.go",
+      "internal/catalog/catalog_test.go",
+      "internal/catalog/schema.go",
+      "internal/search/edge_test.go",
+      "internal/search/search.go",
+      "internal/search/search_test.go",
+      "internal/service/builtin_guidance_test.go",
+      "internal/service/discovery_paging_test.go",
+      "internal/service/durable_test.go",
+      "internal/service/progressive_projection_test.go",
+      "internal/service/projection.go",
+      "internal/service/session_exposure.go",
+      "internal/service/tools.go",
+      "internal/service/tools_test.go"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "evidence": [],
+  "capabilities": [],
+  "blockers": [],
+  "decisions": [],
+  "sources": [
+    {
+      "id": "src-issue-116",
+      "kind": "repository",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/issue-116.md",
+        "sha256": "fa11fb39956a9f27742e57b670b715d330274999330e2cd8a374851df7149501"
+      },
+      "locator": "GitHub jjohnson83853/mcp-bridge#116 snapshot; body sha256 ffdf8986f121d53af965d963b9510e7170521cf21f8814c9bfda33bdee27ade7",
+      "recordedAt": "2026-11-27T13:17:28.179Z"
+    },
+    {
+      "id": "src-refinement",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/refinement.md",
+        "sha256": "0859a7238aaf2dff1a22651de1a6f363d95ef0e0d3868f64a6a9b5cdf16697fc"
+      },
+      "locator": "issue-refiner READY assessment for #116 (second pass)",
+      "recordedAt": "2026-11-27T13:17:28.179Z"
+    },
+    {
+      "id": "src-cr-round1",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/review-cr-r1-source-ff14a51a.json",
+        "sha256": "729c2ef3d19f6c8fc16807551da6a03c1288b02d8c483dce8d55c5bbf715f978"
+      },
+      "locator": "CodeReviewer round 1 observation for ticket 02 r1 (REQUEST CHANGES, F1-F6)",
+      "recordedAt": "2026-11-27T13:17:28.179Z"
+    },
+    {
+      "id": "src-deferred-165",
+      "kind": "repository",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/issue-116.md",
+        "sha256": "fa11fb39956a9f27742e57b670b715d330274999330e2cd8a374851df7149501"
+      },
+      "locator": "Deferred F4 config-coherence work filed as jjohnson83853/mcp-bridge#165",
+      "recordedAt": "2026-11-27T13:17:28.179Z"
+    },
+    {
+      "id": "src-cr-round3",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/review-cr-r3-source-4a4e3336.json",
+        "sha256": "2080907ca1bb83b9e661de789d3477c4a2c1fa2e079d1ba9206ed3622e295c87"
+      },
+      "locator": "CodeReviewer round 2 observation for ticket 02 r3 (REQUEST CHANGES, N1-N7)",
+      "recordedAt": "2026-11-27T13:32:29.831Z"
+    },
+    {
+      "id": "src-cr-round4",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/review-cr-r4-source-df2aa5fc.json",
+        "sha256": "ae93f6f4a7bc3a4d7c6780525590428cd4e8109211302c9184b9ee003d9791f8"
+      },
+      "locator": "CodeReviewer round 3 observation for ticket 02 r4 (APPROVE; CR4-1 MEDIUM)",
+      "recordedAt": "2026-11-27T14:01:43.559Z"
+    }
+  ],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/token-efficient-tool-responses-ticket02-r5/marker.json",
+    "activationEvidenceIds": []
+  },
+  "authorization": null,
+  "reviews": null
+}

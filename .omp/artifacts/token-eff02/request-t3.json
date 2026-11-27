@@ -1,0 +1,32 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "token-efficient-tool-responses-ticket02-r6",
+  "revision": "r6",
+  "requests": [
+    {
+      "name": "ImplementCompactSearchPayload",
+      "taskId": "T3",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/tools.go",
+          "internal/service/tools_test.go",
+          "internal/service/discovery_paging_test.go",
+          "internal/service/durable_test.go",
+          "cmd/mcp-bridge/serve_hybrid_coexistence_test.go",
+          "cmd/mcp-bridge/serve_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_defaults_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_exceptions_test.go",
+          "cmd/mcp-bridge/serve_hybrid_metadata_source_test.go",
+          "cmd/mcp-bridge/prompts_acceptance_test.go",
+          "cmd/mcp-bridge/serve_endpoint_rebind_test.go",
+          "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+          "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go"
+        ]
+      }
+    }
+  ]
+}

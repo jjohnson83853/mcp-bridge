@@ -1,0 +1,20 @@
+{
+  "baseSha64hex": "ccad03435fef35483530a176621e20ae112f4d3671b0b2326e46c2fbb50b4ecb",
+  "taskId": "CT1",
+  "evidence": [
+    {
+      "id": "ev-ct1",
+      "kind": "fact",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff02/review-ct-r6c-source-02e9df12.json"
+      },
+      "acceptanceIds": [],
+      "outcome": "pass",
+      "observedAt": "2026-11-27T15:27:42.123Z",
+      "producer": "reviewer",
+      "details": {
+        "locator": "Critic PASS for candidate r6c"
+      }
+    }
+  ]
+}
