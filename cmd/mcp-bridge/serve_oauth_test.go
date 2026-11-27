@@ -446,8 +446,8 @@ func TestInboundObservabilityWire(t *testing.T) {
 	openAIRecord := recordFor(openAIResponse, "OpenAI tools/list")
 	requireCompletionField(t, openAIRecord, "operation", "tools_list")
 	requireCompletionField(t, openAIRecord, "client_family", "openai")
-	if got, ok := openAIRecord["exposed_tools"].(float64); !ok || got != 3 {
-		t.Errorf("OpenAI exposed_tools = %v; want 3", openAIRecord["exposed_tools"])
+	if got, ok := openAIRecord["exposed_tools"].(float64); !ok || got != 4 {
+		t.Errorf("OpenAI exposed_tools = %v; want 4", openAIRecord["exposed_tools"])
 	}
 	if got, ok := openAIRecord["http_bytes"].(float64); !ok || got != float64(len(openAIBody)) {
 		t.Errorf("OpenAI http_bytes = %v; want response body length %d", openAIRecord["http_bytes"], len(openAIBody))
@@ -497,8 +497,8 @@ func TestInboundObservabilityWire(t *testing.T) {
 		t.Fatalf("recovery tools/list status = %d; want %d", recoveryResponse.StatusCode, http.StatusOK)
 	}
 	recoveryRecord := recordFor(recoveryResponse, "recovery tools/list")
-	if got, ok := recoveryRecord["exposed_tools"].(float64); !ok || got != 3 {
-		t.Errorf("recovery exposed_tools = %v; want 3", recoveryRecord["exposed_tools"])
+	if got, ok := recoveryRecord["exposed_tools"].(float64); !ok || got != 4 {
+		t.Errorf("recovery exposed_tools = %v; want 4", recoveryRecord["exposed_tools"])
 	}
 }
 func TestServeOAuthRouteNormalizationAndRootProbe(t *testing.T) {

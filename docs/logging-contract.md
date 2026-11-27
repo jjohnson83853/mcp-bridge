@@ -85,6 +85,18 @@ object.
 | `http_complete` | finite inbound-method/transport classification | level/outcome reflect the observed request |
 | `mcp_complete` | decoded MCP operation | level/outcome reflect that operation |
 | `backend_complete` | `call_tool` | level/outcome reflect the upstream call |
+| `result_paged` | `call_tool` | `info` / `success` |
+| `result_page_served` | `retrieve_result` | `info` / `success` |
+| `result_expired` | `retrieve_result` | `warn` / `denied` |
+| `result_evicted` | `retrieve_result` | `warn` / `denied` |
+| `invalid_handle` | `retrieve_result` | `warn` / `denied` |
+| `invalid_arguments` | `retrieve_result` | `warn` / `denied` |
+| `result_capacity_exceeded` | `call_tool` | `warn` / `degraded` |
+| `result_aggregate_capacity_exceeded` | `call_tool` | `warn` / `degraded` |
+| `result_namespace_retired` | `call_tool` | `warn` / `degraded` |
+| `result_entropy_unavailable` | `call_tool` | `warn` / `degraded` |
+| `result_epoch_unresolved` | `call_tool` | `warn` / `degraded` |
+| `log_vocabulary_violation` | `logging` | `warn` / `failure` |
 
 The HTTP operation classification is finite: `initialize`, `initialized`,
 `tools_list`, `tools_call`, `resources_list`, `resources_read`, `ping`,
@@ -268,12 +280,21 @@ correlation ID), `generation`, `duration_ms`, and safe `server` identity.
 - The `snapshot_recovery`, `catalog_loop_start`, `catalog_loop_drain`, and
   `listener_serve` full-path records are compared with the rows below through
   `loggingContractClassRow`.
-- Event-specific shared-lane values include counts and shapes (`count`, `slots`,
-  `catalog_tools`, content counts, and upstream/final shapes), the four
-  `*_presence` values (`unknown`, `present`, or `absent`), validated 32-hex
-  operation/backend-call IDs, `correlation_state` (`valid` or `unavailable`),
-  finite MCP metadata, search `mode` (`hybrid`, `hybrid_partial`, or `keyword`),
-  validated `backend_id`, and validated `protocol_version`.
+- Event-specific shared-lane values include counts and sizes (`count`, `page`,
+  `total_bytes`, `total_pages`, `slots`, `catalog_tools`), content counts and
+  upstream/final shapes; the four `*_presence` values (`unknown`, `present`, or
+  `absent`), validated 32-hex operation/backend-call IDs, `correlation_state`
+  (`valid` or `unavailable`), finite MCP metadata, search `mode` (`hybrid`,
+  `hybrid_partial`, or `keyword`), validated `backend_id`, and validated `protocol_version`.
+
+- Retention and paging result metadata uses `retention`, `execution_state`,
+  `paging_required`, `handle`, `total_bytes`, `total_pages`, `page`,
+  `remaining_pages`, and `remaining_bytes`. The five terminal `retention` values
+  are `result_capacity_exceeded`, `result_aggregate_capacity_exceeded`,
+  `result_namespace_retired`, `result_entropy_unavailable`, and
+  `result_epoch_unresolved`. These result fields do not expand the log
+  envelope's field union: paging logs emit only their event-specific fields
+  listed in that union, and never include a handle or handle-presence indicator.
 - The HTTP-only `error_detail` object is a separate optional summary with
   `class`, `code`, and `retry`; its classification is closed. It is not freeform
   error text.
@@ -394,17 +415,23 @@ producer-owned static reason for the first diagnostic.
 
 <!-- config-codes:start -->
 ```text
+aggregate_order
 bound_range
+ceiling_order
 config_read
 config_too_large
 credential_overlap
 duration_positive
 duration_range
 duration_type
+entry_cap_bound
+entry_cap_order
+envelope_feasibility
 header_duplicate
 header_forbidden
 header_mapping
 header_name_invalid
+namespace_cap_order
 pin_ceiling
 pin_duplicate
 pin_fields
@@ -441,6 +468,8 @@ tool_metadata_tool_name
 tool_metadata_tool_unknown
 tool_metadata_unknown_member
 tool_metadata_value
+ttl_invalid
+upstream_code_marker_bound
 url_invalid
 url_secret_parameter
 weight_invalid

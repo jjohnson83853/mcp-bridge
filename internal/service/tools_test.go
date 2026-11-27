@@ -88,7 +88,6 @@ type toolHarness struct {
 	serverInit *mcp.Implementation
 }
 
-
 func newToolHarnessWithDefinitions(t *testing.T, cfg *config.Config, surfaceCfg service.ToolSurfaceConfig, defs []core.ToolDefinition) *toolHarness {
 	t.Helper()
 	upstream := &recordingClient{}
@@ -117,7 +116,6 @@ func newToolHarness(t *testing.T, cfg *config.Config, surfaceCfg service.ToolSur
 	}
 	return newToolHarnessWithDefinitions(t, cfg, surfaceCfg, defs)
 }
-
 
 // newAdmittedToolHarness is the cold-start sibling of newToolHarness: the
 // runtime admits the given durable snapshot instead of discovering upstreams,
@@ -255,6 +253,7 @@ func canonical(t *testing.T, value any) string {
 	}
 	return string(raw)
 }
+
 type syncBuffer struct {
 	mu     sync.Mutex
 	buffer bytes.Buffer
@@ -511,8 +510,7 @@ func TestToolSurfaceCallCatalogRevisionAdmission(t *testing.T) {
 	}
 }
 
-
-// The bridge advertises its three built-ins with the exact schemas, plus its configured
+// The bridge advertises its four built-ins with the exact schemas, plus its configured
 // pin (PR-R7/PR-AC1).
 func assertAdvertisedBuiltinsAndPin(t *testing.T, tools []*mcp.Tool, pinName string) {
 	t.Helper()
@@ -521,6 +519,15 @@ func assertAdvertisedBuiltinsAndPin(t *testing.T, tools []*mcp.Tool, pinName str
 		catalog.ToolSearchTools:  catalog.SearchToolsInputSchema(),
 		catalog.ToolDescribeTool: catalog.DescribeToolInputSchema(),
 		catalog.ToolCallTool:     catalog.CallToolInputSchema(),
+		catalog.ToolRetrieveResult: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"handle": map[string]any{"type": "string", "pattern": "^[A-Za-z0-9_-]{43}$"},
+				"page":   map[string]any{"type": "integer", "minimum": 1, "default": 1},
+			},
+			"required":             []string{"handle"},
+			"additionalProperties": false,
+		},
 	}
 	seen := make(map[string]bool, len(tools))
 	for _, tool := range tools {
@@ -549,7 +556,7 @@ func assertAdvertisedBuiltinsAndPin(t *testing.T, tools []*mcp.Tool, pinName str
 	}
 }
 
-func TestToolSurfaceAdvertisesExactlyItsThreeTools(t *testing.T) {
+func TestToolSurfaceAdvertisesExactlyItsFourTools(t *testing.T) {
 	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")
 	t.Setenv("TOOLS_CLIENT_TOKEN", "client-token")
 	h := newToolHarness(t, parseReloadConfig(t, toolSurfaceConfig), service.ToolSurfaceConfig{
@@ -912,8 +919,8 @@ func TestToolSurfaceSearchToolsUsesWireBoundaryAndFallbackNames(t *testing.T) {
 		t.Fatalf("search results = %v; want the invalid, long, and boundary tools", structured(t, result)["results"])
 	}
 	expected := map[string]string{
-		"read.v2":        core.PublicName("alpha", "read.v2"),
-		longRawName:      core.PublicName("alpha", longRawName),
+		"read.v2":       core.PublicName("alpha", "read.v2"),
+		longRawName:     core.PublicName("alpha", longRawName),
 		boundaryRawName: "alpha__" + boundaryRawName,
 	}
 	for _, item := range results {
@@ -932,7 +939,6 @@ func TestToolSurfaceSearchToolsUsesWireBoundaryAndFallbackNames(t *testing.T) {
 		t.Errorf("search omitted fallback targets: %v", expected)
 	}
 }
-
 
 // The advertised tool list remains stable across reload, with one of each built-in
 // plus its configured pin.

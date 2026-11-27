@@ -661,7 +661,9 @@ var operationVocabulary = []string{
 	"unknown", "request", "discover", "initialize", "initialized", "tools_list",
 	"tools_call", "call_tool", "resources_list", "resources_read", "ping",
 	"sse_stream", "search", "describe", "health", "describe_tool",
-	"prompts_list", "prompts_get",
+	"prompts_list", "prompts_get", "refresh", "prompt_load", "prompt_persist",
+	"startup", "handshake", "reload", "cli", "search_tools", "retrieve_result",
+	"load_config", "check_config", "publish", "logging",
 }
 
 // maxDiagnosticDurationMS bounds the semantic duration.
@@ -756,18 +758,18 @@ func (o *httpOwner) buildSnapshot() (legacyEntry, *HTTPDiagnostic) {
 	level := severityLevel(legacyStage, legacyReason, o.status, o.upstreamState)
 
 	diagnostic := &HTTPDiagnostic{
-		LegacyStage:                  legacyStage,
-		HTTPStatus:                   status,
-		HTTPMethod:                   httpMethodValue(o.method),
-		Route:                        o.route,
-		HTTPOutcome:                  httpOutcome,
-		HTTPBytesBucket:              bucket,
-		Operation:                    operation,
-		ClientFamily:                 o.clientFamily,
-		HTTPBytes:                    o.bytes,
-		StatusState:                  statusState,
-		CorrelationState:             orDefault(o.correlationState, CorrelationUnavailable),
-		DiagSchema:                   "oauth_diag_v1",
+		LegacyStage:      legacyStage,
+		HTTPStatus:       status,
+		HTTPMethod:       httpMethodValue(o.method),
+		Route:            o.route,
+		HTTPOutcome:      httpOutcome,
+		HTTPBytesBucket:  bucket,
+		Operation:        operation,
+		ClientFamily:     o.clientFamily,
+		HTTPBytes:        o.bytes,
+		StatusState:      statusState,
+		CorrelationState: orDefault(o.correlationState, CorrelationUnavailable),
+		DiagSchema:       "oauth_diag_v1",
 
 		BuildState:                   o.diagnostics.provenance.BuildState,
 		ProcessState:                 o.diagnostics.process.State,

@@ -350,10 +350,11 @@ func TestServeHybridProgressiveRevealPages(t *testing.T) {
 	defer session.Close()
 
 	expected := map[string]bool{
-		catalog.ToolSearchTools:  false,
-		catalog.ToolDescribeTool: false,
-		catalog.ToolCallTool:     false,
-		"alpha__read":            false,
+		catalog.ToolSearchTools:    false,
+		catalog.ToolDescribeTool:   false,
+		catalog.ToolCallTool:       false,
+		catalog.ToolRetrieveResult: false,
+		"alpha__read":              false,
 	}
 	seen := make(map[string]bool, len(expected))
 	cursor := ""

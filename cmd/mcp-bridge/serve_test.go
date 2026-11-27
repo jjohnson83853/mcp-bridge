@@ -615,8 +615,8 @@ func TestServeCompositionRootServesCatalogAndSurvivesReload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("tools/list: %v", err)
 	}
-	if len(listed.Tools) != 3 {
-		t.Fatalf("advertised %d tools; want exactly 3", len(listed.Tools))
+	if len(listed.Tools) != 4 {
+		t.Fatalf("advertised %d tools; want exactly 4", len(listed.Tools))
 	}
 
 	// The cold store has no cached catalog: the first pass discovers, embeds and
@@ -814,8 +814,8 @@ func TestServeCatalogErgonomicsLiveWire(t *testing.T) {
 
 	initialize := postServeWire(t, httpURL, "", 1, "initialize", map[string]any{
 		"protocolVersion": "2025-03-26",
-		"capabilities":   map[string]any{},
-		"clientInfo":     map[string]any{"name": "wire-test", "version": "1"},
+		"capabilities":    map[string]any{},
+		"clientInfo":      map[string]any{"name": "wire-test", "version": "1"},
 	})
 	if initialize.status != http.StatusOK {
 		t.Fatalf("initialize status = %d; want 200", initialize.status)

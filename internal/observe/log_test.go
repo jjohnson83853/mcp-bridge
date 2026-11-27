@@ -420,3 +420,68 @@ func TestWriteLoggingFailureFallbackUsesOppositeStandardStream(t *testing.T) {
 		t.Fatalf("opposite-stream fallback = %q; want %q", contents, loggingWriteFailedLine)
 	}
 }
+func TestLogLabelEnumeration(t *testing.T) {
+	wantOperations := []string{
+		"unknown", "request", "discover", "initialize", "initialized", "tools_list",
+		"tools_call", "call_tool", "resources_list", "resources_read", "ping",
+		"sse_stream", "search", "describe", "health", "describe_tool",
+		"prompts_list", "prompts_get", "refresh", "prompt_load", "prompt_persist",
+		"startup", "handshake", "reload", "cli", "search_tools", "retrieve_result",
+		"load_config", "check_config", "publish", "logging",
+	}
+	if !reflect.DeepEqual(operationVocabulary, wantOperations) {
+		t.Fatalf("operation vocabulary = %#v; want %#v", operationVocabulary, wantOperations)
+	}
+
+	newEvents := []string{
+		"result_paged", "result_page_served", "result_expired", "result_evicted",
+		"invalid_handle", "invalid_arguments", "result_capacity_exceeded",
+		"result_aggregate_capacity_exceeded", "result_namespace_retired",
+		"result_entropy_unavailable", "result_epoch_unresolved", "log_vocabulary_violation",
+	}
+	for _, event := range newEvents {
+		if eventMessage(event) == "" {
+			t.Errorf("new event %q has no registered message", event)
+		}
+	}
+	if eventMessage("unlisted_event") != "" {
+		t.Fatal("unregistered event has a fallback message")
+	}
+
+	assertViolation := func(name string, line []byte) {
+		t.Helper()
+		var record map[string]any
+		if err := json.Unmarshal(bytes.TrimSpace(line), &record); err != nil {
+			t.Fatalf("%s emitted invalid JSON: %v: %q", name, err, line)
+		}
+		if record["level"] != "warn" || record["event"] != "log_vocabulary_violation" || record["operation"] != "logging" {
+			t.Fatalf("%s record = %#v; want warning vocabulary-violation record", name, record)
+		}
+		if strings.Contains(string(line), "unlisted_operation") || strings.Contains(string(line), "unlisted_event") {
+			t.Fatalf("%s leaked the rejected value: %s", name, line)
+		}
+	}
+
+	var stdout, stderr bytes.Buffer
+	NewLogger(&stdout, &stderr).Log(Entry{
+		Level: "info", Event: "result_paged", Operation: "unlisted_operation", Outcome: "success",
+	})
+	assertViolation("Logger.Log operation", stderr.Bytes())
+	var direct bytes.Buffer
+	if err := WriteJSONLine(&direct, NewEnvelope("info", "result_paged", "ignored", "unlisted_operation", "success")); err != nil {
+		t.Fatalf("WriteJSONLine operation injection: %v", err)
+	}
+	assertViolation("NewEnvelope/WriteJSONLine operation", direct.Bytes())
+
+	stdout.Reset()
+	stderr.Reset()
+	NewLogger(&stdout, &stderr).Log(Entry{
+		Level: "info", Event: "unlisted_event", Operation: "logging", Outcome: "success",
+	})
+	assertViolation("Logger.Log event", stderr.Bytes())
+	direct.Reset()
+	if err := WriteJSONLine(&direct, NewEnvelope("info", "unlisted_event", "ignored", "logging", "success")); err != nil {
+		t.Fatalf("WriteJSONLine event injection: %v", err)
+	}
+	assertViolation("NewEnvelope/WriteJSONLine event", direct.Bytes())
+}

@@ -105,13 +105,13 @@ func TestPublishedRejectsCandidateWhenDescriptorFails(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := map[string]bool{"search_tools": true, "describe_tool": true, "call_tool": true}
+	want := map[string]bool{"search_tools": true, "describe_tool": true, "call_tool": true, "retrieve_result": true}
 	got := make([]string, 0, len(page.Tools))
 	for _, tool := range page.Tools {
 		got = append(got, tool.Name)
 		delete(want, tool.Name)
 	}
-	if len(want) != 0 || len(got) != 3 {
+	if len(want) != 0 || len(got) != 4 {
 		t.Fatalf("published tools after rejected candidate = %v; missing %v", got, want)
 	}
 }
@@ -452,6 +452,7 @@ func TestUpstreamMetadataValueOmitsEmptyTitle(t *testing.T) {
 		t.Fatalf("icons-only metadata lost its icons: %v", iconsOnly)
 	}
 }
+
 // TestProgressiveMetadataParity verifies an unpinned exact target uses the
 // same source → defaults → exact-tool derivation and winning provenance as a
 // pinned target, without changing the source definition or its schemas.
@@ -540,11 +541,11 @@ pins: []
 		t.Fatalf("pinned and revealed provenance differs: %v vs %v", pinnedFields, revealed.OverrideFields)
 	}
 	wantLayers := map[string]string{
-		"title":                         "tool",
-		"description":                  "server_default",
-		"annotations.readOnlyHint":     "tool",
-		"annotations.destructiveHint":  "tool",
-		"annotations.idempotentHint":   "server_default",
+		"title":                       "tool",
+		"description":                 "server_default",
+		"annotations.readOnlyHint":    "tool",
+		"annotations.destructiveHint": "tool",
+		"annotations.idempotentHint":  "server_default",
 	}
 	gotLayers := make(map[string]string, len(revealed.OverrideFields))
 	for _, field := range revealed.OverrideFields {

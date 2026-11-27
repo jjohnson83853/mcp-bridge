@@ -1,11 +1,14 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"gopkg.in/yaml.v3"
 )
 
@@ -213,4 +216,181 @@ func validateBoundsAt(node *yaml.Node, path, server, configPath string) *Diagnos
 		}
 	}
 	return nil
+}
+
+const retainedEnvelopeHeadroom uint64 = 6
+
+func defaultRetainedResultBounds() RetainedResultBounds {
+	return RetainedResultBounds{
+		DeliveryCeilingBytes:   8192,
+		PreviewCeilingBytes:    1536,
+		MaxRetainedResultBytes: 8388608,
+		MaxBytesPerNamespace:   16777216,
+		MaxEntriesPerNamespace: 16,
+		MaxBytesAggregate:      67108864,
+		HandleTTL:              time.Hour,
+		TombstoneTTL:           15 * time.Minute,
+		MaxUpstreamCodeBytes:   512,
+		MaxMarkersPerNamespace: 16,
+	}
+}
+
+func validateRetainedResults(root *yaml.Node, configPath string, bounds *RetainedResultBounds) *Diagnostics {
+	*bounds = defaultRetainedResultBounds()
+	node := mappingChild(root, "retained_results")
+	if node == nil {
+		return nil
+	}
+
+	numericBounds := []struct {
+		key     string
+		value   *uint64
+		minimum uint64
+	}{
+		{"delivery_ceiling_bytes", &bounds.DeliveryCeilingBytes, 1},
+		{"preview_ceiling_bytes", &bounds.PreviewCeilingBytes, 1},
+		{"max_retained_result_bytes", &bounds.MaxRetainedResultBytes, 0},
+		{"max_bytes_per_namespace", &bounds.MaxBytesPerNamespace, 0},
+		{"max_entries_per_namespace", &bounds.MaxEntriesPerNamespace, 1},
+		{"max_bytes_aggregate", &bounds.MaxBytesAggregate, 0},
+		{"max_upstream_code_bytes", &bounds.MaxUpstreamCodeBytes, 1},
+		{"max_markers_per_namespace", &bounds.MaxMarkersPerNamespace, 1},
+	}
+	for _, setting := range numericBounds {
+		value := mappingChild(node, setting.key)
+		if value == nil {
+			continue
+		}
+		number, err := retainedResultUint(value)
+		if err != nil {
+			shape := "invalid_number"
+			if strings.HasPrefix(value.Value, "-") {
+				shape = "below_minimum"
+			}
+			return retainedResultDiagnostic(configPath, setting.key, value, "bound_range", "range", shape, "outside permitted bounds")
+		}
+		if number < setting.minimum {
+			return retainedResultDiagnostic(configPath, setting.key, value, "bound_range", "range", "below_minimum", "outside permitted bounds")
+		}
+		*setting.value = number
+	}
+	if bounds.MaxRetainedResultBytes > 4294967295 {
+		return retainedResultDiagnostic(configPath, "max_retained_result_bytes", mappingChild(node, "max_retained_result_bytes"), "entry_cap_bound", "range", "above_maximum", "per-entry cap exceeds the supported bound")
+	}
+
+	for _, setting := range []struct {
+		key   string
+		value *time.Duration
+	}{
+		{"handle_ttl", &bounds.HandleTTL},
+		{"tombstone_ttl", &bounds.TombstoneTTL},
+	} {
+		value := mappingChild(node, setting.key)
+		if value == nil {
+			continue
+		}
+		if value.Kind != yaml.ScalarNode || value.Tag != "!!str" {
+			return retainedResultDiagnostic(configPath, setting.key, value, "ttl_invalid", "duration", "wrong_type", "retention TTL must be a positive duration")
+		}
+		duration, err := time.ParseDuration(value.Value)
+		if err != nil {
+			return retainedResultDiagnostic(configPath, setting.key, value, "ttl_invalid", "duration", "invalid_duration", "retention TTL must be a positive duration")
+		}
+		if duration <= 0 {
+			return retainedResultDiagnostic(configPath, setting.key, value, "ttl_invalid", "duration", "nonpositive", "retention TTL must be a positive duration")
+		}
+		*setting.value = duration
+	}
+
+	if bounds.PreviewCeilingBytes >= bounds.DeliveryCeilingBytes {
+		return retainedResultDiagnostic(configPath, "preview_ceiling_bytes", mappingChild(node, "preview_ceiling_bytes"), "ceiling_order", "order", "not_strictly_less", "preview ceiling must be less than delivery ceiling")
+	}
+	if bounds.MaxRetainedResultBytes <= bounds.DeliveryCeilingBytes {
+		return retainedResultDiagnostic(configPath, "max_retained_result_bytes", mappingChild(node, "max_retained_result_bytes"), "entry_cap_order", "order", "not_greater", "per-entry cap must exceed delivery ceiling")
+	}
+	if bounds.MaxBytesPerNamespace < bounds.MaxRetainedResultBytes {
+		return retainedResultDiagnostic(configPath, "max_bytes_per_namespace", mappingChild(node, "max_bytes_per_namespace"), "namespace_cap_order", "order", "below_entry_cap", "namespace byte cap must cover the per-entry cap")
+	}
+	previewFeasible := retainedResultEnvelopeFits(maximalPreviewMetadata(), bounds.MaxUpstreamCodeBytes, bounds.PreviewCeilingBytes)
+	pageFeasible := retainedResultEnvelopeFits(maximalPageMetadata(), bounds.MaxUpstreamCodeBytes, bounds.DeliveryCeilingBytes)
+	terminalFeasible := retainedResultEnvelopeFits(maximalTerminalMetadata(), bounds.MaxUpstreamCodeBytes, bounds.PreviewCeilingBytes)
+	if !previewFeasible || !pageFeasible || !terminalFeasible {
+		key := "delivery_ceiling_bytes"
+		if !previewFeasible || !terminalFeasible {
+			key = "preview_ceiling_bytes"
+		}
+		return retainedResultDiagnostic(configPath, key, mappingChild(node, key), "envelope_feasibility", "feasibility", "insufficient_headroom", "maximal result envelope leaves insufficient rune headroom")
+	}
+	if bounds.MaxBytesAggregate < bounds.MaxRetainedResultBytes {
+		return retainedResultDiagnostic(configPath, "max_bytes_aggregate", mappingChild(node, "max_bytes_aggregate"), "aggregate_order", "order", "below_entry_cap", "aggregate byte cap must cover the per-entry cap")
+	}
+	if bounds.MaxUpstreamCodeBytes < uint64(len("[truncated]")) {
+		return retainedResultDiagnostic(configPath, "max_upstream_code_bytes", mappingChild(node, "max_upstream_code_bytes"), "upstream_code_marker_bound", "minimum", "below_minimum", "upstream code limit must fit the truncation marker")
+	}
+	return nil
+}
+
+func retainedResultUint(node *yaml.Node) (uint64, error) {
+	if node.Kind != yaml.ScalarNode || node.Tag != "!!int" {
+		return 0, fmt.Errorf("not an integer")
+	}
+	return strconv.ParseUint(node.Value, 0, 64)
+}
+
+func retainedResultDiagnostic(configPath, key string, node *yaml.Node, code, property, shape, reason string) *Diagnostics {
+	return single(Diagnostic{
+		Path: configPath, Key: "retained_results." + key,
+		Line: nodeLine(node), Column: nodeColumn(node),
+		Code: code, Property: property, Shape: shape, Reason: reason,
+	})
+}
+
+func retainedResultEnvelopeFits(metadata map[string]any, upstreamCodeBytes, ceiling uint64) bool {
+	encoded, err := json.Marshal(&mcp.CallToolResult{
+		Content:           []mcp.Content{&mcp.TextContent{Text: ""}},
+		StructuredContent: metadata,
+	})
+	if err != nil {
+		return false
+	}
+	baseBytes := uint64(len(encoded))
+	maxUint64 := ^uint64(0)
+	if baseBytes > maxUint64-retainedEnvelopeHeadroom ||
+		upstreamCodeBytes > maxUint64-baseBytes-retainedEnvelopeHeadroom {
+		return false
+	}
+	return baseBytes+upstreamCodeBytes+retainedEnvelopeHeadroom <= ceiling
+}
+
+func maximalPreviewMetadata() map[string]any {
+	return map[string]any{
+		"paging_required": true,
+		"handle":          strings.Repeat("h", 43),
+		"total_bytes":     ^uint64(0),
+		"is_error":        false,
+		"upstream_code":   "",
+	}
+}
+
+func maximalPageMetadata() map[string]any {
+	return map[string]any{
+		"handle":          strings.Repeat("h", 43),
+		"page":            ^uint32(0),
+		"total_pages":     ^uint32(0),
+		"remaining_pages": ^uint32(0),
+		"total_bytes":     ^uint64(0),
+		"remaining_bytes": ^uint64(0),
+		"is_error":        false,
+		"upstream_code":   "",
+	}
+}
+
+func maximalTerminalMetadata() map[string]any {
+	return map[string]any{
+		"retention":       "result_aggregate_capacity_exceeded",
+		"execution_state": "executed",
+		"total_bytes":     ^uint64(0),
+		"is_error":        false,
+		"upstream_code":   "",
+	}
 }

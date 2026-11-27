@@ -251,6 +251,9 @@ func (h *InboundHandler) ensureSDKSession(ctx context.Context, origin *http.Requ
 			remove.Header.Set("Authorization", authorization)
 		}
 		h.next.ServeHTTP(httptest.NewRecorder(), remove)
+		if h.options.ToolSurface != nil {
+			h.options.ToolSurface.sweepRetainedResults()
+		}
 	}
 
 	response := httptest.NewRecorder()
@@ -674,6 +677,9 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		h.cleanupRetiredOwners(retiredOwners)
+		if h.options.ToolSurface != nil {
+			h.options.ToolSurface.sweepRetainedResults()
+		}
 		if deleteUnknown {
 			observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
 				SessionState: "absent", BindingRelation: "not_evaluated",
@@ -768,6 +774,9 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			atCapacity := len(h.sessions) >= maximum
 			h.mu.Unlock()
 			h.cleanupRetiredOwners(retiredOwners)
+			if h.options.ToolSurface != nil {
+				h.options.ToolSurface.sweepRetainedResults()
+			}
 			if atCapacity {
 				rejection = legacyRejection{"session_admission", "session_capacity"}
 				observe.ContributeHTTP(r.Context(), observe.HTTPDecision{
@@ -811,6 +820,7 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.mu.Unlock()
 		if retiredOwner.epoch != 0 {
 			h.options.ToolSurface.cleanupRetiredOwner(retiredOwner)
+			h.options.ToolSurface.retireRetainedResultNamespace(retiredOwner)
 		}
 	}
 	var maxBytes *http.MaxBytesError
@@ -964,6 +974,7 @@ func (h *InboundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.mu.Unlock()
 		if retiredOwner.epoch != 0 {
 			h.options.ToolSurface.cleanupRetiredOwner(retiredOwner)
+			h.options.ToolSurface.retireRetainedResultNamespace(retiredOwner)
 		}
 		if sdkSessionID != "" {
 			remove := httptest.NewRequest(http.MethodDelete, "/mcp", nil)
@@ -1153,6 +1164,7 @@ func (h *InboundHandler) cleanupRetiredOwners(owners []projectionOwner) {
 	for _, owner := range owners {
 		if owner.epoch != 0 && h.options.ToolSurface != nil {
 			h.options.ToolSurface.cleanupRetiredOwner(owner)
+			h.options.ToolSurface.retireRetainedResultNamespace(owner)
 		}
 		remove := httptest.NewRequest(http.MethodDelete, "/mcp", nil)
 		remove.Header.Set(sessionIDHeader, owner.sessionID)

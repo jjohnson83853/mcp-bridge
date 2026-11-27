@@ -278,10 +278,11 @@ func assertProgressiveRevealListWithoutStaleInterest(t *testing.T, label string,
 func assertProgressiveRevealNameSet(t *testing.T, names []string, allowedDynamic string) {
 	t.Helper()
 	expected := map[string]bool{
-		"search_tools":  true,
-		"describe_tool": true,
-		"call_tool":     true,
-		"alpha__read":   true,
+		"search_tools":    true,
+		"describe_tool":   true,
+		"call_tool":       true,
+		"retrieve_result": true,
+		"alpha__read":     true,
 	}
 	if allowedDynamic != "" {
 		expected[allowedDynamic] = true

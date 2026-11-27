@@ -152,6 +152,13 @@ func buildEnvelope(entry Entry) (map[string]any, bool) {
 		!validEnvelopeOutcome(entry.Outcome) || entry.Duration < 0 {
 		return nil, false
 	}
+
+	if logVocabularyViolation(entry.Event, entry.Operation) {
+		entry = Entry{
+			Level: "warn", Event: "log_vocabulary_violation",
+			Operation: "logging", Outcome: "failure",
+		}
+	}
 	message := eventMessage(entry.Event)
 	if message == "" {
 		return nil, false

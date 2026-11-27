@@ -33,19 +33,24 @@ const (
 	stageNotChecked = "not_checked"
 )
 
-
 var diagnosticCodes = [...]string{
+	"aggregate_order",
 	"bound_range",
+	"ceiling_order",
 	"config_read",
 	"config_too_large",
 	"credential_overlap",
 	"duration_positive",
 	"duration_range",
 	"duration_type",
+	"entry_cap_bound",
+	"entry_cap_order",
+	"envelope_feasibility",
 	"header_duplicate",
 	"header_forbidden",
 	"header_mapping",
 	"header_name_invalid",
+	"namespace_cap_order",
 	"pin_ceiling",
 	"pin_duplicate",
 	"pin_fields",
@@ -82,6 +87,8 @@ var diagnosticCodes = [...]string{
 	"tool_metadata_tool_unknown",
 	"tool_metadata_unknown_member",
 	"tool_metadata_value",
+	"ttl_invalid",
+	"upstream_code_marker_bound",
 	"url_invalid",
 	"url_secret_parameter",
 	"weight_invalid",
@@ -102,6 +109,7 @@ var diagnosticCodes = [...]string{
 func DiagnosticCodes() []string {
 	return append([]string(nil), diagnosticCodes[:]...)
 }
+
 // Diagnostic carries the metadata-only attribution of one configuration
 // rejection. Records are immutable value copies; nothing in the collection
 // aliases caller-visible memory.

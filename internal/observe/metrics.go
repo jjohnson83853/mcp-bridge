@@ -31,6 +31,13 @@ var (
 	reloadOutcomes = map[string]bool{"success": true, "rejected": true}
 	reloadReasons  = map[string]bool{"none": true, "invalid_configuration": true, "admission_failed": true}
 )
+var retentionCodes = map[string]struct{}{
+	"result_capacity_exceeded":           {},
+	"result_aggregate_capacity_exceeded": {},
+	"result_namespace_retired":           {},
+	"result_entropy_unavailable":         {},
+	"result_epoch_unresolved":            {},
+}
 
 // requestOperations and requestOutcomes bound inbound metric labels to their
 // finite vocabularies, so unrecognized values cannot create metric series.
@@ -133,6 +140,12 @@ type Metrics struct {
 	refreshTotal   *prometheus.CounterVec
 	reloadTotal    *prometheus.CounterVec
 	readiness      *prometheus.GaugeVec
+
+	retentionRejections    *prometheus.CounterVec
+	resultsPaged           prometheus.Counter
+	resultPagesServed      prometheus.Counter
+	retentionEvictions     prometheus.Counter
+	logOperationViolations prometheus.Counter
 }
 
 // NewMetrics builds the bridge's metric surface. The collectors live in a
@@ -170,8 +183,41 @@ func NewMetrics(serverIDs []string) *Metrics {
 			Name: "bridge_readiness",
 			Help: "Readiness by server: 0 unavailable, 1 degraded, 2 ready.",
 		}, []string{"server"}),
+		retentionRejections: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "bridge_retention_rejections_total",
+			Help: "Retained results rejected by their bounded retention reason.",
+		}, []string{"retention"}),
+		resultsPaged: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "bridge_results_paged_total",
+			Help: "Results retained and delivered using paging.",
+		}),
+		resultPagesServed: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "bridge_result_pages_served_total",
+			Help: "Retained result pages served.",
+		}),
+		retentionEvictions: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "bridge_retention_evictions_total",
+			Help: "Retained result entries evicted to enforce configured bounds.",
+		}),
+		logOperationViolations: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "bridge_log_operation_violations_total",
+			Help: "Log records rejected for unregistered operation or event values.",
+		}),
 	}
-	m.registry.MustRegister(m.requestsTotal, m.catalogTools, m.catalogPrompts, m.catalogAge, m.refreshTotal, m.reloadTotal, m.readiness)
+	m.registry.MustRegister(
+		m.requestsTotal,
+		m.catalogTools,
+		m.catalogPrompts,
+		m.catalogAge,
+		m.refreshTotal,
+		m.reloadTotal,
+		m.readiness,
+		m.retentionRejections,
+		m.resultsPaged,
+		m.resultPagesServed,
+		m.retentionEvictions,
+		m.logOperationViolations,
+	)
 	return m
 }
 
@@ -248,4 +294,33 @@ func (m *Metrics) SetReadiness(server string, state Readiness) bool {
 	}
 	m.readiness.WithLabelValues(server).Set(float64(state))
 	return true
+}
+
+// RecordRetentionRejection counts one terminal retention refusal if its code is registered.
+func (m *Metrics) RecordRetentionRejection(retention string) bool {
+	if _, ok := retentionCodes[retention]; !ok {
+		return false
+	}
+	m.retentionRejections.WithLabelValues(retention).Inc()
+	return true
+}
+
+// RecordResultsPaged counts an over-ceiling result retained for paged delivery.
+func (m *Metrics) RecordResultsPaged() {
+	m.resultsPaged.Inc()
+}
+
+// RecordResultPageServed counts one successfully returned retained page.
+func (m *Metrics) RecordResultPageServed() {
+	m.resultPagesServed.Inc()
+}
+
+// RecordRetentionEviction counts one FIFO result eviction.
+func (m *Metrics) RecordRetentionEviction() {
+	m.retentionEvictions.Inc()
+}
+
+// RecordLogOperationViolation counts one rejected log vocabulary value.
+func (m *Metrics) RecordLogOperationViolation() {
+	m.logOperationViolations.Inc()
 }

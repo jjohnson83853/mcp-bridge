@@ -52,20 +52,38 @@ func (s Server) ServerStateless() bool {
 	return *s.Stateless
 }
 
+// RetainedResultBounds contains the validated, process-wide result-retention limits.
+type RetainedResultBounds struct {
+	DeliveryCeilingBytes   uint64
+	PreviewCeilingBytes    uint64
+	MaxRetainedResultBytes uint64
+	MaxBytesPerNamespace   uint64
+	MaxEntriesPerNamespace uint64
+	MaxBytesAggregate      uint64
+	HandleTTL              time.Duration
+	TombstoneTTL           time.Duration
+	MaxUpstreamCodeBytes   uint64
+	MaxMarkersPerNamespace uint64
+}
+
 type Config struct {
-	SchemaVersion     int                 `yaml:"schema_version"`
-	HTTP              map[string]any      `yaml:"http"`
-	Operations        map[string]any      `yaml:"operations"`
-	Storage           map[string]any      `yaml:"storage"`
-	Catalog           map[string]any      `yaml:"catalog"`
-	Search            map[string]any      `yaml:"search"`
-	Embedding         map[string]any      `yaml:"embedding"`
-	ClientAuth        map[string]any      `yaml:"client_auth"`
-	UpstreamDefaults  map[string]any      `yaml:"upstream_defaults"`
-	Servers           []Server            `yaml:"servers"`
-	Pins              []map[string]string `yaml:"pins"`
-	resolved          map[string]string
-	clientTokenHashes [][32]byte
+	SchemaVersion    int                 `yaml:"schema_version"`
+	HTTP             map[string]any      `yaml:"http"`
+	Operations       map[string]any      `yaml:"operations"`
+	Storage          map[string]any      `yaml:"storage"`
+	Catalog          map[string]any      `yaml:"catalog"`
+	Search           map[string]any      `yaml:"search"`
+	Embedding        map[string]any      `yaml:"embedding"`
+	ClientAuth       map[string]any      `yaml:"client_auth"`
+	UpstreamDefaults map[string]any      `yaml:"upstream_defaults"`
+	Servers          []Server            `yaml:"servers"`
+	Pins             []map[string]string `yaml:"pins"`
+	RetainedResults  map[string]any      `yaml:"retained_results"`
+	// RetainedResultBounds is populated by Parse; a directly constructed Config
+	// leaves it zero-valued and retains existing literal defaults.
+	RetainedResultBounds RetainedResultBounds `yaml:"-"`
+	resolved             map[string]string
+	clientTokenHashes    [][32]byte
 	// embeddingSnapshot holds the per-load effective embedding model and base
 	// URL resolved from environment references. It is populated only by Parse
 	// and is treated as immutable; a directly constructed Config leaves it
@@ -344,6 +362,9 @@ func Parse(data []byte, configPath string) (*Config, error) {
 		}
 	}
 	if diags := validateBounds(root.Content[0], configPath); diags != nil {
+		return nil, diags
+	}
+	if diags := validateRetainedResults(root.Content[0], configPath, &cfg.RetainedResultBounds); diags != nil {
 		return nil, diags
 	}
 	if diags := validateWeights(root.Content[0], configPath); diags != nil {
@@ -646,7 +667,7 @@ func validateEffectiveURL(raw string) error {
 }
 
 var fields = map[string]map[string]bool{
-	"root":              set("schema_version http operations storage catalog search embedding client_auth upstream_defaults servers pins"),
+	"root":              set("schema_version http operations storage catalog search embedding client_auth upstream_defaults servers pins retained_results"),
 	"http":              set("listen allowed_hosts allowed_origins max_request_bytes requests_per_second burst max_sessions session_idle_timeout"),
 	"operations":        set("listen requests_per_second burst"),
 	"storage":           set("directory max_snapshot_bytes"),
@@ -656,9 +677,10 @@ var fields = map[string]map[string]bool{
 	"client_auth":       set("bearer_tokens"),
 	"upstream_defaults": set("connect_timeout call_timeout refresh_timeout max_concurrent_calls max_event_bytes max_response_bytes breaker"),
 	"server":            set("id endpoint prompts_disabled credentials limits tool_metadata stateless"), "credentials": set("bearer headers"),
-	"tool_metadata": set("defaults tools"),
-	"defaults":      set("description title icons annotations _meta"),
-	"limits":        set("max_concurrent_calls call_timeout"), "breaker": set("consecutive_failures open_duration half_open_probes"),
+	"retained_results": set("delivery_ceiling_bytes preview_ceiling_bytes max_retained_result_bytes max_bytes_per_namespace max_entries_per_namespace max_bytes_aggregate handle_ttl tombstone_ttl max_upstream_code_bytes max_markers_per_namespace"),
+	"tool_metadata":    set("defaults tools"),
+	"defaults":         set("description title icons annotations _meta"),
+	"limits":           set("max_concurrent_calls call_timeout"), "breaker": set("consecutive_failures open_duration half_open_probes"),
 	"pin": set("server tool"), "secret": set("env file"),
 }
 
@@ -693,7 +715,7 @@ func (v *docValidator) fail(record Diagnostic) *Diagnostics {
 // sequence or scalar in their place is attributed before the typed decode so
 // the record names the section from the parsed node, never decoder prose
 // (spec §5.2 C-1 wrong-section-type row).
-var mappingOnlySections = set("http operations storage catalog search embedding client_auth upstream_defaults credentials limits breaker headers tool_metadata defaults tools")
+var mappingOnlySections = set("http operations storage catalog search embedding client_auth upstream_defaults retained_results credentials limits breaker headers tool_metadata defaults tools")
 
 func (v *docValidator) validateNode(node *yaml.Node, path, section, server string) *Diagnostics {
 	if section == "headers" {

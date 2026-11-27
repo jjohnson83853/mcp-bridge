@@ -248,3 +248,45 @@ func TestPromptMetricsBoundedLabels(t *testing.T) {
 		}
 	}
 }
+func TestPagingMetricsRegistered(t *testing.T) {
+	m := NewMetrics(nil)
+	retentionCodes := []string{
+		"result_capacity_exceeded",
+		"result_aggregate_capacity_exceeded",
+		"result_namespace_retired",
+		"result_entropy_unavailable",
+		"result_epoch_unresolved",
+	}
+	for _, code := range retentionCodes {
+		if !m.RecordRetentionRejection(code) {
+			t.Fatalf("registered retention code %q was refused", code)
+		}
+	}
+	if m.RecordRetentionRejection("unbounded-value") {
+		t.Fatal("unregistered retention label was accepted")
+	}
+	m.RecordResultsPaged()
+	m.RecordResultPageServed()
+	m.RecordRetentionEviction()
+	m.RecordLogOperationViolation()
+
+	exp := exposition(t, m)
+	for _, code := range retentionCodes {
+		if !strings.Contains(exp, `bridge_retention_rejections_total{retention="`+code+`"} 1`) {
+			t.Errorf("missing closed retention counter for %q: %s", code, exp)
+		}
+	}
+	for _, name := range []string{
+		"bridge_results_paged_total",
+		"bridge_result_pages_served_total",
+		"bridge_retention_evictions_total",
+		"bridge_log_operation_violations_total",
+	} {
+		if !strings.Contains(exp, name+" 1") || strings.Contains(exp, name+"{") {
+			t.Errorf("counter %s must be registered without labels: %s", name, exp)
+		}
+	}
+	if strings.Contains(exp, "unbounded-value") {
+		t.Fatalf("unregistered label reached exposition: %s", exp)
+	}
+}

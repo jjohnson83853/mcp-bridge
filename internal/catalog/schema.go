@@ -4,9 +4,10 @@ package catalog
 
 // Bridge tool names advertised on the single /mcp endpoint (r8 §4.4).
 const (
-	ToolSearchTools  = "search_tools"
-	ToolDescribeTool = "describe_tool"
-	ToolCallTool     = "call_tool"
+	ToolSearchTools   = "search_tools"
+	ToolDescribeTool  = "describe_tool"
+	ToolCallTool      = "call_tool"
+	ToolRetrieveResult = "retrieve_result"
 )
 
 // Draft202012 is the JSON Schema draft URI.

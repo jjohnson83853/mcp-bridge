@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	mcp "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -13,9 +14,9 @@ import (
 )
 
 const (
-	searchToolsBaselineDescription = "Search the bridge's indexed tools. Tools declared in your tools list MUST be invoked directly instead of searching. Unpinned tools remain discoverable through this tool."
+	searchToolsBaselineDescription  = "Search the bridge's indexed tools. Tools declared in your tools list MUST be invoked directly instead of searching. Unpinned tools remain discoverable through this tool."
 	describeToolGuidanceDescription = "Describe one indexed tool with its exact stored schema. DO NOT use this tool to discover input schemas for tools that are already declared in your tools list; invoke those tools directly. Use this tool only to inspect tool metadata, provenance, or unpinned tools."
-	callToolGuidanceDescription    = "Call one indexed upstream tool through the bridge. Directly declared tools in your active tools list MUST be invoked directly instead of calling this multiplexer. Use this tool only to invoke unpinned upstream tools discovered via search_tools."
+	callToolGuidanceDescription     = "Call one indexed upstream tool through the bridge. Directly declared tools in your active tools list MUST be invoked directly instead of calling this multiplexer. Use this tool only to invoke unpinned upstream tools discovered via search_tools."
 )
 
 func TestBuiltinGuidanceSnapshotCoherence(t *testing.T) {
@@ -27,15 +28,37 @@ func TestBuiltinGuidanceSnapshotCoherence(t *testing.T) {
 	if !equalBuiltinDescriptions(registryDescriptions, ownerDescriptions) {
 		t.Fatalf("middleware-free registry descriptions = %#v; owner tools/list descriptions = %#v", registryDescriptions, ownerDescriptions)
 	}
-	want := map[string]string{
-		"search_tools":  "Search the bridge's indexed tools. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: alpha__read, zeta__write. Unpinned tools remain discoverable through this tool.",
-		"describe_tool": describeToolGuidanceDescription,
-		"call_tool":     callToolGuidanceDescription,
-	}
+	want := expectedBuiltinGuidanceDescriptions()
 	if !equalBuiltinDescriptions(registryDescriptions, want) {
 		t.Fatalf("published builtin descriptions = %#v; want %#v", registryDescriptions, want)
 	}
 }
+func TestRetrievalContractDocumented(t *testing.T) {
+	description := publishedBuiltinGuidance(t, guidanceAssembly())["retrieve_result"]
+	if want := expectedBuiltinGuidanceDescriptions()["retrieve_result"]; description != want {
+		t.Fatalf("retrieve_result description = %q; want exact documented contract %q", description, want)
+	}
+	for _, required := range []string{"handle", "page number", "total_pages", "bounded preview"} {
+		if !strings.Contains(description, required) {
+			t.Errorf("retrieve_result description %q does not contain %q", description, required)
+		}
+	}
+	for _, forbidden := range []string{"complete upstream", "complete original"} {
+		if strings.Contains(description, forbidden) {
+			t.Errorf("retrieve_result description %q contains obsolete promise %q", description, forbidden)
+		}
+	}
+}
+
+func expectedBuiltinGuidanceDescriptions() map[string]string {
+	return map[string]string{
+		"search_tools":    "Search the bridge's indexed tools. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: alpha__read, zeta__write. Unpinned tools remain discoverable through this tool.",
+		"describe_tool":   describeToolGuidanceDescription,
+		"call_tool":       callToolGuidanceDescription,
+		"retrieve_result": "Retrieve a retained result page by handle and page number (default 1). The response identifies total_pages; over-ceiling results arrive as a bounded preview plus a handle whose pages reconstruct the retained bytes byte-for-byte when concatenated.",
+	}
+}
+
 
 func TestBuiltinGuidanceDynamicPinInventory(t *testing.T) {
 	got := publishedBuiltinGuidance(t, guidanceAssembly())["search_tools"]
@@ -180,7 +203,7 @@ func listBuiltinGuidance(t *testing.T, client *mcp.ClientSession) map[string]str
 func builtinGuidanceDescriptions(tools []*mcp.Tool) map[string]string {
 	descriptions := make(map[string]string, 3)
 	for _, tool := range tools {
-		if tool.Name == "search_tools" || tool.Name == "describe_tool" || tool.Name == "call_tool" {
+		if tool.Name == "search_tools" || tool.Name == "describe_tool" || tool.Name == "call_tool" || tool.Name == "retrieve_result" {
 			descriptions[tool.Name] = tool.Description
 		}
 	}

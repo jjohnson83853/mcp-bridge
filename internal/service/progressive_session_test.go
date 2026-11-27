@@ -177,9 +177,9 @@ func TestProgressiveMetadataSessionEnrollment(t *testing.T) {
 				t.Errorf("concurrent tools/list %d status = %d, want 200", index, response.StatusCode)
 			}
 			names := decodeListedToolNames(t, response.body)
-			wantNames := []string{catalog.ToolCallTool, catalog.ToolDescribeTool, catalog.ToolSearchTools, config.WireToolName("alpha", "old")}
+			wantNames := []string{catalog.ToolCallTool, catalog.ToolDescribeTool, catalog.ToolSearchTools, catalog.ToolRetrieveResult, config.WireToolName("alpha", "old")}
 			if !sameStrings(names, wantNames) {
-				t.Errorf("concurrent tools/list %d names = %q, want the three bridge built-ins and current pin %q", index, names, wantNames)
+				t.Errorf("concurrent tools/list %d names = %q, want the four bridge built-ins and current pin %q", index, names, wantNames)
 			}
 		}(index)
 	}

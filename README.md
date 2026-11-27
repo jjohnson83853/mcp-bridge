@@ -276,15 +276,16 @@ rules, failure codes, streams, and examples.
 
 ## Tool surface
 
-One MCP server, three tools:
+One MCP server, four tools:
 
 | Tool | Purpose |
 | --- | --- |
 | `search_tools` | hybrid keyword/vector search over current catalogs; optionally narrowed with `servers: []` |
 | `describe_tool` | exact schema for a tool name; `catalog_revision` is optional |
 | `call_tool` | one forwarded execution; `catalog_revision` is optional |
+| `retrieve_result` | page through a retained over-ceiling result by handle; reports `total_pages` |
 
-All three declare standard MCP tool annotations (advisory hints — never
+All four declare standard MCP tool annotations (advisory hints — never
 authorization and never a promise of zero confirmation prompts):
 
 | Tool | `readOnlyHint` | `destructiveHint` | `idempotentHint` | `openWorldHint` |
@@ -292,6 +293,7 @@ authorization and never a promise of zero confirmation prompts):
 | `search_tools` | true | false | true | false |
 | `describe_tool` | true | false | true | false |
 | `call_tool` | false | true | false | true |
+| `retrieve_result` | true | false | true | false |
 
 `search_tools`/`describe_tool` are read-only, idempotent discovery over the
 bridge's own catalog and dispatch nothing upstream. The generic `call_tool`
@@ -322,8 +324,9 @@ catalog revision once at the root and keeps per-tool `availability`, but omits
 the `backends` cluster-health dump and redundant per-result health/revision
 fields. `describe_tool` also retains `availability` while omitting
 `last_success_at` and `catalog_status`. `call_tool` keeps its outer provenance
-envelope and complete upstream result without duplicating discovery-health
-fields.
+envelope and prunes discovery-health fields; an over-ceiling result is
+delivered as a bounded preview plus a handle whose pages reconstruct the
+retained bytes byte-for-byte.
 
 The catalog revision is **global**: it hashes the sorted bound server identities
 and their exact definitions (schemas compared whitespace-insensitively), plus
@@ -440,8 +443,10 @@ warnings, while the inverse direction can suppress them.
 
 ### Progressive metadata reveal and session projections
 
-New sessions initially expose exactly the three bridge built-ins
-(`search_tools`, `describe_tool`, and `call_tool`) plus configured pins.
+New sessions initially expose exactly the four bridge built-ins
+(`search_tools`, `describe_tool`, `call_tool`, and `retrieve_result`) plus
+configured pins. `retrieve_result` is not exposure-gated: it registers like
+the other built-ins and resolves its owner handler-side.
 
 Successful `search_tools` and `describe_tool` discovery commits discovered
 unpinned tools to that session's projection before returning success, so an
@@ -464,11 +469,13 @@ best-effort asynchronous `tools/list_changed` notifications and must
 explicitly re-list; no zero-prompt behavior is promised for any client
 (Gemini CLI 0.18.13.x is user-reported).
 
-Executions return the upstream result unaltered inside a provenance envelope:
-`structuredContent.upstream_result` is the complete original `CallToolResult`
-(content blocks, structured content, `isError`, metadata). The outer
-`call_tool` envelope contains `server`, `tool_name`, `request_id`, and
-`upstream_result`; discovery revision and health fields are not duplicated.
+At or below the delivery ceiling, `structuredContent.upstream_result` retains
+the original `CallToolResult` shape (content blocks, structured content,
+`isError`, metadata). Above the ceiling, the bridge returns a bounded preview
+plus a handle; `retrieve_result` pages report `total_pages` and reconstruct
+the retained bytes byte-for-byte. The outer `call_tool` envelope contains
+`server`, `tool_name`, `request_id`, and `upstream_result`; discovery revision
+and health fields are not duplicated.
 
 ## Prompt surface
 

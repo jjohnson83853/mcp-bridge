@@ -44,11 +44,10 @@ func WriteJSONLine(output io.Writer, record any) error {
 	if output == nil {
 		return errors.New("observe: nil log output")
 	}
-	encoded, err := json.Marshal(record)
+	encoded, _, err := marshalLogRecord(record)
 	if err != nil {
 		return err
 	}
-	encoded = append(encoded, '\n')
 	written, err := output.Write(encoded)
 	if err != nil {
 		return err
@@ -57,6 +56,55 @@ func WriteJSONLine(output io.Writer, record any) error {
 		return io.ErrShortWrite
 	}
 	return nil
+}
+
+func marshalLogRecord(record any) ([]byte, bool, error) {
+	violation := false
+	switch value := record.(type) {
+	case Envelope:
+		if logVocabularyViolation(value.Event, value.Operation) {
+			record, violation = vocabularyViolationRecord(), true
+		}
+	case *Envelope:
+		if value != nil && logVocabularyViolation(value.Event, value.Operation) {
+			record, violation = vocabularyViolationRecord(), true
+		}
+	case map[string]any:
+		eventValue, hasEvent := value["event"]
+		operationValue, hasOperation := value["operation"]
+		if hasEvent || hasOperation {
+			event, eventOK := eventValue.(string)
+			operation, operationOK := operationValue.(string)
+			if !eventOK || !operationOK || logVocabularyViolation(event, operation) {
+				record, violation = vocabularyViolationRecord(), true
+			}
+		}
+	}
+	encoded, err := json.Marshal(record)
+	if err != nil {
+		return nil, violation, err
+	}
+	return append(encoded, '\n'), violation, nil
+}
+
+func logVocabularyViolation(event, operation string) bool {
+	return eventMessage(event) == "" || !validOperation(operation)
+}
+
+func vocabularyViolationRecord() map[string]any {
+	record, _ := buildEnvelope(Entry{
+		Level: "warn", Event: "log_vocabulary_violation", Operation: "logging", Outcome: "failure",
+	})
+	return record
+}
+
+func (l *Logger) writeVocabularyViolation() {
+	encoded, _, err := marshalLogRecord(vocabularyViolationRecord())
+	if err != nil {
+		l.logFailure("warn")
+		return
+	}
+	l.write("warn", encoded)
 }
 
 // WriteLoggingFailureFallback writes the minimal logging failure record to the
@@ -95,18 +143,25 @@ func (l *Logger) Log(entry Entry) {
 		l.logFailure(entry.Level)
 		return
 	}
-	encoded, err := json.Marshal(record)
+	encoded, violation, err := marshalLogRecord(record)
 	if err != nil {
 		l.logFailure(entry.Level)
 		return
 	}
-	encoded = append(encoded, '\n')
-	l.write(entry.Level, encoded)
+	level := entry.Level
+	if event, _ := record["event"].(string); violation || event == "log_vocabulary_violation" {
+		level = "warn"
+	}
+	l.write(level, encoded)
 }
 
 // logHTTP encodes the fixed-slot record once and attempts exactly one write.
 // Encode and sink failures are surfaced once on the opposite severity lane.
 func (l *Logger) logHTTP(entry Entry) {
+	if entry.Event != "" && entry.HTTP.Operation != "" && logVocabularyViolation(entry.Event, entry.HTTP.Operation) {
+		l.writeVocabularyViolation()
+		return
+	}
 	if entry.Event != "http_complete" {
 		return
 	}
@@ -224,7 +279,6 @@ func validHexID(id string) bool {
 	return true
 }
 
-// eventMessage provides the fixed, event-specific message for application logs.
 func eventMessage(event string) string {
 	switch event {
 	case "http_complete":
@@ -273,7 +327,31 @@ func eventMessage(event string) string {
 		return "bridge encountered an internal warning"
 	case "reload":
 		return "configuration reload diagnostic"
+	case "result_paged":
+		return "tool result retained for paging"
+	case "result_page_served":
+		return "retained tool result page served"
+	case "result_expired":
+		return "retained tool result expired"
+	case "result_evicted":
+		return "retained tool result evicted"
+	case "invalid_handle":
+		return "retained tool result handle invalid"
+	case "invalid_arguments":
+		return "retained tool result arguments invalid"
+	case "result_capacity_exceeded":
+		return "tool result exceeds retention capacity"
+	case "result_aggregate_capacity_exceeded":
+		return "aggregate result retention capacity exceeded"
+	case "result_namespace_retired":
+		return "result retention namespace retired"
+	case "result_entropy_unavailable":
+		return "result handle entropy unavailable"
+	case "result_epoch_unresolved":
+		return "result retention epoch unavailable"
+	case "log_vocabulary_violation":
+		return "log vocabulary violation"
 	default:
-		return "mcp-bridge event"
+		return ""
 	}
 }

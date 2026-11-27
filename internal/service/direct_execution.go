@@ -24,6 +24,7 @@ type boundDirectExecution struct {
 	operationID  string
 	correlation  string
 	requestStart time.Time
+	request      mcp.Request
 }
 
 func (e boundDirectExecution) call(ctx context.Context, args json.RawMessage) (*mcp.CallToolResult, error) {
@@ -56,11 +57,20 @@ func (e boundDirectExecution) call(ctx context.Context, args json.RawMessage) (*
 		e.surface.contributeOperation(e.requestID, e.operationID, "succeeded")
 	}
 	e.logDispatchSuccess(backendCallID, backendStart, upstream)
-	return &mcp.CallToolResult{
+	result := &mcp.CallToolResult{
 		Content:           upstream.Content,
 		StructuredContent: upstream.StructuredContent,
 		IsError:           upstream.IsError,
-	}, nil
+	}
+	return e.surface.boundedCallToolResult(e.request, result, directUpstreamCode(upstream.StructuredContent)), nil
+}
+func directUpstreamCode(structured any) string {
+	content, ok := structured.(map[string]any)
+	if !ok {
+		return ""
+	}
+	code, _ := content["code"].(string)
+	return code
 }
 
 func (e boundDirectExecution) logDispatchFailure(backendCallID string, backendStart time.Time, dispatchErr *core.DispatchError) {
@@ -144,7 +154,7 @@ func (e boundDirectExecution) logDispatchSuccess(backendCallID string, backendSt
 		Outcome:   outcome,
 		Error:     observe.RuntimeErrorInfo(reason),
 		Fields: map[string]any{
-			"operation_id":     e.operationID,
+			"operation_id":      e.operationID,
 			"correlation_state": e.correlation,
 			"mcp_method":        "tools_call",
 			"mcp_message_kind":  "request",

@@ -165,8 +165,10 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 		Search:   searchSettings(settings.Search),
 		Provider: provider,
 		Model:    model,
-		PageSize: pageSize,
-		Logger:   logger,
+		PageSize:       pageSize,
+		RetainedResults: func() config.RetainedResultBounds { return liveRetainedResultBounds(holder) },
+		Metrics:         metrics,
+		Logger:          logger,
 	})
 	if err != nil {
 		return toolSurfaceFailure()
@@ -421,4 +423,16 @@ func publishAcceptedAssembly(
 	err := publishProjection(assembly)
 	publishObserver(assembly)
 	return err
+}
+// liveRetainedResultBounds mirrors configHolder.bounds for the retained-result
+// ceilings: the published generation once one exists, the staged candidate
+// before the first admission. It lives here because cmd/mcp-bridge/serve.go is
+// the declared write root for the surface construction.
+func liveRetainedResultBounds(holder *configHolder) config.RetainedResultBounds {
+	holder.mu.Lock()
+	defer holder.mu.Unlock()
+	if holder.published != nil {
+		return holder.published.RetainedResultBounds
+	}
+	return holder.staged.RetainedResultBounds
 }

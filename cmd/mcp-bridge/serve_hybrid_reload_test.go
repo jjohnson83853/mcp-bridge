@@ -212,9 +212,9 @@ func TestServeHybridSIGHUPReload(t *testing.T) {
 	session := connectBridgeToolChanged(t, ctx, httpURL+"/mcp", watcher)
 	defer session.Close()
 
-	// Initial check: the 3 meta-tools plus the preloaded alpha__read pin.
+	// Initial check: the 4 meta-tools plus the preloaded alpha__read pin.
 	initialNames := listToolNames(t, ctx, session)
-	for _, meta := range []string{catalog.ToolSearchTools, catalog.ToolDescribeTool, catalog.ToolCallTool} {
+	for _, meta := range []string{catalog.ToolSearchTools, catalog.ToolDescribeTool, catalog.ToolCallTool, catalog.ToolRetrieveResult} {
 		if !listToolsContains(initialNames, meta) {
 			t.Errorf("initial tools/list missing meta-tool %q; tools = %v", meta, initialNames)
 		}
@@ -222,8 +222,8 @@ func TestServeHybridSIGHUPReload(t *testing.T) {
 	if !listToolsContains(initialNames, "alpha__read") {
 		t.Errorf("initial tools/list missing pinned tool alpha__read; tools = %v", initialNames)
 	}
-	if len(initialNames) != 4 {
-		t.Errorf("initial tools/list = %d tools (%v); want 4 (3 meta-tools + alpha__read)", len(initialNames), initialNames)
+	if len(initialNames) != 5 {
+		t.Errorf("initial tools/list = %d tools (%v); want 5 (4 meta-tools + alpha__read)", len(initialNames), initialNames)
 	}
 
 	t.Run("PinAdditionViaSIGHUP", func(t *testing.T) {
@@ -235,7 +235,7 @@ func TestServeHybridSIGHUPReload(t *testing.T) {
 		var names []string
 		waitFor(t, "pin addition reload", func() bool {
 			names = listToolNames(t, ctx, session)
-			return listToolsContains(names, "alpha__read") && listToolsContains(names, "alpha__write") && len(names) == 5
+			return listToolsContains(names, "alpha__read") && listToolsContains(names, "alpha__write") && len(names) == 6
 		})
 
 		result, err := directCallTool(t, ctx, session, "alpha__write")
@@ -259,7 +259,7 @@ func TestServeHybridSIGHUPReload(t *testing.T) {
 		var names []string
 		waitFor(t, "pin removal reload", func() bool {
 			names = listToolNames(t, ctx, session)
-			return listToolsContains(names, "alpha__write") && !listToolsContains(names, "alpha__read") && len(names) == 4
+			return listToolsContains(names, "alpha__write") && !listToolsContains(names, "alpha__read") && len(names) == 5
 		})
 
 		result, err := directCallTool(t, ctx, session, "alpha__read")

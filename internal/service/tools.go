@@ -35,7 +35,9 @@ type ToolSurfaceConfig struct {
 	// Logger receives the tool surface's own terminal observability records.
 	// A nil Logger is a supported configuration: the surface serves with
 	// request observability disabled rather than failing validation.
-	Logger *observe.Logger
+	Logger          *observe.Logger
+	RetainedResults func() config.RetainedResultBounds
+	Metrics         *observe.Metrics
 }
 
 // ToolSurface registers and serves the bridge's own three tools. Every handler
@@ -50,8 +52,10 @@ type ToolSurface struct {
 
 	cached   *search.Searcher
 	cacheKey string
+	results  *resultStore
 
 	mu                            sync.Mutex
+	resultMu                      sync.Mutex
 	server                        *mcp.Server
 	builtinTools                  []*mcp.Tool
 	receivingMiddlewareRegistered bool
@@ -136,6 +140,32 @@ func renderBuiltinDescriptors(resolvedPins []core.ResolvedPin) []*mcp.Tool {
 				OpenWorldHint:   boolPtr(true),
 			},
 		},
+		{
+			Name:        catalog.ToolRetrieveResult,
+			Description: "Retrieve a retained result page by handle and page number (default 1). The response identifies total_pages; over-ceiling results arrive as a bounded preview plus a handle whose pages reconstruct the retained bytes byte-for-byte when concatenated.",
+			InputSchema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"handle": map[string]any{
+						"type":    "string",
+						"pattern": "^[A-Za-z0-9_-]{43}$",
+					},
+					"page": map[string]any{
+						"type":    "integer",
+						"minimum": 1,
+						"default": 1,
+					},
+				},
+				"required":             []string{"handle"},
+				"additionalProperties": false,
+			},
+			Annotations: &mcp.ToolAnnotations{
+				ReadOnlyHint:    true,
+				DestructiveHint: boolPtr(false),
+				IdempotentHint:  true,
+				OpenWorldHint:   boolPtr(false),
+			},
+		},
 	}
 }
 
@@ -148,6 +178,8 @@ func (t *ToolSurface) registerBuiltinTools(server *mcp.Server, descriptors []*mc
 			server.AddTool(descriptor, t.describeTool)
 		case catalog.ToolCallTool:
 			server.AddTool(descriptor, t.callTool)
+		case catalog.ToolRetrieveResult:
+			server.AddTool(descriptor, t.retrieveResult)
 		}
 	}
 }
@@ -186,7 +218,6 @@ func (t *ToolSurface) Register(server *mcp.Server) error {
 	t.registerBuiltinTools(server, descriptors)
 	return nil
 }
-
 
 // Published rebases pinned projections for every live owner after the runtime
 // accepts an assembly. Reconciliation failures do not roll back accepted
@@ -291,6 +322,7 @@ func (t *ToolSurface) callPinnedTool(ctx context.Context, req *mcp.CallToolReque
 		operationID:  operationID,
 		correlation:  corrState,
 		requestStart: start,
+		request:      req,
 	}
 	return t.callDirectExecution(ctx, execution, args)
 }
@@ -465,10 +497,11 @@ func (t *ToolSurface) searchTools(ctx context.Context, req *mcp.CallToolRequest)
 		}
 		return failureResult(err), nil
 	}
-	return &mcp.CallToolResult{
+	result := &mcp.CallToolResult{
 		Content:           []mcp.Content{&mcp.TextContent{Text: string(raw)}},
 		StructuredContent: payload,
-	}, nil
+	}
+	return t.boundedCallToolResult(req, result, ""), nil
 }
 
 func searchDiscoveryTargets(assembly *Assembly, response search.Response) (map[logicalToolTarget]struct{}, error) {
@@ -649,10 +682,11 @@ func (t *ToolSurface) describeTool(ctx context.Context, req *mcp.CallToolRequest
 			},
 		})
 	}
-	return &mcp.CallToolResult{
+	result := &mcp.CallToolResult{
 		Content:           []mcp.Content{&mcp.TextContent{Text: string(raw)}},
 		StructuredContent: payload,
-	}, nil
+	}
+	return t.boundedCallToolResult(req, result, ""), nil
 }
 
 // logAdmissionFailure records a terminal rejection before any upstream dispatch.
@@ -694,7 +728,6 @@ func validHex(s string) bool {
 func isValidCatalogRevision(rev string) bool {
 	return len(rev) == 64 && validHex(rev)
 }
-
 
 // callTool admits and forwards exactly one execution (plan §4.4/§4.5).
 func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -902,11 +935,18 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 			Fields:    fields,
 		})
 	}
-	return &mcp.CallToolResult{
+	var upstreamCode string
+	if upstreamResult, ok := payload["upstream_result"].(map[string]any); ok {
+		if structuredContent, ok := upstreamResult["structuredContent"].(map[string]any); ok {
+			upstreamCode, _ = structuredContent["code"].(string)
+		}
+	}
+	result := &mcp.CallToolResult{
 		Content:           upstream.Content,
 		StructuredContent: payload,
 		IsError:           upstream.IsError,
-	}, nil
+	}
+	return t.boundedCallToolResult(req, result, upstreamCode), nil
 }
 
 // summarizeShape inspects a tool result's content blocks and structured
@@ -940,6 +980,7 @@ func decodeUpstreamResult(raw json.RawMessage) mcp.CallToolResult {
 	}
 	return result
 }
+
 // effectiveWireName returns the semantic wire name when it fits the identifier
 // contract, and the deterministic public hash otherwise.
 func effectiveWireName(serverID, rawName string) string {
@@ -962,7 +1003,6 @@ func effectiveWireName(serverID, rawName string) string {
 	}
 	return wire
 }
-
 
 // searchPayload renders one search response with the §4.4 field names.
 func searchPayload(response search.Response) map[string]any {
