@@ -8,12 +8,12 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/jjohnson83853/mcp-bridge/internal/catalog"
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
 )
 
@@ -133,19 +133,15 @@ func TestProgressiveMetadataDiscoveryCommit(t *testing.T) {
 		t.Fatal("failed discovery preparation changed projection or union state")
 	}
 	registryEntered := make(chan struct{}, 2)
-	releaseRegistry := make(chan struct{})
-	var releaseOnce sync.Once
-	release := func() { releaseOnce.Do(func() { close(releaseRegistry) }) }
-	var blockFirstRegistryAdd sync.Once
 	coordinator.testBeforeRegistryAdd = func() {
-		registryEntered <- struct{}{}
-		blockFirstRegistryAdd.Do(func() { <-releaseRegistry })
+		select {
+		case registryEntered <- struct{}{}:
+		default:
+		}
 	}
-	defer func() {
-		release()
-		coordinator.testBeforeRegistryAdd = nil
-	}()
+	defer func() { coordinator.testBeforeRegistryAdd = nil }()
 
+	projectionsBefore, unionBefore := snapshotProgressiveCoordinatorState(t, coordinator)
 	type result struct {
 		name string
 		call *mcp.CallToolResult
@@ -166,67 +162,25 @@ func TestProgressiveMetadataDiscoveryCommit(t *testing.T) {
 	close(start)
 
 	finished := make([]result, 0, 2)
-	registryCount := 0
 	deadline := time.After(5 * time.Second)
-	for registryCount == 0 && len(finished) < 2 {
-		select {
-		case <-registryEntered:
-			registryCount++
-		case completedCall := <-completed:
-			finished = append(finished, completedCall)
-		case <-deadline:
-			t.Fatal("timed out waiting for concurrent discovery preparation and completion")
-		}
-	}
-	if registryCount > 0 {
-		coordinator.barrier.Lock()
-		committedCount := 0
-		for _, rawName := range []string{"new", "shared"} {
-			name := "alpha__" + rawName
-			if coordinator.union[name] == nil {
-				continue
-			}
-			for owner, projection := range coordinator.projections {
-				if owner.kind == projectionSession && projection != nil {
-					if _, found := projection.byName[name]; found {
-						committedCount++
-						break
-					}
-				}
-			}
-		}
-		coordinator.barrier.Unlock()
-		if committedCount == 0 {
-			t.Error("registry reconciliation paused before any projection and union commit")
-		}
-		select {
-		case returned := <-completed:
-			finished = append(finished, returned)
-			t.Error("discovery returned success before SDK registry reconciliation completed")
-		default:
-		}
-	}
-	release()
 	for len(finished) < 2 {
 		select {
-		case <-registryEntered:
-			registryCount++
 		case call := <-completed:
 			finished = append(finished, call)
-		case <-time.After(5 * time.Second):
-			t.Fatal("timed out waiting for concurrent discovery calls after registry release")
+		case <-deadline:
+			t.Fatal("timed out waiting for concurrent search calls")
 		}
 	}
-	for len(registryEntered) > 0 {
-		<-registryEntered
-		registryCount++
+	if len(registryEntered) != 0 {
+		t.Errorf("concurrent searches triggered %d SDK registry additions; want 0", len(registryEntered))
 	}
-	if registryCount != 2 {
-		t.Fatalf("concurrent discovery registry additions observed = %d; want 2", registryCount)
+	projectionsAfter, unionAfter := snapshotProgressiveCoordinatorState(t, coordinator)
+	if !reflect.DeepEqual(projectionsAfter, projectionsBefore) || !reflect.DeepEqual(unionAfter, unionBefore) {
+		t.Error("concurrent searches changed projections, interests, or registry union")
 	}
 	for _, call := range finished {
 		if call.err != nil || call.call == nil || call.call.IsError {
-			t.Errorf("%s discovery failed: result=%#v err=%v", call.name, call.call, call.err)
+			t.Errorf("%s search failed: result=%#v err=%v", call.name, call.call, call.err)
 			continue
 		}
 		response := decodeSearch(call.call)
@@ -234,41 +188,29 @@ func TestProgressiveMetadataDiscoveryCommit(t *testing.T) {
 			t.Errorf("%s search revision = %q; want accepted %q", call.name, response.CatalogRevision, assembly.CatalogRevision())
 		}
 		if len(response.Results) == 0 {
-			t.Errorf("%s discovery returned no target", call.name)
+			t.Errorf("%s search returned no target", call.name)
 		}
 	}
 
 	coordinator.barrier.Lock()
-	sameSessionProjectionHasBothTargets := false
+	sameSessionProjectionHasSearchedTargets := false
 	for owner, projection := range coordinator.projections {
 		if owner.kind != projectionSession || projection == nil {
 			continue
 		}
-		hasBothTargets := true
-		for _, target := range []logicalToolTarget{
-			{serverID: "alpha", rawName: "new"},
-			{serverID: "alpha", rawName: "shared"},
-		} {
-			name := "alpha__" + target.rawName
-			if _, found := projection.byName[name]; !found {
-				hasBothTargets = false
-				break
-			}
-			if _, found := projection.interests[target]; !found {
-				hasBothTargets = false
-				break
-			}
+		if _, hasNew := projection.byName["alpha__new"]; hasNew {
+			sameSessionProjectionHasSearchedTargets = true
 		}
-		if hasBothTargets {
-			sameSessionProjectionHasBothTargets = true
-			break
+		if _, hasShared := projection.byName["alpha__shared"]; hasShared {
+			sameSessionProjectionHasSearchedTargets = true
 		}
 	}
 	coordinator.barrier.Unlock()
-	if !sameSessionProjectionHasBothTargets {
-		t.Fatal("concurrent searches from one session did not retain both tools and interests in its projection")
+	if sameSessionProjectionHasSearchedTargets {
+		t.Fatal("concurrent searches added searched tools to a session projection")
 	}
 
+	projectionsBeforeBSearch, unionBeforeBSearch := snapshotProgressiveCoordinatorState(t, coordinator)
 	rejectedName := "alpha__new"
 	clientBTools, err := clientB.ListTools(context.Background(), nil)
 	if err != nil {
@@ -295,10 +237,12 @@ func TestProgressiveMetadataDiscoveryCommit(t *testing.T) {
 	if err != nil || revealedShared == nil || revealedShared.IsError {
 		t.Fatalf("session B discovery of session A's existing union tool failed: result=%#v err=%v", revealedShared, err)
 	}
-	select {
-	case <-registryEntered:
-	default:
-		t.Error("revealing an existing union tool for session B did not signal a registry list change")
+	if len(registryEntered) != 0 {
+		t.Error("search for an existing union tool signaled an SDK registry change")
+	}
+	projectionsAfterBSearch, unionAfterBSearch := snapshotProgressiveCoordinatorState(t, coordinator)
+	if !reflect.DeepEqual(projectionsAfterBSearch, projectionsBeforeBSearch) || !reflect.DeepEqual(unionAfterBSearch, unionBeforeBSearch) {
+		t.Error("session B search changed projections, interests, or registry union")
 	}
 
 	beforeRevision := runtime.Current().CatalogRevision()
@@ -338,28 +282,151 @@ func TestProgressiveMetadataDiscoveryCommit(t *testing.T) {
 		client  *mcp.ClientSession
 		rawName string
 	}{{clientA, "new"}, {clientB, "shared"}} {
-		page, err := check.client.ListTools(context.Background(), nil)
-		if err != nil {
-			t.Fatalf("tools/list after %s discovery: %v", check.rawName, err)
-		}
 		name := "alpha__" + check.rawName
-		found := false
-		for _, tool := range page.Tools {
-			if tool.Name == name {
-				found = true
-				break
-			}
+		tools := snapshotProgressiveClientTools(t, check.client)
+		if _, found := tools[name]; found {
+			t.Errorf("search for %s exposed unpinned tool %q in tools/list", check.rawName, name)
 		}
-		if !found {
-			t.Errorf("successful %s discovery was not listed for its owner", check.rawName)
+		rejected, err := check.client.CallTool(context.Background(), &mcp.CallToolParams{
+			Name:      name,
+			Arguments: json.RawMessage(`{}`),
+		})
+		if err == nil && (rejected == nil || !rejected.IsError) {
+			t.Errorf("direct call to searched but unexposed %s was not rejected: result=%#v err=%v", check.rawName, rejected, err)
 		}
-		call, err := progressiveCallTool(t, check.client, assembly.CatalogRevision(), name, json.RawMessage(`{}`))
-		if err != nil || call == nil || call.IsError {
-			t.Errorf("generic call to discovered %s failed: result=%#v err=%v", check.rawName, call, err)
+		if calls := len(upstream.callsSnapshot()); calls != 0 {
+			t.Errorf("search and rejected direct calls made %d upstream operations; want 0", calls)
 		}
 	}
-	if calls := upstream.callsSnapshot(); len(calls) != 2 {
-		t.Errorf("discovery plus two direct calls made %d upstream operations; want only 2 calls", len(calls))
+	exposed, err := clientA.CallTool(context.Background(), &mcp.CallToolParams{
+		Name:      catalog.ToolExposeTools,
+		Arguments: json.RawMessage(`{"tool_names":["alpha__new","alpha__shared"]}`),
+	})
+	if err != nil || exposed == nil || exposed.IsError {
+		t.Fatalf("explicit expose_tools failed: result=%#v err=%v", exposed, err)
+	}
+	toolsAfterExpose := snapshotProgressiveClientTools(t, clientA)
+	for _, name := range []string{"alpha__new", "alpha__shared"} {
+		if _, found := toolsAfterExpose[name]; !found {
+			t.Errorf("tools/list omitted %q after explicit expose_tools", name)
+		}
+		result, err := clientA.CallTool(context.Background(), &mcp.CallToolParams{
+			Name:      name,
+			Arguments: json.RawMessage(`{}`),
+		})
+		if err != nil || result == nil || result.IsError {
+			t.Errorf("direct call to explicitly exposed %q failed: result=%#v err=%v", name, result, err)
+		}
+	}
+	if calls := len(upstream.callsSnapshot()); calls != 2 {
+		t.Errorf("explicit exposure and direct calls made %d upstream operations; want 2", calls)
+	}
+}
+func TestSearchNoImplicitExposure(t *testing.T) {
+	upstream := &progressiveTestUpstream{}
+	runtime := NewRuntime()
+	deps := progressiveTestDeps(upstream)
+	assembly, err := runtime.Reload(progressiveTestConfig(t, "old"), deps)
+	if err != nil {
+		t.Fatalf("admit generation: %v", err)
+	}
+	server := NewMCPServer()
+	surface := progressiveToolSurface(t, runtime, server)
+	if err := surface.Published(assembly); err != nil {
+		t.Fatalf("publish initial pinned projection: %v", err)
+	}
+	const token = "progressive-no-implicit-exposure-token"
+	inbound := NewInboundHandler(
+		NewStreamableHandler(server),
+		[][32]byte{sha256.Sum256([]byte(token))},
+		InboundOptions{ToolSurface: surface},
+	)
+	httpServer := httptest.NewServer(inbound)
+	t.Cleanup(httpServer.Close)
+	client := connectProgressiveDiscoveryClient(t, httpServer, token)
+	if _, err := client.ListTools(context.Background(), nil); err != nil {
+		t.Fatalf("initialize progressive session tool list: %v", err)
+	}
+
+	toolsBefore := snapshotProgressiveClientTools(t, client)
+	pinnedName := "alpha__old"
+	if _, found := toolsBefore[pinnedName]; !found {
+		t.Fatalf("configured pin %q missing before search", pinnedName)
+	}
+	for _, name := range []string{"alpha__new", "alpha__shared"} {
+		if _, found := toolsBefore[name]; found {
+			t.Fatalf("unexposed search target %q listed before search", name)
+		}
+	}
+	coordinator := surface.projectionCoordinator()
+	projectionsBefore, unionBefore := snapshotProgressiveCoordinatorState(t, coordinator)
+	registrySignals := make(chan struct{}, 1)
+	coordinator.testBeforeRegistryAdd = func() {
+		select {
+		case registrySignals <- struct{}{}:
+		default:
+		}
+	}
+	t.Cleanup(func() { coordinator.testBeforeRegistryAdd = nil })
+
+	result, err := client.CallTool(context.Background(), &mcp.CallToolParams{
+		Name:      "search_tools",
+		Arguments: json.RawMessage(`{"query":"new"}`),
+	})
+	if err != nil || result == nil || result.IsError {
+		t.Fatalf("admitted search failed: result=%#v err=%v", result, err)
+	}
+	if len(result.Content) == 0 {
+		t.Fatal("search response has no content")
+	}
+	text, ok := result.Content[0].(*mcp.TextContent)
+	if !ok {
+		t.Fatalf("search response content type = %T; want text", result.Content[0])
+	}
+	var response struct {
+		Results []struct {
+			ToolName string `json:"tool_name"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal([]byte(text.Text), &response); err != nil {
+		t.Fatalf("decode search response: %v", err)
+	}
+	foundMatch := false
+	for _, match := range response.Results {
+		if match.ToolName == "alpha__new" {
+			foundMatch = true
+			break
+		}
+	}
+	if !foundMatch {
+		t.Fatalf("search response did not include expected match alpha__new: %#v", response.Results)
+	}
+
+	toolsAfter := snapshotProgressiveClientTools(t, client)
+	if !reflect.DeepEqual(toolsAfter, toolsBefore) {
+		t.Errorf("tools/list changed after search: before=%v after=%v", toolsBefore, toolsAfter)
+	}
+	for _, name := range []string{"alpha__new", "alpha__shared"} {
+		if _, found := toolsAfter[name]; found {
+			t.Errorf("search exposed unpinned tool %q", name)
+		}
+	}
+	projectionsAfter, unionAfter := snapshotProgressiveCoordinatorState(t, coordinator)
+	if !reflect.DeepEqual(projectionsAfter, projectionsBefore) || !reflect.DeepEqual(unionAfter, unionBefore) {
+		t.Error("search changed projections, interests, or registry union")
+	}
+	if len(registrySignals) != 0 {
+		t.Errorf("search triggered %d SDK registry additions; want 0", len(registrySignals))
+	}
+	rejected, err := client.CallTool(context.Background(), &mcp.CallToolParams{
+		Name:      "alpha__new",
+		Arguments: json.RawMessage(`{}`),
+	})
+	if err == nil && (rejected == nil || !rejected.IsError) {
+		t.Errorf("direct call to searched but unexposed alpha__new was not rejected: result=%#v err=%v", rejected, err)
+	}
+	if calls := upstream.callsSnapshot(); len(calls) != 0 {
+		t.Errorf("search plus rejected direct call made %d upstream operations; want 0", len(calls))
 	}
 }
 
@@ -461,7 +528,7 @@ func TestProgressiveMetadataDiscoveryFailuresDoNotCommit(t *testing.T) {
 	assertProgressiveDiscoveryUnchanged(t, coordinator, owner, projectionBefore, unionBefore, registrySignals)
 }
 
-func TestProgressiveMetadataDiscoveryCancellationKeepsCommit(t *testing.T) {
+func TestProgressiveMetadataSearchCancellationMakesNoCommit(t *testing.T) {
 	upstream := &progressiveTestUpstream{}
 	runtime := NewRuntime()
 	assembly, err := runtime.Reload(progressiveTestConfig(t, "old"), progressiveTestDeps(upstream))
@@ -498,58 +565,244 @@ func TestProgressiveMetadataDiscoveryCancellationKeepsCommit(t *testing.T) {
 			break
 		}
 	}
+	unionBefore, unionSnapshotErr := snapshotProgressiveUnion(coordinator.union)
 	coordinator.barrier.Unlock()
 	if projectionSnapshotErr != nil {
 		t.Fatalf("snapshot session projection: %v", projectionSnapshotErr)
 	}
+	if unionSnapshotErr != nil {
+		t.Fatalf("snapshot projection union: %v", unionSnapshotErr)
+	}
 	if !projectionBefore.present {
 		t.Fatal("session projection was not admitted before cancelled discovery")
 	}
-	targetName := "alpha__new"
-	if _, alreadyExposed := projectionBefore.byName[targetName]; alreadyExposed {
-		t.Fatalf("cancellation target %q was already exposed", targetName)
+	if _, alreadyExposed := projectionBefore.byName["alpha__new"]; alreadyExposed {
+		t.Fatal("cancellation target alpha__new was already exposed")
 	}
 
-	registryAttempted := make(chan struct{}, 1)
-	callContext, cancelCall := context.WithCancel(context.Background())
-	defer cancelCall()
+	registrySignals := make(chan struct{}, 1)
+	admissionSignals := make(chan struct{}, 1)
 	coordinator.testBeforeRegistryAdd = func() {
-		registryAttempted <- struct{}{}
-		cancelCall()
+		select {
+		case registrySignals <- struct{}{}:
+		default:
+		}
 	}
-	t.Cleanup(func() { coordinator.testBeforeRegistryAdd = nil })
+	surface.testAfterDiscoveryAdmission = func() {
+		select {
+		case admissionSignals <- struct{}{}:
+		default:
+		}
+	}
+	t.Cleanup(func() {
+		coordinator.testBeforeRegistryAdd = nil
+		surface.testAfterDiscoveryAdmission = nil
+	})
+
+	callContext, cancelCall := context.WithCancel(context.Background())
+	cancelCall()
 	call, err := client.CallTool(callContext, &mcp.CallToolParams{
 		Name:      "search_tools",
 		Arguments: json.RawMessage(`{"query":"new"}`),
 	})
 	if err == nil && (call == nil || !call.IsError) {
-		t.Fatalf("postcommit cancellation was not reported as failure: %#v", call)
+		t.Fatalf("pre-dispatch cancellation unexpectedly returned success: %#v", call)
 	}
 	select {
-	case <-registryAttempted:
+	case <-admissionSignals:
+		t.Fatal("pre-dispatch cancellation reached the discovery handler")
 	default:
-		t.Fatal("cancelled discovery did not reach the postcommit registry-add hook")
 	}
+	assertProgressiveDiscoveryUnchanged(t, coordinator, owner, projectionBefore, unionBefore, registrySignals)
+}
+func TestSearchLateOwnerRevalidation(t *testing.T) {
+	testProgressiveLateOwnerRevalidation(t, "search_tools")
+}
 
+func TestDescribeLateOwnerRevalidation(t *testing.T) {
+	testProgressiveLateOwnerRevalidation(t, "describe_tool")
+}
+
+func testProgressiveLateOwnerRevalidation(t *testing.T, operation string) {
+	t.Helper()
+	for _, scenario := range []struct {
+		name     string
+		mutation string
+	}{
+		{name: "publication between admission and completion", mutation: "publication"},
+		{name: "owner retirement between admission and completion", mutation: "retirement"},
+	} {
+		t.Run(scenario.name, func(t *testing.T) {
+			upstream := &progressiveTestUpstream{}
+			runtime := NewRuntime()
+			deps := progressiveTestDeps(upstream)
+			assembly, err := runtime.Reload(progressiveTestConfig(t, "old"), deps)
+			if err != nil {
+				t.Fatalf("admit initial generation: %v", err)
+			}
+			candidate := progressiveTestConfig(t, "old")
+			server := NewMCPServer()
+			surface := progressiveToolSurface(t, runtime, server)
+			if err := surface.Published(assembly); err != nil {
+				t.Fatalf("publish initial pinned projection: %v", err)
+			}
+			const token = "progressive-late-revalidation-token"
+			inbound := NewInboundHandler(
+				NewStreamableHandler(server),
+				[][32]byte{sha256.Sum256([]byte(token))},
+				InboundOptions{ToolSurface: surface},
+			)
+			httpServer := httptest.NewServer(inbound)
+			t.Cleanup(httpServer.Close)
+			client := connectProgressiveDiscoveryClient(t, httpServer, token)
+			if _, err := client.ListTools(context.Background(), nil); err != nil {
+				t.Fatalf("initialize progressive session tool list: %v", err)
+			}
+
+			coordinator := surface.projectionCoordinator()
+			coordinator.barrier.Lock()
+			var owner projectionOwner
+			for candidate := range coordinator.projections {
+				if candidate.kind == projectionSession {
+					owner = candidate
+					break
+				}
+			}
+			coordinator.barrier.Unlock()
+			if owner.kind != projectionSession {
+				t.Fatal("session owner was not admitted before discovery")
+			}
+			projectionsBefore, unionBefore := snapshotProgressiveCoordinatorState(t, coordinator)
+			registrySignals := make(chan struct{}, 1)
+			coordinator.testBeforeRegistryAdd = func() {
+				select {
+				case registrySignals <- struct{}{}:
+				default:
+				}
+			}
+			t.Cleanup(func() { coordinator.testBeforeRegistryAdd = nil })
+
+			var hookCalls int
+			var interleaveError string
+			var baselineProjections map[projectionOwner]progressiveProjectionSnapshot
+			var baselineUnion map[string]progressiveUnionEntrySnapshot
+			surface.testAfterDiscoveryAdmission = func() {
+				hookCalls++
+				switch scenario.mutation {
+				case "publication":
+					if _, err := runtime.Reload(candidate, deps); err != nil {
+						interleaveError = "publish replacement generation: " + err.Error()
+						return
+					}
+				case "retirement":
+					if !surface.retireLiveOwner(owner) {
+						interleaveError = "retire session owner: owner was not live"
+						return
+					}
+				}
+				baselineProjections, baselineUnion = snapshotProgressiveCoordinatorState(t, coordinator)
+			}
+			t.Cleanup(func() { surface.testAfterDiscoveryAdmission = nil })
+
+			toolName := operation
+			arguments := json.RawMessage(`{"query":"new"}`)
+			if operation == "describe_tool" {
+				arguments = json.RawMessage(`{"tool_name":"alpha__new","catalog_revision":"` + assembly.CatalogRevision() + `"}`)
+			}
+			result, err := client.CallTool(context.Background(), &mcp.CallToolParams{
+				Name:      toolName,
+				Arguments: arguments,
+			})
+			if err != nil {
+				t.Fatalf("%s transport failed: %v", operation, err)
+			}
+			if result == nil || !result.IsError {
+				t.Fatalf("%s returned success after %s: %#v", operation, scenario.mutation, result)
+			}
+			rejection, ok := result.StructuredContent.(map[string]any)
+			if !ok || rejection["code"] != codeCatalogChanged ||
+				rejection["message"] != "the catalog revision changed" ||
+				rejection["execution_state"] != core.ExecutionNotStarted {
+				t.Fatalf("%s rejection = %#v; want catalog_changed, exact message, and not-started execution", operation, result.StructuredContent)
+			}
+			if hookCalls != 1 {
+				t.Errorf("%s post-work admission hook calls = %d; want 1", operation, hookCalls)
+			}
+			if interleaveError != "" {
+				t.Fatal(interleaveError)
+			}
+			if baselineProjections == nil || baselineUnion == nil {
+				t.Fatal("interleaving baseline was not captured after the mutation")
+			}
+			if scenario.mutation == "publication" &&
+				(!reflect.DeepEqual(projectionsBefore, baselineProjections) || !reflect.DeepEqual(unionBefore, baselineUnion)) {
+				t.Error("publication changed projections, interests, or registry union")
+			}
+			projectionsAfter, unionAfter := snapshotProgressiveCoordinatorState(t, coordinator)
+			if !reflect.DeepEqual(projectionsAfter, baselineProjections) || !reflect.DeepEqual(unionAfter, baselineUnion) {
+				t.Error("handler changed projections, interests, or registry union after the interleaved mutation")
+			}
+			if len(registrySignals) != 0 {
+				t.Errorf("%s rejection triggered %d SDK registry additions", operation, len(registrySignals))
+			}
+		})
+	}
+}
+
+func snapshotProgressiveClientTools(t *testing.T, client *mcp.ClientSession) map[string][]byte {
+	t.Helper()
+	tools := make(map[string][]byte)
+	var cursor string
+	for {
+		var params *mcp.ListToolsParams
+		if cursor != "" {
+			params = &mcp.ListToolsParams{Cursor: cursor}
+		}
+		page, err := client.ListTools(context.Background(), params)
+		if err != nil {
+			t.Fatalf("tools/list: %v", err)
+		}
+		if page == nil {
+			t.Fatal("tools/list returned a nil page")
+		}
+		for _, tool := range page.Tools {
+			descriptor, err := json.Marshal(tool)
+			if err != nil {
+				t.Fatalf("marshal tool %q: %v", tool.Name, err)
+			}
+			if _, exists := tools[tool.Name]; exists {
+				t.Fatalf("tools/list returned duplicate tool %q", tool.Name)
+			}
+			tools[tool.Name] = descriptor
+		}
+		if page.NextCursor == "" {
+			return tools
+		}
+		cursor = page.NextCursor
+	}
+}
+
+func snapshotProgressiveCoordinatorState(
+	t *testing.T,
+	coordinator *projectionCoordinator,
+) (map[projectionOwner]progressiveProjectionSnapshot, map[string]progressiveUnionEntrySnapshot) {
+	t.Helper()
 	coordinator.barrier.Lock()
-	projectionAfter, projectionSnapshotErr := snapshotProgressiveProjection(coordinator.projections[owner])
-	projectionContainsTarget := false
-	if projectionAfter.present {
-		_, projectionContainsTarget = projectionAfter.byName[targetName]
+	defer coordinator.barrier.Unlock()
+
+	projections := make(map[projectionOwner]progressiveProjectionSnapshot, len(coordinator.projections))
+	for owner, projection := range coordinator.projections {
+		snapshot, err := snapshotProgressiveProjection(projection)
+		if err != nil {
+			t.Fatalf("snapshot projection for owner %#v: %v", owner, err)
+		}
+		projections[owner] = snapshot
 	}
-	unionEntry := coordinator.union[targetName]
-	unionContainsOwner := unionEntry != nil && hasProjectionReference(unionEntry, owner)
-	_, interestContainsOwner := coordinator.interestReferences[logicalToolTarget{serverID: "alpha", rawName: "new"}][owner]
-	coordinator.barrier.Unlock()
-	if projectionSnapshotErr != nil {
-		t.Fatalf("snapshot postcommit projection: %v", projectionSnapshotErr)
+	union, err := snapshotProgressiveUnion(coordinator.union)
+	if err != nil {
+		t.Fatalf("snapshot projection union: %v", err)
 	}
-	if !projectionAfter.present || reflect.DeepEqual(projectionAfter, projectionBefore) || !projectionContainsTarget {
-		t.Errorf("postcommit cancellation removed the discovered tool from the owner projection")
-	}
-	if !unionContainsOwner || !interestContainsOwner {
-		t.Errorf("postcommit cancellation removed the owner's union or discovery interest")
-	}
+	return projections, union
 }
 
 type progressiveProjectedToolSnapshot struct {

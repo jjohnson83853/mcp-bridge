@@ -97,6 +97,30 @@ func TestDescribeToolSchemaMatchesContract(t *testing.T) {
 	}
 }
 
+func TestExposeToolsSchemaMatchesContract(t *testing.T) {
+	if catalog.ToolExposeTools != "expose_tools" {
+		t.Fatalf("ToolExposeTools = %q; want expose_tools", catalog.ToolExposeTools)
+	}
+	if catalog.MaxExposeToolsPerRequest != 8 {
+		t.Fatalf("MaxExposeToolsPerRequest = %d; want 8", catalog.MaxExposeToolsPerRequest)
+	}
+
+	properties := assertSchema(t, "expose_tools", catalog.ExposeToolsInputSchema(), "tool_names")
+	toolNames := properties["tool_names"].(map[string]any)
+	if toolNames["type"] != "array" || toolNames["minItems"] != 1 ||
+		toolNames["maxItems"] != catalog.MaxExposeToolsPerRequest || toolNames["uniqueItems"] != true {
+		t.Fatalf("expose_tools tool_names = %v; want unique array of 1..%d items", toolNames, catalog.MaxExposeToolsPerRequest)
+	}
+	items := toolNames["items"].(map[string]any)
+	if items["type"] != "string" || items["pattern"] != catalog.PublicToolNamePattern {
+		t.Fatalf("expose_tools tool_names items = %v; want string matching %s", items, catalog.PublicToolNamePattern)
+	}
+	revision := properties["catalog_revision"].(map[string]any)
+	if revision["type"] != "string" || revision["pattern"] != catalog.ToolInputCatalogRevisionPattern {
+		t.Fatalf("expose_tools catalog_revision = %v; want optional string matching %s", revision, catalog.ToolInputCatalogRevisionPattern)
+	}
+}
+
 func TestCallToolSchemaMatchesContract(t *testing.T) {
 	properties := assertSchema(t, "call_tool", catalog.CallToolInputSchema(), "tool_name", "arguments")
 

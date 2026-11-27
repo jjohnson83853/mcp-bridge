@@ -276,7 +276,7 @@ rules, failure codes, streams, and examples.
 
 ## Tool surface
 
-One MCP server, four tools:
+One MCP server, five tools:
 
 | Tool | Purpose |
 | --- | --- |
@@ -284,8 +284,9 @@ One MCP server, four tools:
 | `describe_tool` | exact schema for a tool name; `catalog_revision` is optional |
 | `call_tool` | one forwarded execution; `catalog_revision` is optional |
 | `retrieve_result` | page through a retained over-ceiling result by handle; reports `total_pages` |
+| `expose_tools` | explicitly declare up to 8 discovered tools in this session's tools list; pins are already declared |
 
-All four declare standard MCP tool annotations (advisory hints — never
+All five declare standard MCP tool annotations (advisory hints — never
 authorization and never a promise of zero confirmation prompts):
 
 | Tool | `readOnlyHint` | `destructiveHint` | `idempotentHint` | `openWorldHint` |
@@ -294,9 +295,12 @@ authorization and never a promise of zero confirmation prompts):
 | `describe_tool` | true | false | true | false |
 | `call_tool` | false | true | false | true |
 | `retrieve_result` | true | false | true | false |
+| `expose_tools` | false | false | true | false |
 
-`search_tools`/`describe_tool` are read-only, idempotent discovery over the
-bridge's own catalog and dispatch nothing upstream. The generic `call_tool`
+`search_tools` and `describe_tool` are read-only, idempotent discovery over the
+bridge's own catalog and dispatch nothing upstream. `expose_tools` is an
+idempotent projection change: it declares selected unpinned tools only in the
+requesting session and dispatches nothing upstream. The generic `call_tool`
 forwards execution to an arbitrary upstream tool: it may mutate, may be
 destructive, is not idempotent, and interacts with the open world of configured
 upstream servers. The annotations carry no guarantee that a client will skip
@@ -307,17 +311,19 @@ The built-in descriptions steer clients toward tools already declared in their
 active list. `search_tools` includes the exact, alphabetically sorted wire names
 of published configured pins; with no published pins it uses a baseline
 direct-first description without an empty inventory. `describe_tool` discourages
-redundant schema discovery, and `call_tool` reserves generic dispatch for
-unpinned tools. These are advisory descriptions: unpinned tools remain
-discoverable, and schemas, annotations, dispatch behavior, and upstream
-metadata are unchanged.
+redundant schema discovery, `call_tool` reserves generic dispatch for unpinned
+tools, and `expose_tools` explains that search results need explicit declaration.
+These are advisory descriptions: unpinned tools remain discoverable through
+search but are not declared automatically; schemas, annotations, dispatch
+behavior, and upstream metadata are unchanged.
 
-Unpinned tools returned by `search_tools` and revealed in a session projection
-use semantic wire names of the form `<server>__<tool>` when the name is a valid
-identifier and at most 64 characters long. If it is longer or contains invalid
-identifier characters, the bridge uses the deterministic fallback `t_` plus
-unpadded lowercase base32 of `SHA-256([server_id, raw_name])` (RFC 4648 §6).
-A schema change moves the catalog revision without moving the public name.
+Unpinned tools returned by `search_tools` and explicitly declared through
+`expose_tools` use semantic wire names of the form `<server>__<tool>` when the
+name is a valid identifier and at most 64 characters long. If it is longer or
+contains invalid identifier characters, the bridge uses the deterministic
+fallback `t_` plus unpadded lowercase base32 of `SHA-256([server_id, raw_name])`
+(RFC 4648 §6). A schema change moves the catalog revision without moving the
+public name.
 
 `search_tools` returns a compact index. Each hit contains only `tool_name`,
 `description`, and `score`; `server`, `upstream_name`, `pinned`, and
@@ -391,11 +397,11 @@ a defaults member (or the whole `tool_metadata` block) on reload reverts the
 same session to the current source values.
 
 Defaults apply to the owning server's pins and to that server's unpinned tools
-when progressively revealed through `search_tools` or `describe_tool`; their
-winning paths report `layer: "server_default"`. Another server sharing the
-same raw tool name, the bridge built-ins and generic `call_tool` are
-unaffected. A server with no pins may still declare defaults; they apply if
-an unpinned tool from that server is revealed. **Risk:** a server-wide
+when declared through `expose_tools`; their winning paths report
+`layer: "server_default"`. Another server sharing the same raw tool name, the
+bridge built-ins and generic `call_tool` are unaffected. A server with no pins
+may still declare defaults; they apply if an unpinned tool from that server is
+declared through `expose_tools`. **Risk:** a server-wide
 assertion such as `readOnlyHint: true` misclassifies every pinned tool of a
 mixed read/write server, and clients may suppress their own warnings on the
 strength of it. Defaults are advisory claims, not authorization, and a
@@ -423,8 +429,8 @@ server defaults → exact-tool exception, highest wins:
 
 There are no wildcard or cross-server selectors: a `tools` entry may name any
 valid raw tool on the same server, including an unpinned one. An unpinned
-entry is accepted without auto-revealing the tool; when that tool is
-progressively discovered, its patch is layered above defaults and winning
+entry is accepted without declaring the tool; when a caller explicitly declares
+that tool through `expose_tools`, its patch is layered above defaults and winning
 paths report `layer: "tool"`. Unknown tool names reject the whole candidate
 with a typed, redacted diagnostic (`tool_metadata_tool_unknown`), as do
 invalid tool names, unsupported patch members and duplicate entries. The
@@ -450,16 +456,19 @@ warnings, while the inverse direction can suppress them.
 
 ### Progressive metadata reveal and session projections
 
-New sessions initially expose exactly the four bridge built-ins
-(`search_tools`, `describe_tool`, `call_tool`, and `retrieve_result`) plus
-configured pins. `retrieve_result` is not exposure-gated: it registers like
-the other built-ins and resolves its owner handler-side.
+New sessions initially expose exactly the five bridge built-ins
+(`search_tools`, `describe_tool`, `call_tool`, `retrieve_result`, and
+`expose_tools`) plus configured pins. `retrieve_result` is not exposure-gated:
+it registers like the other built-ins and resolves its owner handler-side.
 
-Successful `search_tools` and `describe_tool` discovery commits discovered
-unpinned tools to that session's projection before returning success, so an
-immediate `tools/list` re-list or direct call in the same session succeeds.
-Projections are session-local: a tool discovered in session A is not visible
-in session B, even when both sessions use the same bearer token.
+Successful `search_tools` and `describe_tool` calls do not change a session's
+projection. To add unpinned tools to the list and make them directly callable,
+call `expose_tools` with 1–8 catalog names; only the requesting session's
+projection changes. Configured pins are already declared and remain unchanged.
+A pinned target uses its configured `<server>__<tool>` projection name; an
+unpinned target uses its semantic name or deterministic `t_` fallback.
+Projections are session-local: a tool declared in session A is not visible in
+session B, even when both sessions use the same bearer token.
 
 `tools/list` supports pagination with a default page size of 1000 or a
 configured positive page size. Its URL-safe base64 cursors are 57 bytes and

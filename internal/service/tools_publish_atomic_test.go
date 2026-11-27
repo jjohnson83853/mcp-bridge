@@ -47,13 +47,13 @@ func TestPublishedKeepsPreviousGenerationWhenDescriptorFails(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := map[string]bool{"search_tools": true, "describe_tool": true, "call_tool": true, "retrieve_result": true, "alpha__good": true}
+	want := map[string]bool{"search_tools": true, "describe_tool": true, "call_tool": true, "retrieve_result": true, "expose_tools": true, "alpha__good": true}
 	got := make([]string, 0, len(page.Tools))
 	for _, tool := range page.Tools {
 		got = append(got, tool.Name)
 		delete(want, tool.Name)
 	}
-	if len(want) != 0 || len(got) != 5 {
+	if len(want) != 0 || len(got) != 6 {
 		t.Fatalf("published tools after rejected candidate = %v; missing %v", got, want)
 	}
 }

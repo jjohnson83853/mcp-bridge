@@ -4,18 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/catalog"
-	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -120,28 +119,51 @@ func TestServeHybridProgressiveRevealDiscovery(t *testing.T) {
 		}
 	}
 
-	// Listing immediately after search must observe every result before success
-	// is returned to the caller.
-	status, listed := call(sessionA, `{"jsonrpc":"2.0","id":3,"method":"tools/list","params":{}}`)
-	if status != http.StatusOK || listed.Error != nil || listed.Result == nil {
-		t.Fatalf("tools/list after discovery failed: status=%d envelope=%+v", status, listed)
+	// Search results are not declared automatically.
+	status, listedAfterSearch := call(sessionA, `{"jsonrpc":"2.0","id":3,"method":"tools/list","params":{}}`)
+	if status != http.StatusOK || listedAfterSearch.Error != nil || listedAfterSearch.Result == nil {
+		t.Fatalf("tools/list after search failed: status=%d envelope=%+v", status, listedAfterSearch)
 	}
-	listedNames := make(map[string]bool, len(listed.Result.Tools))
+	listedNames := make(map[string]bool, len(listedAfterSearch.Result.Tools))
+	for _, tool := range listedAfterSearch.Result.Tools {
+		listedNames[tool.Name] = true
+	}
+	if !listedNames[targets["read"]] {
+		t.Errorf("configured pin %q disappeared after search", targets["read"])
+	}
+	if listedNames[targets["write"]] {
+		t.Fatalf("search automatically exposed unpinned result %q", targets["write"])
+	}
+	status, directBeforeExpose := call(sessionA, `{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"`+targets["write"]+`","arguments":{"path":"file.txt","data":"before-expose"}}}`)
+	if status == http.StatusOK && directBeforeExpose.Error == nil && directBeforeExpose.Result != nil && !directBeforeExpose.Result.IsError {
+		t.Fatalf("direct call to unexposed search result %q unexpectedly succeeded", targets["write"])
+	}
+	status, exposedA := call(sessionA, `{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"expose_tools","arguments":{"tool_names":["`+targets["write"]+`"]}}}`)
+	if status != http.StatusOK || exposedA.Error != nil || exposedA.Result == nil || exposedA.Result.IsError {
+		t.Fatalf("expose_tools in session A failed: status=%d envelope=%+v", status, exposedA)
+	}
+	status, listed := call(sessionA, `{"jsonrpc":"2.0","id":6,"method":"tools/list","params":{}}`)
+	if status != http.StatusOK || listed.Error != nil || listed.Result == nil {
+		t.Fatalf("tools/list after expose_tools failed: status=%d envelope=%+v", status, listed)
+	}
+	listedNames = make(map[string]bool, len(listed.Result.Tools))
 	for _, tool := range listed.Result.Tools {
 		listedNames[tool.Name] = true
 	}
 	for _, name := range targets {
 		if !listedNames[name] {
-			t.Errorf("search result %q was not listed before search success returned", name)
+			t.Errorf("explicitly exposed result %q was absent from tools/list", name)
 		}
 	}
 
+	directID := 7
 	for rawName, name := range targets {
 		arguments := `{"path":"file.txt"}`
 		if rawName == "write" {
 			arguments = `{"path":"file.txt","data":"discovery"}`
 		}
-		status, direct := call(sessionA, `{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"`+name+`","arguments":`+arguments+`}}`)
+		status, direct := call(sessionA, `{"jsonrpc":"2.0","id":`+strconv.Itoa(directID)+`,"method":"tools/call","params":{"name":"`+name+`","arguments":`+arguments+`}}`)
+		directID++
 		if status != http.StatusOK || direct.Error != nil || direct.Result == nil || direct.Result.IsError {
 			var isError bool
 			var content any
@@ -149,18 +171,18 @@ func TestServeHybridProgressiveRevealDiscovery(t *testing.T) {
 				isError = direct.Result.IsError
 				content = direct.Result.Content
 			}
-			t.Errorf("direct call to discovered alpha/%s (%q) failed: status=%d error=%+v isError=%t content=%#v", rawName, name, status, direct.Error, isError, content)
+			t.Errorf("direct call to explicitly exposed alpha/%s (%q) failed: status=%d error=%+v isError=%t content=%#v", rawName, name, status, direct.Error, isError, content)
 		}
 	}
 
-	// The search in A must not enroll B through the shared SDK name union.
-	status, guessed := call(sessionB, `{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"`+targets["write"]+`","arguments":{"path":"file.txt","data":"guess"}}}`)
+	// Exposure in A must not enroll B through the shared SDK name union.
+	status, guessed := call(sessionB, `{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"`+targets["write"]+`","arguments":{"path":"file.txt","data":"guess"}}}`)
 	if status == http.StatusOK && guessed.Error == nil && guessed.Result != nil && !guessed.Result.IsError {
-		t.Fatalf("session B called session A's discovered target %q without discovery", targets["write"])
+		t.Fatalf("session B called session A's exposed target %q without exposure", targets["write"])
 	}
 
-	// B reveals the same target directly by description, without searching.
-	status, described := call(sessionB, `{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"describe_tool","arguments":{"tool_name":"`+targets["write"]+`","catalog_revision":"`+found.CatalogRevision+`"}}}`)
+	// B can inspect the same target without declaring it.
+	status, described := call(sessionB, `{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"describe_tool","arguments":{"tool_name":"`+targets["write"]+`","catalog_revision":"`+found.CatalogRevision+`"}}}`)
 	if status != http.StatusOK || described.Error != nil || described.Result == nil || described.Result.IsError {
 		t.Fatalf("describe_tool failed: status=%d envelope=%+v", status, described)
 	}
@@ -224,16 +246,33 @@ func TestServeHybridProgressiveRevealDiscovery(t *testing.T) {
 	if reflect.DeepEqual(describedMetadata.Metadata, describedMetadata.UpstreamMetadata) {
 		t.Error("describe_tool metadata did not reflect configured overrides")
 	}
-	status, listedB := call(sessionB, `{"jsonrpc":"2.0","id":7,"method":"tools/list","params":{}}`)
+	status, listedB := call(sessionB, `{"jsonrpc":"2.0","id":10,"method":"tools/list","params":{}}`)
 	if status != http.StatusOK || listedB.Error != nil || listedB.Result == nil {
 		t.Fatalf("tools/list after describe failed: status=%d envelope=%+v", status, listedB)
 	}
 	for _, tool := range listedB.Result.Tools {
 		if tool.Name == targets["write"] {
+			t.Fatalf("describe_tool automatically exposed %q", targets["write"])
+		}
+	}
+	status, exposedB := call(sessionB, `{"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"expose_tools","arguments":{"tool_names":["`+targets["write"]+`"]}}}`)
+	if status != http.StatusOK || exposedB.Error != nil || exposedB.Result == nil || exposedB.Result.IsError {
+		t.Fatalf("expose_tools in session B failed: status=%d envelope=%+v", status, exposedB)
+	}
+	status, listedBAfterExpose := call(sessionB, `{"jsonrpc":"2.0","id":12,"method":"tools/list","params":{}}`)
+	if status != http.StatusOK || listedBAfterExpose.Error != nil || listedBAfterExpose.Result == nil {
+		t.Fatalf("tools/list after session B expose_tools failed: status=%d envelope=%+v", status, listedBAfterExpose)
+	}
+	for _, tool := range listedBAfterExpose.Result.Tools {
+		if tool.Name == targets["write"] {
+			status, directB := call(sessionB, `{"jsonrpc":"2.0","id":13,"method":"tools/call","params":{"name":"`+targets["write"]+`","arguments":{"path":"file.txt","data":"owner-b"}}}`)
+			if status != http.StatusOK || directB.Error != nil || directB.Result == nil || directB.Result.IsError {
+				t.Fatalf("direct call after session B exposure failed: status=%d envelope=%+v", status, directB)
+			}
 			return
 		}
 	}
-	t.Fatalf("describe-only session did not reveal %q; listed=%s", targets["write"], strings.TrimSpace(string(mustJSON(t, listedB.Result.Tools))))
+	t.Fatalf("explicit expose_tools did not declare %q in session B; listed=%s", targets["write"], strings.TrimSpace(string(mustJSON(t, listedBAfterExpose.Result.Tools))))
 }
 
 func mustJSON(t *testing.T, value any) []byte {
@@ -361,6 +400,7 @@ func TestServeHybridProgressiveRevealPages(t *testing.T) {
 		catalog.ToolDescribeTool:   false,
 		catalog.ToolCallTool:       false,
 		catalog.ToolRetrieveResult: false,
+		catalog.ToolExposeTools:    false,
 		"alpha__read":              false,
 	}
 	seen := make(map[string]bool, len(expected))
@@ -406,28 +446,57 @@ func TestServeHybridProgressiveRevealPages(t *testing.T) {
 
 	firstPage, err := session.ListTools(ctx, nil)
 	if err != nil {
-		t.Fatalf("tools/list first page before publication: %v", err)
+		t.Fatalf("tools/list first page before search: %v", err)
 	}
 	if firstPage.NextCursor == "" {
-		t.Fatal("first page omitted cursor before publication")
+		t.Fatal("first page omitted cursor before search")
 	}
 	discovered, err := session.CallTool(ctx, &mcp.CallToolParams{
 		Name:      catalog.ToolSearchTools,
 		Arguments: json.RawMessage(`{"query":"file"}`),
 	})
 	if err != nil {
-		t.Fatalf("search_tools discovery: %v", err)
+		t.Fatalf("search_tools: %v", err)
 	}
 	if discovered == nil || discovered.IsError {
-		t.Fatalf("search_tools discovery failed: %+v", discovered)
+		t.Fatalf("search_tools failed: %+v", discovered)
 	}
-	_, err = session.ListTools(ctx, &mcp.ListToolsParams{Cursor: firstPage.NextCursor})
-	var rpcErr *jsonrpc.Error
-	if !errors.As(err, &rpcErr) {
-		t.Fatalf("stale page cursor error = %T %v; want JSON-RPC invalid params", err, err)
+	postSearchNames := make(map[string]bool, len(firstPage.Tools))
+	for _, tool := range firstPage.Tools {
+		postSearchNames[tool.Name] = true
 	}
-	if rpcErr.Code != jsonrpc.CodeInvalidParams || rpcErr.Message != "invalid cursor" {
-		t.Fatalf("stale page cursor error = (%d, %q); want (%d, %q)", rpcErr.Code, rpcErr.Message, jsonrpc.CodeInvalidParams, "invalid cursor")
+	cursor = firstPage.NextCursor
+	for cursor != "" {
+		page, err := session.ListTools(ctx, &mcp.ListToolsParams{Cursor: cursor})
+		if err != nil {
+			t.Fatalf("resume pre-search cursor after search_tools: %v", err)
+		}
+		if len(page.Tools) > 2 {
+			t.Fatalf("post-search page has %d tools; want at most 2", len(page.Tools))
+		}
+		for _, tool := range page.Tools {
+			if postSearchNames[tool.Name] {
+				t.Errorf("post-search traversal duplicated %q", tool.Name)
+			}
+			postSearchNames[tool.Name] = true
+			if tool.Name == "alpha__write" {
+				t.Error("search result alpha__write appeared in a post-search tools/list page without explicit exposure")
+			}
+		}
+		cursor = page.NextCursor
+	}
+	if len(postSearchNames) != len(expected) {
+		t.Errorf("post-search traversal returned %d tools; want %d: %v", len(postSearchNames), len(expected), postSearchNames)
+	}
+	for name := range expected {
+		if !postSearchNames[name] {
+			t.Errorf("post-search traversal omitted %q; got %v", name, postSearchNames)
+		}
+	}
+	for name := range postSearchNames {
+		if _, known := expected[name]; !known {
+			t.Errorf("post-search traversal returned unexpected tool %q", name)
+		}
 	}
 }
 

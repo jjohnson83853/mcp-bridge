@@ -198,10 +198,10 @@ func TestServeHybridPreloadedToolsListExposure(t *testing.T) {
 			Schema      json.RawMessage
 		}{tool.Description, tool.InputSchema}
 	}
-	if got := len(envelope.Result.Tools); got != 5 {
-		t.Fatalf("tools/list length = %d (%v); want 5: search_tools, describe_tool, call_tool, retrieve_result, alpha__read (body=%s)", got, names, body)
+	if got := len(envelope.Result.Tools); got != 6 {
+		t.Fatalf("tools/list length = %d (%v); want 6: search_tools, describe_tool, call_tool, retrieve_result, expose_tools, alpha__read (body=%s)", got, names, body)
 	}
-	for _, meta := range []string{catalog.ToolSearchTools, catalog.ToolDescribeTool, catalog.ToolCallTool, catalog.ToolRetrieveResult} {
+	for _, meta := range []string{catalog.ToolSearchTools, catalog.ToolDescribeTool, catalog.ToolCallTool, catalog.ToolRetrieveResult, catalog.ToolExposeTools} {
 		if _, present := names[meta]; !present {
 			t.Errorf("tools/list missing meta-tool %q", meta)
 		}

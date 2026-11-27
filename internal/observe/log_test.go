@@ -427,7 +427,7 @@ func TestLogLabelEnumeration(t *testing.T) {
 		"sse_stream", "search", "describe", "health", "describe_tool",
 		"prompts_list", "prompts_get", "refresh", "prompt_load", "prompt_persist",
 		"startup", "handshake", "reload", "cli", "search_tools", "retrieve_result",
-		"load_config", "check_config", "publish", "logging",
+		"load_config", "check_config", "publish", "logging", "expose_tools",
 	}
 	if !reflect.DeepEqual(operationVocabulary, wantOperations) {
 		t.Fatalf("operation vocabulary = %#v; want %#v", operationVocabulary, wantOperations)

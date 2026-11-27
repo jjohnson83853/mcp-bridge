@@ -510,7 +510,7 @@ func TestToolSurfaceCallCatalogRevisionAdmission(t *testing.T) {
 	}
 }
 
-// The bridge advertises its four built-ins with the exact schemas, plus its configured
+// The bridge advertises its five built-ins with the exact schemas, plus its configured
 // pin (PR-R7/PR-AC1).
 func assertAdvertisedBuiltinsAndPin(t *testing.T, tools []*mcp.Tool, pinName string, topKDefault, topKMax int) {
 	t.Helper()
@@ -528,6 +528,7 @@ func assertAdvertisedBuiltinsAndPin(t *testing.T, tools []*mcp.Tool, pinName str
 			"required":             []string{"handle"},
 			"additionalProperties": false,
 		},
+		catalog.ToolExposeTools: catalog.ExposeToolsInputSchema(),
 	}
 	seen := make(map[string]bool, len(tools))
 	for _, tool := range tools {
@@ -556,7 +557,7 @@ func assertAdvertisedBuiltinsAndPin(t *testing.T, tools []*mcp.Tool, pinName str
 	}
 }
 
-func TestToolSurfaceAdvertisesExactlyItsFourTools(t *testing.T) {
+func TestToolSurfaceAdvertisesExactlyItsFiveTools(t *testing.T) {
 	t.Setenv("TOOLS_ALPHA_SECRET", "alpha-secret")
 	t.Setenv("TOOLS_CLIENT_TOKEN", "client-token")
 	h := newToolHarness(t, parseReloadConfig(t, toolSurfaceConfig), service.ToolSurfaceConfig{

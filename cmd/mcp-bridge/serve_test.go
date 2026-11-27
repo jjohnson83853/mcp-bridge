@@ -615,8 +615,8 @@ func TestServeCompositionRootServesCatalogAndSurvivesReload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("tools/list: %v", err)
 	}
-	if len(listed.Tools) != 4 {
-		t.Fatalf("advertised %d tools; want exactly 4", len(listed.Tools))
+	if len(listed.Tools) != 5 {
+		t.Fatalf("advertised %d tools; want exactly 5", len(listed.Tools))
 	}
 
 	// The cold store has no cached catalog: the first pass discovers, embeds and
@@ -894,21 +894,53 @@ func TestServeCatalogErgonomicsLiveWire(t *testing.T) {
 		t.Fatalf("search_tools status = %d; want 200", searchResponse.status)
 	}
 
-	listed := postServeWire(t, httpURL, sessionID, nextID, "tools/list", map[string]any{})
+	listedAfterSearch := postServeWire(t, httpURL, sessionID, nextID, "tools/list", map[string]any{})
 	nextID++
-	if listed.status != http.StatusOK {
-		t.Fatalf("tools/list after discovery status = %d; want 200", listed.status)
+	if listedAfterSearch.status != http.StatusOK {
+		t.Fatalf("tools/list after search status = %d; want 200", listedAfterSearch.status)
 	}
-	listResult, ok := listed.body["result"].(map[string]any)
+	searchListResult, ok := listedAfterSearch.body["result"].(map[string]any)
 	if !ok {
-		t.Fatalf("tools/list response = %v; want result", listed.body)
+		t.Fatalf("tools/list response after search = %v; want result", listedAfterSearch.body)
 	}
-	listedTools, ok := listResult["tools"].([]any)
+	searchListTools, ok := searchListResult["tools"].([]any)
 	if !ok {
-		t.Fatalf("tools/list tools = %T; want array", listResult["tools"])
+		t.Fatalf("tools/list tools after search = %T; want array", searchListResult["tools"])
+	}
+	for _, item := range searchListTools {
+		tool, ok := item.(map[string]any)
+		if ok && tool["name"] == wireToolName {
+			t.Fatalf("search automatically exposed %q in tools/list: %v", wireToolName, searchListTools)
+		}
+	}
+
+	exposeResponse, exposeResult, expose := callWireTool("expose_tools", map[string]any{"tool_names": []string{wireToolName}})
+	if exposeResponse.status != http.StatusOK {
+		t.Fatalf("expose_tools status = %d; want 200", exposeResponse.status)
+	}
+	if isError, _ := exposeResult["isError"].(bool); isError {
+		t.Fatalf("expose_tools returned an error: %v", expose)
+	}
+	declared, ok := expose["declared"].([]any)
+	if !ok || len(declared) != 1 || declared[0] != wireToolName {
+		t.Fatalf("expose_tools declared = %v; want [%q]", expose["declared"], wireToolName)
+	}
+
+	listedAfterExpose := postServeWire(t, httpURL, sessionID, nextID, "tools/list", map[string]any{})
+	nextID++
+	if listedAfterExpose.status != http.StatusOK {
+		t.Fatalf("tools/list after expose_tools status = %d; want 200", listedAfterExpose.status)
+	}
+	exposeListResult, ok := listedAfterExpose.body["result"].(map[string]any)
+	if !ok {
+		t.Fatalf("tools/list response after expose_tools = %v; want result", listedAfterExpose.body)
+	}
+	exposedTools, ok := exposeListResult["tools"].([]any)
+	if !ok {
+		t.Fatalf("tools/list tools after expose_tools = %T; want array", exposeListResult["tools"])
 	}
 	foundListedTool := false
-	for _, item := range listedTools {
+	for _, item := range exposedTools {
 		tool, ok := item.(map[string]any)
 		if ok && tool["name"] == wireToolName {
 			foundListedTool = true
@@ -916,7 +948,7 @@ func TestServeCatalogErgonomicsLiveWire(t *testing.T) {
 		}
 	}
 	if !foundListedTool {
-		t.Fatalf("tools/list omitted newly discovered %q: %v", wireToolName, listedTools)
+		t.Fatalf("tools/list omitted explicitly declared %q: %v", wireToolName, exposedTools)
 	}
 
 	staleRevision := revision

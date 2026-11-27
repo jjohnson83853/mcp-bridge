@@ -8,6 +8,7 @@ const (
 	ToolDescribeTool  = "describe_tool"
 	ToolCallTool      = "call_tool"
 	ToolRetrieveResult = "retrieve_result"
+	ToolExposeTools    = "expose_tools"
 )
 
 // Draft202012 is the JSON Schema draft URI.
@@ -23,9 +24,10 @@ const (
 
 // Fixed bounds for the bridge's own parameters.
 const (
-	QueryMaxLength    = 2048
-	ServerFilterMax   = 32
-	MaxServerIdentity = 1024
+	QueryMaxLength           = 2048
+	ServerFilterMax          = 32
+	MaxServerIdentity        = 1024
+	MaxExposeToolsPerRequest = 8
 )
 
 // SearchToolsInputSchema returns the search_tools input schema with effective top_k bounds.
@@ -63,6 +65,25 @@ func DescribeToolInputSchema() map[string]any {
 		"required":             []any{"tool_name"},
 		"properties": map[string]any{
 			"tool_name":        map[string]any{"type": "string", "pattern": PublicToolNamePattern},
+			"catalog_revision": map[string]any{"type": "string", "pattern": ToolInputCatalogRevisionPattern},
+		},
+	}
+}
+
+// ExposeToolsInputSchema returns the expose_tools input schema.
+func ExposeToolsInputSchema() map[string]any {
+	return map[string]any{
+		"type":                 "object",
+		"additionalProperties": false,
+		"required":             []any{"tool_names"},
+		"properties": map[string]any{
+			"tool_names": map[string]any{
+				"type":        "array",
+				"minItems":    1,
+				"maxItems":    MaxExposeToolsPerRequest,
+				"uniqueItems": true,
+				"items":       map[string]any{"type": "string", "pattern": PublicToolNamePattern},
+			},
 			"catalog_revision": map[string]any{"type": "string", "pattern": ToolInputCatalogRevisionPattern},
 		},
 	}

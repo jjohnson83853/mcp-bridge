@@ -35,7 +35,7 @@ func TestProgressiveMetadataConcurrencyAndLifecycle(t *testing.T) {
 		},
 		{
 			name: "canceled discovery does not roll back a completed commit",
-			run:  TestProgressiveMetadataDiscoveryCancellationKeepsCommit,
+			run:  TestProgressiveMetadataSearchCancellationMakesNoCommit,
 		},
 		{
 			name: "accepted generation publication is atomic and rebases newer state",
@@ -694,8 +694,8 @@ func TestProgressiveMetadataPaginationLargeDescriptorTraversal(t *testing.T) {
 	}
 	surface.builtinTools = builtinTools
 	surface.pageSize = 0
-	if len(builtinTools) != 4 {
-		t.Fatalf("surface has %d built-in tools; want 4", len(builtinTools))
+	if len(builtinTools) != 5 {
+		t.Fatalf("surface has %d built-in tools; want 5", len(builtinTools))
 	}
 	firstPage, err := surface.ownerToolListPage(projection, "")
 	if err != nil {
@@ -711,8 +711,8 @@ func TestProgressiveMetadataPaginationLargeDescriptorTraversal(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list default-size page 2: %v", err)
 	}
-	if len(secondPage.Tools) != 54 {
-		t.Fatalf("default-size page 2 contains %d tools; want 54", len(secondPage.Tools))
+	if len(secondPage.Tools) != 55 {
+		t.Fatalf("default-size page 2 contains %d tools; want 55", len(secondPage.Tools))
 	}
 	if secondPage.NextCursor != "" {
 		t.Fatalf("default-size page 2 next cursor = %q; want empty", secondPage.NextCursor)
@@ -728,8 +728,8 @@ func TestProgressiveMetadataPaginationLargeDescriptorTraversal(t *testing.T) {
 		}
 		expectedDefaultNames[tool.Name] = struct{}{}
 	}
-	if len(expectedDefaultNames) != 1054 {
-		t.Fatalf("expected default-size traversal set contains %d tools; want 1054", len(expectedDefaultNames))
+	if len(expectedDefaultNames) != 1055 {
+		t.Fatalf("expected default-size traversal set contains %d tools; want 1055", len(expectedDefaultNames))
 	}
 	defaultNames := make([]string, 0, len(expectedDefaultNames))
 	for _, tool := range firstPage.Tools {
@@ -738,8 +738,8 @@ func TestProgressiveMetadataPaginationLargeDescriptorTraversal(t *testing.T) {
 	for _, tool := range secondPage.Tools {
 		defaultNames = append(defaultNames, tool.Name)
 	}
-	if len(defaultNames) != 1054 {
-		t.Fatalf("default-size traversal collected %d tools; want 1054", len(defaultNames))
+	if len(defaultNames) != 1055 {
+		t.Fatalf("default-size traversal collected %d tools; want 1055", len(defaultNames))
 	}
 	seenDefaultNames := make(map[string]struct{}, len(expectedDefaultNames))
 	for index, name := range defaultNames {

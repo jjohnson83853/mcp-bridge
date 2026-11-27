@@ -79,7 +79,7 @@ func (t *ToolSurface) requiresExposure(method string, request mcp.Request) (rele
 	switch call.Params.Name {
 	case catalog.ToolCallTool:
 		return false, false, ""
-	case catalog.ToolSearchTools, catalog.ToolDescribeTool:
+	case catalog.ToolSearchTools, catalog.ToolDescribeTool, catalog.ToolExposeTools:
 		return true, false, ""
 	default:
 		if t.isProjectedToolName(call.Params.Name) {

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -42,7 +43,7 @@ type ToolSurfaceConfig struct {
 	Metrics         *observe.Metrics
 }
 
-// ToolSurface registers and serves the bridge's own three tools. Every handler
+// ToolSurface registers and serves the bridge's five built-in tools. Every handler
 // reads the published generation at call time, so a reload is observed without
 // re-registering the tool list.
 type ToolSurface struct {
@@ -65,6 +66,7 @@ type ToolSurface struct {
 	builtinTools                  []*mcp.Tool
 	receivingMiddlewareRegistered bool
 	testBeforeExposureAdmission   func()
+	testAfterDiscoveryAdmission   func()
 	projectionOnce                sync.Once
 	coordinator                   *projectionCoordinator
 	publisherOwner                projectionOwner
@@ -109,6 +111,8 @@ func (t *ToolSurface) searchBounds() (topKDefault, topKMax int) {
 // boolPtr returns a fresh pointer for an advisory hint literal, so callers
 // never share a mutable hint value.
 func boolPtr(value bool) *bool { return &value }
+
+var publicToolNamePattern = regexp.MustCompile(catalog.PublicToolNamePattern)
 
 func renderBuiltinDescriptors(resolvedPins []core.ResolvedPin, topKDefault, topKMax int) []*mcp.Tool {
 	pinnedNames := make([]string, 0, len(resolvedPins))
@@ -186,6 +190,17 @@ func renderBuiltinDescriptors(resolvedPins []core.ResolvedPin, topKDefault, topK
 				OpenWorldHint:   boolPtr(false),
 			},
 		},
+		{
+			Name:        catalog.ToolExposeTools,
+			Description: "Search results are not exposed automatically. Use expose_tools to declare up to 8 discovered tools into this session's tools list; configured pinned tools are already declared.",
+			InputSchema: catalog.ExposeToolsInputSchema(),
+			Annotations: &mcp.ToolAnnotations{
+				ReadOnlyHint:    false,
+				DestructiveHint: boolPtr(false),
+				IdempotentHint:  true,
+				OpenWorldHint:   boolPtr(false),
+			},
+		},
 	}
 }
 
@@ -200,6 +215,8 @@ func (t *ToolSurface) registerBuiltinTools(server *mcp.Server, descriptors []*mc
 			server.AddTool(descriptor, t.callTool)
 		case catalog.ToolRetrieveResult:
 			server.AddTool(descriptor, t.retrieveResult)
+		case catalog.ToolExposeTools:
+			server.AddTool(descriptor, t.exposeTools)
 		}
 	}
 }
@@ -218,8 +235,8 @@ func (t *ToolSurface) publishBuiltinTools(descriptors []*mcp.Tool) {
 	t.mu.Unlock()
 }
 
-// Register installs exactly the three bridge tools on server with the exact
-// §4.4 input schemas. It is not safe for concurrent use with tool calls.
+// Register installs the bridge's built-in tools on server with their exact
+// input schemas. It is not safe for concurrent use with tool calls.
 func (t *ToolSurface) Register(server *mcp.Server) error {
 	if server == nil {
 		return errors.New("service: tool surface needs a server")
@@ -366,7 +383,13 @@ func (t *ToolSurface) directRequestOwner(req *mcp.CallToolRequest) (projectionOw
 		return projectionOwner{}, false
 	}
 	session := req.GetSession()
-	if session == nil || session.ID() == "" {
+	serverSession, isServerSession := session.(*mcp.ServerSession)
+	if session == nil || (isServerSession && serverSession == nil) {
+		t.projectionCoordinator()
+		return t.publisherOwner, true
+	}
+	sessionID := session.ID()
+	if sessionID == "" {
 		t.projectionCoordinator()
 		return t.publisherOwner, true
 	}
@@ -374,7 +397,7 @@ func (t *ToolSurface) directRequestOwner(req *mcp.CallToolRequest) (projectionOw
 	if !valid {
 		return projectionOwner{}, false
 	}
-	return projectionOwner{kind: projectionSession, sessionID: session.ID(), epoch: epoch}, true
+	return projectionOwner{kind: projectionSession, sessionID: sessionID, epoch: epoch}, true
 }
 
 func hasProjectionReference(registration *unionTool, owner projectionOwner) bool {
@@ -503,20 +526,16 @@ func (t *ToolSurface) searchTools(ctx context.Context, req *mcp.CallToolRequest)
 	if response.CatalogRevision != assembly.CatalogRevision() {
 		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
 	}
-	targets, err := searchDiscoveryTargets(assembly, response)
-	if err != nil {
-		return failureResult(err), nil
-	}
 	payload := searchPayload(response)
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		return errorResult(codeInternalError, "failed to marshal search response", core.ExecutionNotStarted), nil
 	}
-	if err := t.commitDiscovery(owner, assembly, targets); err != nil {
-		if errors.Is(err, errAcceptedGenerationMismatch) {
-			return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
-		}
-		return failureResult(err), nil
+	if t.testAfterDiscoveryAdmission != nil {
+		t.testAfterDiscoveryAdmission()
+	}
+	if !t.discoveryOwnerValid(owner, assembly) {
+		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
 	}
 	result := &mcp.CallToolResult{
 		Content:           []mcp.Content{&mcp.TextContent{Text: string(raw)}},
@@ -525,37 +544,6 @@ func (t *ToolSurface) searchTools(ctx context.Context, req *mcp.CallToolRequest)
 	return t.boundedCallToolResult(req, result, ""), nil
 }
 
-func searchDiscoveryTargets(assembly *Assembly, response search.Response) (map[logicalToolTarget]struct{}, error) {
-	if assembly == nil || assembly.catalog == nil {
-		return nil, errors.New("service: search discovery has no accepted catalog")
-	}
-	if response.CatalogRevision != assembly.CatalogRevision() {
-		return nil, errAcceptedGenerationMismatch
-	}
-	pinnedNames := assembly.PinnedNames()
-	targets := make(map[logicalToolTarget]struct{}, len(response.Results))
-	for _, result := range response.Results {
-		if result.ToolName == "" || result.Server == "" || result.UpstreamName == "" {
-			return nil, errors.New("service: search discovery returned an incomplete tool identity")
-		}
-		expectedName := core.PublicName(result.Server, result.UpstreamName)
-		if result.ToolName != expectedName {
-			return nil, errors.New("service: search discovery tool name does not match its accepted target")
-		}
-		binding, publicName, found := resolveBinding(assembly.catalog, result.ToolName)
-		if !found || publicName != expectedName || binding.ServerID != result.Server || binding.RawName != result.UpstreamName {
-			return nil, errors.New("service: search discovery identity does not match the accepted catalog")
-		}
-		if result.CatalogRevision != response.CatalogRevision {
-			return nil, errAcceptedGenerationMismatch
-		}
-		if result.Pinned != pinnedNames[publicName] {
-			return nil, errors.New("service: search discovery pin state does not match the accepted catalog")
-		}
-		targets[logicalToolTarget{serverID: binding.ServerID, rawName: binding.RawName}] = struct{}{}
-	}
-	return targets, nil
-}
 
 // resolveBinding locates a published binding by either the wire tool name or
 // its derived public name (server/hash), so hybrid wire-name callers resolve
@@ -679,12 +667,11 @@ func (t *ToolSurface) describeTool(ctx context.Context, req *mcp.CallToolRequest
 	if err != nil {
 		return errorResult(codeInternalError, "failed to marshal describe response", core.ExecutionNotStarted), nil
 	}
-	target := logicalToolTarget{serverID: binding.ServerID, rawName: binding.RawName}
-	if err := t.commitDiscovery(owner, assembly, map[logicalToolTarget]struct{}{target: {}}); err != nil {
-		if errors.Is(err, errAcceptedGenerationMismatch) {
-			return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
-		}
-		return failureResult(err), nil
+	if t.testAfterDiscoveryAdmission != nil {
+		t.testAfterDiscoveryAdmission()
+	}
+	if !t.discoveryOwnerValid(owner, assembly) {
+		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
 	}
 	t.contributeOperation(requestID, operationID, "not_attempted")
 	if t.logger != nil {
@@ -695,6 +682,144 @@ func (t *ToolSurface) describeTool(ctx context.Context, req *mcp.CallToolRequest
 			RequestID: requestID,
 			Operation: "describe_tool",
 			Duration:  duration,
+			Outcome:   "success",
+			Fields: map[string]any{
+				"operation_id":      operationID,
+				"mcp_method":        "tools_call",
+				"correlation_state": corrState,
+			},
+		})
+	}
+	result := &mcp.CallToolResult{
+		Content:           []mcp.Content{&mcp.TextContent{Text: string(raw)}},
+		StructuredContent: payload,
+	}
+	return t.boundedCallToolResult(req, result, ""), nil
+}
+
+type exposeToolsWire struct {
+	ToolNames       []string `json:"tool_names"`
+	CatalogRevision string   `json:"catalog_revision"`
+}
+
+func (t *ToolSurface) exposeTools(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var requestID string
+	corrState := "unavailable"
+	if req != nil && req.Extra != nil && req.Extra.Header != nil {
+		carrier := req.Extra.Header.Get("X-Mcp-Bridge-Internal-Request-Id")
+		if len(carrier) == 32 && validHex(carrier) {
+			requestID = carrier
+			corrState = "valid"
+		}
+	}
+	operationID := observe.CorrelationID("")
+	start := time.Now()
+
+	var wire exposeToolsWire
+	if err := decodeStrict(rawArguments(req), &wire); err != nil {
+		return errorResult(search.CodeInvalidArguments, "expose_tools arguments are not a valid expose request", core.ExecutionNotStarted), nil
+	}
+	assembly := t.runtime.Current()
+	if assembly == nil {
+		return errorResult(codeBackendUnavailable, "no catalog generation is published", core.ExecutionNotStarted), nil
+	}
+	if wire.CatalogRevision == "" {
+		wire.CatalogRevision = assembly.CatalogRevision()
+	} else {
+		if !isValidCatalogRevision(wire.CatalogRevision) {
+			t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, catalog.ToolExposeTools, "invalid_arguments")
+			return errorResult(search.CodeInvalidArguments, "catalog_revision is not a valid 64-character hexadecimal digest", core.ExecutionNotStarted), nil
+		}
+		if wire.CatalogRevision != assembly.CatalogRevision() {
+			t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, catalog.ToolExposeTools, "catalog_changed")
+			return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
+		}
+	}
+	owner, ownerOK := t.directRequestOwner(req)
+	if !ownerOK || !t.discoveryOwnerValid(owner, assembly) {
+		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
+	}
+	if owner.kind != projectionSession {
+		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
+	}
+	if len(wire.ToolNames) == 0 || len(wire.ToolNames) > catalog.MaxExposeToolsPerRequest {
+		return errorResult(search.CodeInvalidArguments, "tool_names must contain between 1 and 8 unique public tool names", core.ExecutionNotStarted), nil
+	}
+	seenNames := make(map[string]struct{}, len(wire.ToolNames))
+	for _, name := range wire.ToolNames {
+		if _, duplicate := seenNames[name]; duplicate || !publicToolNamePattern.MatchString(name) {
+			return errorResult(search.CodeInvalidArguments, "tool_names must contain between 1 and 8 unique public tool names", core.ExecutionNotStarted), nil
+		}
+		seenNames[name] = struct{}{}
+	}
+
+	type resolvedTarget struct {
+		binding    *core.Binding
+		publicName string
+	}
+	targets := make(map[logicalToolTarget]resolvedTarget, len(wire.ToolNames))
+	for _, name := range wire.ToolNames {
+		binding, publicName, found := resolveBinding(assembly.catalog, name)
+		if !found {
+			t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, catalog.ToolExposeTools, "unknown_tool")
+			return errorResult(codeUnknownTool, "no such tool in the published catalog", core.ExecutionNotStarted), nil
+		}
+		target := logicalToolTarget{serverID: binding.ServerID, rawName: binding.RawName}
+		if _, duplicate := targets[target]; !duplicate {
+			targets[target] = resolvedTarget{binding: binding, publicName: publicName}
+		}
+	}
+
+	coordinator := t.projectionCoordinator()
+	coordinator.barrier.Lock()
+	previous := coordinator.projections[owner]
+	coordinator.barrier.Unlock()
+	if previous == nil {
+		return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
+	}
+	pinnedNames := assembly.PinnedNames()
+	pending := make(map[logicalToolTarget]struct{}, len(targets))
+	declared := make([]string, 0, len(targets))
+	exposed := make([]string, 0, len(targets))
+	for target, resolved := range targets {
+		if pinnedNames[resolved.publicName] {
+			declared = append(declared, config.WireToolName(resolved.binding.ServerID, resolved.binding.RawName))
+			continue
+		}
+		name := effectiveWireName(resolved.binding.ServerID, resolved.binding.RawName)
+		declared = append(declared, name)
+		pending[target] = struct{}{}
+		if _, alreadyDeclared := previous.interests[target]; !alreadyDeclared {
+			exposed = append(exposed, name)
+		}
+	}
+	sort.Strings(declared)
+	sort.Strings(exposed)
+	if len(pending) > 0 {
+		if err := t.commitDiscovery(owner, assembly, pending); err != nil {
+			if errors.Is(err, errAcceptedGenerationMismatch) {
+				return errorResult(codeCatalogChanged, "the catalog revision changed", core.ExecutionNotStarted), nil
+			}
+			return failureResult(err), nil
+		}
+	}
+	payload := map[string]any{
+		"exposed":         exposed,
+		"declared":        declared,
+		"catalog_revision": assembly.CatalogRevision(),
+	}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return errorResult(codeInternalError, "failed to marshal expose response", core.ExecutionNotStarted), nil
+	}
+	t.contributeOperation(requestID, operationID, "not_attempted")
+	if t.logger != nil {
+		t.logger.Log(observe.Entry{
+			Level:     "info",
+			Event:     "mcp_complete",
+			RequestID: requestID,
+			Operation: catalog.ToolExposeTools,
+			Duration:  time.Since(start),
 			Outcome:   "success",
 			Fields: map[string]any{
 				"operation_id":      operationID,

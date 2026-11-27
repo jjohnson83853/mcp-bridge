@@ -23,7 +23,7 @@ func TestServeHybridProgressiveRevealLifecycle(t *testing.T) {
 			run:  TestServeHybridProgressiveRevealDiscovery,
 		},
 		{
-			name: "real-wire inventory pages and stale cursor rejection",
+			name: "real-wire inventory pages and valid cursor after search",
 			run:  TestServeHybridProgressiveRevealPages,
 		},
 		{
@@ -280,6 +280,7 @@ func assertProgressiveRevealNameSet(t *testing.T, names []string, allowedDynamic
 		"describe_tool":   true,
 		"call_tool":       true,
 		"retrieve_result": true,
+		"expose_tools":    true,
 		"alpha__read":     true,
 	}
 	if allowedDynamic != "" {
@@ -421,6 +422,8 @@ func testServeHybridProgressiveRevealConcurrentRetirement(t *testing.T) {
 		assertProgressiveRevealCallSuccess(t, test.name, decodeProgressiveRevealWireEnvelope(t, response.body))
 	}
 
+	_, exposeA := harness.rpc(sessionA, progressiveRevealCallBody(t, 22, "expose_tools", `{"tool_names":["`+writeName+`"]}`))
+	assertProgressiveRevealCallSuccess(t, "owner A expose_tools", exposeA)
 	_, listA := harness.rpc(sessionA, progressiveRevealListBody(17, ""))
 	assertProgressiveRevealListNames(t, listA, writeName)
 	_, listB := harness.rpc(sessionB, progressiveRevealListBody(18, ""))
@@ -474,6 +477,8 @@ func testServeHybridProgressiveRevealLazyRetirement(t *testing.T) {
 	}
 
 	writeName := harness.discoverWrite(sessionC)
+	_, exposedC := harness.rpc(sessionC, progressiveRevealCallBody(t, 32, "expose_tools", `{"tool_names":["`+writeName+`"]}`))
+	assertProgressiveRevealCallSuccess(t, "owner C expose_tools", exposedC)
 	_, listC := harness.rpc(sessionC, progressiveRevealListBody(22, ""))
 	if listC.Result == nil || listC.Result.NextCursor == "" {
 		t.Fatalf("owner C did not receive a paginated discovered list: %+v", listC)
