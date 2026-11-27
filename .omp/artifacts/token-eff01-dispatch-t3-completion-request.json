@@ -1,0 +1,38 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "token-efficient-tool-responses",
+  "revision": "r40",
+  "requests": [
+    {
+      "name": "ImplementTicket01T3Completion",
+      "taskId": "T3",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/bounded_delivery.go",
+          "internal/service/bounded_delivery_test.go",
+          "internal/service/retrieve_result_test.go",
+          "internal/service/tools.go",
+          "internal/catalog/schema.go",
+          "internal/service/inbound.go",
+          "internal/service/tools_test.go",
+          "internal/service/builtin_guidance_test.go",
+          "internal/service/progressive_session_test.go",
+          "internal/service/progressive_concurrency_lifecycle_test.go",
+          "internal/service/tools_publish_atomic_test.go",
+          "internal/service/tool_metadata_test.go",
+          "cmd/mcp-bridge/serve_test.go",
+          "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+          "cmd/mcp-bridge/serve_hybrid_reload_test.go",
+          "docs/logging-contract.md",
+          "cmd/mcp-bridge/logging_contract_test.go",
+          "internal/observe/log.go",
+          "cmd/mcp-bridge/serve.go"
+        ]
+      }
+    }
+  ]
+}

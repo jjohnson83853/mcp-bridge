@@ -39,7 +39,11 @@ schema re-sends on later turns).
 - Remaining blockers are design-level, not wording: preview-feasibility validation (M1), the upstream-code
   promise across the unretainable branch (M2), description observability (L1), the purge-seam model (L2),
   and observability deliverables with no AC (L3).
-- Review budget (S15): 5 of 5 completed reviews used. The planning branch stops here for an owner decision.
+- Review budget: five rounds completed under the default allocation; the owner then **reset the budget to 5**
+  and authorized one further repair round (decision log: `.scratch/token-efficient-tool-responses/decisions.md`,
+  ledger: `.omp/artifacts/token-eff01-review/findings-round5.md`). Round 5 left five findings: M1 preview
+  feasibility, M2 upstream-code scope, L1 description observability, L2 purge-seam model, L3 observability
+  deliverables without an AC.
 
 ## Current execution record
 

@@ -1,0 +1,877 @@
+{
+  "schemaVersion": 2,
+  "feature": "token-efficient-tool-responses",
+  "revision": "r35",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+    "sha256": "cb91faf9c093e12486c5623386ac35a6893b0fa8caf120213327229d8bddc2da",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r35",
+        "sha256": "c597925cc20df317138a792f1dd4e4afc9a137f9d5c24b84dd2c1aede7538dbe"
+      },
+      "design": {
+        "revision": "r35",
+        "sha256": "127188a1aba56eaf6e98d9e87483db843a6c74fdbeb7805ae43bf57baa5beafb"
+      },
+      "tasks": {
+        "revision": "r35",
+        "sha256": "13f2b9094fe211ef27c63161440584a7a1efd6d80a106857ea727e85dd81753e"
+      },
+      "envelope": {
+        "revision": "r35",
+        "sha256": "9a8eb0f186ee0c99491dd761449036fdcb39ae31af28a7379935315774c05b04"
+      }
+    }
+  },
+  "packet": {
+    "digest": "b44f5b73a8a2cb5fdcc72b531f0fd85d00c1a3d5709455a65a8728ec6a422a0b",
+    "branches": [
+      {
+        "id": "token-efficient-tool-responses-ticket01-r35",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T1",
+          "T2",
+          "T3",
+          "T4",
+          "T5"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r35",
+            "sha256": "c597925cc20df317138a792f1dd4e4afc9a137f9d5c24b84dd2c1aede7538dbe"
+          },
+          "design": {
+            "revision": "r35",
+            "sha256": "127188a1aba56eaf6e98d9e87483db843a6c74fdbeb7805ae43bf57baa5beafb"
+          },
+          "tasks": {
+            "revision": "r35",
+            "sha256": "13f2b9094fe211ef27c63161440584a7a1efd6d80a106857ea727e85dd81753e"
+          },
+          "envelope": {
+            "revision": "r35",
+            "sha256": "9a8eb0f186ee0c99491dd761449036fdcb39ae31af28a7379935315774c05b04"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": null
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "pass-through — A result whose measured bytes are ≤ `delivery_ceiling_bytes` is delivered byte-identically to the pre-change SDK marshaling."
+    },
+    {
+      "id": "R2",
+      "summary": "measurement — The measure is the byte length of the SDK-marshaled complete `mcp.CallToolResult`; every occurrence in the serialized form counts; no deduplication, reordering, or pretty-printing may reduce it"
+    },
+    {
+      "id": "R3",
+      "summary": "preview — An over-ceiling retainable result is delivered on every paged surface (call_tool, directly invoked projected tools, search_tools, describe_tool) as a preview ≤ `preview_ceiling_bytes` whose `Content` is a non-empty UTF-8"
+    },
+    {
+      "id": "R4",
+      "summary": "handles — Handles are opaque `crypto/rand` values (43-char base64url), bound to one owner namespace (session + admitted epoch, or the session-less publisher namespace), and expire at `handle_ttl`"
+    },
+    {
+      "id": "R5",
+      "summary": "paging completeness — Each page is a rune-aligned valid-UTF-8 slice of the serialized retained bytes (cut points fall only on rune boundaries; SDK JSON marshaling is valid UTF-8), so concatenating all pages of a handle reproduces the retained"
+    },
+    {
+      "id": "R6",
+      "summary": "bounded retention — Retention is hard-bounded per namespace in bytes and entries, capped per entry by `max_retained_result_bytes`, and evicts FIFO / expires by TTL under those bounds"
+    },
+    {
+      "id": "R7",
+      "summary": "retired namespace — Namespace retirement leaves a store-internal tombstone with a stated lifetime (`tombstone_ttl`) and an explicit clearing condition, counted in retention accounting; wire-level retrieval of a handle from a retired namespa"
+    },
+    {
+      "id": "R8",
+      "summary": "execution facts — `is_error` and `upstream_code` are preserved identically on the preview, every page, and every terminal; paging never re-executes the upstream; bridge-side dispatch failures remain small `errorResult` responses, never pa"
+    },
+    {
+      "id": "R9",
+      "summary": "pinning — The per-entry `upstream_code` bound and rendered value, and the page/preview sizing derived from the ceilings, are fixed at retention time; a config reload of `max_upstream_code_bytes`, `delivery_ceiling_bytes` or `previ"
+    },
+    {
+      "id": "R10",
+      "summary": "terminals — Each unretainable over-ceiling outcome — per-entry cap exceeded, aggregate cap exceeded, namespace retired before commit, entropy failure at handle generation — produces a distinct typed terminal preview (no handle), bou"
+    },
+    {
+      "id": "R11",
+      "summary": "config validation — All documented relations are validated at config load with typed diagnostics; startup fails closed: (a) `preview_ceiling_bytes < delivery_ceiling_bytes`, equal rejected; (b) `max_retained_result_bytes > delivery_ceiling_"
+    },
+    {
+      "id": "R12",
+      "summary": "finite labels — Log labels `{operation}` and `{outcome}` take values only from declared enumerations; an unlisted value fails the vocabulary test; every enumerated value has at least one producing path."
+    },
+    {
+      "id": "R13",
+      "summary": "retrieval input contract — `retrieve_result` validates its input handler-side, never relying on a JSON-schema pattern for this built-in surface: a shape-invalid handle or page returns `invalid_arguments`, and a page beyond the entry's `total_pages"
+    },
+    {
+      "id": "R14",
+      "summary": "terminal field semantics — A terminal's `StructuredContent` carries `retention`, whose allowed values are exactly the four terminal codes {`result_capacity_exceeded`, `result_aggregate_capacity_exceeded`, `result_namespace_retired`, `result_entrop"
+    },
+    {
+      "id": "R15",
+      "summary": "documentation — README and the `retrieve_result` tool description document the handle/page retrieval contract (handle, page, `total_pages`, bounded preview, byte-exact page concatenation) and replace the \"complete upstream CallToolResul"
+    },
+    {
+      "id": "R16",
+      "summary": "sweep markers — Expiry and eviction install store-internal markers parallel to the tombstone: stated lifetime (`tombstone_ttl`), explicit clearing condition — cleared when the sweep observes marker age > lifetime — counted in `max_bytes"
+    }
+  ],
+  "authorization": null,
+  "reviews": null,
+  "sources": [
+    {
+      "id": "src-owner-kickoff",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
+        "sha256": "5ed67dab601ea5360d693bda93df2fdb740426e33c5a36306f19b9ba58fda52c"
+      },
+      "locator": "owner prompt: review bridge token waste, file tickets, start the first ticket (RULES.md S14 backlog authority)",
+      "recordedAt": "2026-11-25T17:42:18.344Z"
+    },
+    {
+      "id": "src-owner-auth",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/owner-authorization-r4.md",
+        "sha256": "00a05dc0eb783c63d6336e4a67d4fa1337057fae2a45205df23c88426cef02a1"
+      },
+      "locator": "owner turns: reset+two reviews; authorized; add 4 to budget; add 4 and fix the two HIGHs",
+      "recordedAt": "2026-11-26T12:56:14.263Z"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D-OD1",
+      "inputDigest": "653398516c85e6cc81703e1c1de2dc9091e97ad9decc22ab5f20376f7a2c3c7b",
+      "kind": "technical",
+      "status": "resolved",
+      "question": "Which caller-visible surface should retrievable results use?",
+      "answer": "A fourth first-class built-in tool `retrieve_result` (planner recommendation OD1-A). Existing stored schemas are unchanged and the contract stays explicit.",
+      "rationale": "RULES.md S06: adopt the conservative documented recommendation of the planning specialist rather than leaving a reversible default open.",
+      "sourceIds": [
+        "src-owner-kickoff"
+      ],
+      "affects": [
+        "R6",
+        "T3",
+        "AC6"
+      ]
+    },
+    {
+      "id": "D-OD2",
+      "inputDigest": "9231bb5069888087f5120035bb3347fb881ef9d71d5b6e0f5b66c7ea5790d8de",
+      "kind": "technical",
+      "status": "resolved",
+      "question": "What retained-result storage bounds apply by default?",
+      "answer": "Planner recommendation OD2-A: 16 entries and 8 MiB per session, 64 MiB aggregate, 8 MiB max retained result, 1h TTL.",
+      "rationale": "RULES.md S06: adopt the conservative documented recommendation of the planning specialist rather than leaving a reversible default open.",
+      "sourceIds": [
+        "src-owner-kickoff"
+      ],
+      "affects": [
+        "R9",
+        "T2",
+        "AC9"
+      ]
+    },
+    {
+      "id": "D-OD3",
+      "inputDigest": "5f182f8f37848575039eda4883055a5fe24fa4d15d0f734583927473ae7343c1",
+      "kind": "technical",
+      "status": "resolved",
+      "question": "What handle expiry policy applies?",
+      "answer": "Planner recommendation OD3-A: fixed 1h handle_ttl plus purge on session idle-retire/delete.",
+      "rationale": "RULES.md S06: adopt the conservative documented recommendation of the planning specialist rather than leaving a reversible default open.",
+      "sourceIds": [
+        "src-owner-kickoff"
+      ],
+      "affects": [
+        "R8",
+        "T2",
+        "AC8"
+      ]
+    }
+  ],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "CR1",
+      "CT1",
+      "T1",
+      "T2",
+      "T3",
+      "T4",
+      "T5"
+    ],
+    "readPaths": [
+      ".scratch/token-efficient-tool-responses/spec.md",
+      ".scratch/token-efficient-tool-responses/issues/01-bounded-results-with-paging.md",
+      ".scratch/token-efficient-tool-responses/map.md",
+      ".omp/artifacts/token-efficiency-ticket01-refinement.md",
+      ".omp/artifacts/token-efficiency-ticket01-review-packet.md",
+      ".omp/plans/decisions.md",
+      "README.md",
+      "CHANGELOG.md",
+      "docs/agents",
+      ".omp/RULES.md",
+      "internal/service",
+      "internal/config",
+      "internal/catalog",
+      "cmd/mcp-bridge",
+      "internal/observe"
+    ],
+    "writePaths": [
+      "README.md",
+      "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+      "cmd/mcp-bridge/serve_test.go",
+      "docs/logging-contract.md",
+      "internal/catalog/schema.go",
+      "internal/config/bounds.go",
+      "internal/observe/envelope.go",
+      "internal/observe/log_test.go",
+      "internal/observe/metrics.go",
+      "internal/service/bounded_delivery.go",
+      "internal/service/bounded_delivery_test.go",
+      "internal/service/direct_execution.go",
+      "internal/service/discovery_paging_test.go",
+      "internal/service/inbound.go",
+      "internal/service/progressive_concurrency_lifecycle_test.go",
+      "internal/service/result_handle.go",
+      "internal/service/result_handle_test.go",
+      "internal/service/result_measure.go",
+      "internal/service/result_measure_test.go",
+      "internal/service/result_paging_integration_test.go",
+      "internal/service/retrieve_result_test.go",
+      "internal/service/tool_metadata_test.go",
+      "internal/service/tools.go",
+      "internal/service/tools_publish_atomic_test.go"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [
+        "D-OD1",
+        "D-OD2",
+        "D-OD3"
+      ],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "CR1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/spec.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "CT1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/spec.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "critic"
+      ]
+    },
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/result_measure.go",
+          "internal/service/result_measure_test.go",
+          "internal/config/bounds.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC2",
+        "AC5"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T2",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/result_handle.go",
+          "internal/service/result_handle_test.go",
+          "internal/observe/metrics.go",
+          "internal/observe/envelope.go",
+          "internal/observe/log_test.go",
+          "docs/logging-contract.md"
+        ]
+      },
+      "acceptanceIds": [
+        "AC2",
+        "AC5"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T3",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1",
+        "T2"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/bounded_delivery.go",
+          "internal/service/bounded_delivery_test.go",
+          "internal/service/retrieve_result_test.go",
+          "internal/service/tools.go",
+          "internal/catalog/schema.go",
+          "internal/service/inbound.go",
+          "internal/service/progressive_concurrency_lifecycle_test.go",
+          "internal/service/tools_publish_atomic_test.go",
+          "internal/service/tool_metadata_test.go",
+          "cmd/mcp-bridge/serve_test.go",
+          "cmd/mcp-bridge/serve_hybrid_exposure_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC2",
+        "AC5"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T4",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T3"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/tools.go",
+          "internal/service/direct_execution.go",
+          "internal/service/discovery_paging_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC2",
+        "AC5"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T5",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T3",
+        "T4"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/result_paging_integration_test.go",
+          "internal/catalog/schema.go",
+          "README.md"
+        ]
+      },
+      "acceptanceIds": [
+        "AC2",
+        "AC5"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC1",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2",
+      "requirementIds": [
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC3",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC4",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC5",
+      "requirementIds": [
+        "R4",
+        "R16"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC6",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC7",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC8",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC9",
+      "requirementIds": [
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC10",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC11",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC12",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC13",
+      "requirementIds": [
+        "R12"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC14",
+      "requirementIds": [
+        "R12"
+      ],
+      "ownerTaskIds": [
+        "T2",
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC15",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC16",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC17",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC18",
+      "requirementIds": [
+        "R6",
+        "R16"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC19",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC20",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC21",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC22",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC23",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC24",
+      "requirementIds": [
+        "R13"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC25",
+      "requirementIds": [
+        "R13"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC26",
+      "requirementIds": [
+        "R14"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC27",
+      "requirementIds": [
+        "R15"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC28",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1",
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC29",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC30",
+      "requirementIds": [
+        "R6",
+        "R16"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.superpowers/sdd/GATE_OPEN",
+    "activationEvidenceIds": []
+  }
+}

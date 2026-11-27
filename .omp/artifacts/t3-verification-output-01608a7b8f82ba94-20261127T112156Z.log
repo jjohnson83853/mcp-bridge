@@ -1,0 +1,49 @@
+--- FAIL: TestTerminalPreviewsBounded (0.00s)
+    --- FAIL: TestTerminalPreviewsBounded/epoch_unresolved (0.00s)
+        bounded_delivery_test.go:180: terminal = map[string]interface {}{"execution_state":"executed", "is_error":true, "retention":"result_namespace_retired", "total_bytes":2539, "upstream_code":"fact"} / isError=true, want result_epoch_unresolved
+--- FAIL: TestEpochUnresolvedNoHandle (0.00s)
+    bounded_delivery_test.go:324: retention=result_namespace_retired, want result_epoch_unresolved
+--- FAIL: TestBuiltinGuidanceSnapshotCoherence (0.01s)
+    builtin_guidance_test.go:37: published builtin descriptions = map[string]string{"call_tool":"Call one indexed upstream tool through the bridge. Directly declared tools in your active tools list MUST be invoked directly instead of calling this multiplexer. Use this tool only to invoke unpinned upstream tools discovered via search_tools.", "describe_tool":"Describe one indexed tool with its exact stored schema. DO NOT use this tool to discover input schemas for tools that are already declared in your tools list; invoke those tools directly. Use this tool only to inspect tool metadata, provenance, or unpinned tools.", "search_tools":"Search the bridge's indexed tools. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: alpha__read, zeta__write. Unpinned tools remain discoverable through this tool."}; want map[string]string{"call_tool":"Call one indexed upstream tool through the bridge. Directly declared tools in your active tools list MUST be invoked directly instead of calling this multiplexer. Use this tool only to invoke unpinned upstream tools discovered via search_tools.", "describe_tool":"Describe one indexed tool with its exact stored schema. DO NOT use this tool to discover input schemas for tools that are already declared in your tools list; invoke those tools directly. Use this tool only to inspect tool metadata, provenance, or unpinned tools.", "retrieve_result":"Retrieve a retained result page by handle and page number (default 1). The response identifies total_pages; over-ceiling results arrive as a bounded preview plus a handle whose pages reconstruct the retained bytes byte-for-byte when concatenated.", "search_tools":"Search the bridge's indexed tools. The following tools are already directly declared in your tools list and MUST be invoked directly instead of searching: alpha__read, zeta__write. Unpinned tools remain discoverable through this tool."}
+--- FAIL: TestHandleRejectionUniformHandler (0.00s)
+    retrieve_result_test.go:46: rejection = map[string]interface {}{"code":"invalid_arguments", "execution_state":"unknown", "message":"result retrieval arguments are invalid", "retryable":false} / isError=true
+--- FAIL: TestToolSurfaceDescribeToolServesExactStoredSchema (0.01s)
+    tools_test.go:739: tools/call describe_tool: tools/call describe_tool: calling "tools/call": invalid exposure request
+FAIL
+FAIL github.com/jjohnson83853/mcp-bridge/internal/service 4.113s
+FAIL
+ok   github.com/jjohnson83853/mcp-bridge/internal/observe 0.206s
+ok   github.com/jjohnson83853/mcp-bridge/internal/config 0.192s
+{"schema_version":1,"level":"info","service":"mcp-bridge","event":"config_reload_applied","message":"configuration reload applied","operation":"reload","outcome":"success","config_revision":"e6c61cd20dc160a213349ec3eb07b75769f817b3eeec12286bc1511c3479e219","trigger":"trigger"}
+{"schema_version":1,"level":"info","service":"mcp-bridge","event":"config_reload_applied","message":"configuration reload applied","operation":"reload","outcome":"success","config_revision":"f7a0f608a07d2ff2d753a7ff706549f51ddf3651ebd83c29241ad712298cdea5","trigger":"trigger"}
+{"schema_version":1,"level":"info","service":"mcp-bridge","event":"config_reload_applied","message":"configuration reload applied","operation":"reload","outcome":"success","config_revision":"e01468151e0b6e13f08b2e041c79bf13b6ed34d9bbda5225f442d1123791d2c6","trigger":"trigger"}
+{"schema_version":1,"level":"info","service":"mcp-bridge","event":"config_reload_applied","message":"configuration reload applied","operation":"reload","outcome":"success","config_revision":"247ad1733476c92fd9d6854579073c75f33710cbdb68a350dca5505bc07be880","trigger":"trigger"}
+{"schema_version":1,"level":"info","service":"mcp-bridge","event":"config_reload_applied","message":"configuration reload applied","operation":"reload","outcome":"success","config_revision":"8bec6fcdcb59aec101c49aa78e43febd07fdd84b929621bdcb93d2627dab93a5","trigger":"trigger"}
+{"schema_version":1,"level":"info","service":"mcp-bridge","event":"config_reload_applied","message":"configuration reload applied","operation":"reload","outcome":"success","config_revision":"74b04987d419d0eedade98ab9c4c0256ba94124d71aed339f58ee4b17c7a128f","trigger":"trigger"}
+{"schema_version":1,"level":"info","service":"mcp-bridge","event":"config_reload_applied","message":"configuration reload applied","operation":"reload","outcome":"success","config_revision":"50dfff79b4656bb01a9e7da8eabe4b0275fbba16965c4c46535fd0f274ad96ba","trigger":"trigger"}
+--- FAIL: TestServeHybridProgressiveRevealLifecycle (0.18s)
+    --- FAIL: TestServeHybridProgressiveRevealLifecycle/real-wire_inventory_pages_and_stale_cursor_rejection (0.03s)
+        serve_hybrid_progressive_reveal_test.go:395: tools/list traversal returned unexpected tool "retrieve_result"
+    --- FAIL: TestServeHybridProgressiveRevealLifecycle/concurrent_first_requests_and_DELETE_owner_barrier (0.04s)
+        serve_hybrid_progressive_reveal_lifecycle_test.go:391: tools/list included unexpected target "retrieve_result"
+        serve_hybrid_progressive_reveal_lifecycle_test.go:426: tools/list included unexpected target "retrieve_result"
+        serve_hybrid_progressive_reveal_lifecycle_test.go:428: tools/list included unexpected target "retrieve_result"
+        serve_hybrid_progressive_reveal_lifecycle_test.go:447: tools/list included unexpected target "retrieve_result"
+    --- FAIL: TestServeHybridProgressiveRevealLifecycle/lazy_idle_retirement_removes_owner_cursors_and_interests (0.04s)
+        serve_hybrid_progressive_reveal_lifecycle_test.go:492: tools/list included unexpected target "retrieve_result"
+--- FAIL: TestServeHybridProgressiveRevealPages (0.03s)
+    serve_hybrid_progressive_reveal_test.go:395: tools/list traversal returned unexpected tool "retrieve_result"
+{"schema_version":1,"level":"info","service":"mcp-bridge","event":"config_reload_applied","message":"configuration reload applied","operation":"reload","outcome":"success","config_revision":"12002ba6ee60cee00afab8dcd75848e532021937e61b036ebe27b0f970b35968","trigger":"trigger"}
+{"schema_version":1,"level":"info","service":"mcp-bridge","event":"config_reload_applied","message":"configuration reload applied","operation":"reload","outcome":"success","config_revision":"d85dc01fb520992dac70fbaafc4dda93b10d4ee5e82a8114934d6ab216e5287c","trigger":"trigger"}
+--- FAIL: TestInboundObservabilityWire (0.08s)
+    serve_oauth_test.go:450: OpenAI exposed_tools = 4; want 3
+    serve_oauth_test.go:501: recovery exposed_tools = 4; want 3
+{"schema_version":1,"level":"info","service":"mcp-bridge","event":"config_reload_applied","message":"configuration reload applied","operation":"reload","outcome":"success","config_revision":"1a78b22d87c36faff19a5aabb5a086e8655dd8c6aba916886b51b3db22d2b3b4","trigger":"trigger"}
+FAIL
+FAIL github.com/jjohnson83853/mcp-bridge/cmd/mcp-bridge 19.700s
+FAIL
+go build ./...: exit 0
+go test ./internal/service/ -count=1: exit 1
+go test ./internal/observe/ -count=1: exit 0
+go test ./internal/config/ -count=1: exit 0
+go test ./cmd/mcp-bridge/ -count=1: exit 1

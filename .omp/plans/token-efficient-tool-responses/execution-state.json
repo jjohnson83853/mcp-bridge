@@ -1,35 +1,35 @@
 {
   "schemaVersion": 2,
   "feature": "token-efficient-tool-responses",
-  "revision": "r5",
+  "revision": "r34",
   "projectRoot": "/home/opencode/projects/default/mcp-bridge",
   "spec": {
     "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
-    "sha256": "85fcc4c9c3a4c225fa3195348df35b59f9b2507acaf0245bf7bebd2500c37449",
+    "sha256": "6d1fca40c612a7b071584aa191a769f2823b1196e9d3606a0523f6770c1d8d74",
     "sectionBindings": {
       "requirements": {
-        "revision": "r5",
-        "sha256": "7fb7113c45b4f5d73e00d5e6b7cb02415fc0e6c42249279b3439bd5b9edcfde1"
+        "revision": "r34",
+        "sha256": "247e258453e9d75933f794c2d7a58c65776798ddab720aee7de3604c426cca3a"
       },
       "design": {
-        "revision": "r5",
-        "sha256": "0a2ff0778fe53e36aa8a518b1d704505943a4a16092f00f17010f38833db4505"
+        "revision": "r34",
+        "sha256": "3ee856b5bea589d70a897178bbf687b530cf0a4b4fba239ed5a2475eb641fc35"
       },
       "tasks": {
-        "revision": "r5",
-        "sha256": "2fac4488f09e0461ec571b372f7804b399c605269324a191ceda9b445ef93838"
+        "revision": "r34",
+        "sha256": "d96c20e49127dcfc4091ec5758e69db1ba4140f41ee7fb8a9c08e38e014932cd"
       },
       "envelope": {
-        "revision": "r5",
-        "sha256": "acec4babbdffdd3675042097d0d34f412a56cd43dfd134e1bf8636b06daaa883"
+        "revision": "r34",
+        "sha256": "9a8eb0f186ee0c99491dd761449036fdcb39ae31af28a7379935315774c05b04"
       }
     }
   },
   "packet": {
-    "digest": "6905d4d45e14c1e5f6750702c7200add9ea0665b1d7832f11ab18ed53f7647af",
+    "digest": "a1e904c4dad729f1e79d3ab796f41d4d845037414df808dfe065762ac6d1eb1d",
     "branches": [
       {
-        "id": "token-efficient-tool-responses-ticket01-r5",
+        "id": "token-efficient-tool-responses-ticket01-r34",
         "answerIds": [],
         "taskIds": [
           "CR1",
@@ -38,27 +38,25 @@
           "T2",
           "T3",
           "T4",
-          "T5",
-          "T6",
-          "T7"
+          "T5"
         ],
         "envelopeId": "env-1",
         "sectionBindings": {
           "requirements": {
-            "revision": "r5",
-            "sha256": "7fb7113c45b4f5d73e00d5e6b7cb02415fc0e6c42249279b3439bd5b9edcfde1"
+            "revision": "r34",
+            "sha256": "247e258453e9d75933f794c2d7a58c65776798ddab720aee7de3604c426cca3a"
           },
           "design": {
-            "revision": "r5",
-            "sha256": "0a2ff0778fe53e36aa8a518b1d704505943a4a16092f00f17010f38833db4505"
+            "revision": "r34",
+            "sha256": "3ee856b5bea589d70a897178bbf687b530cf0a4b4fba239ed5a2475eb641fc35"
           },
           "tasks": {
-            "revision": "r5",
-            "sha256": "2fac4488f09e0461ec571b372f7804b399c605269324a191ceda9b445ef93838"
+            "revision": "r34",
+            "sha256": "d96c20e49127dcfc4091ec5758e69db1ba4140f41ee7fb8a9c08e38e014932cd"
           },
           "envelope": {
-            "revision": "r5",
-            "sha256": "acec4babbdffdd3675042097d0d34f412a56cd43dfd134e1bf8636b06daaa883"
+            "revision": "r34",
+            "sha256": "9a8eb0f186ee0c99491dd761449036fdcb39ae31af28a7379935315774c05b04"
           }
         }
       }
@@ -74,51 +72,67 @@
   "requirements": [
     {
       "id": "R1",
-      "summary": "Over-ceiling results deliver a bounded preview (<=1536 bytes) plus an opaque handle reporting total_bytes and paging_required"
+      "summary": "pass-through — A result whose measured bytes are ≤ `delivery_ceiling_bytes` is delivered byte-identically to the pre-change SDK marshaling."
     },
     {
       "id": "R2",
-      "summary": "Results at or below the 8192-byte ceiling are delivered byte-identically to today; 8193 pages"
+      "summary": "measurement — The measure is the byte length of the SDK-marshaled complete `mcp.CallToolResult`; every occurrence in the serialized form counts; no deduplication, reordering, or pretty-printing may reduce it"
     },
     {
       "id": "R3",
-      "summary": "Each page is <=8192 serialized bytes and reports page, total_pages, remaining_pages, total_bytes, remaining_bytes"
+      "summary": "preview — An over-ceiling retainable result is delivered on every paged surface (call_tool, directly invoked projected tools, search_tools, describe_tool) as a preview ≤ `preview_ceiling_bytes` whose `Content` is a non-empty UTF-8"
     },
     {
       "id": "R4",
-      "summary": "Concatenated pages reproduce the unbounded serialized result byte-exactly and are stable until expiry or eviction"
+      "summary": "handles — Handles are opaque `crypto/rand` values (43-char base64url), bound to one owner namespace (session + admitted epoch, or the session-less publisher namespace), and expire at `handle_ttl`"
     },
     {
       "id": "R5",
-      "summary": "Pages are valid UTF-8 across boundaries and the ceiling measures post-escape serialized bytes"
+      "summary": "paging completeness — Each page is a rune-aligned valid-UTF-8 slice of the serialized retained bytes (cut points fall only on rune boundaries; SDK JSON marshaling is valid UTF-8), so concatenating all pages of a handle reproduces the retained"
     },
     {
       "id": "R6",
-      "summary": "The retrieval surface, parameters and preview/page contract are documented and require no output-shape prediction"
+      "summary": "bounded retention — Retention is hard-bounded per namespace in bytes and entries, capped per entry by `max_retained_result_bytes`, and evicts FIFO / expires by TTL under those bounds"
     },
     {
       "id": "R7",
-      "summary": "Handles are crypto-random, content-independent and incarnation-bound; unknown, tampered or foreign handles are rejected indistinguishably"
+      "summary": "retired namespace — Namespace retirement leaves a store-internal tombstone with a stated lifetime (`tombstone_ttl`) and an explicit clearing condition, counted in retention accounting; wire-level retrieval of a handle from a retired namespa"
     },
     {
       "id": "R8",
-      "summary": "Expired and evicted handles fail with distinct typed codes, never an empty or partial success"
+      "summary": "execution facts — `is_error` and `upstream_code` are preserved identically on the preview, every page, and every terminal; paging never re-executes the upstream; bridge-side dispatch failures remain small `errorResult` responses, never pa"
     },
     {
       "id": "R9",
-      "summary": "Retained storage is bounded per session and in aggregate with deterministic eviction and no cross-session eviction"
+      "summary": "pinning — The per-entry `upstream_code` bound and rendered value, and the page/preview sizing derived from the ceilings, are fixed at retention time; a config reload of `max_upstream_code_bytes`, `delivery_ceiling_bytes` or `previ"
     },
     {
       "id": "R10",
-      "summary": "Oversized isError results keep error status and code; bridge dispatch failures keep their small typed shape"
+      "summary": "terminals — Each unretainable over-ceiling outcome — per-entry cap exceeded, aggregate cap exceeded, namespace retired before commit, entropy failure at handle generation — produces a distinct typed terminal preview (no handle), bou"
     },
     {
       "id": "R11",
-      "summary": "The ceiling applies identically to call_tool, directly invoked projected tools, search_tools and describe_tool"
+      "summary": "config validation — All documented relations are validated at config load with typed diagnostics; startup fails closed: (a) `preview_ceiling_bytes < delivery_ceiling_bytes`, equal rejected; (b) `max_retained_result_bytes > delivery_ceiling_"
     },
     {
       "id": "R12",
-      "summary": "Durable behavioral tests cover R1-R11 including boundary, reconstruction, UTF-8, isolation, expiry, eviction and serialization bounds"
+      "summary": "finite labels — Log labels `{operation}` and `{outcome}` take values only from declared enumerations; an unlisted value fails the vocabulary test; every enumerated value has at least one producing path."
+    },
+    {
+      "id": "R13",
+      "summary": "retrieval input contract — `retrieve_result` validates its input handler-side, never relying on a JSON-schema pattern for this built-in surface: a shape-invalid handle or page returns `invalid_arguments`, and a page beyond the entry's `total_pages"
+    },
+    {
+      "id": "R14",
+      "summary": "terminal field semantics — A terminal's `StructuredContent` carries `retention`, whose allowed values are exactly the four terminal codes {`result_capacity_exceeded`, `result_aggregate_capacity_exceeded`, `result_namespace_retired`, `result_entrop"
+    },
+    {
+      "id": "R15",
+      "summary": "documentation — README and the `retrieve_result` tool description document the handle/page retrieval contract (handle, page, `total_pages`, bounded preview, byte-exact page concatenation) and replace the \"complete upstream CallToolResul"
+    },
+    {
+      "id": "R16",
+      "summary": "sweep markers — Expiry and eviction install store-internal markers parallel to the tombstone: stated lifetime (`tombstone_ttl`), explicit clearing condition — cleared when the sweep observes marker age > lifetime — counted in `max_bytes"
     }
   ],
   "authorization": null,
@@ -129,10 +143,20 @@
       "kind": "user-message",
       "artifact": {
         "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
-        "sha256": "b2502c19180b6a53bd3c1565861e4776c8a0b3d62c414e11065d83de1cbcf0fd"
+        "sha256": "5ed67dab601ea5360d693bda93df2fdb740426e33c5a36306f19b9ba58fda52c"
       },
       "locator": "owner prompt: review bridge token waste, file tickets, start the first ticket (RULES.md S14 backlog authority)",
       "recordedAt": "2026-11-25T17:42:18.344Z"
+    },
+    {
+      "id": "src-owner-auth",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/owner-authorization-r4.md",
+        "sha256": "00a05dc0eb783c63d6336e4a67d4fa1337057fae2a45205df23c88426cef02a1"
+      },
+      "locator": "owner turns: reset+two reviews; authorized; add 4 to budget; add 4 and fix the two HIGHs",
+      "recordedAt": "2026-11-26T12:56:14.263Z"
     }
   ],
   "decisions": [
@@ -198,9 +222,7 @@
       "T2",
       "T3",
       "T4",
-      "T5",
-      "T6",
-      "T7"
+      "T5"
     ],
     "readPaths": [
       ".scratch/token-efficient-tool-responses/spec.md",
@@ -220,31 +242,30 @@
       "internal/observe"
     ],
     "writePaths": [
-      "internal/service/result_measure.go",
-      "internal/service/result_handle.go",
-      "internal/service/bounded_delivery.go",
-      "internal/service/tools.go",
-      "internal/service/direct_execution.go",
-      "internal/service/session_exposure.go",
-      "internal/service/inbound.go",
-      "internal/config",
-      "internal/catalog/schema.go",
       "README.md",
-      "CHANGELOG.md",
-      "internal/service/tools_test.go",
-      "internal/service/progressive_session_test.go",
-      "internal/service/progressive_concurrency_lifecycle_test.go",
       "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
-      "cmd/mcp-bridge/serve_hybrid_reload_test.go",
-      "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
-      "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
-      "cmd/mcp-bridge/serve_oauth_test.go",
-      ".omp/artifacts/coverage-ticket01.out",
-      "internal/observe/metrics.go",
-      "internal/service/tool_metadata_test.go",
-      "internal/service/tools_publish_atomic_test.go",
       "cmd/mcp-bridge/serve_test.go",
-      "docs/logging-contract.md"
+      "docs/logging-contract.md",
+      "internal/catalog/schema.go",
+      "internal/config/bounds.go",
+      "internal/observe/envelope.go",
+      "internal/observe/log_test.go",
+      "internal/observe/metrics.go",
+      "internal/service/bounded_delivery.go",
+      "internal/service/bounded_delivery_test.go",
+      "internal/service/direct_execution.go",
+      "internal/service/discovery_paging_test.go",
+      "internal/service/inbound.go",
+      "internal/service/progressive_concurrency_lifecycle_test.go",
+      "internal/service/result_handle.go",
+      "internal/service/result_handle_test.go",
+      "internal/service/result_measure.go",
+      "internal/service/result_measure_test.go",
+      "internal/service/result_paging_integration_test.go",
+      "internal/service/retrieve_result_test.go",
+      "internal/service/tool_metadata_test.go",
+      "internal/service/tools.go",
+      "internal/service/tools_publish_atomic_test.go"
     ],
     "allowedEffects": [
       "read",
@@ -325,7 +346,7 @@
         "paths": [
           "internal/service/result_measure.go",
           "internal/service/result_measure_test.go",
-          "internal/config"
+          "internal/config/bounds.go"
         ]
       },
       "acceptanceIds": [
@@ -350,16 +371,15 @@
         "paths": [
           "internal/service/result_handle.go",
           "internal/service/result_handle_test.go",
-          "internal/config",
-          "internal/service/inbound.go",
-          "internal/observe/metrics.go"
+          "internal/observe/metrics.go",
+          "internal/observe/envelope.go",
+          "internal/observe/log_test.go",
+          "docs/logging-contract.md"
         ]
       },
       "acceptanceIds": [
-        "AC7",
-        "AC8",
-        "AC9",
-        "AC14"
+        "AC2",
+        "AC5"
       ],
       "evidenceIds": [],
       "agentRoles": [
@@ -371,37 +391,29 @@
       "stage": "implementation",
       "status": "pending",
       "blockedBy": [
+        "T1",
         "T2"
       ],
       "requires": [],
       "effects": {
         "kind": "write",
         "paths": [
-          "internal/catalog/schema.go",
-          "internal/service/tools.go",
-          "internal/service/session_exposure.go",
+          "internal/service/bounded_delivery.go",
+          "internal/service/bounded_delivery_test.go",
           "internal/service/retrieve_result_test.go",
-          "internal/service/tools_test.go",
-          "internal/service/progressive_session_test.go",
+          "internal/service/tools.go",
+          "internal/catalog/schema.go",
+          "internal/service/inbound.go",
           "internal/service/progressive_concurrency_lifecycle_test.go",
-          "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
-          "cmd/mcp-bridge/serve_hybrid_reload_test.go",
-          "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
-          "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
-          "cmd/mcp-bridge/serve_oauth_test.go",
-          "internal/service/tool_metadata_test.go",
           "internal/service/tools_publish_atomic_test.go",
-          "cmd/mcp-bridge/serve_test.go"
+          "internal/service/tool_metadata_test.go",
+          "cmd/mcp-bridge/serve_test.go",
+          "cmd/mcp-bridge/serve_hybrid_exposure_test.go"
         ]
       },
       "acceptanceIds": [
-        "AC3",
-        "AC4",
-        "AC6",
-        "AC7",
-        "AC8",
-        "AC15",
-        "AC17"
+        "AC2",
+        "AC5"
       ],
       "evidenceIds": [],
       "agentRoles": [
@@ -413,27 +425,20 @@
       "stage": "implementation",
       "status": "pending",
       "blockedBy": [
-        "T1",
-        "T2",
         "T3"
       ],
       "requires": [],
       "effects": {
         "kind": "write",
         "paths": [
-          "internal/service/bounded_delivery.go",
-          "internal/service/bounded_delivery_test.go",
           "internal/service/tools.go",
-          "internal/service/direct_execution.go"
+          "internal/service/direct_execution.go",
+          "internal/service/discovery_paging_test.go"
         ]
       },
       "acceptanceIds": [
-        "AC1",
         "AC2",
-        "AC10",
-        "AC11",
-        "AC13",
-        "AC16"
+        "AC5"
       ],
       "evidenceIds": [],
       "agentRoles": [
@@ -445,8 +450,6 @@
       "stage": "implementation",
       "status": "pending",
       "blockedBy": [
-        "T1",
-        "T2",
         "T3",
         "T4"
       ],
@@ -454,65 +457,14 @@
       "effects": {
         "kind": "write",
         "paths": [
-          "internal/service/tools.go",
-          "internal/service/discovery_bounded_test.go"
+          "internal/service/result_paging_integration_test.go",
+          "internal/catalog/schema.go",
+          "README.md"
         ]
       },
       "acceptanceIds": [
-        "AC11",
         "AC2",
-        "AC13"
-      ],
-      "evidenceIds": [],
-      "agentRoles": [
-        "engineer"
-      ]
-    },
-    {
-      "id": "T6",
-      "stage": "implementation",
-      "status": "pending",
-      "blockedBy": [
-        "T3",
-        "T4",
-        "T5"
-      ],
-      "requires": [],
-      "effects": {
-        "kind": "write",
-        "paths": [
-          "README.md",
-          "CHANGELOG.md",
-          "docs/logging-contract.md"
-        ]
-      },
-      "acceptanceIds": [
-        "AC6"
-      ],
-      "evidenceIds": [],
-      "agentRoles": [
-        "engineer"
-      ]
-    },
-    {
-      "id": "T7",
-      "stage": "implementation",
-      "status": "pending",
-      "blockedBy": [
-        "T2",
-        "T3",
-        "T4",
-        "T5"
-      ],
-      "requires": [],
-      "effects": {
-        "kind": "write",
-        "paths": [
-          ".omp/artifacts/coverage-ticket01.out"
-        ]
-      },
-      "acceptanceIds": [
-        "AC12"
+        "AC5"
       ],
       "evidenceIds": [],
       "agentRoles": [
@@ -528,7 +480,7 @@
         "R1"
       ],
       "ownerTaskIds": [
-        "T4"
+        "T3"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -541,9 +493,7 @@
         "R2"
       ],
       "ownerTaskIds": [
-        "T1",
-        "T4",
-        "T5"
+        "T1"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -569,7 +519,7 @@
         "R4"
       ],
       "ownerTaskIds": [
-        "T3"
+        "T2"
       ],
       "method": "test",
       "requiredEvidenceKinds": [
@@ -579,7 +529,309 @@
     {
       "id": "AC5",
       "requirementIds": [
+        "R4",
+        "R16"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC6",
+      "requirementIds": [
         "R5"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC7",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC8",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC9",
+      "requirementIds": [
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC10",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC11",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC12",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC13",
+      "requirementIds": [
+        "R12"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC14",
+      "requirementIds": [
+        "R12"
+      ],
+      "ownerTaskIds": [
+        "T2",
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC15",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC16",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC17",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC18",
+      "requirementIds": [
+        "R6",
+        "R16"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC19",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC20",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC21",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC22",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC23",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC24",
+      "requirementIds": [
+        "R13"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC25",
+      "requirementIds": [
+        "R13"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC26",
+      "requirementIds": [
+        "R14"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC27",
+      "requirementIds": [
+        "R15"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC28",
+      "requirementIds": [
+        "R11"
       ],
       "ownerTaskIds": [
         "T1",
@@ -591,144 +843,11 @@
       ]
     },
     {
-      "id": "AC6",
-      "requirementIds": [
-        "R6"
-      ],
-      "ownerTaskIds": [
-        "T3",
-        "T6"
-      ],
-      "method": "inspection",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC7",
-      "requirementIds": [
-        "R7"
-      ],
-      "ownerTaskIds": [
-        "T2",
-        "T3"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC8",
-      "requirementIds": [
-        "R8"
-      ],
-      "ownerTaskIds": [
-        "T2",
-        "T3"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC9",
+      "id": "AC29",
       "requirementIds": [
         "R9"
       ],
       "ownerTaskIds": [
-        "T2"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC10",
-      "requirementIds": [
-        "R10"
-      ],
-      "ownerTaskIds": [
-        "T4"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC11",
-      "requirementIds": [
-        "R11"
-      ],
-      "ownerTaskIds": [
-        "T4",
-        "T5"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC12",
-      "requirementIds": [
-        "R12",
-        "R1",
-        "R2",
-        "R3",
-        "R4",
-        "R5",
-        "R6",
-        "R7",
-        "R8",
-        "R9",
-        "R10",
-        "R11"
-      ],
-      "ownerTaskIds": [
-        "T7"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC13",
-      "requirementIds": [
-        "R1"
-      ],
-      "ownerTaskIds": [
-        "T4",
-        "T5"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC14",
-      "requirementIds": [
-        "R7"
-      ],
-      "ownerTaskIds": [
-        "T2"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC15",
-      "requirementIds": [
-        "R7"
-      ],
-      "ownerTaskIds": [
         "T3"
       ],
       "method": "test",
@@ -737,22 +856,10 @@
       ]
     },
     {
-      "id": "AC16",
+      "id": "AC30",
       "requirementIds": [
-        "R10"
-      ],
-      "ownerTaskIds": [
-        "T4"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    },
-    {
-      "id": "AC17",
-      "requirementIds": [
-        "R7"
+        "R6",
+        "R16"
       ],
       "ownerTaskIds": [
         "T3"

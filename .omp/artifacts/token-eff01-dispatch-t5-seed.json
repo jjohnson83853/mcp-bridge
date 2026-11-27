@@ -1,0 +1,36 @@
+{
+  "intent": "ImplementTicket01T5 (engineer; README R15 anchors + integration oracles in one new test file)",
+  "instructions": "T5: integration oracles plus the R15 documentation. Edit exactly two files: internal/service/result_paging_integration_test.go (new) and README.md. Nothing else \u2014 the request's wider declared effect set exists only to match canonical state; do not touch internal/catalog/schema.go, cmd/mcp-bridge/serve.go or internal/service/tools.go.\n\nREADME.md edits (only these; both anchors must end up positively asserting the four-tool inventory and the qualified promise):\n\n1. `## Tool surface` (line ~277):\n   - \"One MCP server, three tools:\" -> \"One MCP server, four tools:\"\n   - add a table row: | `retrieve_result` | page through a retained over-ceiling result by handle; reports `total_pages` |\n   - \"All three declare standard MCP tool annotations\" -> \"All four declare ...\"\n   - add annotation row: | `retrieve_result` | true | false | true | false |\n2. `### Progressive metadata reveal and session projections` (line ~441): \"exactly the three bridge built-ins (`search_tools`, `describe_tool`, and `call_tool`) plus configured pins\" -> the four built-ins incl. `retrieve_result`, and state that `retrieve_result` is not exposure-gated: it registers like the other built-ins and resolves its owner handler-side.\n3. R15 promise qualification \u2014 both unqualified sentences must go:\n   - line ~325 \"`call_tool` keeps its outer provenance envelope and complete upstream result without duplicating discovery-health fields.\" -> keep the envelope/pruning statement, but state that an over-ceiling result is delivered as a bounded preview plus a handle whose pages reconstruct the retained bytes byte-for-byte.\n   - line ~468 \"`structuredContent.upstream_result` is the complete original `CallToolResult` (content blocks, structured content, `isError`, metadata).\" -> qualify: that is the shape at or below the delivery ceiling; above it the bridge returns a bounded preview plus a handle, and `retrieve_result` pages reconstruct the retained bytes byte-for-byte.\n   The literal phrases \"complete upstream result\" and \"complete original `CallToolResult`\" must not survive anywhere in either anchor section.\n\ninternal/service/result_paging_integration_test.go (new, package service) must contain:\nA. TestReadmeInventoryAndPromise \u2014 read README.md from the repo root (package dir is internal/service, so \"../../README.md\"), split it at the two anchor headings, and positively assert in BOTH sections: the four tool names (search_tools, describe_tool, call_tool, retrieve_result) appear; the qualified promise terms appear (handle, page, total_pages, bounded preview, and byte-exact/byte-for-byte reconstruction); neither forbidden phrase above appears.\nB. End-to-end multi-page retrieval incl. expiry mid-sequence: an over-ceiling result producing >= 3 pages; page 1 and a repeat of page 1 byte-identical; then advance an injected clock past handle_ttl and request the next page -> typed result_expired rejection in section-3's pinned shape (isError true, exactly one TextContent, StructuredContent carrying the code, no page content/metadata/handle).\nC. Per-surface handle-retrieval round-trip across producers (call_tool, direct invocation, search_tools, describe_tool): the issued handle's pages concatenate to that surface's own independent golden literal, and re-retrieving any page is byte-identical. Reuse the existing package harnesses; do not reimplement surface wiring.\nD. Single-execution invocation-count assertion: the upstream backend is called exactly once per produced result, asserted across a full multi-page retrieval and again across the expiry-mid-sequence case.\nTo drive the injected clock you may install a resultStore built with an injected now (as newDeliveryOracle does) on the ToolSurface under test; production code must not change.\n\nVERIFY, report verbatim exit codes and output:\n  go build ./...\n  go vet ./internal/service/\n  gofmt -l internal/service/result_paging_integration_test.go\n  go test ./internal/service/ -run 'TestReadmeInventoryAndPromise|TestRetained|TestPerSurface|TestSingleExecution' -count=1\n  go test ./... \nWrite COMPLETED receipt to .omp/artifacts/receipt_T5.json (task_id T5, evidence entries with command/phase/exit_code/output) only when every command exits 0 and gofmt lists nothing; otherwise INCOMPLETE with the exact failing output.\n",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses",
+    "revision": "r40",
+    "requests": [
+      {
+        "name": "ImplementTicket01T5",
+        "taskId": "T5",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/service/result_paging_integration_test.go",
+            "internal/catalog/schema.go",
+            "README.md",
+            "cmd/mcp-bridge/serve.go",
+            "internal/service/tools.go"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ImplementTicket01T5",
+      "agent": "engineer",
+      "solutionSpace": "one design: README wording fixed at the two anchors and four named integration oracles",
+      "task": "Update the two README anchors for four tools plus the qualified retrieval promise, add TestReadmeInventoryAndPromise and the integration oracles in internal/service/result_paging_integration_test.go, run the five checks, write the T5 receipt when green."
+    }
+  ]
+}

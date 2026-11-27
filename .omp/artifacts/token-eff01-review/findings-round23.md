@@ -1,0 +1,21 @@
+VERDICT: REVISER
+Spec review, repair pass (declared r23, on-disk `.scratch/token-efficient-tool-responses/spec.md`); prior ledgers findings-round22 / findings-critic-r22. C6's semantics are now closed; its oracle placement is not.
+
+**F1 [HIGH][dependency-incoherence] R12/AC18; §5 AC18, §6 T2/T3/T4/T5.** AC18 binds dispatch-side deltas (1,3,4,6) and `result_capacity_exceeded` real emission to T2/T3 oracles, but those behaviors first exist in the T4/T5 seams; T4 depends on T3. Consequence: T2 (deps T1) and T3 fail their own listed validation before T4 exists, and T4→T3→T4 is a cycle; the only escape is dropping the dispatch half of the delta table, reopening C6. Each AC18 delta/emission oracle must be owned by the task introducing that behavior (dispatch Δ in T4/T5, retrieval Δ in T3), or the table must move to T7.
+
+**F2 [MEDIUM][statement-contradiction] R1 no-owner terminal, T4; §4.0 matrix, §4.6, §7, T6.** The new session-ful `call_tool` epoch rejection returns `catalog_changed`/"the catalog revision changed" when no revision changed, contradicting §7 "no change to catalog-revision … semantics" and §4.6 "Catalog-revision checks untouched"; T6's "complete" claim list also omits README's catalog_changed→refresh-discovery promise. Consequence: a caller is told a false cause and given a retry that cannot succeed, and a documented code silently gains a second meaning. Either authorize the taxonomy change with a named doc owner or forbid reusing that code here.
+
+**F3 [MEDIUM][ac-gap] R1/R12, AC13; §4.2 terminal shape, §5 AC1/AC13.** R1 bounds each unretainable terminal preview (≤ preview ceiling, non-empty UTF-8 prefix, preserved is_error/upstream_code), but AC13 asserts only `retention` + no handle and AC1 is scoped to the retainable branch. Consequence: a terminal preview shipping all of a >8 MiB S, or an empty prefix, passes every named oracle — the exact unbounded-delivery harm this ticket exists to prevent. Pin the terminal-preview bound/UTF-8/error preservation in AC13.
+
+**F4 [LOW] R9; §4.5 quantified bounds, §11-OD2.** `(max_sessions+1)×16MiB = 68,719,493,120` is unattainable for any integer max_sessions (4096→68,719,476,736; 4097→68,736,253,952), `max_sessions` is absent from the validated bounds list, and the 1 MiB/namespace tombstone allowance is omitted; worst-case exposure is unverifiable (prior L1 open).
+
+**F5 [LOW] R12/T2; §3 "Verified facts", §6 T2.** §3 states observe.Metrics already reaches the surface via the `ToolSurfaceConfig` literal at serve.go:164, but that struct (tools.go:29-40) has no `Metrics` field and T2's own file list adds it; required injection work reads as proven (prior L4 open).
+
+**F6 [LOW] R6/AC6/T6; §6 T6.** README anchors `:288`/`:337`/`:470` are stale (claims at 287/332/468), and `` ! grep -q '`CallToolResult` (content blocks' `` cannot match because README wraps at 468/469, so that negative check is a no-op; line edits mis-target (prior L5 open).
+
+**Verified adequate.** 1) Measured form is the complete `CallToolResult` via SDK `MarshalJSON`, duplicated forms counted per copy, `total_bytes=len(S)`, preview and pages use that same form (AC1–3). 2) Termination: preview ≤1536; pages ≤ pinned ceiling and exempt from the current one; `retrieve_result` never paged; envelope+6<ceiling guarantees progress. 3) Handles: 32 B `crypto/rand`, owner=(sessionID,epoch), monotonic `nextEpoch`, one zero-byte `invalid_handle`; reused-ID and retired-epoch cases rejected. 4) Store: hard per-namespace bytes/entries, FIFO own-only eviction, advisory aggregate, bounded tombstones, retirement-vs-retention under one admission lock, complete-page-or-typed-error. 5) Errors: isError/is_error/upstream_code on preview and every page; `errorResult` never paged. 6) Compatibility: own `additionalProperties:false` schema (43-char base64url, page≥1), description tokens, no `full`. 7) Regression: post-`commitDiscovery` seam, §4.6 invariants, 11-file surface inventory. 8) Ledger otherwise acyclic; T1–T7 carry RED/files/ACs/commands and no sibling-ticket dependency. 9) Changed and preserved README claims are named (anchors per F6).
+
+Limits: read-only; no shell/test/digest checks; reviewed the declared-r23 bytes.
+
+## Recommendation
+REQUEST CHANGES

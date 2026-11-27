@@ -1,0 +1,17 @@
+# T4 acceptance (token-efficient-tool-responses r40), recorded 2026-11-27T12:07:58Z
+$ go build ./...
+exit=0
+$ go vet ./internal/service/ ./internal/observe/
+exit=0
+$ go test ./internal/service/ -run 'TestPagingAllSurfaces|TestSmallResultPassThroughByteIdentical|TestLogLabelProducers' -count=1
+ok  	github.com/jjohnson83853/mcp-bridge/internal/service	0.058s
+exit=0
+$ go test ./internal/service/ -count=1
+ok  	github.com/jjohnson83853/mcp-bridge/internal/service	3.127s
+exit=0
+$ go test ./internal/observe/ -count=1
+ok  	github.com/jjohnson83853/mcp-bridge/internal/observe	0.134s
+exit=0
+$ go test ./cmd/mcp-bridge/ -count=1
+ok  	github.com/jjohnson83853/mcp-bridge/cmd/mcp-bridge	18.899s
+exit=0

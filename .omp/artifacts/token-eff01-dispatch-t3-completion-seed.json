@@ -1,0 +1,50 @@
+{
+  "intent": "ImplementTicket01T3Completion (engineer; bounded: exact files and edits given, <=40 reads before first edit)",
+  "instructions": "T3 has two verified gaps. Fix exactly these; no redesign, no new files outside the write roots.\n\nGAP A \u2014 retention-namespace retirement is never wired (AC43 / R7). resultStore.retire has no production caller; the three inbound trigger paths only call ToolSurface.sweepRetainedResults (expiry/marker sweep), so a retired namespace keeps its records and installs no tombstone.\n\nA1. internal/service/bounded_delivery.go \u2014 add, next to sweepRetainedResults (line ~265):\nfunc (t *ToolSurface) retireRetainedResultNamespace(owner projectionOwner) {\n\tif owner.kind != projectionSession || owner.epoch == 0 {\n\t\treturn\n\t}\n\tt.resultMu.Lock()\n\tdefer t.resultMu.Unlock()\n\tif t.results == nil {\n\t\treturn\n\t}\n\tt.results.retire(resultNamespace{sessionID: owner.sessionID, epoch: strconv.FormatUint(owner.epoch, 10)})\n}\nComment it as R7's release-funded retirement trigger: a namespace holding no live record completes with zero store effect inside retire.\n\nA2. internal/service/inbound.go \u2014 invoke it at all three trigger paths, inside the existing `h.options.ToolSurface != nil` guards:\n  (1) cleanupRetiredOwners (line ~1161): inside `if owner.epoch != 0 && h.options.ToolSurface != nil` call h.options.ToolSurface.retireRetainedResultNamespace(owner) after cleanupRetiredOwner(owner).\n  (2) missing-session rewrite branch (~813): inside `if retiredOwner.epoch != 0` add the same call after cleanupRetiredOwner(retiredOwner).\n  (3) session DELETE branch (~966): same addition.\nKeep the existing sweepRetainedResults calls.\n\nA3. Terminal precedence (R10: namespace-retired precedes no-stamped-epoch). In deliverBoundedResult (bounded_delivery.go line ~23-27) the pre-check currently returns result_epoch_unresolved for every resolution failure. Change it to: resolution failure with owner.epoch == \"\" -> result_epoch_unresolved; resolution failure with a stamped epoch -> result_namespace_retired.\n\nGAP B \u2014 two T3 oracles do not exist.\n\nB1. internal/service/builtin_guidance_test.go \u2014 add TestRetrievalContractDocumented. Assert the published retrieve_result description (publishedBuiltinGuidance) is exactly the literal already declared in that file's exact-string map, and contains \"handle\", \"page number\", \"total_pages\", \"bounded preview\"; assert it contains neither \"complete upstream\" nor \"complete original\".\n\nB2. internal/service/bounded_delivery_test.go \u2014 add TestInboundRetirementHooks with three subtests, one per trigger path, reusing the existing package-internal inbound harness (testInbound/requestFor/serve in inbound_bounds_test.go; sessionIssuingHandler issues session ids). Per subtest:\n  - surface := a *ToolSurface whose results store is a newDeliveryOracle-style store with injected clock; drive session enrolment so the inbound record has a nonzero epoch, then commit one live record under the namespace the production path will retire (sdk session id + decimal epoch).\n  - record aggregateBytes/entries before; fire the trigger; assert: entry removed, exactly one live tombstone, exact before/after aggregate delta (negative or equal, never positive), handle resolves invalid_handle afterwards.\n  - late commit: an over-ceiling result for the retired namespace yields retention == \"result_namespace_retired\", no handle, zero aggregate delta; repeat after the tombstone clears (advance the injected clock past tombstone_ttl).\n  - zero-effect variant: a trigger whose namespace holds no live record persists nothing (no tombstone, zero delta).\n  The retired owner must come only from the production trigger; never inject it in the fixture.\n  If the InboundHandler's session-enrolment path needs an initialized projection coordinator on the ToolSurface, initialize it the same way other package tests do; do not change production code to make the fixture simpler.\n\nVERIFY (report exit codes and outputs verbatim):\n  go build ./...\n  go vet ./internal/service/\n  go test ./internal/service/ -run 'TestInboundRetirementHooks|TestRetrievalContractDocumented|TestEpochUnresolvedNoHandle|TestHandleRejectionUniformHandler|TestTerminalPreviewsBounded' -count=1\n  go test ./internal/service/ -count=1\n  go test ./internal/observe/ -count=1\n  go test ./cmd/mcp-bridge/ -count=1\nWrite COMPLETED receipt to .omp/artifacts/receipt_T3.json only if every command exits 0; otherwise report INCOMPLETE with the exact failing output and stop.\n",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses",
+    "revision": "r40",
+    "requests": [
+      {
+        "name": "ImplementTicket01T3Completion",
+        "taskId": "T3",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/service/bounded_delivery.go",
+            "internal/service/bounded_delivery_test.go",
+            "internal/service/retrieve_result_test.go",
+            "internal/service/tools.go",
+            "internal/catalog/schema.go",
+            "internal/service/inbound.go",
+            "internal/service/tools_test.go",
+            "internal/service/builtin_guidance_test.go",
+            "internal/service/progressive_session_test.go",
+            "internal/service/progressive_concurrency_lifecycle_test.go",
+            "internal/service/tools_publish_atomic_test.go",
+            "internal/service/tool_metadata_test.go",
+            "cmd/mcp-bridge/serve_test.go",
+            "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+            "cmd/mcp-bridge/serve_hybrid_reload_test.go",
+            "docs/logging-contract.md",
+            "cmd/mcp-bridge/logging_contract_test.go",
+            "internal/observe/log.go",
+            "cmd/mcp-bridge/serve.go"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ImplementTicket01T3Completion",
+      "agent": "engineer",
+      "solutionSpace": "one fix: the exact wiring and the two named oracles; no alternate designs",
+      "task": "Wire retention-namespace retirement at the three inbound trigger paths, fix retired-vs-epoch terminal precedence, add TestRetrievalContractDocumented and TestInboundRetirementHooks, run the listed checks, write the T3 receipt only if all pass."
+    }
+  ]
+}

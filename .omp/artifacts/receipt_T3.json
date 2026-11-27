@@ -3,24 +3,28 @@
   "status": "COMPLETED",
   "artifact_receipt": ".omp/artifacts/receipt_T3.json",
   "telemetry_ref": null,
-  "summary": "T3 AC03 acceptance is green on the focused command. The broader package run failed on cross-task logging, OAuth, manifest, handshake, and rotation tests; those failures are recorded for T7 reconciliation.",
+  "summary": "Applied the three authorized repairs; both requested focused Go test commands passed.",
   "error_code": null,
   "evidence": [
     {
-      "command": "go test ./cmd/mcp-bridge -run '^TestRunFlagParseErrorsAreTypedRecords$'",
-      "exitCode": 1,
-      "result": "RED: unknown/missing flags exited 2 with parser and usage text; positional input fell through to plaintext configuration failure."
+      "command": "go test ./internal/service/ -count=1",
+      "phase": "RED",
+      "exit_code": 1,
+      "output": "Prior T3 attempt recorded failures in TestTerminalPreviewsBounded/epoch_unresolved, TestEpochUnresolvedNoHandle, TestBuiltinGuidanceSnapshotCoherence, and TestHandleRejectionUniformHandler; see .omp/artifacts/t3-verification-output-01608a7b8f82ba94-20261127T112156Z.log (7709 bytes, sha256 01608a7b8f82ba942da5d0be0b50845a455ac862147c01f630598239307dae54)."
     },
     {
-      "command": "go test ./cmd/mcp-bridge -run 'Flag|Startup|Usage|Help|RunContext|ServeStartup'",
-      "exitCode": 0,
-      "result": "PASS: AC03 typed CLI errors, unchanged help, startup classifications, publication single-record behavior, and serve config attribution."
+      "command": "go test ./internal/service/ -run 'TestTerminalPreviewsBounded|TestEpochUnresolvedNoHandle|TestBuiltinGuidanceSnapshotCoherence|TestHandleRejectionUniformHandler' -count=1",
+      "phase": "GREEN",
+      "exit_code": 0,
+      "output": "ok\tgithub.com/jjohnson83853/mcp-bridge/internal/service\t0.019s"
     },
     {
-      "command": "go test ./cmd/mcp-bridge/...",
-      "exitCode": 1,
-      "result": "FAIL (252.478s). Tests: TestEmbeddingEnvReloadSameReferenceRotation (embedding_env_rotation_test.go; model, base_url); TestConfigDiagnosticFieldManifest (manifest_test.go); TestServeLoggingCompatibility (serve_logging_compatibility_test.go; ChunkedRequestLimit, Metrics, FailingStdout); TestServeLoggingFailures/ToolReportedError (serve_logging_failures_test.go); TestServeLoggingTimeouts/BackendTimeoutEmitsDeadlineExceeded (serve_logging_streaming_test.go); TestServeLoggingHTTP/ClientAuthentication (serve_logging_test.go); TestServeOAuthDiagnosticRejections (serve_oauth_diagnostics_test.go; MissingCredential, WrongScheme, InvalidJWT, WrongVerifiedAudience, InsufficientScope); TestProtectedResourceMetadataWire, TestServeOAuthMissingAuthorizationDiagnostic, TestServeOAuthActionDiscoveryEndToEnd, TestChatGPTOAuthAndActionDiscoveryWire, TestChatGPTSessionAdmissionDiscoveryBurstWire (serve_oauth_test.go); TestTerminalRecordRuntimeProvenance, TestPathBearingResourceChallengeClassification, TestRouteOutcomeByActualDispatch/Unmatched, TestToolErrorOperationLinkage (serve_provenance_test.go); TestUpstreamEphemeralHandshakeLog (serve_upstream_restart_test.go)."
+      "command": "go test ./cmd/mcp-bridge/ -run 'TestServeHybridReload|TestLoggingContract|TestServeCompositionRoot|TestServeHybridExposure' -count=1",
+      "phase": "GREEN",
+      "exit_code": 0,
+      "output": "ok\tgithub.com/jjohnson83853/mcp-bridge/cmd/mcp-bridge\t0.117s"
     }
   ],
-  "decisions": []
+  "decisions": [],
+  "unrun": []
 }

@@ -1,0 +1,48 @@
+# T2 acceptance evidence — token-efficient-tool-responses r40
+# observed 2026-11-27T02:57:42Z by coordinator
+
+== go build ./... ==
+exit=0
+
+== govet ==
+exit=0
+
+== gofmt -l ==
+exit=0
+
+== go test ./internal/observe/ -count=1 ==
+ok  	github.com/jjohnson83853/mcp-bridge/internal/observe	0.136s
+exit=0
+
+== go test ./internal/service/ -run T2oracles -count=1 -v ==
+=== RUN   TestHandleOwnerEpochBinding
+--- PASS: TestHandleOwnerEpochBinding (0.00s)
+=== RUN   TestHandleExpiry
+--- PASS: TestHandleExpiry (0.00s)
+=== RUN   TestRetentionBounded
+--- PASS: TestRetentionBounded (0.00s)
+=== RUN   TestRetiredNamespaceTombstone
+--- PASS: TestRetiredNamespaceTombstone (0.00s)
+=== RUN   TestHandleRejectionUniformStore
+--- PASS: TestHandleRejectionUniformStore (0.00s)
+=== RUN   TestEvictedHandleRetrieval
+--- PASS: TestEvictedHandleRetrieval (0.00s)
+=== RUN   TestEvictionNamespaceIsolation
+--- PASS: TestEvictionNamespaceIsolation (0.00s)
+=== RUN   TestRetirementAdmissionUnconditional
+--- PASS: TestRetirementAdmissionUnconditional (0.00s)
+=== RUN   TestMarkerAdmissionBound
+--- PASS: TestMarkerAdmissionBound (0.00s)
+ok  	github.com/jjohnson83853/mcp-bridge/internal/service	0.021s
+exit=0
+
+== go test ./internal/observe/ -run AC13AC14 -count=1 -v ==
+=== RUN   TestLogLabelEnumeration
+--- PASS: TestLogLabelEnumeration (0.00s)
+=== RUN   TestPagingMetricsRegistered
+--- PASS: TestPagingMetricsRegistered (0.00s)
+ok  	github.com/jjohnson83853/mcp-bridge/internal/observe	0.006s
+
+== receipt-validator ==
+{"valid":true,"receipt":{"task_id":"T2","status":"COMPLETED","artifact_receipt":".omp/artifacts/receipt_T2.json","telemetry_ref":null,"summary":"T2 implementation and required verification completed."
+exit=0

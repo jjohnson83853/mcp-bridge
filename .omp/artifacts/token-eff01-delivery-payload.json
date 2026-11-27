@@ -1,0 +1,12 @@
+{
+  "i": "Delivering token-efficiency ticket 01 on main",
+  "context": "Unmanaged git-master delivery for the completed r40 feature token-efficient-tool-responses.",
+  "tasks": [
+    {
+      "name": "DeliverTokenEfficiencyTicket01",
+      "agent": "git-master",
+      "solutionSpace": "one delivery sequence: restore the unexplained GATE_OPEN deletion, stage all work, commit with a conventional message matching repo history, push main",
+      "task": "Deliver the completed feature work on main."
+    }
+  ]
+}

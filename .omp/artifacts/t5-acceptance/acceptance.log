@@ -1,0 +1,25 @@
+# T5 acceptance (token-efficient-tool-responses r40), recorded 2026-11-27T12:15:52Z
+$ go build ./...
+exit=0
+$ go vet ./internal/service/
+exit=0
+$ gofmt -l internal/service/result_paging_integration_test.go
+exit=0
+$ go test ./internal/service/ -run 'TestReadmeInventoryAndPromise|TestRetained|TestPerSurface|TestSingleExecution' -count=1
+ok  	github.com/jjohnson83853/mcp-bridge/internal/service	0.081s
+exit=0
+$ go test ./...
+ok  	github.com/jjohnson83853/mcp-bridge/cmd/covcheck	(cached)
+ok  	github.com/jjohnson83853/mcp-bridge/cmd/mcp-bridge	(cached)
+ok  	github.com/jjohnson83853/mcp-bridge/internal/auth	(cached)
+ok  	github.com/jjohnson83853/mcp-bridge/internal/catalog	(cached)
+ok  	github.com/jjohnson83853/mcp-bridge/internal/config	(cached)
+ok  	github.com/jjohnson83853/mcp-bridge/internal/core	(cached)
+ok  	github.com/jjohnson83853/mcp-bridge/internal/coveragecheck	(cached)
+ok  	github.com/jjohnson83853/mcp-bridge/internal/observe	(cached)
+?   	github.com/jjohnson83853/mcp-bridge/internal/observe/internal/genhttpwriter	[no test files]
+ok  	github.com/jjohnson83853/mcp-bridge/internal/search	(cached)
+ok  	github.com/jjohnson83853/mcp-bridge/internal/service	(cached)
+ok  	github.com/jjohnson83853/mcp-bridge/internal/storage	(cached)
+ok  	github.com/jjohnson83853/mcp-bridge/internal/upstream	(cached)
+exit=0

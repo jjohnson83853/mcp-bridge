@@ -1,0 +1,17 @@
+# T3 acceptance (token-efficient-tool-responses r40), recorded 2026-11-27T11:54:39Z
+$ go build ./...
+exit=0
+$ go vet ./internal/service/ ./internal/observe/
+exit=0
+$ go test ./internal/service/ -run 'TestPreviewBoundedAndMetadata|TestPagesConcatenateToOriginal|TestExecutionFactsPreserved|TestUpstreamCodePinned|TestTerminalPreviewsBounded|TestAggregateAdmissionHard|TestPageRuneAlignment|TestPageBoundsValidated|TestRetrieveShapeInvalid|TestTerminalFieldSemantics|TestRetrievalContractDocumented|TestCeilingsPinnedAcrossReload|TestRetrievalEvictionAtomicity|TestEpochUnresolvedNoHandle|TestRetrieveValidationPrecedence|TestEscapingHeavyPagesWithinCeiling|TestCeilingPlusOneBoundary|TestInboundRetirementHooks|TestExecutionStateRegistry|TestHandleRejectionUniformHandler' -count=1
+ok  	github.com/jjohnson83853/mcp-bridge/internal/service	0.046s
+exit=0
+$ go test ./internal/observe/ -count=1
+ok  	github.com/jjohnson83853/mcp-bridge/internal/observe	0.125s
+exit=0
+$ go test ./internal/service/ -count=1
+ok  	github.com/jjohnson83853/mcp-bridge/internal/service	3.334s
+exit=0
+$ go test ./cmd/mcp-bridge/ -count=1
+ok  	github.com/jjohnson83853/mcp-bridge/cmd/mcp-bridge	18.502s
+exit=0

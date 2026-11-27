@@ -2,7 +2,7 @@
   "inputs": [
     {
       "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
-      "sha256": "4eed4835a9fc8b688e1dda7f5add5cd85ac56c804db304b268af27c2f540d9a3"
+      "sha256": "cce6ab4f453ac0e685c283b3683217c0b783133250320941daa34b9ed23dfff1"
     },
     {
       "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/issues/01-bounded-results-with-paging.md",
@@ -10,7 +10,7 @@
     },
     {
       "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-efficiency-ticket01-review-packet.md",
-      "sha256": "4e8624a319e91aa7f35a1f01a9b285dd03350fe955fd91f94e1693e5787111b5"
+      "sha256": "f43eb99a639a0fb595f9aafec79e774f1bb7c19ede5045f83f49b9f050dfbea8"
     },
     {
       "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-efficiency-ticket01-refinement.md",
@@ -59,5 +59,11 @@
   ],
   "contextSha256": "2bda02f3320b909b893740ec444b543dfa4a1728e984f887df926372dc9c43ab",
   "taskCodeReviewerSha256": "0d6e5e340769a3888a5c465930aaf910ff13be04a056281b45732124f8e6d8b3",
-  "taskCriticSha256": "ececec2b3cbd4ef179147fa745596e630024d44afed1ba4de2388382d7c00961"
+  "taskCriticSha256": "ececec2b3cbd4ef179147fa745596e630024d44afed1ba4de2388382d7c00961",
+  "candidate": {
+    "path": ".scratch/token-efficient-tool-responses/spec.md",
+    "sha256": "cce6ab4f453ac0e685c283b3683217c0b783133250320941daa34b9ed23dfff1",
+    "bytes": 101622,
+    "revision": "r36"
+  }
 }

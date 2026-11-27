@@ -1,25 +1,18 @@
 # Target
 
-Review specification candidate `token-efficient-tool-responses-ticket01-spec` — the file `.scratch/token-efficient-tool-responses/spec.md`. Review its on-disk bytes; it declares its own revision. Read the shared instructions in the batch context first.
+Review the replacement specification at `.scratch/token-efficient-tool-responses/spec.md` (ticket 01, bounded tool results with recoverable paging). It replaces an 80 KB predecessor that failed 27 review rounds without producing implementation; the owner ordered a concise replacement.
 
-# Checks, in priority order
+# Review stance
 
-1. Byte accounting: does the spec measure the actual serialized client response, count duplicated content-block and structured forms once, and prove that both the 8192 ceiling and the ≤1536-byte preview are checks of that same form?
-2. Retrieval termination: can a preview or a page itself become an over-ceiling payload (nesting)? Does the spec state a termination rule?
-3. Handle security: crypto-random, content-independent, bound to session incarnation (session ID plus exposure epoch), indistinguishable rejection for unknown/tampered/foreign/other-incarnation handles. A reused session ID after rehydration must not resurrect handles.
-4. Storage bounds and isolation: per-session and aggregate accounting, deterministic eviction, no cross-session eviction, defined concurrency behavior.
-5. Error semantics: `isError` visibility in preview and every page; bridge dispatch failures keep their small typed shape; no paged success for a failure.
-6. Compatibility: the retrieval surface must pass stored input-schema validation (`additionalProperties:false`) and be documented as a caller-visible contract; no `full` knob collision with ticket 05.
-7. Regression: ceilings on discovery/describe must not break exposure, projection epoch, or catalog-revision admission; name the existing behavior that would fail.
-8. Task ledger T1–T6: each task independently verifiable, dependency edges coherent, no task requiring an unstated capability or a sibling ticket.
-9. Public documentation: which README claims change and which must be preserved.
+Judge THIS document on its own terms:
+- Every requirement falsifiable and non-duplicative?
+- Every acceptance criterion names an oracle independent of the implementation it tests?
+- Every task owns only the behaviour it introduces, with exact write roots?
+- Are the six carried correctness invariants present and testable — independent byte oracle; retired-marker lifetime and accounting; pinned `upstream_code`; finite label enumerations with producers; per-terminal preview bounds; ceiling-order validation?
+- Is anything stated twice, or too vague to test?
 
-# Deliver
+Do NOT ask for the predecessor's length, its review-history tables, or its per-surface repetition. Do NOT reopen what section 8 (NON-GOALS and OPEN DECISIONS) deliberately scopes out, unless a non-goal hides a correctness hole.
 
-`VERDICT: PASS` or `VERDICT: REVISE` on the first line, then findings ordered by severity with ID, affected R/T, one-sentence defect, spec section anchor, and observable consequence. Then list what you verified as adequate, so coverage is distinguishable from silence.
+# Output
 
-# Acceptance
-
-- Every finding is anchored to a spec section and a requirement or task id.
-- No implementation code proposals; name the invariant the spec must state instead.
-- The worktree is unmodified.
+Verdict: APPROVE or REQUEST CHANGES, then findings with severity, each naming the exact section and the fix. Keep the whole review under 900 words.

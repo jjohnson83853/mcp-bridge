@@ -1,0 +1,39 @@
+{
+  "intent": "Diagnose T2 observe edit failure (debugger, read-only root-cause isolation under P03)",
+  "instructions": "Read-only causal analysis under project rule P03. Root /home/opencode/projects/default/mcp-bridge. Authoritative spec: .scratch/token-efficient-tool-responses/spec.md at sha256 37dd21cee4cebdd8c5e4771741e05e594feb01292e43269ace89ee11d35ad686 (§2 R12, §7, AC13, AC14). Prior attempt records: .omp/artifacts/receipt_T2.json and history://RepairTicket01T2.\n\nREAD ONLY the eight paths in requests[0].effects.paths. Do not write or edit any source file, do not run mutating git commands, do not touch state.\n\nObjective: produce an exact, minimal diagnosis of why the engineer's patch to internal/observe/metrics.go was rejected by the edit tool with 'file parses now but would not after this edit as written (first syntax error near line 357)', and provide the exact, syntactically verified patch contents (or replacement blocks) for all observe deliverables so the subsequent engineer relaunch cannot fail on edit mechanics:\n1. internal/observe/metrics.go: exact new methods required by metrics_test.go:251+ (RecordRetentionRejection(string) bool, RecordResultsPaged(), RecordResultPageServed(), RecordRetentionEviction(), RecordLogOperationViolation()) and the closed retention label set 'bridge_retention_rejections_total{retention=...}'. Show the exact anchor and insertion content.\n2. internal/observe/log.go: exact eventMessage() additions for the 12 new events asserted by log_test.go:437-441.\n3. internal/observe/httpdiagnostics.go: exact replacement for operationVocabulary to match the 31 values in log_test.go:424-431.\n4. internal/observe/envelope.go: any required vocabulary validation updates.\n\nWrite your findings to .omp/artifacts/t2-debugger-diagnosis.md. Verify every Go snippet you provide against `gofmt -e` using throwaway scratch files if needed, but do not touch the repository source files.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses",
+    "revision": "r40",
+    "requests": [
+      {
+        "name": "DiagnoseT2ObserveEditFailure",
+        "taskId": "CR1",
+        "agent": "debugger",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            "internal/observe/metrics.go",
+            "internal/observe/metrics_test.go",
+            "internal/observe/log.go",
+            "internal/observe/log_test.go",
+            "internal/observe/httpdiagnostics.go",
+            "internal/observe/envelope.go",
+            "docs/logging-contract.md",
+            "internal/service/result_handle_test.go"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "DiagnoseT2ObserveEditFailure",
+      "agent": "debugger",
+      "solutionSpace": "Read-only root cause and syntax-verified patch design for the observe package deliverables under AC13/AC14/R12/§7.",
+      "task": "Diagnose the engineer's edit failure on internal/observe/metrics.go and produce syntactically valid, anchor-accurate patch blocks for all observe-layer T2 requirements. Read history://RepairTicket01T2, the observe source files, and .scratch/token-efficient-tool-responses/spec.md. Write a structured report to .omp/artifacts/t2-debugger-diagnosis.md containing: (1) exact root cause of the line-357 parse failure in the engineer's rejected edit; (2) verified, exact-string replacement blocks for internal/observe/metrics.go, log.go, httpdiagnostics.go, and envelope.go that make `go test ./internal/observe/ -count=1` pass once applied; (3) the exact package-private signatures in result_handle.go required by internal/service/result_handle_test.go so the engineer can write the store without exploratory reads. Do not edit repository Go files."
+    }
+  ]
+}

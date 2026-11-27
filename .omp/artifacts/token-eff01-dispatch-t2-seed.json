@@ -1,0 +1,40 @@
+{
+  "intent": "Dispatch Ticket01T2RetentionStore (engineer, ticket 01 T2: retention store)",
+  "instructions": "Bounded implementation, feature token-efficient-tool-responses revision r40, ticket 01 task T2 ONLY. Root /home/opencode/projects/default/mcp-bridge. Authoritative spec: .scratch/token-efficient-tool-responses/spec.md at sha256 37dd21cee4cebdd8c5e4771741e05e594feb01292e43269ace89ee11d35ad686; read §2 R4, R5, R6, R7, R9, R10, R12, R16; §3; §4 AC4, AC5, AC7, AC8, AC13, AC14, AC16, AC18, AC36, AC38, AC39; §5 T2; §6; §7. Also read internal/service/result_measure.go (T1, measureResult) and internal/config/bounds.go (RetainedResultBounds) as the inputs you consume.\n\nWRITE ONLY these nine paths: internal/service/result_handle.go (new), internal/service/result_handle_test.go (new), internal/observe/metrics.go, internal/observe/metrics_test.go, internal/observe/envelope.go, internal/observe/log_test.go, internal/observe/log.go (eventMessage registry: the twelve new §7 event entries, closed set), internal/observe/httpdiagnostics.go (operationVocabulary to R12's frozen 31 values), docs/logging-contract.md (log field vocabulary only; the config-codes block is T1's and must not be touched). Do not edit spec, state, tickets, README, tools.go, inbound.go, direct_execution.go, config files or any handler. T2 is store-only and handler-free: no retrieve_result dispatch, no inbound wiring, no call_tool seam. T2 may name retrieve_result only as vocabulary data and test fixture.\n\nDesign constraints (spec pins no public Go API; keep the seam package-private in internal/service): type resultStore constructed with the T1 config.RetainedResultBounds, an *observe.Logger, an *observe.Metrics, and injectable seams `now func() time.Time` and `entropy io.Reader`; package-private types for namespaces and records (entry / tombstone / marker). Namespace identity is (session id, stamped epoch) or the shared publisher namespace; the store must not read inbound state. Required store operations: a commit that performs per-entry cap check, pre-commit owner/liveness resolution, FIFO entry eviction inside the creating namespace only, the durable 256-byte reservation for each admitted entry, and the hard aggregate admission with exactly the five R10 codes the store owns (result_capacity_exceeded, result_aggregate_capacity_exceeded, result_namespace_retired, result_entropy_unavailable; result_epoch_unresolved is produced by the seam, not the store); a lookup that resolves handle shape then handle resolution and owner binding then page evaluation, returning the shared byte-identical invalid_handle or the typed result_expired / result_evicted; retirement that completes in the trigger commit (funded by its own releases, zero-effect when the namespace holds no live record), leaves a 256-byte tombstone with the R16 half-open lifetime, and makes every later commit/lookup observe the retirement by absent pre-commit owner resolution, never by store bookkeeping; a sweep hook that reclaims memory only (never changes logical results); a born-dead marker discarded at installation. Entry pinning at retention: serialized bytes, the upstream_code bound and its rendered value, ceiling-derived preview/page sizing and handle_ttl/tombstone_ttl deadlines.\n\nRequired RED/GREEN tests in internal/service/result_handle_test.go, exactly these names: TestHandleOwnerEpochBinding (AC4), TestHandleExpiry (AC5), TestRetentionBounded (AC7), TestRetiredNamespaceTombstone (AC8), TestHandleRejectionUniformStore (AC16 store half), TestEvictedHandleRetrieval (AC18), TestEvictionNamespaceIsolation (AC36), TestRetirementAdmissionUnconditional (AC38 store half), TestMarkerAdmissionBound (AC39). In internal/observe: TestLogLabelEnumeration (AC13 handler-free runtime closed-registry oracle, both injection paths), TestPagingMetricsRegistered (AC14 registration only; no scrape-delta assertions). Capture the RED state first (compile-failure of the new tests is the required RED), then GREEN. Deterministic fixtures only: injected clock and entropy, no live network, no sleeps for expiry.\n\nValidation, run and report exact output and exit codes: go build ./... ; go test ./internal/service/ -run 'TestHandle|TestRetention|TestMarker|TestEviction|TestRetired|TestRetirement' -count=1 ; go test ./internal/observe/ -count=1 ; gofmt -l on every written file. Do not run the full repository suite. Write .omp/artifacts/receipt_T2.json per the receipt contract. More than 42 read/search operations before your first edit means stop and report stalled; no external SDK/vendor research.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses",
+    "revision": "r40",
+    "requests": [
+      {
+        "name": "ImplementTicket01T2",
+        "taskId": "T2",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/service/result_handle.go",
+            "internal/service/result_handle_test.go",
+            "internal/observe/metrics.go",
+            "internal/observe/metrics_test.go",
+            "internal/observe/envelope.go",
+            "internal/observe/log_test.go",
+            "internal/observe/log.go",
+            "internal/observe/httpdiagnostics.go",
+            "docs/logging-contract.md"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ImplementTicket01T2",
+      "agent": "engineer",
+      "solutionSpace": "One implementation: store, tests, vocabularies and metric registration only; files, test names and checks given.",
+      "task": "Implement ticket T2 exactly as the instructions specify: nine write paths only, package-private store in internal/service/result_handle.go with injectable clock/entropy seams, the nine named store tests, the two named observe tests, R12's frozen 31-value operation vocabulary, the twelve new §7 eventMessage entries and closed label sets in the metrics registration, and the logging-contract field vocabulary. Capture RED (new tests fail to compile), then GREEN. Run the four named validation commands and report exact output and exit codes. Do not edit production files outside the nine paths, do not wire handlers, and do not touch the spec, state or tickets."
+    }
+  ]
+}

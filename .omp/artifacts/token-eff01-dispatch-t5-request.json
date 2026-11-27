@@ -1,0 +1,24 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "token-efficient-tool-responses",
+  "revision": "r40",
+  "requests": [
+    {
+      "name": "ImplementTicket01T5",
+      "taskId": "T5",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/result_paging_integration_test.go",
+          "internal/catalog/schema.go",
+          "README.md",
+          "cmd/mcp-bridge/serve.go",
+          "internal/service/tools.go"
+        ]
+      }
+    }
+  ]
+}

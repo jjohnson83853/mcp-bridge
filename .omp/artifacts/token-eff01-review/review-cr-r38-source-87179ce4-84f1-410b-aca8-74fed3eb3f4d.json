@@ -1,0 +1,209 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket01-spec",
+  "revision": "r38",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+      "sha256": "5d34706213db34a4f8d546f25b27b186427ccbeacfa438e0f5c10a16e02ac55a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/issues/01-bounded-results-with-paging.md",
+      "sha256": "997d15667fcd9346ff146230b43b858f5e40d9d970b6f6ea67b47296f16b5b01"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-efficiency-ticket01-review-packet.md",
+      "sha256": "f43eb99a639a0fb595f9aafec79e774f1bb7c19ede5045f83f49b9f050dfbea8"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-efficiency-ticket01-refinement.md",
+      "sha256": "eac715304b2b204ad54ff212900d2d8bafea718c9ffaab035bb3e2505616aa15"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round1.md",
+      "sha256": "3d97e9a7cd855710e9a9e7f21a59eada2ba6b1cc763185b90c7396c321058d2f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round2.md",
+      "sha256": "239fc9dccd1f5a4338fa964f098682e7bd7ab2d609a12a46766e8b98d3e67a8a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round5.md",
+      "sha256": "3529aa79e88692afae4229bbe179bbcb06ddfc04cb7b1ab15719eecc1d761161"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round6.md",
+      "sha256": "cdc00267ce2f6ad92feda1f1d174ee994781fc864bfaa99c24a6b0618be34d2f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round7.md",
+      "sha256": "571b9f7e8a69bc23c78cb80037c38abfa8a68e4d4d2691988b7a6e695eb3e235"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round8.md",
+      "sha256": "4b483e3c43f77db13c97b32e6678ddfd7e67302c25868c8d3da746a8f4e89436"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round9.md",
+      "sha256": "15d18f8ba83ac3f17c1d6a68e571815d68d54dc4c6563d3a43d997b3a60aad4f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round10.md",
+      "sha256": "53812aac59d3b540d7915187352acc602b364b9139f74b22bcd55d53f11b86a1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/decisions.md",
+      "sha256": "0926720ddb3dcc0f13980a0ebebb77ca541ec34bf8f320856c86a503621210cb"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
+      "sha256": "5ed67dab601ea5360d693bda93df2fdb740426e33c5a36306f19b9ba58fda52c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "c2dbe413a1e3ab73af1bba494092f2abe6d988d472e7621ca7fe7ddfb20f6701"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
+      "sha256": "da319458e503aefb18d1f7bde3e1783e9ebf0d80a8d6a157bb31f0d9a43cc10d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "c823bbf637526cbd85cfe5ca53d90b34e26a715576f94bdf18f9d3a3b23a1c2f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "965b0ba4ab5cc9348cb6354a32c3b4e3d9cad643e640532636a2ecb0e2eb5cb5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "7c1e9e1393a74ad59625731059e4ae5f6e5d48a0fa05f70a4b0f858817a6570a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+      "sha256": "7bf371691455c88a0a085fb172ab9c61dbce0a6204e22712ba34bebd02b93bee"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_test.go",
+      "sha256": "9bf99e0b08e0eb01e7d480c874437cf2a8bee36b11f0613f2f82515918c87109"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_session_test.go",
+      "sha256": "aec62dfb7d9a1249b2cbef46f249bcad8fb25b4e39feeee355622f9aa11f13e3"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_concurrency_lifecycle_test.go",
+      "sha256": "dfce15e3e0269130fc5691a98c720a9750373af4c7cdaf27aab40757ba00d57d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+      "sha256": "90121ffe2fbc4dc139db3b32a436c4a8198b94cf832cf74ca5af7b8f18fec8eb"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_reload_test.go",
+      "sha256": "ae8fb6339e89f0d62608c3fc3c0c27ac645a755e6e875ebd37d4267f28df97ca"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+      "sha256": "3bab02f362d5b9925c386d7238c731f9e59f1fdfa6ad8508e1d66a90303e26f4"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+      "sha256": "40c6212d861cb87348ed0c09e823146a8fb29fd943947ed223aa0cf6658a7bcf"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_oauth_test.go",
+      "sha256": "b28fc9dadf0ddef4a187bb35a70c855dff9071869a8abb65e46a316a79744f8d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tool_metadata_test.go",
+      "sha256": "63da6386243e51bf8ff9c3d51e094cf36521eb76bf5d94c34250011c7ee954a5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_publish_atomic_test.go",
+      "sha256": "a380839433dbe0f19cdd8be2439460cb08ace1a2956934adcfb8e7906ce21247"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_test.go",
+      "sha256": "59fb93d898873008a434a264fd71b899cea8fdd4f6a05576f9027a5b77ea6683"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/covcheck/main.go",
+      "sha256": "c96c912514ba612b393da16d759fff8fdbe5b1de35483ed2d87a75c1233792e1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "a2fc976285ebae717a0d1283cd67406bcc699b63ce9023fe418fbc3628642172"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "38ac2ee5dfc44918a67fcf48ec7c05b67a1822f7c8b722b1aee91d634de6039d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/CHANGELOG.md",
+      "sha256": "4ede091062752a1ecfd6b1991331ada96ddea2c3dba3dedbd30fdd85aed07ecc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/RULES.md",
+      "sha256": "b32cd836184cbae854d78e8a429c5c3497228b29221fa6e917e4b2849c289a2f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/session_exposure.go",
+      "sha256": "e6f8e6cc7ec479f13eebb0750e87b6b0fda8f964e775506176588aa3bdb64da2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/projection.go",
+      "sha256": "5c9a90712dd572575690a982f6df1e15d2190abc55c4253cfe76adeb8dbbf474"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/inbound.go",
+      "sha256": "7c313195991180357ab3c877c5ad3fb8f00d9183ff7c2d0daacd82376187959a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/cursor.go",
+      "sha256": "f5883817347e499aa2b3b66af5d7dbd64cc649fec5e73b37fe0dfe2f65ab3616"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "1e49b633a9a9c6dfdec31ccb9f916cb5320d16dbdb66fd5b2042fbefa7abad21"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "9abca6709fddcaed4b00e9cbbff44481475c0221ee4ca495877e74febac22335"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SpecReviewPaging",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "requestSha256": "fe80f46f0ff2ee17845e1b5b74af5c9f66aa890404f65847b3d653f9ee7d13f4",
+      "targetCandidateId": "token-efficient-tool-responses-ticket01-spec",
+      "targetRevision": "r38",
+      "taskSha256": "74aecea6981ca4b6f322a96820c8309fffbf6932b09785f64e66ce1f02d79680",
+      "instructionsSha256": "df301c003da93e39a76c5889df708f5e657d92a26408407bb55e80f92d851c29"
+    },
+    {
+      "name": "SpecGatePaging",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "requestSha256": "6564a3ff418e2ca7287ef71c277099bf69125f8a0d646da9217ca377fd7f867a",
+      "targetCandidateId": "token-efficient-tool-responses-ticket01-spec",
+      "targetRevision": "r38",
+      "taskSha256": "cd9e59a6a5d35e5d1c7e50f49ecfb611073d98a15f43381006ed8197d736ed16",
+      "instructionsSha256": "df301c003da93e39a76c5889df708f5e657d92a26408407bb55e80f92d851c29"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** Specification · **Pass:** Repair (r37→r38) · **Candidate:** `.scratch/token-efficient-tool-responses/spec.md`, pin `r38-replacement`, 207 lines.\n**Files Reviewed:** 1 spec + read-only anchor verification (`internal/service/inbound.go:522/:676/:767/:770/:808/:813/:950-966`, `internal/service/projection.go:863/:877`).\n\n### Closure evidence\n\n**C5 [MAJOR] — CLOSED.** The chosen reconciliation is unconditional admissibility, so the refusal→rediscovery chain is dissolved rather than bookkept:\n- Funding invariant is stated in R6/R7 terms: §2 R7 — \"every live record the namespace holds surrenders at least 256 aggregate bytes (a live entry its serialized payload plus its durable 256-byte reservation, a live marker its 256-byte charge), so whenever the namespace holds at least one live record the post-commit aggregate never exceeds the pre-commit aggregate and the tombstone always fits the hard aggregate bound (R6)\". Post − pre = −payload ≤ 0 (entry) or 0 (marker-only), given every retained record is admitted within the bound at its own commit (§2 R6). The arithmetic holds at the bound and at exact saturation; no band exists where 256 B is unfundable.\n- No refusal terminal or retry survives normatively: R6 (\"a retirement commit is never infeasible … a namespace holding none has no store presence to retire\"), §3 OD3, §6 `max_bytes_aggregate` row, T2, T3 all state never-refuses; the zero-effect class persists \"no tombstone, no aggregate delta, nothing persisted, no sweep retry\" (R7). No discovery record, cap or clearing condition is introduced — explicitly none \"is needed and none is permitted\".\n- AC38 now asserts the full chain — \"refusal (proven impossible) → trigger completion → capacity release → ordinary production sweep → completed retirement\" — with the sweep finding \"no pending retirement to complete and moves no aggregate charge\", i.e. \"nothing was deferred\". AC43 mirrors both completions (live-record branch: release delta asserted never positive, tombstone installed/counted, `result_namespace_retired` reachable; empty branch: zero delta, nothing persisted).\n- The named cheap false pass is excluded explicitly in both AC38 (\"the fixture supplies the retiring owner only through the production trigger path, so an implementation that completes a retirement only after the owner is re-supplied … fails\") and AC43 (\"no fixture reinjection of a retired owner appears at any step\").\n- `result_namespace_retired` stays constructible: a tombstone-ful namespace (R7's first branch) plus a later commit under the lock — AC11's isolating fixture is satisfiable.\n\n**AC7 advisory [LOW] — CLOSED.** §4 AC7 now pins the instant: \"the assertion is taken after the T2 sweep hook runs at the post-clearing clock, so both a clock-only reclamation and a sweep-driven reclamation pass, and neither can pass while retaining a container\". This matches the r37 request exactly, leaves the aggregate-return and structural clauses intact, and keeps the wrong-implementation discrimination (a surviving container fails the set equality). T2 owns the sweep hook and injectable clock, so the seam is delivered.\n\n### No new scope\n\nR1–R16, AC1–AC44, T1–T5, the ten `retained_results` keys, oracles and write roots are intact; every r38 edit is in place. All line anchors I checked are exact: `inbound.go:808` calls `retireLiveOwnerAtInboundLock`, `:813` calls `cleanupRetiredOwner`, `:962`/`:966` match the DELETE branch, `:522/:676/:767/:770` match the reaping pair, `projection.go:863/:877` are the two seam funcs. The r37→r38 table has exactly two rows, one per finding, each naming the clauses it actually repaired (R7 admission paragraph, R6 aggregate-terminal scoping, AC38 rewrite + oracle rename, AC43 tail, AC7 references, §6/OD3 tails, T2/T3 wording).\n\n### Advisories (non-blocking)\n\n**F1 [LOW][ledger-drift]** — §3 ledger row `r34-F3` still says \"deferred branch: nothing persists … later sweep retries (AC38's completing-path assertion covers the retry)\", and its root-invariant cell still reads \"No retirement ever completes without a tombstone\"; `r35-C1`/`r36-F1` cells still speak of a \"refused retirement\". AC38 no longer covers a retry, and R7 now completes without a tombstone. The r37-C5 row does mark the deferred branch \"superseded by proof of unreachability\", so this is provenance-with-supersession rather than a live claim — but the retry phrase names AC38 as its oracle, which no longer matches. Fix: strike \"(AC38's completing-path assertion covers the retry)\" from the r34-F3 cell.\n\n**Open Question [LOW-confidence]** — R7 says a zero-effect completion persists nothing, but no normative clause states what a commit landing *after* such a completion yields; only the §3 Critic handoff says it creates a fresh namespace whose handle fails owner binding, while R6's \"a commit landing on a retired namespace yields `result_namespace_retired`\" reads unconditionally and T2 says \"no retired-namespace resurrection\". R7's explicit \"nothing persisted\" limits the hazard, but one sentence scoping the terminal to tombstone-ful namespaces would remove the ambiguity that could tempt an implementer to record empty retirement (which would breach R6's retained-metadata bound).\n\n### Positive Observations\n\n- The repair removes a branch rather than adding bookkeeping — the smallest invariant-preserving shape.\n- AC38/AC43 reuse the existing set-enumeration and delta assertion forms; no second observation seam was invented.\n- The Critic handoff states the residual in-flight-commit consequence honestly instead of hiding it.\n\n### Review limits\n\nNo hashing or shell tool in this profile, so the pinned sha256 (111563 B) was not recomputed; drift was checked structurally (207 lines, `r38-replacement` pin, complete R1–R16/AC1–AC44/T1–T5/ten-key sets, ledger chain r34→r38 present and ordered).\n\n### Recommendation\nAPPROVE\n",
+  "invocationId": "87179ce4-84f1-410b-aca8-74fed3eb3f4d"
+}

@@ -1,0 +1,50 @@
+{
+  "intent": "ImplementTicket01T3Repair (engineer, attempt 2: repair wiring after two edit rejections)",
+  "instructions": "Bounded REPAIR of ticket 01 task T3, feature token-efficient-tool-responses r40. Root /home/opencode/projects/default/mcp-bridge. Spec .scratch/token-efficient-tool-responses/spec.md sha256 37dd21cee4cebdd8c5e4771741e05e594feb01292e43269ace89ee11d35ad686, section 5 T3 is the scope. You are attempt 2: attempt 1 stopped after two edit-tool rejections, ~60% wired. Do not restart; repair forward.\n\nVERIFIED TREE STATE (coordinator ran it just now):\n- `go build ./...` fails ONLY in internal/service/bounded_delivery.go (382 lines, untracked): lines 242 and 245-252 reference missing ToolSurface members, line 304 uses context.Context with no \"context\" import; the \"strings\" import is unused.\n- internal/observe/log.go is already coherent (WriteJSONLine + marshalLogRecord compile); do not redo it, only add T3-required rows if the spec needs them.\n- internal/service/bounded_delivery_test.go (358 lines) and retrieve_result_test.go (128 lines) exist and call newResultStore directly.\n\nEXACT REPAIRS (apply these first, then finish the wiring):\n1. internal/service/tools.go lines 29-39 (ToolSurfaceConfig): add `RetainedResults func() config.RetainedResultBounds` and `Metrics *observe.Metrics`.\n2. internal/service/tools.go lines 44-62 (ToolSurface struct): add `results *resultStore` and `resultMu sync.Mutex`.\n3. internal/service/bounded_delivery.go imports (lines 3-15): add \"context\"; remove \"strings\" only if grep shows no `strings.` use.\n4. cmd/mcp-bridge/serve.go lines 164-170 (the service.ToolSurfaceConfig literal): pass the live retained-result bounds accessor and the surface metrics. Read the config accessor T1 landed before choosing the expression; change nothing else in serve.go.\n5. internal/catalog/schema.go: add the fourth built-in name constant (retrieve_result) alongside ToolSearchTools / ToolDescribeTool / ToolCallTool.\n6. internal/service/tools.go renderBuiltinDescriptors (line 89) and registerBuiltinTools (line 140): add the fourth descriptor with the R15 description (handle, page, total_pages, bounded preview, byte-exact page concatenation, qualified promise) and the case wiring to t.retrieveResult.\n7. internal/service/tools.go callTool (line 700): the measure/decide seam goes immediately before the final `return &mcp.CallToolResult{...}` (about line 905), on the successful dispatch path only, after every catalog-revision and schema admission check. Build the result once, extract upstreamCode from payload[\"upstream_result\"].structuredContent.code with the [truncated] marker at max_upstream_code_bytes (spec R8), then `return t.boundedCallToolResult(req, result, upstreamCode), nil`.\n8. internal/service/inbound.go: invoke the store sweep at all three R7 retirement paths - the deleteSession closure at line 242 (session DELETE termination) and both h.reapExpiredLocked(now) sites (lines 522 and 767; expiry reaping and the missing-session rewrite branch). The retirement commit must complete at each trigger. Reach the surface store through the handler; if the handler has no surface reference, add the narrowest field needed and set it where the handler is constructed, staying inside the 19 declared paths.\n9. Count pins and docs, per spec section 5 (read each current literal before editing):\n   - cmd/mcp-bridge/logging_contract_test.go lines 703-751: pin map gains 13 rows; the len(eventMessages)!=23 and want 23 assertions become 36.\n   - cmd/mcp-bridge/serve_hybrid_reload_test.go: the three literal tool counts become derived from registered built-ins plus pinned upstream tools.\n   - internal/service/tools_test.go assertAdvertisedBuiltinsAndPin: three-schema map becomes four.\n   - internal/service/builtin_guidance_test.go: retrieve_result exact description assertion.\n   - progressive_session_test.go, progressive_concurrency_lifecycle_test.go, tools_publish_atomic_test.go, tool_metadata_test.go, cmd/mcp-bridge/serve_test.go, serve_hybrid_exposure_test.go: count and name lists.\n   - docs/logging-contract.md: paging event rows only.\n10. Make the existing T3 oracles pass: TestPreviewBoundedAndMetadata, TestPagesConcatenateToOriginal, TestExecutionFactsPreserved, TestUpstreamCodePinned, TestTerminalPreviewsBounded, TestAggregateAdmissionHard, TestHandleRejectionUniformHandler, TestPageRuneAlignment, TestPageBoundsValidated, TestRetrieveShapeInvalid, TestTerminalFieldSemantics, TestRetrievalContractDocumented, TestPreviewRuneStraddle, TestCeilingsPinnedAcrossReload, TestRetrievalEvictionAtomicity, TestEpochUnresolvedNoHandle, TestRetrieveValidationPrecedence, TestExecutionStateRegistry, TestEscapingHeavyPagesWithinCeiling, TestCeilingPlusOneBoundary, TestInboundRetirementHooks, TestPagingMetricsDeltas.\n\nCONSTRAINTS: exact 19 write roots only; do not edit internal/service/result_handle.go, result_handle_test.go, result_measure.go, any file under internal/config/, internal/observe (metrics.go, envelope.go, httpdiagnostics.go, log_test.go), or the observe vocabulary; no exposure case for retrieve_result; no spec edits; do not call record-failure (the harness writer accepts only schema-1 state; known gap).\n\nEDIT DISCIPLINE: read the anchor immediately before each edit; if an edit is rejected, re-read the exact region and retry once with the corrected anchor; if a second rejection happens, STOP and write a BLOCKED receipt naming the exact file, line range and old_string you attempted. Keep research under 42 read/search calls before your first edit - the repair list above is the research.\n\nVALIDATION (report exact output and exit codes): go build ./... ; go test ./internal/service/ -count=1 ; go test ./internal/observe/ -count=1 ; go test ./internal/config/ -count=1 ; go test ./cmd/mcp-bridge/ -count=1 ; gofmt -l on every Go file you touched. Then write a COMPLETED receipt to .omp/artifacts/receipt_T3.json listing each command with exit code and output.\n",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses",
+    "revision": "r40",
+    "requests": [
+      {
+        "name": "ImplementTicket01T3Repair",
+        "taskId": "T3",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/service/bounded_delivery.go",
+            "internal/service/bounded_delivery_test.go",
+            "internal/service/retrieve_result_test.go",
+            "internal/service/tools.go",
+            "internal/catalog/schema.go",
+            "internal/service/inbound.go",
+            "internal/service/tools_test.go",
+            "internal/service/builtin_guidance_test.go",
+            "internal/service/progressive_session_test.go",
+            "internal/service/progressive_concurrency_lifecycle_test.go",
+            "internal/service/tools_publish_atomic_test.go",
+            "internal/service/tool_metadata_test.go",
+            "cmd/mcp-bridge/serve_test.go",
+            "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+            "cmd/mcp-bridge/serve_hybrid_reload_test.go",
+            "docs/logging-contract.md",
+            "cmd/mcp-bridge/logging_contract_test.go",
+            "internal/observe/log.go",
+            "cmd/mcp-bridge/serve.go"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ImplementTicket01T3Repair",
+      "agent": "engineer",
+      "solutionSpace": "One fix set: repair the stopped T3 wiring to the exact anchors given (surface fields, cfg fields, imports, serve wiring, fourth built-in, call seam, three sweep triggers), then finish the spec section 5 T3 test and count pins; no design choices remain.",
+      "task": "Repair and complete T3 exactly as the wrapper instructions enumerate: apply repairs 1-8 until `go build ./...` exits 0, then the count/doc pins (9) and the T3 oracle set (10), run the six validations, and write .omp/artifacts/receipt_T3.json."
+    }
+  ]
+}

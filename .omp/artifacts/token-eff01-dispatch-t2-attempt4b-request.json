@@ -1,0 +1,28 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "token-efficient-tool-responses",
+  "revision": "r40",
+  "requests": [
+    {
+      "name": "ImplementTicket01T2Attempt4b",
+      "taskId": "T2",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/result_handle.go",
+          "internal/service/result_handle_test.go",
+          "internal/observe/metrics.go",
+          "internal/observe/metrics_test.go",
+          "internal/observe/envelope.go",
+          "internal/observe/log_test.go",
+          "internal/observe/log.go",
+          "internal/observe/httpdiagnostics.go",
+          "docs/logging-contract.md"
+        ]
+      }
+    }
+  ]
+}

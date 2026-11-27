@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 2,
+  "feature": "snapshot-recovery",
+  "revision": "r30",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "authorizationId": "owner-bounded-snapshot-recovery-t1",
+  "envelopeId": "env-1",
+  "packetDigest": "795629f2020c6a8c757f7f54c31bd40db3b776e0decd5f2dd023b4300c9af287",
+  "selectedBranchId": "snapshot-recovery-r30"
+}

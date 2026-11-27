@@ -3,31 +3,6 @@
   "status": "COMPLETED",
   "artifact_receipt": ".omp/artifacts/receipt_T1.json",
   "telemetry_ref": null,
-  "summary": "PASS: startup diagnostics tests and CLI smoke passed; aggregate source-line coverage 90.0% (7335/8146).",
-  "error_code": null,
-  "evidence": [
-    {
-      "command": "go test ./internal/observe -count=1",
-      "exitCode": 0,
-      "result": "observe package tests passed."
-    },
-    {
-      "command": "go test ./... -count=1",
-      "exitCode": 0,
-      "result": "All Go packages passed."
-    },
-    {
-      "command": "go test -coverpkg=./... -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/covcheck -profile coverage.out -root .",
-      "exitCode": 0,
-      "result": "Aggregate source-line coverage 90.0% (7335/8146); 90% gate passed."
-    },
-    {
-      "command": "Disposable built-CLI corrupt-snapshot smoke with MCP_SNAPSHOT_QUARANTINE=off and configured secret sentinel",
-      "exitCode": 1,
-      "result": "CLI exited 1 as expected; stdout empty. stderr contained exactly one startup_failed event with code and stage catalog_loop_start and cause admission_persist_failed, plus one separate startup_snapshot_rejected warning. No configured secret or raw cause text appeared."
-    }
-  ],
-  "decisions": [
-    "[AUTO-DECISION] Used existing fake upstream and fake embeddings fixtures for valid isolated config and listener lifecycle tests."
-  ]
+  "summary": "Applied the four in-scope config validation fixes. Build, config tests, measurement oracle test, and gofmt passed; the entry-cap-only 4294967296 case now asserts entry_cap_bound.",
+  "error_code": null
 }

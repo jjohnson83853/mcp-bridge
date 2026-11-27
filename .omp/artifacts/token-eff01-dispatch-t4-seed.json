@@ -1,0 +1,35 @@
+{
+  "intent": "ImplementTicket01T4 (engineer; seam wiring at named lines, four-surface paging/pass-through/log-label oracles)",
+  "instructions": "T4 wire-up + oracles for the same delivery seam on the three non-call_tool surfaces. Do exactly this.\n\nWIRING (reuse boundedCallToolResult in internal/service/bounded_delivery.go; do not add a second seam, do not edit that file):\n\n1. internal/service/tools.go, searchTools (~line 500) and describeTool (~line 684): both currently `return &mcp.CallToolResult{Content: ..., StructuredContent: payload}, nil`. Build the result as today, then return `t.boundedCallToolResult(req, result, \"\"), nil` \u2014 these are bridge-generated results, so upstream_code is always absent and is_error always false. `req` is the handler's *mcp.CallToolRequest.\n\n2. internal/service/direct_execution.go: add field `request mcp.Request` to boundDirectExecution (next to requestStart). In call() (~line 59) build the result as today and return `e.surface.boundedCallToolResult(e.request, result, directUpstreamCode(upstream.StructuredContent)), nil`, where directUpstreamCode returns the upstream result's own structuredContent[\"code\"] string (R8 direct path) or \"\" when absent/not a map.\n\n3. internal/service/tools.go, callPinnedTool (~line 313, where boundDirectExecution is built): set `request: req`.\n\nTESTS (new: internal/service/discovery_paging_test.go; extend: internal/service/bounded_delivery_test.go):\n\n4. TestPagingAllSurfaces (AC19) in discovery_paging_test.go: parameterized over the four surfaces \u2014 call_tool, directly invoked projected tool, search_tools, describe_tool. Reuse the existing package harnesses (progressiveSessionHarness/newDirectExecutionFixture/newToolHarness) so each surface's result goes through its real handler, not a hand-built result. For each surface: over-ceiling result yields R3's preview contract (paging_required true, 43-char handle, total_bytes equal to the surface's own serialized result length, is_error/upstream_code per surface: call_tool and direct carry the upstream code, search_tools/describe_tool are is_error false with upstream_code absent); retrieve_result returns pages that concatenate byte-exactly to that surface's own independent golden literal; re-retrieving page 1 is byte-identical; include one projection-bearing direct-invocation case (live owner + projection, over-ceiling).\n\n5. TestSmallResultPassThroughByteIdentical (AC1) in bounded_delivery_test.go: one subtest per surface, each with its own literal expected JSON string in the test source (no re-marshal through the delivery path) and its literal length; plus per surface an exactly-at-ceiling fixture whose literal expected length is 8192 delivered byte-identically (AC40's 8193 paging half is already T3's TestCeilingPlusOneBoundary; do not duplicate it).\n\n6. TestLogLabelProducers (AC13 surface half) in bounded_delivery_test.go: for each of the four surfaces, assert the emitted paging/label records use the registered operation and event values (call_tool: result_paged; retrieve_result: result_page_served).\n\nDo not change production behavior other than the three wiring edits; small results must stay byte-identical. No edits outside the four write roots.\n\nVERIFY, report verbatim exit codes/output:\n  go build ./...\n  go vet ./internal/service/\n  gofmt -l internal/service/tools.go internal/service/direct_execution.go internal/service/discovery_paging_test.go internal/service/bounded_delivery_test.go\n  go test ./internal/service/ -run 'TestPagingAllSurfaces|TestSmallResultPassThroughByteIdentical|TestLogLabelProducers' -count=1\n  go test ./internal/service/ -count=1\n  go test ./internal/observe/ -count=1\n  go test ./cmd/mcp-bridge/ -count=1\nWrite COMPLETED receipt to .omp/artifacts/receipt_T4.json only when all exit 0 and gofmt lists nothing; else INCOMPLETE with exact output.\n",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses",
+    "revision": "r40",
+    "requests": [
+      {
+        "name": "ImplementTicket01T4",
+        "taskId": "T4",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/service/tools.go",
+            "internal/service/direct_execution.go",
+            "internal/service/discovery_paging_test.go",
+            "internal/service/bounded_delivery_test.go"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ImplementTicket01T4",
+      "agent": "engineer",
+      "solutionSpace": "one design: reuse boundedCallToolResult on the three surfaces and pin the three named oracles",
+      "task": "Wire the delivery seam into search_tools, describe_tool and direct invocation; add TestPagingAllSurfaces, TestSmallResultPassThroughByteIdentical, TestLogLabelProducers; run the seven checks; write the T4 receipt when green."
+    }
+  ]
+}

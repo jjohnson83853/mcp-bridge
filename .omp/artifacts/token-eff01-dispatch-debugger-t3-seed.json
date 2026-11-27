@@ -1,0 +1,51 @@
+{
+  "intent": "Map T3 repair anchors (debugger, read-only root-cause/isolation under P03)",
+  "instructions": "Read-only repair mapping under project rule P03. Root /home/opencode/projects/default/mcp-bridge. Authoritative spec .scratch/token-efficient-tool-responses/spec.md sha256 37dd21cee4cebdd8c5e4771741e05e594feb01292e43269ace89ee11d35ad686; read section 5 T3 and section 4 ACs AC3, AC6, AC9, AC10, AC11, AC14-AC17, AC24-AC32, AC37, AC40, AC43, AC44.\n\nCONTEXT: ticket T3's first engineer attempt stopped after two edit-tool rejections at ~60% wiring. Current tree facts I verified: `go build ./...` fails ONLY in internal/service/bounded_delivery.go (new, untracked, 382 lines): lines 242-252 reference ToolSurface fields that do not exist (`results`, `resultMu`, `cfg.RetainedResults`, `cfg.Metrics`), line 304 uses `context.Context` with no `context` import, and the `strings` import is unused. internal/observe/log.go is already coherent (WriteJSONLine + marshalLogRecord compile). Tests internal/service/bounded_delivery_test.go (358 lines) and retrieve_result_test.go (128 lines) exist.\n\nREAD ONLY the paths in requests[0].effects.paths. Do not edit or write any source file; write only the one artifact named below. Do not run mutating git commands, do not touch state, do not run record-failure.\n\nOBJECTIVE: write /home/opencode/projects/default/mcp-bridge/.omp/artifacts/t3-repair-map.md containing, for each item, exact file path, exact line range, and a literal old_string/new_string patch block the engineer can apply without further searching:\n\n1. internal/service/tools.go \u2014 the two config fields to add to ToolSurfaceConfig (`RetainedResults func() config.RetainedResultBounds`, `Metrics *observe.Metrics`) and the two ToolSurface fields (`results *resultStore`, `resultMu sync.Mutex`), with anchors and any import additions.\n2. internal/service/bounded_delivery.go \u2014 exact import-block replacement (add \"context\", drop unused \"strings\"), and confirm no other new-file compile errors beyond those four missing members by reading the whole file.\n3. cmd/mcp-bridge/serve.go \u2014 exact construction site of service.ToolSurfaceConfig and where the live config bounds accessor and observe.Metrics are available; give the anchor and the exact field assignments (no other behaviour change).\n4. internal/service/tools.go \u2014 the call_tool handler: exact function, the insertion point for the measure/decide seam AFTER the existing catalog-revision checks, how the upstream result and upstreamCode (`structuredContent.upstream_result.structuredContent.code`) are obtained there, and the exact replacement block calling `t.boundedCallToolResult(...)`.\n5. internal/service/tools.go (or wherever built-ins are declared) \u2014 exact registration site for the three existing built-ins and the retrieve_result tool schema/description anchor (R15 wording), plus the handler wrapper signature matching `func (*ToolSurface) retrieveResult(context.Context, *mcp.CallToolRequest)`.\n6. The three R7 inbound retirement trigger sites (expiry reaping, missing-session rewrite branch, session DELETE termination) \u2014 exact file/function/line anchors and the exact call to add (`retire` and/or `sweep`), per spec section 5 T3.\n7. Count-pin edits with current literal text and replacement: cmd/mcp-bridge/logging_contract_test.go:703-751 (thirteen new rows, len 23->36), cmd/mcp-bridge/serve_hybrid_reload_test.go (three literal tool counts -> derived), internal/service/tools_test.go assertAdvertisedBuiltinsAndPin (three-schema map -> four), internal/service/builtin_guidance_test.go (add retrieve_result description), progressive_session_test.go, progressive_concurrency_lifecycle_test.go, tools_publish_atomic_test.go, tool_metadata_test.go, cmd/mcp-bridge/serve_test.go, serve_hybrid_exposure_test.go.\n8. Whether internal/observe/log.go and docs/logging-contract.md already satisfy their T3 share (state yes/no with the exact missing rows, if any).\n9. The four validation commands and the one-liner predicate that decides the tree is whole (`go build ./...` exit 0, then go test ./internal/service/ ./internal/observe/ ./internal/config/ ./cmd/mcp-bridge/).\n\nKeep the map under 900 lines. No recommendations beyond the spec; no edits.\n",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses",
+    "revision": "r40",
+    "requests": [
+      {
+        "name": "MapT3RepairAnchors",
+        "taskId": "CR1",
+        "agent": "debugger",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            "internal/service/bounded_delivery.go",
+            "internal/service/bounded_delivery_test.go",
+            "internal/service/retrieve_result_test.go",
+            "internal/service/tools.go",
+            "internal/service/tools_test.go",
+            "internal/service/builtin_guidance_test.go",
+            "internal/service/progressive_session_test.go",
+            "internal/service/progressive_concurrency_lifecycle_test.go",
+            "internal/service/tools_publish_atomic_test.go",
+            "internal/service/tool_metadata_test.go",
+            "internal/service/result_handle.go",
+            "internal/service/session_exposure.go",
+            "cmd/mcp-bridge/serve.go",
+            "cmd/mcp-bridge/serve_test.go",
+            "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+            "cmd/mcp-bridge/serve_hybrid_reload_test.go",
+            "cmd/mcp-bridge/logging_contract_test.go",
+            "internal/observe/metrics.go",
+            "internal/observe/log.go",
+            "docs/logging-contract.md"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "MapT3RepairAnchors",
+      "agent": "debugger",
+      "solutionSpace": "Read-only mapping of exact anchors, signatures and count pins needed to finish the T3 wiring after a stopped engineer attempt; no design choices beyond spec section 5 T3.",
+      "task": "Produce .omp/artifacts/t3-repair-map.md exactly as specified in the wrapper instructions: anchors, literal patch blocks, count-pin literals, and the validation predicate. Read-only; the artifact is the only file you write."
+    }
+  ]
+}

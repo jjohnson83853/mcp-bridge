@@ -15,12 +15,14 @@ Attack the acceptance contract, not prose quality:
 
 # Deliver
 
-`VERDICT: PASS` or `VERDICT: REVISE` on the first line, then:
+End the report with the installed verdict block, exactly this shape and nothing after it:
 
-1. Findings ordered by severity: ID, affected R or T, the cheap false pass or contradiction, spec anchor, and the criterion that would close it.
-2. A per-requirement verdict for R1–R12: adequate, weak, or missing, each with one-line evidence.
-3. Any requirement that a reviewer could not falsify against the built binary, named precisely.
-4. Any silent resolution of an open owner decision, or contradiction with a settled ruling.
+```
+### Verdict
+PASS
+```
+
+The single line after the heading must be one of `PASS`, `REVISE`, or `BLOCKED`. Before it: findings ordered by severity (ID, affected R or T, the cheap false pass or contradiction, spec anchor, the criterion that would close it); a per-requirement verdict for R1–R12; any requirement a reviewer could not falsify against the built binary; any silent resolution of an open owner decision.
 
 # Acceptance
 

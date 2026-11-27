@@ -1,0 +1,133 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket01-spec",
+  "revision": "r10",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+      "sha256": "017f22d9e2d24a592eac8a0c5351601c37ce7ad297f0c105ab0eb1e993fff5da"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/issues/01-bounded-results-with-paging.md",
+      "sha256": "997d15667fcd9346ff146230b43b858f5e40d9d970b6f6ea67b47296f16b5b01"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-efficiency-ticket01-review-packet.md",
+      "sha256": "4e8624a319e91aa7f35a1f01a9b285dd03350fe955fd91f94e1693e5787111b5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-efficiency-ticket01-refinement.md",
+      "sha256": "eac715304b2b204ad54ff212900d2d8bafea718c9ffaab035bb3e2505616aa15"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round1.md",
+      "sha256": "3d97e9a7cd855710e9a9e7f21a59eada2ba6b1cc763185b90c7396c321058d2f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round2.md",
+      "sha256": "239fc9dccd1f5a4338fa964f098682e7bd7ab2d609a12a46766e8b98d3e67a8a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round5.md",
+      "sha256": "3529aa79e88692afae4229bbe179bbcb06ddfc04cb7b1ab15719eecc1d761161"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round6.md",
+      "sha256": "cdc00267ce2f6ad92feda1f1d174ee994781fc864bfaa99c24a6b0618be34d2f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round7.md",
+      "sha256": "571b9f7e8a69bc23c78cb80037c38abfa8a68e4d4d2691988b7a6e695eb3e235"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round8.md",
+      "sha256": "4b483e3c43f77db13c97b32e6678ddfd7e67302c25868c8d3da746a8f4e89436"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/findings-round9.md",
+      "sha256": "15d18f8ba83ac3f17c1d6a68e571815d68d54dc4c6563d3a43d997b3a60aad4f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/decisions.md",
+      "sha256": "db78a422ccd7119536dfbe2ccf8d71e7d692efdf78636b5402a6c9a8f936bfaf"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
+      "sha256": "5ed67dab601ea5360d693bda93df2fdb740426e33c5a36306f19b9ba58fda52c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "85ac7e95aef2aff388e0b2e6b82c0db9dd42525b25521f09f2242e54edc4ab21"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/CHANGELOG.md",
+      "sha256": "4ede091062752a1ecfd6b1991331ada96ddea2c3dba3dedbd30fdd85aed07ecc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/RULES.md",
+      "sha256": "b32cd836184cbae854d78e8a429c5c3497228b29221fa6e917e4b2849c289a2f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "a2fc976285ebae717a0d1283cd67406bcc699b63ce9023fe418fbc3628642172"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "38ac2ee5dfc44918a67fcf48ec7c05b67a1822f7c8b722b1aee91d634de6039d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/session_exposure.go",
+      "sha256": "e6f8e6cc7ec479f13eebb0750e87b6b0fda8f964e775506176588aa3bdb64da2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/projection.go",
+      "sha256": "5c9a90712dd572575690a982f6df1e15d2190abc55c4253cfe76adeb8dbbf474"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/inbound.go",
+      "sha256": "7c313195991180357ab3c877c5ad3fb8f00d9183ff7c2d0daacd82376187959a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/cursor.go",
+      "sha256": "f5883817347e499aa2b3b66af5d7dbd64cc649fec5e73b37fe0dfe2f65ab3616"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "1e49b633a9a9c6dfdec31ccb9f916cb5320d16dbdb66fd5b2042fbefa7abad21"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "9abca6709fddcaed4b00e9cbbff44481475c0221ee4ca495877e74febac22335"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "SpecReviewPaging",
+      "agent": "code-reviewer",
+      "reviewerId": "code-reviewer",
+      "taskId": "CR1",
+      "targetCandidateId": "token-efficient-tool-responses-ticket01-spec",
+      "targetRevision": "r10",
+      "requestSha256": "35d73dcff6c648ffdaeaa32aeab3c8a3784d476286cda31aee509af95dc823d3",
+      "taskSha256": "ea4f8ddf0bb9b30e8a39355de0f2798bb1c0e706d53697d1ccbb24d438a2a297",
+      "instructionsSha256": "a9302e498b5662d52bde185789fa0400412edec4dfc1316dc59aa190a1c44535"
+    },
+    {
+      "name": "SpecGatePaging",
+      "agent": "critic",
+      "reviewerId": "critic",
+      "taskId": "CT1",
+      "targetCandidateId": "token-efficient-tool-responses-ticket01-spec",
+      "targetRevision": "r10",
+      "requestSha256": "37342a94690bd056865bdfed9295e28f5b90931af36c73f60e52de53c6514026",
+      "taskSha256": "0fdfaec8b9ddd301720e6d980c140e46d12073256d9ac5e1b6b08e9a5f2eafb4",
+      "instructionsSha256": "a9302e498b5662d52bde185789fa0400412edec4dfc1316dc59aa190a1c44535"
+    }
+  ],
+  "output": "<task-result id=\"SpecReviewPaging-10\" agent=\"code-reviewer\" status=\"completed\" duration=\"8m22s\">\n\n<output>\nVERDICT: REVISE\nMode: specification; pass: repair (r10, closes r9 ledger).\n\n**F1 [HIGH][byte-accounting — reopens H1]** Affected: R1, R9, AC9, AC13; §4.5 \"Retention model\"/\"Quantified bounds\", AUTO-DECISION 11–12, §9.\nDefect: §4.5 says the per-entry bound equals the transport payload bound, but AUTO-DECISION 11 says accounting is on S, and the store's entry is the whole delivered result: `call_tool` returns `Content: upstream.Content` (`tools.go:903-908`) while `payload[\"upstream_result\"]` embeds the same decoded result (`tools.go:869`), so the upstream content appears twice, and re-marshaling adds up to 6× escaping (spec §3). `maximal_entry_bytes = 8388608+256` assumes one copy and no escaping. The 8 MiB premise is only a validation range (`config/bounds.go:86`); `Command.MaxResponseBytes` is read (`command.go:109`) but no upstream reader applies it — only embedding uses its own cap (`wiring.go:322`), and `internal/upstream/client.go` installs no body limit.\nConsequence: a maximal `call_tool` entry measures ≈2× the cap (>16 MiB) and an unenforced cap makes it unbounded, so `max_bytes_per_session=16777216` (hard, \"cannot be overshot\") cannot admit it; R1's terminal set has no capacity outcome, so either AC13 total retention fails or R9's hard bound is breached. §9's `≥8388864` check passes undetected.\nFix invariant: define one entry-byte metric (the `total_bytes` form or the retained compact value), derive the maximum from duplicated forms, escaping and an actually-enforced upstream cap, and require the hard bound ≥ that, or add a typed capacity terminal and a near-cap-entry oracle.\n\n**F2 [MEDIUM][contract]** R1, R3, R4; AC4; §4.1, §4.5.\nDefect: R1's universal \"any tool result over the configured ceiling\" is not scoped, while pages are sized to the handle's *pinned* ceiling after a ceiling reload; a lowered `delivery_ceiling_bytes` makes a pinned page exceed the configured ceiling, so R1 demands re-paging, contradicting R4 and the no-recursive-paging non-goal.\nConsequence: the required behavior is undecidable and untested. Spec must state retrieval pages are exempt from the current ceiling and bounded only by the pinned ceiling.\n\n**F3 [MEDIUM][verifiability]** AC13; R1 §2 terminal set; T2/T4/T5.\nDefect: AC13 claims \"the three terminal outcomes are typed errors\", but its oracles test only retention; no task names a seam to induce entropy failure (2) or envelope infeasibility (3), and config load makes (3) unreachable.\nConsequence: two of R1's three terminal branches can be omitted or mis-shaped without failing the suite. Name injectable entropy and a store-construction oracle (add to T2 scope), or narrow R1/AC13.\n\n**F4 [MEDIUM][security-oracle]** R7, AC14, T2.\nDefect: R7's \"crypto-random\" has no falsifiable oracle; AC14 only checks pairwise-distinct 43-char base64url, which a predictable counter satisfies.\nConsequence: K3's guessability risk is not closed by the test plan. Name the entropy source/failing-source oracle or state unpredictability is inspection-verified.\n\n**F5 [LOW][authority/ledger]** §4.5, §11 OD2-A, AUTO-DECISION 12.\nDefect: the spec adopts 16 MiB `max_bytes_per_session` and deletes `max_retained_result_bytes` as \"OD2-A as amended\", but `decisions.md` records OD2-A as 8 MiB with that key and no amendment.\nConsequence: an owner-adopted bound/config surface changes without recorded authority, and the contested arithmetic is resolved by doubling the bound.\n\n**Verified adequate** (no defect): measured form is the whole `CallToolResult` via SDK marshal, duplicates per occurrence, one metric for `total_bytes`/ceiling/preview/page fill (8192/8193 and ≤1536 are the same form); termination is stated (preview prefix, page ≤ pinned ceiling, `retrieve_result` never paged, no recursive paging); handles are 32-byte crypto/rand bound to `{kind,sessionID,epoch}` with one `invalid_handle` for unknown/tampered/foreign/old-epoch and two-phase validation — `nextEpoch` is a single mutex-guarded counter (`projection.go:199-212`), so re-minted session IDs cannot reach old-epoch handles; per-namespace hard entry/byte bounds, FIFO, own-only advisory eviction, atomic creation, immutable reads, tombstone taxonomy; `isError`/`upstream_code` in preview and every page (string-only, rune-safe, full code in S), dispatch `errorResult` never paged; own `retrieve_result` tool with `additionalProperties:false` schema in `internal/catalog/schema.go`, no `full` collision; seam after `commitDiscovery` with the complete 11-file built-in inventory; T1–T7 deps coherent with AC→task ownership; all seven T6 negative README fixtures exist verbatim. No writes performed; worktree unmodified.\n</output>\n</task-result>\n",
+  "invocationId": "SpecReviewPaging-10"
+}

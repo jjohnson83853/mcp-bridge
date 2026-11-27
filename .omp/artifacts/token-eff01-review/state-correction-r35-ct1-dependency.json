@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-26T20:38:08.931Z",
+  "reason": "CT1 blockedBy CR1 is stale metadata: the positive CodeReviewer observation for r35 is bound (reviewHistory seq 76), but CR1 completion has no canonical writer. Removing the stale edge lets the installed schema-2 missing-review schedule adapter admit the dependent Critic dispatch.",
+  "before": {
+    "blockedBy": [
+      "CR1"
+    ]
+  },
+  "after": {
+    "blockedBy": []
+  }
+}

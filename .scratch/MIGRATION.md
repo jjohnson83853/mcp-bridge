@@ -1,6 +1,6 @@
 # Local backlog migration to GitHub issues
 
-Migrated 130 tickets and 31 feature specifications from the local Markdown tracker
+Migrated 130 tickets and 34 feature specifications from the local Markdown tracker
 (`.scratch/<feature>/`) to GitHub issues in this repository on 2026-11-26.
 
 GitHub issues are now the authoritative tracker. The files under `.scratch/` are retained as the
@@ -36,9 +36,12 @@ Mapping rules:
 | oauth-session-diagnostics | [#145](https://github.com/jjohnson83853/mcp-bridge/issues/145) | 5 | `.scratch/oauth-session-diagnostics/spec.md` |
 | observability-completeness | [#146](https://github.com/jjohnson83853/mcp-bridge/issues/146) | 9 | `.scratch/observability-completeness/spec.md` |
 | openai-tool-schema-compatibility | [#147](https://github.com/jjohnson83853/mcp-bridge/issues/147) | 2 | `.scratch/openai-tool-schema-compatibility/spec.md` |
+| progressive-metadata-reveal | [#162](https://github.com/jjohnson83853/mcp-bridge/issues/162) | 0 | `.scratch/progressive-metadata-reveal/spec.md` |
 | resource-passthrough | [#148](https://github.com/jjohnson83853/mcp-bridge/issues/148) | 7 | `.scratch/resource-passthrough/spec.md` |
+| result-spill-ignore | [#163](https://github.com/jjohnson83853/mcp-bridge/issues/163) | 0 | `.scratch/result-spill-ignore/spec.md` |
 | search-filter-and-lock | [#149](https://github.com/jjohnson83853/mcp-bridge/issues/149) | 2 | `.scratch/search-filter-and-lock/spec.md` |
 | session-bound-oauth-admission | [#150](https://github.com/jjohnson83853/mcp-bridge/issues/150) | 5 | `.scratch/session-bound-oauth-admission/spec.md` |
+| session-expiry-recovery | [#164](https://github.com/jjohnson83853/mcp-bridge/issues/164) | 0 | `.scratch/session-expiry-recovery/spec.md` |
 | snapshot-recovery | [#151](https://github.com/jjohnson83853/mcp-bridge/issues/151) | 1 | `.scratch/snapshot-recovery/spec.md` |
 | startup-diagnostics | [#152](https://github.com/jjohnson83853/mcp-bridge/issues/152) | 1 | `.scratch/startup-diagnostics/spec.md` |
 | stateless-and-backend-modes | [#153](https://github.com/jjohnson83853/mcp-bridge/issues/153) | 5 | `.scratch/stateless-and-backend-modes/spec.md` |
@@ -185,3 +188,21 @@ Mapping rules:
 | `.scratch/tool-metadata/issues/06-integrated-acceptance-and-release-evidence.md` | [#128](https://github.com/jjohnson83853/mcp-bridge/issues/128) | ready-for-agent | [tool-metadata] 06: Complete integrated acceptance and release evidence |
 | `.scratch/upstream-breaker-recovery/issues/01-breaker-discovery-probe-recovery.md` | [#129](https://github.com/jjohnson83853/mcp-bridge/issues/129) | ready-for-agent | [upstream-breaker-recovery] 01 — Breaker Regains Reachable Close Path via Discovery Probe |
 | `.scratch/upstream-stateless-wiring-bugfix/issues/01-upstream-stateless-wiring.md` | [#130](https://github.com/jjohnson83853/mcp-bridge/issues/130) | closed | [upstream-stateless-wiring-bugfix] 01 - Upstream Server Stateless Wiring and Restart Resilience |
+
+## Late additions (2026-11-26)
+
+Three feature directories under `.scratch/` carried a `spec.md` but had no issue and no row in the
+tables above. They were published after the main migration:
+
+- `progressive-metadata-reveal` → [#162](https://github.com/jjohnson83853/mcp-bridge/issues/162)
+  (closed as completed; implemented by `1c6ef7f`).
+- `result-spill-ignore` → [#163](https://github.com/jjohnson83853/mcp-bridge/issues/163)
+  (closed as completed; `.gitignore:47`).
+- `session-expiry-recovery` → [#164](https://github.com/jjohnson83853/mcp-bridge/issues/164)
+  (published open with `status:needs-triage`; no implementing commit found, disposition unverified).
+- `token-efficient-tool-responses` → [#157](https://github.com/jjohnson83853/mcp-bridge/issues/157)
+  refreshed to specification r40: the body carries the header, status block, tickets and section
+  index; the byte-exact specification is mirrored in three dated comments
+  (`sha256 37dd21cee4cebdd8c5e4771741e05e594feb01292e43269ace89ee11d35ad686`) and the decision log in
+  a fourth. The digest-pinned file at `.scratch/token-efficient-tool-responses/spec.md` remains the
+  reviewed artifact bound by `.omp/plans/review-sequence.json`.

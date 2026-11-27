@@ -1,0 +1,27 @@
+{
+  "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "token-efficient-tool-responses",
+  "revision": "r40",
+  "requests": [
+    {
+      "name": "DiagnoseT2ObserveEditFailure",
+      "taskId": "CR1",
+      "agent": "debugger",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          "internal/observe/metrics.go",
+          "internal/observe/metrics_test.go",
+          "internal/observe/log.go",
+          "internal/observe/log_test.go",
+          "internal/observe/httpdiagnostics.go",
+          "internal/observe/envelope.go",
+          "docs/logging-contract.md",
+          "internal/service/result_handle_test.go"
+        ]
+      }
+    }
+  ]
+}

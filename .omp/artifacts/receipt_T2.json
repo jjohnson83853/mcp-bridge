@@ -3,24 +3,37 @@
   "status": "COMPLETED",
   "artifact_receipt": ".omp/artifacts/receipt_T2.json",
   "telemetry_ref": null,
-  "summary": "AD10 source-node attribution, the AD15 DiagnosticCodes() registry, and AC02-1..AC02-7 tests pass.",
+  "summary": "T2 implementation and required verification completed.",
   "error_code": null,
   "evidence": [
     {
-      "command": "go test ./internal/config/...",
-      "exitCode": 0,
-      "result": "PASS; configuration diagnostics and position assertions."
+      "command": "gofmt -l internal/service/result_handle.go internal/service/result_handle_test.go internal/observe/metrics.go internal/observe/httpdiagnostics.go internal/observe/log.go internal/observe/envelope.go",
+      "phase": "GREEN",
+      "exit_code": 0,
+      "output": ""
     },
     {
-      "command": "go test ./cmd/mcp-bridge -run DiagnosticsEnvelope",
-      "exitCode": 0,
-      "result": "PASS; total remediation and envelope attribution assertions."
+      "command": "go build ./...",
+      "phase": "GREEN",
+      "exit_code": 0,
+      "output": ""
     },
     {
-      "command": "go vet ./...",
-      "exitCode": 0,
-      "result": "PASS; repository vet checks."
+      "command": "go test ./internal/observe/ -count=1",
+      "phase": "GREEN",
+      "exit_code": 0,
+      "output": "ok   github.com/jjohnson83853/mcp-bridge/internal/observe\t0.144s\n"
+    },
+    {
+      "command": "go test ./internal/service/ -run 'TestHandle|TestRetention|TestMarker|TestEviction|TestRetired|TestRetirement' -count=1",
+      "phase": "GREEN",
+      "exit_code": 0,
+      "output": "ok   github.com/jjohnson83853/mcp-bridge/internal/service\t0.017s\n"
     }
   ],
-  "decisions": []
+  "decisions": [
+    "logHTTP checks vocabulary only for non-empty event and operation values, preserving the existing invalid-core fallback for empty HTTP labels.",
+    "TestRetentionBounded uses a 200-byte entry-retention bound and adds a 100-byte FIFO byte-overflow case; TestMarkerAdmissionBound asserts an aggregate-neutral marker-cap swap."
+  ],
+  "unrun": []
 }

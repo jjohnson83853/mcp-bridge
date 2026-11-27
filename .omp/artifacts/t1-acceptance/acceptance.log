@@ -1,0 +1,24 @@
+# T1 acceptance — post-repair tree, 2026-11-27T01:51:15Z
+ M docs/logging-contract.md
+ M internal/config/bounds.go
+ M internal/config/config.go
+ M internal/config/diagnostics.go
+ M internal/config/validate_edge_test.go
+?? internal/service/result_measure.go
+?? internal/service/result_measure_test.go
+--- go build ---
+build_exit=0
+--- config package ---
+ok  	github.com/jjohnson83853/mcp-bridge/internal/config	0.226s
+config_exit=0
+--- service oracle ---
+=== RUN   TestMeasurementIndependentOracle
+=== RUN   TestMeasurementIndependentOracle/duplicate_content_below_delivery_ceiling
+=== RUN   TestMeasurementIndependentOracle/duplicate_content_above_delivery_ceiling
+--- PASS: TestMeasurementIndependentOracle (0.00s)
+    --- PASS: TestMeasurementIndependentOracle/duplicate_content_below_delivery_ceiling (0.00s)
+    --- PASS: TestMeasurementIndependentOracle/duplicate_content_above_delivery_ceiling (0.00s)
+PASS
+ok  	github.com/jjohnson83853/mcp-bridge/internal/service	0.017s
+--- gofmt ---
+gofmt_exit=0

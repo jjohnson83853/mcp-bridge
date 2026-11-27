@@ -1,0 +1,50 @@
+{
+  "intent": "ImplementTicket01T3 (engineer, ticket 01 T3: call_tool delivery seam and retrieve_result)",
+  "instructions": "Bounded implementation, feature token-efficient-tool-responses revision r40, ticket 01 task T3 ONLY. Root /home/opencode/projects/default/mcp-bridge. Authoritative spec .scratch/token-efficient-tool-responses/spec.md sha256 37dd21cee4cebdd8c5e4771741e05e594feb01292e43269ace89ee11d35ad686: read section 2 R3-R16, section 3, section 4 AC3, AC6, AC9, AC10, AC11, AC14, AC15, AC16, AC17, AC24-AC32, AC37, AC40, AC43, AC44, section 5 T3 (verbatim objective and write roots), section 7.\n\nDEPENDENCY ALREADY LANDED (T2, accepted): internal/service/result_handle.go provides the store seam, all oracles green. Use it, do not rewrite it:\n  newResultStore(bounds config.RetainedResultBounds, logger *observe.Logger, metrics *observe.Metrics, now func() time.Time, entropy io.Reader) *resultStore\n  resultNamespace{sessionID, epoch string; publisher bool}\n  resultOwnerResolver func(resultNamespace) (resultNamespace, bool)\n  (*resultStore).commit(owner resultNamespace, resolve resultOwnerResolver, payload []byte, upstreamCode string, isError bool) resultCommit  // {handle, retention}\n  (*resultStore).lookup(handle string, owner resultNamespace, resolve resultOwnerResolver, page int) resultLookup  // {code, rejection, entry, page}\n  (*resultStore).retire(owner resultNamespace); (*resultStore).sweep(); (*resultStore).stats()\n  *resultStore also exposes installMarker(entry, code string, transition time.Time)\nT2 also landed: T1's measureResult (internal/service/result_measure.go), config.RetainedResultBounds (internal/config/bounds.go), the 31-value operationVocabulary, the 12 event messages and the R12 violation path.\n\nSCOPE (spec section 5 T3, verbatim): measure/decide seam on call_tool only, after existing catalog-revision checks; preview/page/terminal shapes for the call_tool path (rune-aligned pages, result_epoch_unresolved, R8 upstream_code extraction from structuredContent.upstream_result.structuredContent.code with the [truncated] marker at max_upstream_code_bytes); retrieve_result registered as the fourth built-in, NOT exposure-gated (owner ruling), owner resolved handler-side per section 3, with the retrieval round-trip for call_tool-retained results; handler-level rejection uniformity and R13/R4 precedence (AC16 handler half, AC32); typed retrieval failures; sweep trigger from all three R7 inbound retirement paths (expiry reaping, the missing-session rewrite branch, session DELETE termination) with the retirement commit completing at each trigger; metric delta binding including AC13(b)'s bridge_log_operation_violations_total increment; AC13 producer clause and AC15 terminal production; inventory assertions updated at registration.\n\nRED tests this task owns (names from section 5): TestPreviewBoundedAndMetadata, TestPagesConcatenateToOriginal, TestExecutionFactsPreserved, TestUpstreamCodePinned, TestTerminalPreviewsBounded, TestAggregateAdmissionHard, TestHandleRejectionUniformHandler, TestPageRuneAlignment, TestPageBoundsValidated, TestRetrieveShapeInvalid, TestTerminalFieldSemantics, TestRetrievalContractDocumented (description half), TestPreviewRuneStraddle, TestCeilingsPinnedAcrossReload, TestRetrievalEvictionAtomicity, TestEpochUnresolvedNoHandle, TestRetrieveValidationPrecedence, TestExecutionStateRegistry, TestEscapingHeavyPagesWithinCeiling, TestCeilingPlusOneBoundary, TestInboundRetirementHooks, TestPagingMetricsDeltas, plus the AC1 pass-through fixture set for call_tool.\n\nCOUNT-ASSERTION FILES (spec section 5 gives the exact required edits):\n- cmd/mcp-bridge/logging_contract_test.go: the pin map at lines 703-751 gains thirteen rows (the twelve new events plus snapshot_retention_failed -> startup) and the len(eventMessages)!=23 / want 23 assertions become 36.\n- cmd/mcp-bridge/serve_hybrid_reload_test.go: rewrite the three literal tool-count assertions (initial len(initialNames)!=4, waits len(names)==5 then len(names)==4) to DERIVE from the registered built-in count plus pinned upstream tools; do not introduce literal shift values.\n- internal/service/tools_test.go assertAdvertisedBuiltinsAndPin: three-schema map becomes four; builtin_guidance_test.go: add the retrieve_result exact description string satisfying R15 (handle, page, total_pages, bounded preview, byte-exact page concatenation, qualified promise); progressive_session_test.go strict three-name list; progressive_concurrency_lifecycle_test.go, tools_publish_atomic_test.go, tool_metadata_test.go, cmd/mcp-bridge/serve_test.go, serve_hybrid_exposure_test.go counts.\n\nHARD CONSTRAINTS: exact write roots only (the 19 declared effect paths); no spec edits; no service-layer bypass of the store seam; no exposure case for retrieve_result; no change to catalog_changed semantics, decodeStrict admission or the errorResult taxonomy; docs/logging-contract.md gains paging event rows only (config block stays T1's, field vocabulary stays T2's). Preserve T1/T2 behaviour: no edits to internal/service/result_handle.go, result_handle_test.go, result_measure.go, config files, or the observe vocabulary/event registry except the two T3-owned observe/cmd files (internal/observe/log.go, cmd/mcp-bridge/serve.go) where the spec requires them.\n\nDO NOT run record-failure: the canonical state is schema 2 and that writer accepts only schema-1 task maps (E_STATE_INVALID). It is a harness gap, not a task gate.\n\nVALIDATION (report exact output and exit codes):\n1. go build ./...\n2. go test ./internal/service/ -count=1\n3. go test ./internal/observe/ -count=1\n4. go test ./internal/config/ -count=1\n5. go test ./cmd/mcp-bridge/ -count=1\n6. gofmt -l on every Go file you touched\nAll green/clean. Then write a COMPLETED receipt to .omp/artifacts/receipt_T3.json listing each command with its exit code and output. If a check fails, correct once and stop with a truthful BLOCKED receipt.\n",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses",
+    "revision": "r40",
+    "requests": [
+      {
+        "name": "ImplementTicket01T3",
+        "taskId": "T3",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/service/bounded_delivery.go",
+            "internal/service/bounded_delivery_test.go",
+            "internal/service/retrieve_result_test.go",
+            "internal/service/tools.go",
+            "internal/catalog/schema.go",
+            "internal/service/inbound.go",
+            "internal/service/tools_test.go",
+            "internal/service/builtin_guidance_test.go",
+            "internal/service/progressive_session_test.go",
+            "internal/service/progressive_concurrency_lifecycle_test.go",
+            "internal/service/tools_publish_atomic_test.go",
+            "internal/service/tool_metadata_test.go",
+            "cmd/mcp-bridge/serve_test.go",
+            "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+            "cmd/mcp-bridge/serve_hybrid_reload_test.go",
+            "docs/logging-contract.md",
+            "cmd/mcp-bridge/logging_contract_test.go",
+            "internal/observe/log.go",
+            "cmd/mcp-bridge/serve.go"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ImplementTicket01T3",
+      "agent": "engineer",
+      "solutionSpace": "TDD implementation of the spec section 5 T3 slice on the accepted T2 store seam: call_tool seam, retrieve_result built-in, inbound sweep triggers, inventory/count assertions.",
+      "task": "Implement T3 exactly per the instructions and spec section 5 T3. The T2 store seam and T1 measurement/config layer already exist and are green; reuse them. Write the RED oracles named in the instructions, implement to GREEN, update the count-assertion files exactly as specified, run the six validation commands, then write the COMPLETED T3 receipt."
+    }
+  ]
+}

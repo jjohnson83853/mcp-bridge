@@ -1,0 +1,11 @@
+[
+  {
+    "candidateId": "token-efficient-tool-responses-ticket01-spec",
+    "invocationId": "SpecGatePaging-21",
+    "fingerprint": "fa66d9a8be175d19437e3d0028e6b700054d6fda90e1a935a2355d513585d743",
+    "reviewerId": "critic",
+    "status": "succeeded",
+    "role": "critic",
+    "revision": "r21"
+  }
+]
