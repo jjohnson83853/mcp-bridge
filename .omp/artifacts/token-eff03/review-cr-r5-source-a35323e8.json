@@ -1,0 +1,149 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket03-spec-r5",
+  "revision": "r5",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket03-spec-r5.md",
+      "sha256": "8252a28ee0c0be8594a5ddc5b4c4fe84da30990fe4d51ae464762eed70ad9de0"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/issue-117.md",
+      "sha256": "632af8f540082c0068104340861ac902f6779ccc8a149422fff954d0d10a2e57"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/refinement.md",
+      "sha256": "5fb9816f630b9fb7e53045a49fd0206e1600a9d23119b5195e453450b6ec8c2d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "6ab6f3062f5ceaefff22172804c7dd92d039e285d38f5e08fb0da742da468222"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/catalog_test.go",
+      "sha256": "6b05be5d334fed471bf773345cc912e29a353586217dd63231814f98de875a55"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "0be9ae335293e11e0448377a52f3eaae208c33dcf5549a00e09284d2161fc2c9"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_discovery_test.go",
+      "sha256": "98c08d8e305476f5e84db901a54140f6896bcfcdae7a47fcbf2daf6294c43adc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/service_edge_test.go",
+      "sha256": "2f5e686f938b1de8ec220cb6021b166b063ebbda3ce319116bc099901336be1b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "d2a4cdc69ac724c79d462c16e2565370abbeb2b838b62ba7b2fa83f8b0d529d6"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+      "sha256": "fd1692cffe89d01aa05c9661aa584bdee124dfaabb61e30a2818c9fca5ee9833"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+      "sha256": "10bca4c67111a25d77b2ea2a680eb483e1a3c76397af6743b2c086c81553d4ff"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+      "sha256": "52ccb3a4a69b6936b784132ae3e1f52ef64e180c93d96bc76765d898b74b9b48"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_reload_test.go",
+      "sha256": "0a137c08f4bed96cabb5c21431d96759893d5a05522b4c8d95cbd4cbfbb5d3df"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_oauth_test.go",
+      "sha256": "ef9e8895463cb2363a0638295ff2044f804694f519b3b97677b9549485a34948"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_test.go",
+      "sha256": "c1afcb71c82b0bbb55ac983dc221c7c9801d7aa2ecff9314c705e71c21dd4c4e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/httpdiagnostics.go",
+      "sha256": "22c70c25dbddf1267d4e79206ecd64e2f2420d0c29d2833e2f96d09616c6fee5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
+      "sha256": "1385da47f57fa0fe0199a8dfced872f79d756bc7d2280d0e5efb7e6a6beeaf45"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/builtin_guidance_test.go",
+      "sha256": "be9e356318d999da0e9e95fb044bb0952e9489ae681e9ceb267ca3cd6ac18cde"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/discovery_paging_test.go",
+      "sha256": "788eba7c32a9d0006017d0653078bfd55704b40d80be37ca363299dce671a038"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_concurrency_lifecycle_test.go",
+      "sha256": "fdf22fd363b2be38aa585b5a55f3fdf677f3a41f493885a76c93ae87377b15a0"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_session_test.go",
+      "sha256": "b78bab9f416b8926c24b3fb3c0eebb9a3080ae88042aebf8370aa8f327947bd2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/session_exposure.go",
+      "sha256": "0b45f1a6be93fff237936cfe2978f0a6fbdc2bf7bd53cb3648f3341c2cf02d9d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tool_metadata_test.go",
+      "sha256": "c4beaf9f745fc40ddf8a3f170d1ca3809251124eb2ec7f39cd7e4ca798770e27"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_publish_atomic_test.go",
+      "sha256": "fdd918604960c90175d8b0e82a95e944aa510b29abb84b177f6a62d84486ffc8"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_test.go",
+      "sha256": "fdb9d8f6d7a4bf3f40083035b84ac5e017515f5391dd9b0ac88ecdbd64425954"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket117R5",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket03-spec-r5.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket03-spec-r5",
+      "targetRevision": "r5",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "2a9903c3fa9cfaa8c4ec22ec9923e071d372bc980ad79f8b17dd023b75800d13",
+      "instructionsSha256": "bb9f5f903d612c137761102c5945b438faab0ae4fd0492a7657196fb864cd72c",
+      "requestSha256": "0db5260a9f673a8e2038cc85267dd58fcd294b4b793fb5e390930dc6fdebfa4a"
+    },
+    {
+      "name": "CriticTicket117R5",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket03-spec-r5.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket03-spec-r5",
+      "targetRevision": "r5",
+      "reviewerId": "critic",
+      "taskSha256": "c7745da7f758167742a1b872eb68667ad6d15601aefef41fadc6f0868319518c",
+      "instructionsSha256": "bb9f5f903d612c137761102c5945b438faab0ae4fd0492a7657196fb864cd72c",
+      "requestSha256": "bb1b3ab74752348022ccf3c29837511da62f20dcc503eac559a3672c879ec5cd"
+    }
+  ],
+  "invocationId": "a35323e8-2279-448d-adce-c6348ec0f44b",
+  "output": "## Code Review Summary\nMode: specification · pass: repair (r5, verifying F1–F8). Files reviewed: spec plus verified source/test anchors. Total issues: 3.\nLimits: read-only role, no shell; no build/test executed — all claims are source inspection.\n\n### By Severity\nCRITICAL 0 · HIGH 1 · MEDIUM 0 · LOW 2\n\n### Issues\n\n[CR5-1][ledger-state-drift][HIGH][confidence HIGH] Unenumerated cmd oracle depends on search fanout\nFile: cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go:342-432 (block :404-431)\nID: CR5-1 (new; same class as F8/CR3-2)\nIssue: `TestServeHybridProgressiveRevealPages` (page size 2) captures `firstPage`, calls `search_tools`, then requires that pre-search cursor to fail with `invalid cursor` (:421-431). Cursors bind `projection.generation` (cursor.go:36-72; session_exposure.go:234-264) and generation increments on every rebuild (projection.go:233-238). Today search's commit (tools.go:515) rebuilds the projection and invalidates the cursor; R1/T2 remove that commit, so the generation is unchanged, the cursor stays valid, and the test fatals at :426-427. Neither §3, AC1/AC5, nor T3's cmd bullet enumerates this range — T3 edits only the `:360-363` expected map in the same test and is Prohibited beyond enumerated edits. The test also runs through the lifecycle table (serve_hybrid_progressive_reveal_lifecycle_test.go:24-27).\nConsequence: T3/T4 validation `go test ./cmd/mcp-bridge/` cannot exit 0, with no authorized repair path.\nFix: add :342-432 to T3's edits and to AC1(cmd); require either (a) assert the pre-search cursor remains valid after search (the R1-consistent oracle), or (b) insert an explicit `expose_tools` before the stale-cursor assertion so invalidation is exposure-driven.\n\n[CR5-2][ledger-state-drift][LOW][HIGH] AC8 is not claimed by T3 although T3 creates `TestDescribeDoesNotExpose` and the cmd absence half. Fix: add AC8 to T3's AC list.\n\n[CR5-3][ledger-state-drift][LOW][MEDIUM] T1 \"Files\" omits `internal/catalog/catalog_test.go` while its RED step requires extending it. Fix: list the file.\n\n### Open Questions\n[F4 RED][LOW confidence] A pre-dispatch cancel likely aborts Search before any commit, so the rewritten cancellation oracle may already pass pre-T2 and thus not be the \"real RED\" §9(12) demands. Regression value remains; confirm at implementation.\n\n### Closure evidence (F1–F8)\nF1 closed: operationVocabulary (httpdiagnostics.go:660-666), 31 entries, excludes expose_tools; exactly two copies (log_test.go:428-433, DeepEqual :432); finiteEnum consumers need no edits. F2 closed: T2 :337-364 absence-only, T3 owns positive rewrite. F3 closed: :242-269 (fatal :269) inverted; :272-296 preserved; :301-305 inverted; :333-335 kept. F4 closed: hook at projection.go:1041 reachable only via commitDiscovery (:469). F5 closed: corrected anchors exact (projection.go:367/469/470; tools.go:581/604-613/625/682-691/694/714/1007; session_exposure.go:99-131/175-177; gate :41-45). F6 closed: :731 and :741 both 1054. F7 closed: README :288-289 plus :279/:315/:394/:398/:425-427/:453/:458-460 verified. F8 closed: reveal :227-236, fatal :236.\n\nCounts verified: 4→5 built-ins, 54→55, 1054→1055, publish got 5→6, metadata map 4→5; cmd 4→5, 5→6, 6→7, 5→6, exposed_tools 4→5. No third vocabulary copy, no other `searchDiscoveryTargets` caller; metadata/coexistence/endpoint-rebind suites use pins or `call_tool`.\n\n### Positive Observations\nAnchor precision is high; the F5/F7 corrections are correct (the review-supplied `:433-435`/`:293-294` were stale). AD5 matches `directRequestOwner` (tools.go:364-378) and the publisher branch; AD9 mirrors describe_tool :604-625; AD6's pinned pre-filter is necessary because commitDiscovery merges interests; AD8 mirrors call_tool :801-802.\n\n### Recommendation\nREQUEST CHANGES\n"
+}

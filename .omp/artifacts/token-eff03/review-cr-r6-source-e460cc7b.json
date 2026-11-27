@@ -1,0 +1,149 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket03-spec-r6",
+  "revision": "r6",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket03-spec-r6.md",
+      "sha256": "540b450ac513c8a05c6643c1e6480c648ab911b1c4bf1faba02d0619b509a7a8"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/issue-117.md",
+      "sha256": "632af8f540082c0068104340861ac902f6779ccc8a149422fff954d0d10a2e57"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/refinement.md",
+      "sha256": "5fb9816f630b9fb7e53045a49fd0206e1600a9d23119b5195e453450b6ec8c2d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "6ab6f3062f5ceaefff22172804c7dd92d039e285d38f5e08fb0da742da468222"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/catalog_test.go",
+      "sha256": "6b05be5d334fed471bf773345cc912e29a353586217dd63231814f98de875a55"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "0be9ae335293e11e0448377a52f3eaae208c33dcf5549a00e09284d2161fc2c9"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_discovery_test.go",
+      "sha256": "98c08d8e305476f5e84db901a54140f6896bcfcdae7a47fcbf2daf6294c43adc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/service_edge_test.go",
+      "sha256": "2f5e686f938b1de8ec220cb6021b166b063ebbda3ce319116bc099901336be1b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "d2a4cdc69ac724c79d462c16e2565370abbeb2b838b62ba7b2fa83f8b0d529d6"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+      "sha256": "fd1692cffe89d01aa05c9661aa584bdee124dfaabb61e30a2818c9fca5ee9833"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+      "sha256": "10bca4c67111a25d77b2ea2a680eb483e1a3c76397af6743b2c086c81553d4ff"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+      "sha256": "52ccb3a4a69b6936b784132ae3e1f52ef64e180c93d96bc76765d898b74b9b48"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_reload_test.go",
+      "sha256": "0a137c08f4bed96cabb5c21431d96759893d5a05522b4c8d95cbd4cbfbb5d3df"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_oauth_test.go",
+      "sha256": "ef9e8895463cb2363a0638295ff2044f804694f519b3b97677b9549485a34948"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_test.go",
+      "sha256": "c1afcb71c82b0bbb55ac983dc221c7c9801d7aa2ecff9314c705e71c21dd4c4e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/httpdiagnostics.go",
+      "sha256": "22c70c25dbddf1267d4e79206ecd64e2f2420d0c29d2833e2f96d09616c6fee5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
+      "sha256": "1385da47f57fa0fe0199a8dfced872f79d756bc7d2280d0e5efb7e6a6beeaf45"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/builtin_guidance_test.go",
+      "sha256": "be9e356318d999da0e9e95fb044bb0952e9489ae681e9ceb267ca3cd6ac18cde"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/discovery_paging_test.go",
+      "sha256": "788eba7c32a9d0006017d0653078bfd55704b40d80be37ca363299dce671a038"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_concurrency_lifecycle_test.go",
+      "sha256": "fdf22fd363b2be38aa585b5a55f3fdf677f3a41f493885a76c93ae87377b15a0"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_session_test.go",
+      "sha256": "b78bab9f416b8926c24b3fb3c0eebb9a3080ae88042aebf8370aa8f327947bd2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/session_exposure.go",
+      "sha256": "0b45f1a6be93fff237936cfe2978f0a6fbdc2bf7bd53cb3648f3341c2cf02d9d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tool_metadata_test.go",
+      "sha256": "c4beaf9f745fc40ddf8a3f170d1ca3809251124eb2ec7f39cd7e4ca798770e27"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_publish_atomic_test.go",
+      "sha256": "fdd918604960c90175d8b0e82a95e944aa510b29abb84b177f6a62d84486ffc8"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_test.go",
+      "sha256": "fdb9d8f6d7a4bf3f40083035b84ac5e017515f5391dd9b0ac88ecdbd64425954"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket117R6",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket03-spec-r6.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket03-spec-r6",
+      "targetRevision": "r6",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "a0641eaa743814f15a79a12f8ae3063e7842acf4dfe750c8a96eb4233fffbe53",
+      "instructionsSha256": "a1d716e28c05ca0370c7d44937037ddc5704a9f9620940d2af2f9fa43fe03fd5",
+      "requestSha256": "923d677b9d91bd9da0348f65df273a949400fa4d87f3ed1b90876b6b4a9f3db2"
+    },
+    {
+      "name": "CriticTicket117R6",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket03-spec-r6.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket03-spec-r6",
+      "targetRevision": "r6",
+      "reviewerId": "critic",
+      "taskSha256": "428a4fcde1c8c548349b00e6709ea9b70c6574b871f0154e1fc4253d55466f0f",
+      "instructionsSha256": "a1d716e28c05ca0370c7d44937037ddc5704a9f9620940d2af2f9fa43fe03fd5",
+      "requestSha256": "38cb859c5a9c6ddfc82b7394bb9272eed391e6ad40a6820fb465489ff7fff7b5"
+    }
+  ],
+  "invocationId": "e460cc7b-7546-4eee-b6bf-673e9afa7fde",
+  "output": "## Code Review Summary\n\n**Mode:** Specification (no implementation exists; ticket 03, revision r6). **Pass:** repair verification (CR5-1…CR5-3) plus regression check on prior closures.\n**Candidate:** `.scratch/token-efficient-tool-responses/ticket03-spec-r6.md` (`ticket117-no-search-fanout`, r6). Read: spec §1–§10 + Appendix, issue #117, and the cited live sources.\n\n**Total Issues:** 0 blocking; 2 low advisories.\n\n### By Severity\n- CRITICAL: 0 · HIGH: 0 · MEDIUM: 0 · LOW: 2 (advisory)\n\n### Closure Evidence (independently verified)\n[CR5-1][ledger-state-drift] closed. T3 (`:133`) now owns the whole `cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go:342-432` rewrite and the lifecycle `:26` label; AC1 (`:107`) carries the cmd cursor oracle. Live-source cross-check: the pre-search traversal (`:342-403`) precedes the search; the only search-dependent assertion is `:404-431`; `errors`/`jsonrpc` are used *only* at `:425-430`, so the removal instruction is both correct and required for compilation. `cursor.go:36-66` binds epoch then generation; `firstPage.NextCursor` therefore stays valid under R1 (no generation bump), so the replacement oracle is genuinely RED on current main and GREEN post-T2 — a real falsifiable oracle, not a weakened one. Chapter-14 adjacent sweep confirmed: `NextCursor` appears only in this test across a search; lifecycle `cursorC` (`:481`→`:504`) is cross-owner (epoch rejection), R1-independent; `progressive_cursor_test.go` remains mechanics-only. The page fixture really pins `alpha__read` (`:301`), making the \"searched-but-unexposed `alpha__write` absent\" assertion meaningful.\n\n[CR5-2][r-ac-coverage-gap] closed. T3's AC line now enumerates AC8 (`:136`); both known AC8 halves (`TestDescribeDoesNotExpose`, `:227-236` absence half) were already T3 edits.\n\n[CR5-3][ledger-state-drift] closed. T1 Files now list `internal/catalog/catalog_test.go` (`:124`), matching its own RED step; the envelope already authorized it (`:150`).\n\n**No prior closure regressed.** R1–R8, AC1–AC11, T1–T4 and AD1–AD10 remain enumerated; AC4 retains the `:741` literal, AC5 retains `:227-236` with T3 ownership, AC6 keeps `:272-296` byte-unchanged, and the envelope retains both CR5-1 files plus the `:279-283` lifecycle expected-map edit.\n\n### Open Questions (LOW, non-blocking, no amendment required)\n- AC1 says the resumed traversal \"completes with the pre-search page invariants\" while T3 (`:133`) states the precise invariants (≤2/page, no duplicates, `alpha__write` absent). Read together they are consistent; read alone, AC1 could invite an over-strict full-name-set assertion that cannot hold on pages 2–3. T3 is the operative instruction.\n- §7 cites `describe_tool`'s `mcp_complete` as emitted \"immediately after its commit at `:683-691`\" — T2 deletes that commit, so the citation will be stale though the log-schema guidance stands. Editorial only.\n\n### Positive Observations\n- The CR5-1 disposition correctly diagnoses the old assertion as testing the removed fanout side effect rather than a cursor contract, and replaces it with the R1 invariant instead of preserving false coverage.\n- Count/oracle amendments are paired with their owning tasks and validation commands; AC→task mapping is now complete.\n\n### Review Limits\nNo shell/Git/LSP; candidate hash recomputation not performed (packet attests it) and the r5 byte-identity claim for §2/§4 was accepted from the supplied delta rather than re-hashed. No tests were run — specification mode.\n\n### Recommendation\nAPPROVE\n"
+}

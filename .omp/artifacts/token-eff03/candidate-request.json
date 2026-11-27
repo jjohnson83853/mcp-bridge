@@ -1,0 +1,71 @@
+{
+  "candidateId": "token-efficient-tool-responses-ticket03-spec-r1",
+  "revision": "r1",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket03-spec-r1.md",
+      "sha256": "a2adbc69ba6e66bd867e5060fb2976c7edb4505408602cde53d6cce2e2a58e25"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/issue-117.md",
+      "sha256": "632af8f540082c0068104340861ac902f6779ccc8a149422fff954d0d10a2e57"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/refinement.md",
+      "sha256": "5fb9816f630b9fb7e53045a49fd0206e1600a9d23119b5195e453450b6ec8c2d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "6ab6f3062f5ceaefff22172804c7dd92d039e285d38f5e08fb0da742da468222"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/catalog_test.go",
+      "sha256": "6b05be5d334fed471bf773345cc912e29a353586217dd63231814f98de875a55"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "0be9ae335293e11e0448377a52f3eaae208c33dcf5549a00e09284d2161fc2c9"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_discovery_test.go",
+      "sha256": "98c08d8e305476f5e84db901a54140f6896bcfcdae7a47fcbf2daf6294c43adc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/service_edge_test.go",
+      "sha256": "2f5e686f938b1de8ec220cb6021b166b063ebbda3ce319116bc099901336be1b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/session_exposure.go",
+      "sha256": "0b45f1a6be93fff237936cfe2978f0a6fbdc2bf7bd53cb3648f3341c2cf02d9d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/builtin_guidance_test.go",
+      "sha256": "be9e356318d999da0e9e95fb044bb0952e9489ae681e9ceb267ca3cd6ac18cde"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_test.go",
+      "sha256": "fdb9d8f6d7a4bf3f40083035b84ac5e017515f5391dd9b0ac88ecdbd64425954"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/discovery_paging_test.go",
+      "sha256": "788eba7c32a9d0006017d0653078bfd55704b40d80be37ca363299dce671a038"
+    }
+  ],
+  "reviewers": [
+    {
+      "name": "ReviewTicket117R1",
+      "taskId": "CR1",
+      "reviewerId": "code-reviewer",
+      "payloadPath": ".omp/artifacts/token-eff03/payload-cr.json"
+    },
+    {
+      "name": "CriticTicket117R1",
+      "taskId": "CT1",
+      "reviewerId": "critic",
+      "payloadPath": ".omp/artifacts/token-eff03/payload-ct.json"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "baseSha64hex": "fea31835821bab8c14549e235d73688f1ee42d150e9516cdd5ebd964a299806c",
+  "taskId": "CT1",
+  "evidence": [
+    {
+      "id": "EV-CT1-1",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/review-ct-r10-source.json"
+      },
+      "acceptanceIds": [],
+      "outcome": "pass",
+      "observedAt": "2026-11-27T20:18:34.735Z",
+      "producer": "reviewer:CT1",
+      "details": {
+        "rubric": "independent spec review verdict",
+        "observedOutcome": "Critic r10 PASS"
+      }
+    }
+  ]
+}

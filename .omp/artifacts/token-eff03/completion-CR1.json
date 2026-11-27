@@ -1,0 +1,21 @@
+{
+  "baseSha64hex": "34e14f5d33fc7a1d0606b5c9ec4a8e142a2a2c5aad71c76e58b6b888900e592c",
+  "taskId": "CR1",
+  "evidence": [
+    {
+      "id": "EV-CR1-1",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/review-cr-r10-source-82481313.json"
+      },
+      "acceptanceIds": [],
+      "outcome": "pass",
+      "observedAt": "2026-11-27T20:18:34.322Z",
+      "producer": "reviewer:CR1",
+      "details": {
+        "rubric": "independent spec review verdict",
+        "observedOutcome": "CodeReviewer r10 APPROVE"
+      }
+    }
+  ]
+}

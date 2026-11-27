@@ -1,0 +1,34 @@
+{
+  "intent": "Review ticket 03 r2",
+  "instructions": "# Shared review packet — ticket 03 (no search schema fanout), revision r2 (#117)\nRepo: /home/opencode/projects/default/mcp-bridge (Go MCP bridge). Read-only.\nCandidate: .scratch/token-efficient-tool-responses/ticket03-spec-r2.md, sha256 16ed9826587759595e10d65e187d3b4e6e7385fd0bf93f6bec5511b4f40ac482, revision r2, id token-efficient-tool-responses-ticket03-spec-r2, author planner.\n\nCandidate-bound inputs (coordinator-attested; hashing not required):\n- /home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket03-spec-r2.md sha256 16ed9826587759595e10d65e187d3b4e6e7385fd0bf93f6bec5511b4f40ac482\n- /home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/issue-117.md sha256 632af8f540082c0068104340861ac902f6779ccc8a149422fff954d0d10a2e57\n- /home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/refinement.md sha256 5fb9816f630b9fb7e53045a49fd0206e1600a9d23119b5195e453450b6ec8c2d\n- /home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go sha256 6ab6f3062f5ceaefff22172804c7dd92d039e285d38f5e08fb0da742da468222\n- /home/opencode/projects/default/mcp-bridge/internal/catalog/catalog_test.go sha256 6b05be5d334fed471bf773345cc912e29a353586217dd63231814f98de875a55\n- /home/opencode/projects/default/mcp-bridge/internal/service/tools.go sha256 0be9ae335293e11e0448377a52f3eaae208c33dcf5549a00e09284d2161fc2c9\n- /home/opencode/projects/default/mcp-bridge/internal/service/progressive_discovery_test.go sha256 98c08d8e305476f5e84db901a54140f6896bcfcdae7a47fcbf2daf6294c43adc\n- /home/opencode/projects/default/mcp-bridge/internal/service/service_edge_test.go sha256 2f5e686f938b1de8ec220cb6021b166b063ebbda3ce319116bc099901336be1b\n- /home/opencode/projects/default/mcp-bridge/README.md sha256 d2a4cdc69ac724c79d462c16e2565370abbeb2b838b62ba7b2fa83f8b0d529d6\n- /home/opencode/projects/default/mcp-bridge/internal/service/builtin_guidance_test.go sha256 be9e356318d999da0e9e95fb044bb0952e9489ae681e9ceb267ca3cd6ac18cde\n- /home/opencode/projects/default/mcp-bridge/internal/service/discovery_paging_test.go sha256 788eba7c32a9d0006017d0653078bfd55704b40d80be37ca363299dce671a038\n- /home/opencode/projects/default/mcp-bridge/internal/service/progressive_concurrency_lifecycle_test.go sha256 fdf22fd363b2be38aa585b5a55f3fdf677f3a41f493885a76c93ae87377b15a0\n- /home/opencode/projects/default/mcp-bridge/internal/service/progressive_session_test.go sha256 b78bab9f416b8926c24b3fb3c0eebb9a3080ae88042aebf8370aa8f327947bd2\n- /home/opencode/projects/default/mcp-bridge/internal/service/session_exposure.go sha256 0b45f1a6be93fff237936cfe2978f0a6fbdc2bf7bd53cb3648f3341c2cf02d9d\n- /home/opencode/projects/default/mcp-bridge/internal/service/tool_metadata_test.go sha256 c4beaf9f745fc40ddf8a3f170d1ca3809251124eb2ec7f39cd7e4ca798770e27\n- /home/opencode/projects/default/mcp-bridge/internal/service/tools_publish_atomic_test.go sha256 fdd918604960c90175d8b0e82a95e944aa510b29abb84b177f6a62d84486ffc8\n- /home/opencode/projects/default/mcp-bridge/internal/service/tools_test.go sha256 fdb9d8f6d7a4bf3f40083035b84ac5e017515f5391dd9b0ac88ecdbd64425954\n\n# Authority and prior round\nIssue #117 A1–A7 authoritative. Ticket 02 delivered at f32e8e06; do not reopen. CodeReviewer round r1 returned REQUEST CHANGES (CR1-1..8); verify each is repaired at bytes.\n\n# r2 dispositions\n- CR1-1: declared/exposed are sorted effectiveWireName per target; t_hash aliases normalize; AC2/§4 step 10 updated.\n- CR1-2: T2 covers full TestProgressiveMetadataDiscoveryCommit :20-365 and cancellation test :464-563.\n- CR1-3: four count-fallout files added to T3 with expected counts 5/6/1055/55.\n- CR1-4: retired epoch/non-live owner = JSON-RPC -32600 middleware rejection; stale revision = catalog_changed; AC7 asserts both.\n- CR1-5: README.md added; five tools, expose_tools annotation/flow, revealed wording removed.\n- CR1-6: AC4/5/7 reworded behavior-preserved with enumerated edits.\n- CR1-7: AC11 + TestExposeToolsMalformedInputs; malformed revision handled in §4 step 3.\n- CR1-8: pinned names pre-filtered; pending-empty skips commitDiscovery (AD6); AC10 no-commit oracle.\n\n# Output\n- CodeReviewer: APPROVE or REQUEST CHANGES with IDs/severity/class/anchor/consequence/amendment.\n- Critic: exactly one ### Verdict heading then PASS/REVISE/BLOCKED with Spec ID, Revision, Findings by ID.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses-ticket03-r2",
+    "revision": "r2",
+    "requests": [
+      {
+        "name": "ReviewTicket117R2",
+        "taskId": "CR1",
+        "agent": "code-reviewer",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/token-efficient-tool-responses/ticket03-spec-r2.md"
+          ]
+        },
+        "targetCandidateId": "token-efficient-tool-responses-ticket03-spec-r2",
+        "targetRevision": "r2"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ReviewTicket117R2",
+      "agent": "code-reviewer",
+      "task": "# Target\nReview /home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket03-spec-r2.md (sha256 16ed9826587759595e10d65e187d3b4e6e7385fd0bf93f6bec5511b4f40ac482) against issue #117 and the shared packet.\n\nVerify CR1-1..CR1-8 repairs and re-check the no-fanout transaction, expose_tools bound/atomicity/errors, describe non-exposure, pins, isolation, revision/epoch surfaces, and all declared write paths. Report APPROVE or REQUEST CHANGES; no edits.",
+      "solutionSpace": "independent verification of eight repaired findings plus full spec review"
+    }
+  ]
+}

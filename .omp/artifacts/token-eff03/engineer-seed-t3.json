@@ -1,0 +1,51 @@
+{
+  "intent": "Implement ticket 117 T3",
+  "instructions": "# Ticket #117 implementation — T3 (expose_tools handler, routing, fallout, cmd integration, docs)\nRepo: /home/opencode/projects/default/mcp-bridge (Go). Read the approved spec at .scratch/token-efficient-tool-responses/ticket03-spec-r10.md fully, especially T3 and §4 steps 1-10, then implement ONLY T3.\n\n# T3 scope (all 20 write paths are authorized)\n- internal/service/tools.go: expose_tools descriptor + case + exposeTools handler + payload struct + pinned pre-filter + target dedupe + failureResult(err); ordered validation and commit exactly per §4.\n- internal/service/session_exposure.go: one routing case.\n- internal/service/expose_tools_test.go (new): success/declared/exposed names, bound/empty/duplicate/unknown atomic rejection, malformed name/revision, idempotence, all-pinned no-op, publisher catalog_changed, stale revision, retired-epoch -32600, isolation, logs, pin-preservation test.\n- service fallout: progressive_session_test.go, progressive_concurrency_lifecycle_test.go, tools_publish_atomic_test.go, tool_metadata_test.go, tools_test.go (counts 5/6/1055/55 and five-tool rename), plus progressive_discovery_test.go positive post-expose rewrite now that expose_tools exists.\n- cmd fallout: serve_test.go, serve_hybrid_reload_test.go, serve_hybrid_exposure_test.go, serve_oauth_test.go, serve_hybrid_progressive_reveal_test.go (including :342-432 cursor-valid oracle and :227-236), serve_hybrid_progressive_reveal_lifecycle_test.go, counts 5/6/6/5 and reveal->expose rewrites.\n- internal/observe/httpdiagnostics.go: append expose_tools to operationVocabulary; log_test.go wantOperations mirror.\n- README.md: five tools, expose_tools annotations/flow, explicit exposure wording, all enumerated stale claims.\n- Do not modify pins, call_tool, retrieve_result, cursor semantics, ticket 02 behavior, or any file outside these 20 paths.\n\n# Verification\nRun `go test ./internal/service/ ./cmd/mcp-bridge/ ./internal/observe/` and `go build ./...`. Report exact commands/exit codes and failures.\n\n# Delivery\nReturn changed files, diff summary, test results. Do not commit or push.",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses-ticket03-r10",
+    "revision": "r10",
+    "requests": [
+      {
+        "name": "ImplementTicket117T3",
+        "taskId": "T3",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "README.md",
+            "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+            "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+            "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+            "cmd/mcp-bridge/serve_hybrid_reload_test.go",
+            "cmd/mcp-bridge/serve_oauth_test.go",
+            "cmd/mcp-bridge/serve_test.go",
+            "internal/observe/httpdiagnostics.go",
+            "internal/observe/log_test.go",
+            "internal/service/builtin_guidance_test.go",
+            "internal/service/discovery_paging_test.go",
+            "internal/service/expose_tools_test.go",
+            "internal/service/progressive_concurrency_lifecycle_test.go",
+            "internal/service/progressive_discovery_test.go",
+            "internal/service/progressive_session_test.go",
+            "internal/service/session_exposure.go",
+            "internal/service/tool_metadata_test.go",
+            "internal/service/tools.go",
+            "internal/service/tools_publish_atomic_test.go",
+            "internal/service/tools_test.go"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ImplementTicket117T3",
+      "agent": "engineer",
+      "task": "Implement T3 exactly per the spec, all 20 authorized paths. Add expose_tools end to end, complete service/cmd/observe/README fallout, run the listed tests and build. Return changed files and exact test output.",
+      "solutionSpace": "one fixed approved design; implementation and enumerated test fallout only"
+    }
+  ]
+}

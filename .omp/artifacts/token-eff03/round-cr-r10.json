@@ -1,0 +1,10 @@
+{
+  "candidateId": "token-efficient-tool-responses-ticket03-spec-r10",
+  "revision": "r10",
+  "reviewerId": "code-reviewer",
+  "verdict": "APPROVE",
+  "findings": [{"id":"CR10-1","class":"ledger-state-drift","severity":"MEDIUM","advisory":true}],
+  "sourcePath": ".omp/artifacts/token-eff03/review-cr-r10-source-82481313.json",
+  "dispatchName": "ReviewTicket117R10",
+  "format": "installed"
+}

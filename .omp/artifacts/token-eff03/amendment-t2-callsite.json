@@ -1,0 +1,11 @@
+{
+  "taskId": "T2",
+  "paths": [
+    "internal/service/progressive_concurrency_lifecycle_test.go"
+  ],
+  "blockerIds": [],
+  "sourceId": "src-owner-authorization-f48166e368ab321e",
+  "explicit": true,
+  "timedOut": false,
+  "automatic": false
+}

@@ -1,0 +1,15 @@
+{
+  "artifact": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/owner-authorization-r10.md",
+    "sha256": "087c7826d7d0b6e9f2f61e75517eceb184ce90f465376b64e0061aeeccddf53d"
+  },
+  "branchId": "token-efficient-tool-responses-ticket03-r10-r10",
+  "locator": "User milestone authorization for ticket #117 implementation and delivery",
+  "recordedAt": "2026-11-27T19:42:21Z",
+  "taskIds": [
+    "T1",
+    "T2",
+    "T3",
+    "T4"
+  ]
+}

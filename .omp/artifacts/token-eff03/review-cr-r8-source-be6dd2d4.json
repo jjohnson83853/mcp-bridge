@@ -1,0 +1,149 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket03-spec-r8",
+  "revision": "r8",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket03-spec-r8.md",
+      "sha256": "42d802dd180d51a0f6c795c17c5143c2749b5f90c73debf024489a859632f7b7"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/issue-117.md",
+      "sha256": "632af8f540082c0068104340861ac902f6779ccc8a149422fff954d0d10a2e57"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/refinement.md",
+      "sha256": "5fb9816f630b9fb7e53045a49fd0206e1600a9d23119b5195e453450b6ec8c2d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "6ab6f3062f5ceaefff22172804c7dd92d039e285d38f5e08fb0da742da468222"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/catalog_test.go",
+      "sha256": "6b05be5d334fed471bf773345cc912e29a353586217dd63231814f98de875a55"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "0be9ae335293e11e0448377a52f3eaae208c33dcf5549a00e09284d2161fc2c9"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_discovery_test.go",
+      "sha256": "98c08d8e305476f5e84db901a54140f6896bcfcdae7a47fcbf2daf6294c43adc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/service_edge_test.go",
+      "sha256": "2f5e686f938b1de8ec220cb6021b166b063ebbda3ce319116bc099901336be1b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "d2a4cdc69ac724c79d462c16e2565370abbeb2b838b62ba7b2fa83f8b0d529d6"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+      "sha256": "fd1692cffe89d01aa05c9661aa584bdee124dfaabb61e30a2818c9fca5ee9833"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+      "sha256": "10bca4c67111a25d77b2ea2a680eb483e1a3c76397af6743b2c086c81553d4ff"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+      "sha256": "52ccb3a4a69b6936b784132ae3e1f52ef64e180c93d96bc76765d898b74b9b48"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_reload_test.go",
+      "sha256": "0a137c08f4bed96cabb5c21431d96759893d5a05522b4c8d95cbd4cbfbb5d3df"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_oauth_test.go",
+      "sha256": "ef9e8895463cb2363a0638295ff2044f804694f519b3b97677b9549485a34948"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_test.go",
+      "sha256": "c1afcb71c82b0bbb55ac983dc221c7c9801d7aa2ecff9314c705e71c21dd4c4e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/httpdiagnostics.go",
+      "sha256": "22c70c25dbddf1267d4e79206ecd64e2f2420d0c29d2833e2f96d09616c6fee5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
+      "sha256": "1385da47f57fa0fe0199a8dfced872f79d756bc7d2280d0e5efb7e6a6beeaf45"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/builtin_guidance_test.go",
+      "sha256": "be9e356318d999da0e9e95fb044bb0952e9489ae681e9ceb267ca3cd6ac18cde"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/discovery_paging_test.go",
+      "sha256": "788eba7c32a9d0006017d0653078bfd55704b40d80be37ca363299dce671a038"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_concurrency_lifecycle_test.go",
+      "sha256": "fdf22fd363b2be38aa585b5a55f3fdf677f3a41f493885a76c93ae87377b15a0"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_session_test.go",
+      "sha256": "b78bab9f416b8926c24b3fb3c0eebb9a3080ae88042aebf8370aa8f327947bd2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/session_exposure.go",
+      "sha256": "0b45f1a6be93fff237936cfe2978f0a6fbdc2bf7bd53cb3648f3341c2cf02d9d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tool_metadata_test.go",
+      "sha256": "c4beaf9f745fc40ddf8a3f170d1ca3809251124eb2ec7f39cd7e4ca798770e27"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_publish_atomic_test.go",
+      "sha256": "fdd918604960c90175d8b0e82a95e944aa510b29abb84b177f6a62d84486ffc8"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_test.go",
+      "sha256": "fdb9d8f6d7a4bf3f40083035b84ac5e017515f5391dd9b0ac88ecdbd64425954"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket117R8",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket03-spec-r8.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket03-spec-r8",
+      "targetRevision": "r8",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "ebb122a46ec5b763ddacccf2e5d29a6104ad41bef0e951fa7d10f031482d4cbc",
+      "instructionsSha256": "6ae51e80194f16388e331ee1f315426aed49aee56d4928183a231758f8d8221e",
+      "requestSha256": "68cc0860503e9626cb31ade26c0d156b4d480677a2a187387f35057e86529612"
+    },
+    {
+      "name": "CriticTicket117R8",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket03-spec-r8.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket03-spec-r8",
+      "targetRevision": "r8",
+      "reviewerId": "critic",
+      "taskSha256": "61e6551472e27f3404f63776756b7b2b720e64bd6f05a66812f87474772eae09",
+      "instructionsSha256": "6ae51e80194f16388e331ee1f315426aed49aee56d4928183a231758f8d8221e",
+      "requestSha256": "799d47204d25f5724f086189d54232f5aeca0199debce25f73765293a327824d"
+    }
+  ],
+  "invocationId": "be6dd2d4-0d7a-4656-b733-482e42636ec3",
+  "output": "## Code Review Summary\n\n**Mode:** specification · **Pass:** repair (r8) verifying CR7-1..CR7-3\n**Files Reviewed:** 21 (candidate + 20 source/test files)\n**Total Issues:** 1 (0 blocking)\n\n### By Severity\n- CRITICAL: 0\n- HIGH: 0\n- MEDIUM: 0\n- LOW: 1\n\n### Closure Evidence (independently verified; no test execution available — review limit)\n- **CR7-1 closed.** Seam is now after the work, immediately before the late check: both `testAfterDiscoveryAdmission` citations (`tools.go:511`→old `:515`; `:678`→old `:683`, success path `:689`) match the file. AD11, §4, T2(i)(iii), AC7(iv), §9(15) all use the post-work wording; no residual pre-work placement. Falsifiability holds: a pre-work-only check lets the hook mutation land after the only check → stale success → oracle RED.\n- **CR7-2 closed.** Retirement baseline is captured inside the hook after `retireLiveOwner` (`projection.go:894`; `cleanupRetiredOwner` `:878-892` → `replaceProjectionLocked(owner,nil)` + registry delta). AC7(v), T2(iii), §9(15), §10 C1 agree; the oracle is satisfiable (retirement's own delta precedes the baseline) and remains falsifiable via the expected `catalog_changed` result.\n- **CR7-3 closed.** Verified exactly: `resolveBinding` call `:623` (`:625` = unknown-name return), `contributeOperation` `:689`, `wantOperations` `log_test.go:424-432` with `reflect.DeepEqual` at `:432`. No residual `:693-708` / `:428-433`.\n- **No prior closure regressed.** Spot-verified anchors/counts: `697/714/731/741`, metadata `108/114`, publish `50/56`, session `:180`, `serve_test.go:618`, reload `217/225/238`, exposure `201/204`, oauth `449-450/500-501`, reveal `360-363`, lifecycle `279-283`; README `279/288/315/394/398/425-427/451-465`; vocabulary pair `660-666`/`424-432`; `searchDiscoveryTargets` sole caller `:506`; middleware `:101-113/117-131/175-177`; `PinnedNames` `reload.go:203`; `effectiveWireName` `:1007`; `WireToolName` `:1278`; `testBeforeRegistryAdd` `:1041`.\n\n### Issues\n[LOW][stale-citation] CR8-1 — describeTool deletion range overstates the block\nFile: `.scratch/token-efficient-tool-responses/ticket03-spec-r8.md:96` (also T2 `:132`, §9 `:169`, §10 C1 `:218`)\nConfidence: HIGH\nIssue: The clause says delete `tools.go:682-691` (§10 says `:683-691`), but the target+commit block is `:682-688`; `:689-691` are `contributeOperation`, `if t.logger != nil`, `duration :=` — which the same clause designates as the retained success path starting `:689`. A literal range deletion removes the logging prologue and breaks compilation.\nFix: cite `:682-688` (and `:683-688` in §10/§9); advisory only — the explicit `:689` boundary already makes the intended edit unambiguous.\n\n### Open Questions (non-blocking, informational)\n[MEDIUM] Publication subtest exercises only the runtime-accept half of publication\nFile: candidate `AC7(iv)`, T2(iii)\nConfidence: HIGH on code fact\nIssue: `runtime.Reload` (`reload.go:479`) only calls `accept` (generation/pointer swap, `projection.go:150-172`); production reload additionally calls `ToolSurface.Published`, which rebases every live owner (`projection.go:907-985`). The \"ZERO projection/interest/union/registry mutation\" clause is therefore satisfiable only for the specified harness. The oracle still fails RED without the late check, so this is representativeness, not falsifiability. Consider stating the harness covers the accept half explicitly.\n\n### Positive Observations\n- r8 repairs are surgical: seam and baseline changes are propagated uniformly to every dependent clause (AD11, §4, AC7, T2, §9), with no stale r7 wording left.\n- CR7-2 correctly diagnoses that the retirement's own mutation invalidated the baseline, and keeps the publication subtest unchanged rather than weakening both.\n- Anchor discipline is now high: all CR7-3 and enumerated count anchors resolve exactly against the working tree.\n\n### Recommendation\nAPPROVE\n"
+}

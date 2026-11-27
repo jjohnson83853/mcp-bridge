@@ -1,0 +1,97 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket03-spec-r1",
+  "revision": "r1",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket03-spec-r1.md",
+      "sha256": "a2adbc69ba6e66bd867e5060fb2976c7edb4505408602cde53d6cce2e2a58e25"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/issue-117.md",
+      "sha256": "632af8f540082c0068104340861ac902f6779ccc8a149422fff954d0d10a2e57"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/refinement.md",
+      "sha256": "5fb9816f630b9fb7e53045a49fd0206e1600a9d23119b5195e453450b6ec8c2d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "6ab6f3062f5ceaefff22172804c7dd92d039e285d38f5e08fb0da742da468222"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/catalog_test.go",
+      "sha256": "6b05be5d334fed471bf773345cc912e29a353586217dd63231814f98de875a55"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "0be9ae335293e11e0448377a52f3eaae208c33dcf5549a00e09284d2161fc2c9"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_discovery_test.go",
+      "sha256": "98c08d8e305476f5e84db901a54140f6896bcfcdae7a47fcbf2daf6294c43adc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/service_edge_test.go",
+      "sha256": "2f5e686f938b1de8ec220cb6021b166b063ebbda3ce319116bc099901336be1b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/session_exposure.go",
+      "sha256": "0b45f1a6be93fff237936cfe2978f0a6fbdc2bf7bd53cb3648f3341c2cf02d9d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/builtin_guidance_test.go",
+      "sha256": "be9e356318d999da0e9e95fb044bb0952e9489ae681e9ceb267ca3cd6ac18cde"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_test.go",
+      "sha256": "fdb9d8f6d7a4bf3f40083035b84ac5e017515f5391dd9b0ac88ecdbd64425954"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/discovery_paging_test.go",
+      "sha256": "788eba7c32a9d0006017d0653078bfd55704b40d80be37ca363299dce671a038"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket117R1",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket03-spec-r1.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket03-spec-r1",
+      "targetRevision": "r1",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "1b9a49033654189b7ecfd7391141f743be256fb49d56c650612e1d8f59307ebc",
+      "instructionsSha256": "abd891b6afc11e9f8675ed9ed8d02afe2230f0a1be55265095f106f226d8d903",
+      "requestSha256": "1af119e1851e8fcb7c2be1ae346974bdc7f750fe6d74291dcf82d409eb2241d9"
+    },
+    {
+      "name": "CriticTicket117R1",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket03-spec-r1.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket03-spec-r1",
+      "targetRevision": "r1",
+      "reviewerId": "critic",
+      "taskSha256": "27b199d404c3fa39e97b907afd932ec4d1bd18feb7159de1edfb7e6dfd21adcb",
+      "instructionsSha256": "abd891b6afc11e9f8675ed9ed8d02afe2230f0a1be55265095f106f226d8d903",
+      "requestSha256": "5d7d863507e4c34515058149f308600671ee101c9394d8104a837f099786a175"
+    }
+  ],
+  "invocationId": "4c48a6a4-b1e8-4606-9580-982b2b210def",
+  "output": "## Code Review Summary\n\n**Mode:** Specification (initial pass). **Candidate:** `.scratch/token-efficient-tool-responses/ticket03-spec-r1.md` r1 (`a2adbc…`; digests accepted as attested). **Files Reviewed:** 14 (spec, #117, refinement, 10 source/test).\n\n### By Severity\nCRITICAL: 0 · HIGH: 3 · MEDIUM: 2 · LOW: 3\n\n### Issues\n\n[HIGH][contract] CR1-1 `declared` contradicts AC2 and its own design\nAnchor: spec §2 R2 payload / §4 step 9 / AC2; `tools.go:548-566` (resolveBinding returns t_hash as `pub`), `projection.go:340` + `tools.go:1096` (projection and search names are `effectiveWireName`).\nIssue: step 9 defines `declared` as \"requested public names\" = t_hash, but `tools/list` declares the wire name. Normal flow (search returns `alpha__x`) → `declared=[t_hash]` ≠ requested set, AC2 fails; t_hash input → `tools/list` lacks the requested literal, AC2 also fails. The two texts cannot both hold.\nFix: define `declared` as `effectiveWireName(target)` per requested name, state t_hash aliases are normalized, reword AC2 and step 9.\n\n[HIGH][verifiability] CR1-2 T2 rewrite scope misses a test asserting the removed behavior\nAnchor: `progressive_discovery_test.go:464-563` `TestProgressiveMetadataDiscoveryCancellationKeepsCommit` (requires cancelled search to reach `testBeforeRegistryAdd` and retain projection/union/interest). Also `TestProgressiveMetadataDiscoveryCommit` spans 20-365; registry-signal/interest assertions at ~130-220 lie outside the declared \":244-355\".\nConsequence: T2 cannot reach GREEN; repair needs edits outside named lines/files.\nFix: name both tests and full ranges in T2.\n\n[HIGH][spec-completeness] CR1-3 Built-in count fallout omits four files → undeclared failing tests\nAnchors: `progressive_session_test.go:180-183`; `progressive_concurrency_lifecycle_test.go:697-698,715,734`; `tools_publish_atomic_test.go:50-65`; `tool_metadata_test.go:108-120` — each hard-codes the four built-ins/counts 4/5/54/1054. Only `builtin_guidance_test.go`/`tools_test.go` are declared; `discovery_paging_test.go` needs no change (verified).\nConsequence: T3's `go test ./internal/service/` fails on undeclared files → unauthorized scope expansion or blocked task.\nFix: add all four to T3 and the envelope with expected 5/6/1055/55.\n\n[MEDIUM][contract] CR1-4 Retired-epoch outcome contradicts mandated middleware routing\nAnchor: R2(e), AC7; `session_exposure.go:100-140`, `progressive_concurrency_lifecycle_test.go:256-261`.\nIssue: T3 routes `expose_tools` through `requiresExposure`; a non-live session epoch is rejected by middleware with JSON-RPC -32600 \"invalid exposure request\", not a tool-result `catalog_changed`. The handler's non-live branch is reachable only as a post-admission race.\nFix: document both surfaces; make AC7 assert -32600 for retired epochs and `catalog_changed` for stale revision/generation races.\n\n[MEDIUM][documentation] CR1-5 README is an undeclared, now-false write path\nAnchor: `README.md:278-320` (\"four tools\", annotation table, read-only discovery sentence, \"Unpinned tools returned by `search_tools` and revealed in a session projection…\"). The issue Note explicitly requires documenting the exposure request.\nFix: add README.md to T3/T5: five tools, `expose_tools` row (readOnly false/destructive false/idempotent true/openWorld false), explicit-exposure flow, delete \"revealed\".\n\n[LOW][verifiability] CR1-6 AC4/AC5/AC7 \"green unmodified\" is unachievable: a fifth descriptor forces `tools_test.go`/`builtin_guidance_test.go` edits, and AC5's rejection assertions live in the function T2 rewrites. Reword to behavior-preserved plus enumerated edits.\n\n[LOW][contract] CR1-7 R2(b) pattern-mismatch has no AC (AC3 covers 0/9/duplicates only); malformed `catalog_revision` → `invalid_arguments` (describe parity) is absent from §4 step 3. Add both.\n\n[LOW][contract] CR1-8 R3's \"pinned exposure is a no-op\" is not literal: first pinned expose adds an interest (`projection.go:323-341`), bumps `projection.generation`, and invalidates in-flight `tools/list` cursors (`session_exposure.go:250-257`) with no registry delta. Pre-filter pins or define \"no descriptor/union/registry change\".\n\n### Open Questions\n- [LOW] R6's \"no catalog check removed\" is literally false for search (its post-computation commit-time generation recheck disappears); benign because search no longer writes, but state it.\n- [LOW] §4 step 9 omits the success result's Content/text block; other built-ins duplicate the payload in text (`README.md:322-331`), and paging measures both.\n\n### Positive Observations\n- AD1/AD3/AD5 are well-argued; `describe_tool`'s `ReadOnlyHint` becomes truthful, publisher exposure is rejected, and `commitDiscovery` is reused verbatim with owner/generation/barrier/descriptor validation intact.\n- Atomic resolution of all names before commit, per-request N=8, and R1–R8/AC1–AC10 → A1–A7 (incl. bullet 7) mapping are coherent; search payload/schema paths are genuinely untouched.\n\n**Review limits:** static read-only inspection; no tests/builds executed; digests not independently recomputed.\n\n### Recommendation\nREQUEST CHANGES\n"
+}

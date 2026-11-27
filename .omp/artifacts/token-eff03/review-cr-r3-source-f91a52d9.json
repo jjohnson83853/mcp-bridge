@@ -1,0 +1,141 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket03-spec-r3",
+  "revision": "r3",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket03-spec-r3.md",
+      "sha256": "f17ba1a2a50c187f81077b87f2e1bfc38a134d8a963e9114376614bfe6fa89e4"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/issue-117.md",
+      "sha256": "632af8f540082c0068104340861ac902f6779ccc8a149422fff954d0d10a2e57"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/refinement.md",
+      "sha256": "5fb9816f630b9fb7e53045a49fd0206e1600a9d23119b5195e453450b6ec8c2d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "6ab6f3062f5ceaefff22172804c7dd92d039e285d38f5e08fb0da742da468222"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/catalog_test.go",
+      "sha256": "6b05be5d334fed471bf773345cc912e29a353586217dd63231814f98de875a55"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "0be9ae335293e11e0448377a52f3eaae208c33dcf5549a00e09284d2161fc2c9"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_discovery_test.go",
+      "sha256": "98c08d8e305476f5e84db901a54140f6896bcfcdae7a47fcbf2daf6294c43adc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/service_edge_test.go",
+      "sha256": "2f5e686f938b1de8ec220cb6021b166b063ebbda3ce319116bc099901336be1b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "d2a4cdc69ac724c79d462c16e2565370abbeb2b838b62ba7b2fa83f8b0d529d6"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+      "sha256": "fd1692cffe89d01aa05c9661aa584bdee124dfaabb61e30a2818c9fca5ee9833"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+      "sha256": "10bca4c67111a25d77b2ea2a680eb483e1a3c76397af6743b2c086c81553d4ff"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+      "sha256": "52ccb3a4a69b6936b784132ae3e1f52ef64e180c93d96bc76765d898b74b9b48"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_reload_test.go",
+      "sha256": "0a137c08f4bed96cabb5c21431d96759893d5a05522b4c8d95cbd4cbfbb5d3df"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_oauth_test.go",
+      "sha256": "ef9e8895463cb2363a0638295ff2044f804694f519b3b97677b9549485a34948"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_test.go",
+      "sha256": "c1afcb71c82b0bbb55ac983dc221c7c9801d7aa2ecff9314c705e71c21dd4c4e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/builtin_guidance_test.go",
+      "sha256": "be9e356318d999da0e9e95fb044bb0952e9489ae681e9ceb267ca3cd6ac18cde"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/discovery_paging_test.go",
+      "sha256": "788eba7c32a9d0006017d0653078bfd55704b40d80be37ca363299dce671a038"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_concurrency_lifecycle_test.go",
+      "sha256": "fdf22fd363b2be38aa585b5a55f3fdf677f3a41f493885a76c93ae87377b15a0"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_session_test.go",
+      "sha256": "b78bab9f416b8926c24b3fb3c0eebb9a3080ae88042aebf8370aa8f327947bd2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/session_exposure.go",
+      "sha256": "0b45f1a6be93fff237936cfe2978f0a6fbdc2bf7bd53cb3648f3341c2cf02d9d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tool_metadata_test.go",
+      "sha256": "c4beaf9f745fc40ddf8a3f170d1ca3809251124eb2ec7f39cd7e4ca798770e27"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_publish_atomic_test.go",
+      "sha256": "fdd918604960c90175d8b0e82a95e944aa510b29abb84b177f6a62d84486ffc8"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_test.go",
+      "sha256": "fdb9d8f6d7a4bf3f40083035b84ac5e017515f5391dd9b0ac88ecdbd64425954"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket117R3",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket03-spec-r3.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket03-spec-r3",
+      "targetRevision": "r3",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "dc676d63d8b40fb485529458060f9f02f688619de8cd51c0fb01418a5117c67f",
+      "instructionsSha256": "c83b28cb963e8761f6a2781a4e54da73cdd01f658d192ac500ccf3bcabec7411",
+      "requestSha256": "b16fd3a652ad5d9a132df1437d690d135d25083923db8bb3b44d15b2871b011f"
+    },
+    {
+      "name": "CriticTicket117R3",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket03-spec-r3.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket03-spec-r3",
+      "targetRevision": "r3",
+      "reviewerId": "critic",
+      "taskSha256": "ff73e4f67292afbf84c3f784fe0330660a3f709503cce20792a64472ad60956a",
+      "instructionsSha256": "c83b28cb963e8761f6a2781a4e54da73cdd01f658d192ac500ccf3bcabec7411",
+      "requestSha256": "bf936049be50cc8012a45a65d27c83fffb02a1405393b4d5ee831fd888631d66"
+    }
+  ],
+  "invocationId": "f91a52d9-2b16-41a5-bdf8-bcf616770391",
+  "output": "## Code Review Summary\n\n**Subject:** specification (repair pass) · candidate `ticket03-spec-r3` (sha256 `f17ba1a2…89e4`) · revision r3 · against issue #117 A1–A7/refinement.\n**Files reviewed:** 2 inputs, 13 repo sources/tests.\n**Total Issues:** 8 — CRITICAL 0, HIGH 2, MEDIUM 4, LOW 2.\n\n### CR2 closure\nCR2-2 (README :279,:288,:315,:394,:398,:426-427,:451-465 all stale wording, complete), CR2-3 (`tool_metadata_test.go:108-114` both edits), CR2-4 (`projection.go:313` `config.WireToolName` vs `:340` `effectiveWireName`), CR2-5 (`session_exposure.go:104-127` publisher admitted; `:165-177` `-32600` only for nil/missing-epoch/non-live), CR2-6 (`tools.go:515-519` parity), CR2-7 (bound documented; `projection.go:425-427,452-460`), CR2-8 (`resolveBinding` both branches), CR2-9 (R6/AD6 agree) — **verified closed**. **CR2-1 reopens.**\n\n### Issues\n**[CR3-1][HIGH][ledger-state-drift]** `cmd/mcp-bridge/serve_hybrid_reload_test.go:238,262` — counts `len(names)==6` (pin add) and `==5` (pin removal) include 4 built-ins; with 5 they must be 7/6. Spec enumerates only `:217,225`. Confidence: HIGH. Consequence: `waitFor` never satisfies, so T3's `go test ./cmd/mcp-bridge/` fails; fixing is outside \"enumerated edits\". Fix: add both edits (238→7, 262→6).\n\n**[CR3-2][HIGH][ledger-state-drift]** (reopens CR2-1/CR1-3) `cmd/mcp-bridge/serve_test.go:918-919` (`TestServeCatalogErgonomicsLiveWire`, fixture `pins: []` at :204) asserts post-search `tools/list` contains `alpha__read`; R1 deletes that commit. Only `:617-618` is enumerated, and §3's \"only direct-call-after-discovery flows in the two reveal files\" omits this listing flow. Confidence: HIGH. Consequence: T3 cannot pass; R1 cmd fallout unowned. Fix: rewrite to search → assert absence → `expose_tools` → assert presence; correct the inventory claim.\n\n**[CR3-3][MEDIUM][ledger-state-drift]** `internal/service/progressive_concurrency_lifecycle_test.go:741` second `len(defaultNames) != 1054` must become 1055; spec/AC4 cite only `:697-734`. Consequence: T3 service suite RED. Fix: add the edit.\n\n**[CR3-4][MEDIUM][statement-contradiction]** T2 `:333` \"inverted to assert absence\": `:333` already asserts absence; the presence assertion to invert is `:301`, and `:173-225` (`registryCount != 2`) is also invalidated. Consequence: literal edit asserts a signal R1 forbids and leaves the real assertion RED. Fix: name `:301` for inversion, keep `:333`, add `:173-225`.\n\n**[CR3-5][MEDIUM][statement-contradiction]** §4 step 8 \"`pinned := resolved targets in assembly.PinnedNames()`\" is type-mismatched: `PinnedNames` is `map[string]bool` keyed by `core.PublicName` (`reload.go:202-209`), not `logicalToolTarget`. Consequence: keying by projected name misclassifies pins as pending, merging interests/generation and breaking R3/AD6. Fix: `pinned := pinnedNames[publicName]` using `resolveBinding`'s second return.\n\n**[CR3-6][MEDIUM][verifiability]** AC4/AC9 require `TestPinsPreservedWithoutSearchFanout`, but no task creates it; AC9's `-run` regex exits 0 without it, so pin-preservation is unverified. Fix: assign it to T3's `expose_tools_test.go` and add an existence assertion.\n\n**[CR3-7][LOW][statement-contradiction]** R2(b) makes malformed shape unconditionally `invalid_arguments`, but §4 step 3 validates revision first, so malformed+stale yields `catalog_changed`. Fix: state precedence.\n\n**[CR3-8][LOW][evidence]** §7 lists `unknown_tool` as a `logAdmissionFailure` reason, but steps 4–7 do not log it (describe's unknown path doesn't); line anchors drift (`projection.go` commits at 367/385/377/425/452, not 383/391/399/437/451; `tools.go` describe commit at 683, not 663-670).\n\n### Open Questions\n- [LOW] Publisher rejection uses `catalog_changed`; no catalog changed. Consider a session-required code.\n- [LOW] `boundedCallToolResult` may page an 8-name payload (declared can hold long pinned names); document exemption.\n- [LOW] Pin names failing `PublicToolNamePattern` are requestable only via `t_` alias.\n- [LOW] Deleting `searchDiscoveryTargets` removes the only result-identity/pin cross-check.\n\n### Positive Observations\nCR2-2/3/5/6/8/9 repairs are accurate and line-verified; counts 5/6/6/5, 1055/55, `got=6`, `want` map and rename are correct; `commitDiscovery` transaction/no-op/skip semantics, `resolveBinding` alias premise, and projected-name rules match source.\n\n### Recommendation\nREQUEST CHANGES\n"
+}

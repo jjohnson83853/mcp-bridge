@@ -1,0 +1,149 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket03-spec-r10",
+  "revision": "r10",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket03-spec-r10.md",
+      "sha256": "2f51d8363ccc7111af9f59e8a77b847b773a3a8c0dae9f7809108d1b86a1350e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/issue-117.md",
+      "sha256": "632af8f540082c0068104340861ac902f6779ccc8a149422fff954d0d10a2e57"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/refinement.md",
+      "sha256": "5fb9816f630b9fb7e53045a49fd0206e1600a9d23119b5195e453450b6ec8c2d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "6ab6f3062f5ceaefff22172804c7dd92d039e285d38f5e08fb0da742da468222"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/catalog_test.go",
+      "sha256": "6b05be5d334fed471bf773345cc912e29a353586217dd63231814f98de875a55"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "0be9ae335293e11e0448377a52f3eaae208c33dcf5549a00e09284d2161fc2c9"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_discovery_test.go",
+      "sha256": "98c08d8e305476f5e84db901a54140f6896bcfcdae7a47fcbf2daf6294c43adc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/service_edge_test.go",
+      "sha256": "2f5e686f938b1de8ec220cb6021b166b063ebbda3ce319116bc099901336be1b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "d2a4cdc69ac724c79d462c16e2565370abbeb2b838b62ba7b2fa83f8b0d529d6"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+      "sha256": "fd1692cffe89d01aa05c9661aa584bdee124dfaabb61e30a2818c9fca5ee9833"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+      "sha256": "10bca4c67111a25d77b2ea2a680eb483e1a3c76397af6743b2c086c81553d4ff"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+      "sha256": "52ccb3a4a69b6936b784132ae3e1f52ef64e180c93d96bc76765d898b74b9b48"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_reload_test.go",
+      "sha256": "0a137c08f4bed96cabb5c21431d96759893d5a05522b4c8d95cbd4cbfbb5d3df"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_oauth_test.go",
+      "sha256": "ef9e8895463cb2363a0638295ff2044f804694f519b3b97677b9549485a34948"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_test.go",
+      "sha256": "c1afcb71c82b0bbb55ac983dc221c7c9801d7aa2ecff9314c705e71c21dd4c4e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/httpdiagnostics.go",
+      "sha256": "22c70c25dbddf1267d4e79206ecd64e2f2420d0c29d2833e2f96d09616c6fee5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
+      "sha256": "1385da47f57fa0fe0199a8dfced872f79d756bc7d2280d0e5efb7e6a6beeaf45"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/builtin_guidance_test.go",
+      "sha256": "be9e356318d999da0e9e95fb044bb0952e9489ae681e9ceb267ca3cd6ac18cde"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/discovery_paging_test.go",
+      "sha256": "788eba7c32a9d0006017d0653078bfd55704b40d80be37ca363299dce671a038"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_concurrency_lifecycle_test.go",
+      "sha256": "fdf22fd363b2be38aa585b5a55f3fdf677f3a41f493885a76c93ae87377b15a0"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_session_test.go",
+      "sha256": "b78bab9f416b8926c24b3fb3c0eebb9a3080ae88042aebf8370aa8f327947bd2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/session_exposure.go",
+      "sha256": "0b45f1a6be93fff237936cfe2978f0a6fbdc2bf7bd53cb3648f3341c2cf02d9d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tool_metadata_test.go",
+      "sha256": "c4beaf9f745fc40ddf8a3f170d1ca3809251124eb2ec7f39cd7e4ca798770e27"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_publish_atomic_test.go",
+      "sha256": "fdd918604960c90175d8b0e82a95e944aa510b29abb84b177f6a62d84486ffc8"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_test.go",
+      "sha256": "fdb9d8f6d7a4bf3f40083035b84ac5e017515f5391dd9b0ac88ecdbd64425954"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket117R10",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket03-spec-r10.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket03-spec-r10",
+      "targetRevision": "r10",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "efb3d2671cab8a34079d934542f5f3953ff20631080822982b8f8a6c2483645d",
+      "instructionsSha256": "4f2fdb5c430e6c6bb2dc8c03e3c66db82dc758bcb72879f126b7312bb48d0144",
+      "requestSha256": "279df6445ad4e0cf9d3a06fcfd7edde74e72daa712aa974cfa6c1b2c9874da57"
+    },
+    {
+      "name": "CriticTicket117R10",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket03-spec-r10.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket03-spec-r10",
+      "targetRevision": "r10",
+      "reviewerId": "critic",
+      "taskSha256": "4a5612de72cf9d8462d570e0d0bdf91124e6f6d0394d8bfc2da8597183d9bb9b",
+      "instructionsSha256": "4f2fdb5c430e6c6bb2dc8c03e3c66db82dc758bcb72879f126b7312bb48d0144",
+      "requestSha256": "f92bee1b470e9c86687b7f9de87072ca15541ad0d759468628ddc23aebb14714"
+    }
+  ],
+  "invocationId": "82481313-3f3d-46e4-9130-1a6284c762a2",
+  "output": "## Code Review Summary\n\n**Mode:** specification · **Pass:** repair (CR9-1 closure only) · Candidate `ticket03-spec-r10.md`, sha256 `2f51d836…` (matches packet).\n**Files Reviewed:** 4 (candidate; r8/r9 originals; r8/r9/r10 plan-state bindings)\n**Total Issues:** 1 new (non-blocking class) + closure verified\n\n### CR9-1 closure — VERIFIED\n- **Design region == r8:** raw reads `ticket03-spec-r8.md:84-108` vs `ticket03-spec-r10.md:85-109` match line-for-line (25 lines each). Plan-state bindings agree: r8 and r10 both `0418994b…`, r9 was `e8f52791…` — the r9 drift was real and is reverted.\n- **Both annotations restored:** the r9 strings (`…CR4/CR5/C1/C2/CR7/C3 findings only`; `(F4; …no RED role — C3)`) now occur only outside §4 (lines 8, 65, 264); §4 line 108 carries the r8 forms `…CR4/CR5/C1/C2/CR7 findings only` and `` `:464-563` (F4), ``. No `C3` token remains inside the design region.\n- **Other regions match stated priors:** requirements `78bd4997…` (r8/r9/r10), tasks `5bf7c7b4…` (r9/r10; r8 `5c04a68a…`), envelope `35119699…`; AC1–AC11 identical (r9:110-125 ↔ r10:111-126); §7/§8 identical.\n- **C3 carriers intact:** §1 (line 8), AC1 (transport negative control, NO RED), T2(ii)+T2 RED sentence, §9(12), §10 row + closure table + addendum.\n- **Limits:** no shell, so digests were not recomputed; equality rests on exact raw text comparison plus persisted region bindings. Planner's delta-tool run is declared unrun (line 278); the unresolved `claims[].replacementText` is explicitly delegated to the coordinator lane (r9 convention) — not a defect.\n\n### Issues\n[CR10-1][ledger-state-drift] MEDIUM · confidence HIGH · advisory (class is outside the W09 rounds-1–2 blocking set)\nFile: `.scratch/token-efficient-tool-responses/ticket03-spec-r10.md:278`\nIssue: the delta narrative claims “Non-marker sections 1 and 10 change”, but §3 changed (line 43 adds the r10 raw-read clause; new bullet line 65; line 83 tail) and §9 changed (line 171 appends the CR9-1 scope clause). r9's own narrative enumerated “1, 3, 5, 9 and 10”, so 5 is correctly dropped but 3 and 9 are wrongly dropped. Consequence: the declared changed-section inventory omits exactly the §3 evidence bullet and §9 scope check that substantiate this closure — the declared-vs-actual invariant CR9-1 enforced, recurring for non-marker sections. Fix: “Non-marker sections 1, 3, 9 and 10 change” (or enumerate those clauses).\n\n### Positive Observations\n- Byte-exact revert rather than a paraphrase; drift narrowly localized to one line/two substrings.\n- C3 deliberately kept out of §4 while its five declared carriers are preserved.\n- Unrun delta tooling disclosed with an explicit coordinator re-scan obligation.\n\n### Recommendation\nAPPROVE\n"
+}

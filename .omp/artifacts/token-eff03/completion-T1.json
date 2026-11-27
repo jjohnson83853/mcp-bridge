@@ -1,0 +1,21 @@
+{
+  "baseSha64hex": "1449f38bc589814d125e3176b1afb0429909597588121d8152fa1d4a556a8513",
+  "taskId": "T1",
+  "evidence": [
+    {
+      "id": "EV-T1-1",
+      "kind": "inspection",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/receipt_token-efficient-tool-responses-ticket03-r10-T1.json"
+      },
+      "acceptanceIds": [],
+      "outcome": "pass",
+      "observedAt": "2026-11-27T19:45:57.961Z",
+      "producer": "engineer:ImplementTicket117T1",
+      "details": {
+        "rubric": "T1 expose_tools schema contract",
+        "observedOutcome": "RED: undefined symbols; GREEN: go test ./internal/catalog/ exit 0"
+      }
+    }
+  ]
+}
