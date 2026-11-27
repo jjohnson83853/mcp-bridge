@@ -1,0 +1,491 @@
+{
+  "schemaVersion": 2,
+  "feature": "token-efficient-tool-responses-ticket03-r2",
+  "revision": "r2",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket03-spec-r2.md",
+    "sha256": "16ed9826587759595e10d65e187d3b4e6e7385fd0bf93f6bec5511b4f40ac482",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r2",
+        "sha256": "818308510773d3b20b94c8b590866478c6cef1142a0c84394d6d14007fa30005"
+      },
+      "design": {
+        "revision": "r2",
+        "sha256": "ccb846a33d8c66e2e71eedbaaf2aa9667e353ea2402a1e0b214395f763fe6646"
+      },
+      "tasks": {
+        "revision": "r2",
+        "sha256": "7eb8f5f88e06ec029a74231396f53275d56af81e07e4befa5d3162453aa4c64b"
+      },
+      "envelope": {
+        "revision": "r2",
+        "sha256": "2cc6a23caa9d1017b5f713c587afbc32ed0a3e88eea4cfe5a531d543f337bf79"
+      }
+    }
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "summary": "Search does not mutate session projection; no tools appear in later lists solely from a match."
+    },
+    {
+      "id": "R2",
+      "summary": "Expose_tools is the only unpinned-exposure path: 1..8 unique catalog names, atomic deterministic outcomes."
+    },
+    {
+      "id": "R3",
+      "summary": "Configured pins unchanged in publisher and session projections; exposing a pin is a no-op."
+    },
+    {
+      "id": "R4",
+      "summary": "Direct-call eligibility unchanged for never-pinned/never-exposed tools; call_tool and retrieve_result untouched."
+    },
+    {
+      "id": "R5",
+      "summary": "Exposed tools are isolated to the requesting session; other sessions unchanged."
+    },
+    {
+      "id": "R6",
+      "summary": "Catalog revision, owner, epoch and registry checks preserved and revalidated during exposure."
+    },
+    {
+      "id": "R7",
+      "summary": "Describe_tool never mutates the session projection."
+    },
+    {
+      "id": "R8",
+      "summary": "Automated coverage for no-fanout, exposure success, bound rejection, pins, isolation."
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "AC1",
+      "requirementIds": [
+        "R1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ]
+    },
+    {
+      "id": "AC2",
+      "requirementIds": [
+        "R2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ]
+    },
+    {
+      "id": "AC3",
+      "requirementIds": [
+        "R2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ]
+    },
+    {
+      "id": "AC4",
+      "requirementIds": [
+        "R3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ]
+    },
+    {
+      "id": "AC5",
+      "requirementIds": [
+        "R4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ]
+    },
+    {
+      "id": "AC6",
+      "requirementIds": [
+        "R5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ]
+    },
+    {
+      "id": "AC7",
+      "requirementIds": [
+        "R6"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ]
+    },
+    {
+      "id": "AC8",
+      "requirementIds": [
+        "R7"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ]
+    },
+    {
+      "id": "AC9",
+      "requirementIds": [
+        "R8"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ]
+    },
+    {
+      "id": "AC10",
+      "requirementIds": [
+        "R2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ]
+    },
+    {
+      "id": "AC11",
+      "requirementIds": [
+        "R2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "CR1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket03-spec-r2.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "CT1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket03-spec-r2.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "critic"
+      ]
+    },
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/catalog/schema.go",
+          "internal/catalog/catalog_test.go"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T2",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/tools.go",
+          "internal/service/progressive_discovery_test.go",
+          "internal/service/service_edge_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC1",
+        "AC8"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T3",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T1",
+        "T2"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "README.md",
+          "internal/service/builtin_guidance_test.go",
+          "internal/service/discovery_paging_test.go",
+          "internal/service/expose_tools_test.go",
+          "internal/service/progressive_concurrency_lifecycle_test.go",
+          "internal/service/progressive_session_test.go",
+          "internal/service/session_exposure.go",
+          "internal/service/tool_metadata_test.go",
+          "internal/service/tools.go",
+          "internal/service/tools_publish_atomic_test.go",
+          "internal/service/tools_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC6",
+        "AC7",
+        "AC10",
+        "AC11"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T4",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [
+        "T3"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/expose_tools_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC9"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "packet": {
+    "digest": "c5371d1934f0324d3d1e1060b6c52be72bfdd6627305429ada199ac90d05d1ad",
+    "branches": [
+      {
+        "id": "token-efficient-tool-responses-ticket03-r2-r2",
+        "envelopeId": "env-1",
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r2",
+            "sha256": "818308510773d3b20b94c8b590866478c6cef1142a0c84394d6d14007fa30005"
+          },
+          "design": {
+            "revision": "r2",
+            "sha256": "ccb846a33d8c66e2e71eedbaaf2aa9667e353ea2402a1e0b214395f763fe6646"
+          },
+          "tasks": {
+            "revision": "r2",
+            "sha256": "7eb8f5f88e06ec029a74231396f53275d56af81e07e4befa5d3162453aa4c64b"
+          },
+          "envelope": {
+            "revision": "r2",
+            "sha256": "2cc6a23caa9d1017b5f713c587afbc32ed0a3e88eea4cfe5a531d543f337bf79"
+          }
+        },
+        "answerIds": []
+      }
+    ],
+    "selectedBranchId": null
+  },
+  "authorization": null,
+  "reviews": null,
+  "evidence": [],
+  "capabilities": [],
+  "blockers": [],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "CR1",
+      "CT1",
+      "T1",
+      "T2",
+      "T3",
+      "T4"
+    ],
+    "readPaths": [
+      ".scratch/token-efficient-tool-responses/ticket03-spec-r2.md",
+      ".omp/artifacts/token-eff03/issue-117.md",
+      ".omp/artifacts/token-eff03/refinement.md",
+      "README.md",
+      "docs",
+      ".omp/RULES.md",
+      "internal/service",
+      "internal/catalog",
+      "internal/config",
+      "cmd/mcp-bridge"
+    ],
+    "writePaths": [
+      "README.md",
+      "internal/catalog/catalog_test.go",
+      "internal/catalog/schema.go",
+      "internal/service/builtin_guidance_test.go",
+      "internal/service/discovery_paging_test.go",
+      "internal/service/expose_tools_test.go",
+      "internal/service/progressive_concurrency_lifecycle_test.go",
+      "internal/service/progressive_discovery_test.go",
+      "internal/service/progressive_session_test.go",
+      "internal/service/service_edge_test.go",
+      "internal/service/session_exposure.go",
+      "internal/service/tool_metadata_test.go",
+      "internal/service/tools.go",
+      "internal/service/tools_publish_atomic_test.go",
+      "internal/service/tools_test.go"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "src-issue-117",
+      "kind": "repository",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/issue-117.md",
+        "sha256": "632af8f540082c0068104340861ac902f6779ccc8a149422fff954d0d10a2e57"
+      },
+      "locator": "GitHub jjohnson83853/mcp-bridge#117 snapshot",
+      "recordedAt": "2026-11-27T15:36:04.598Z"
+    },
+    {
+      "id": "src-refinement-117",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff03/refinement.md",
+        "sha256": "5fb9816f630b9fb7e53045a49fd0206e1600a9d23119b5195e453450b6ec8c2d"
+      },
+      "locator": "issue-refiner READY assessment for #117",
+      "recordedAt": "2026-11-27T15:36:04.599Z"
+    }
+  ],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/token-efficient-tool-responses-ticket03-r2/marker.json",
+    "activationEvidenceIds": []
+  }
+}

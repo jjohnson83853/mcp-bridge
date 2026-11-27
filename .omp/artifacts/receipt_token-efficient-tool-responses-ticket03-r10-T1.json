@@ -1,0 +1,8 @@
+{
+  "task_id": "T1",
+  "status": "COMPLETED",
+  "artifact_receipt": ".omp/artifacts/receipt_token-efficient-tool-responses-ticket03-r10-T1.json",
+  "telemetry_ref": null,
+  "summary": "Implemented T1 expose_tools schema and shape assertions; compile-time RED confirmed undefined symbols, final go test passed. Existing receipt_T1.json was preserved, so this task uses a unique receipt path.",
+  "error_code": null
+}
