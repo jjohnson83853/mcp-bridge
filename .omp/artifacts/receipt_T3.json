@@ -3,26 +3,51 @@
   "status": "COMPLETED",
   "artifact_receipt": ".omp/artifacts/receipt_T3.json",
   "telemetry_ref": null,
-  "summary": "Applied the three authorized repairs; both requested focused Go test commands passed.",
+  "summary": "Wired log-vocabulary violation counting and serve startup binding; added exact scrape-delta coverage for paging, retrieval, capacity refusal, FIFO eviction, and invalid/valid log records. Required build, focused tests, and vet passed.",
   "error_code": null,
+  "files": [
+    "internal/observe/log.go",
+    "cmd/mcp-bridge/serve.go",
+    "internal/service/bounded_delivery_test.go"
+  ],
   "evidence": [
     {
-      "command": "go test ./internal/service/ -count=1",
+      "command": "go test ./internal/service -run '^TestPagingMetricsDeltas$' -count=1",
       "phase": "RED",
       "exit_code": 1,
-      "output": "Prior T3 attempt recorded failures in TestTerminalPreviewsBounded/epoch_unresolved, TestEpochUnresolvedNoHandle, TestBuiltinGuidanceSnapshotCoherence, and TestHandleRejectionUniformHandler; see .omp/artifacts/t3-verification-output-01608a7b8f82ba94-20261127T112156Z.log (7709 bytes, sha256 01608a7b8f82ba942da5d0be0b50845a455ac862147c01f630598239307dae54)."
+      "output": "Expected compile-time RED: observe.BindLogOperationViolationCounter was not yet defined."
     },
     {
-      "command": "go test ./internal/service/ -run 'TestTerminalPreviewsBounded|TestEpochUnresolvedNoHandle|TestBuiltinGuidanceSnapshotCoherence|TestHandleRejectionUniformHandler' -count=1",
-      "phase": "GREEN",
-      "exit_code": 0,
-      "output": "ok\tgithub.com/jjohnson83853/mcp-bridge/internal/service\t0.019s"
+      "command": "go test ./internal/service -run '^TestPagingMetricsDeltas$' -count=1",
+      "phase": "CHECK",
+      "exit_code": 1,
+      "output": "Initial assertion found the FIFO-triggering delivery also increments bridge_results_paged_total; expectation corrected to include both committed deltas."
     },
     {
-      "command": "go test ./cmd/mcp-bridge/ -run 'TestServeHybridReload|TestLoggingContract|TestServeCompositionRoot|TestServeHybridExposure' -count=1",
+      "command": "go test ./internal/service -run '^TestPagingMetricsDeltas$' -count=1",
       "phase": "GREEN",
       "exit_code": 0,
-      "output": "ok\tgithub.com/jjohnson83853/mcp-bridge/cmd/mcp-bridge\t0.117s"
+      "output": "ok github.com/jjohnson83853/mcp-bridge/internal/service 0.007s"
+    },
+    {
+      "command": "go build ./...",
+      "exit_code": 0,
+      "output": "no output"
+    },
+    {
+      "command": "go test ./internal/observe -run 'TestLog|TestPagingMetricsRegistered' -count=1",
+      "exit_code": 0,
+      "output": "ok github.com/jjohnson83853/mcp-bridge/internal/observe 0.017s"
+    },
+    {
+      "command": "go test ./internal/service -run 'TestPagingMetricsDeltas|TestPagingMetrics|TestPreviewBoundedAndMetadata|TestHandleOwnerEpochBinding|TestTerminalPreviewsBounded|TestLogLabelProducers' -count=1",
+      "exit_code": 0,
+      "output": "ok github.com/jjohnson83853/mcp-bridge/internal/service 0.036s"
+    },
+    {
+      "command": "go vet ./internal/observe ./internal/service ./cmd/mcp-bridge",
+      "exit_code": 0,
+      "output": "no output"
     }
   ],
   "decisions": [],

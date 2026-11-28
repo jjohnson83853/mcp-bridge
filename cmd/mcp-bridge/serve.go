@@ -130,6 +130,7 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 		),
 	})
 	metrics := observe.NewMetrics(configuredServerIDs(candidate))
+	observe.BindLogOperationViolationCounter(metrics.RecordLogOperationViolation)
 
 	store, err := storage.Open(settings.StorageDirectory)
 	if err != nil {

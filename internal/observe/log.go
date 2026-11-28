@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -33,6 +34,24 @@ type Logger struct {
 }
 
 var loggingWriteFailedLine = []byte(`{"schema_version":1,"level":"warn","service":"mcp-bridge","event":"logging_write_failed","message":"logging write failed","operation":"logging","outcome":"failure"}` + "\n")
+
+var logViolationCounter atomic.Pointer[func()]
+
+// BindLogOperationViolationCounter installs process-scoped wiring for the
+// vocabulary-enforcement boundary. Passing nil clears the binding.
+func BindLogOperationViolationCounter(counter func()) {
+	if counter == nil {
+		logViolationCounter.Store(nil)
+		return
+	}
+	logViolationCounter.Store(&counter)
+}
+
+func countLogOperationViolation() {
+	if counter := logViolationCounter.Load(); counter != nil {
+		(*counter)()
+	}
+}
 
 func NewLogger(stdout, stderr io.Writer) *Logger {
 	return &Logger{stdout: stdout, stderr: stderr}
@@ -79,6 +98,9 @@ func marshalLogRecord(record any) ([]byte, bool, error) {
 				record, violation = vocabularyViolationRecord(), true
 			}
 		}
+	}
+	if violation {
+		countLogOperationViolation()
 	}
 	encoded, err := json.Marshal(record)
 	if err != nil {
@@ -138,6 +160,9 @@ func (l *Logger) Log(entry Entry) {
 		l.logHTTP(entry)
 		return
 	}
+	if logVocabularyViolation(entry.Event, entry.Operation) {
+		countLogOperationViolation()
+	}
 	record, ok := buildEnvelope(entry)
 	if !ok {
 		l.logFailure(entry.Level)
@@ -159,6 +184,7 @@ func (l *Logger) Log(entry Entry) {
 // Encode and sink failures are surfaced once on the opposite severity lane.
 func (l *Logger) logHTTP(entry Entry) {
 	if entry.Event != "" && entry.HTTP.Operation != "" && logVocabularyViolation(entry.Event, entry.HTTP.Operation) {
+		countLogOperationViolation()
 		l.writeVocabularyViolation()
 		return
 	}

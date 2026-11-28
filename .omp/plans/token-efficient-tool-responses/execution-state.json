@@ -72,67 +72,67 @@
   "requirements": [
     {
       "id": "R1",
-      "summary": "pass-through \u2014 A result whose measured bytes are \u2264 `delivery_ceiling_bytes` is delivered byte-identically to the pre-change SDK marshaling."
+      "summary": "pass-through — A result whose measured bytes are ≤ `delivery_ceiling_bytes` is delivered byte-identically to the pre-change SDK marshaling."
     },
     {
       "id": "R2",
-      "summary": "measurement \u2014 The measure is the byte length of the SDK-marshaled complete `mcp.CallToolResult`; every occurrence in the serialized form counts; no deduplication, reordering, or pretty-printing may reduce it"
+      "summary": "measurement — The measure is the byte length of the SDK-marshaled complete `mcp.CallToolResult`; every occurrence in the serialized form counts; no deduplication, reordering, or pretty-printing may reduce it"
     },
     {
       "id": "R3",
-      "summary": "preview \u2014 An over-ceiling retainable result is delivered on every paged surface (call_tool, directly invoked projected tools, search_tools, describe_tool) as a preview \u2264 `preview_ceiling_bytes` whose `Content` is a non-empty UTF-8"
+      "summary": "preview — An over-ceiling retainable result is delivered on every paged surface (call_tool, directly invoked projected tools, search_tools, describe_tool) as a preview ≤ `preview_ceiling_bytes` whose `Content` is a non-empty UTF-8"
     },
     {
       "id": "R4",
-      "summary": "handles \u2014 Handles are opaque `crypto/rand` values (43-char base64url), bound to one owner namespace (session + admitted epoch, or the session-less publisher namespace), and expire at `handle_ttl`"
+      "summary": "handles — Handles are opaque `crypto/rand` values (43-char base64url), bound to one owner namespace (session + admitted epoch, or the session-less publisher namespace), and expire at `handle_ttl`"
     },
     {
       "id": "R5",
-      "summary": "paging completeness \u2014 Each page is a rune-aligned valid-UTF-8 slice of the serialized retained bytes (cut points fall only on rune boundaries; SDK JSON marshaling is valid UTF-8), so concatenating all pages of a handle reproduces the retained"
+      "summary": "paging completeness — Each page is a rune-aligned valid-UTF-8 slice of the serialized retained bytes (cut points fall only on rune boundaries; SDK JSON marshaling is valid UTF-8), so concatenating all pages of a handle reproduces the retained"
     },
     {
       "id": "R6",
-      "summary": "bounded retention \u2014 Retention is hard-bounded per namespace in bytes and entries, capped per entry by `max_retained_result_bytes`, and evicts FIFO / expires by TTL under those bounds"
+      "summary": "bounded retention — Retention is hard-bounded per namespace in bytes and entries, capped per entry by `max_retained_result_bytes`, and evicts FIFO / expires by TTL under those bounds"
     },
     {
       "id": "R7",
-      "summary": "retired namespace \u2014 Namespace retirement leaves a store-internal tombstone with a stated lifetime (`tombstone_ttl`) and an explicit clearing condition, counted in retention accounting; wire-level retrieval of a handle from a retired namespa"
+      "summary": "retired namespace — Namespace retirement leaves a store-internal tombstone with a stated lifetime (`tombstone_ttl`) and an explicit clearing condition, counted in retention accounting; wire-level retrieval of a handle from a retired namespa"
     },
     {
       "id": "R8",
-      "summary": "execution facts \u2014 `is_error` and `upstream_code` are preserved identically on the preview, every page, and every terminal; paging never re-executes the upstream; bridge-side dispatch failures remain small `errorResult` responses, never pa"
+      "summary": "execution facts — `is_error` and `upstream_code` are preserved identically on the preview, every page, and every terminal; paging never re-executes the upstream; bridge-side dispatch failures remain small `errorResult` responses, never pa"
     },
     {
       "id": "R9",
-      "summary": "pinning \u2014 The per-entry `upstream_code` bound and rendered value, and the page/preview sizing derived from the ceilings, are fixed at retention time; a config reload of `max_upstream_code_bytes`, `delivery_ceiling_bytes` or `previ"
+      "summary": "pinning — The per-entry `upstream_code` bound and rendered value, and the page/preview sizing derived from the ceilings, are fixed at retention time; a config reload of `max_upstream_code_bytes`, `delivery_ceiling_bytes` or `previ"
     },
     {
       "id": "R10",
-      "summary": "terminals \u2014 Each unretainable over-ceiling outcome \u2014 per-entry cap exceeded, aggregate cap exceeded, namespace retired before commit, entropy failure at handle generation \u2014 produces a distinct typed terminal preview (no handle), bou"
+      "summary": "terminals — Each unretainable over-ceiling outcome — per-entry cap exceeded, aggregate cap exceeded, namespace retired before commit, entropy failure at handle generation — produces a distinct typed terminal preview (no handle), bou"
     },
     {
       "id": "R11",
-      "summary": "config validation \u2014 All documented relations are validated at config load with typed diagnostics; startup fails closed: (a) `preview_ceiling_bytes < delivery_ceiling_bytes`, equal rejected; (b) `max_retained_result_bytes > delivery_ceiling_"
+      "summary": "config validation — All documented relations are validated at config load with typed diagnostics; startup fails closed: (a) `preview_ceiling_bytes < delivery_ceiling_bytes`, equal rejected; (b) `max_retained_result_bytes > delivery_ceiling_"
     },
     {
       "id": "R12",
-      "summary": "finite labels \u2014 Log labels `{operation}` and `{outcome}` take values only from declared enumerations; an unlisted value fails the vocabulary test; every enumerated value has at least one producing path."
+      "summary": "finite labels — Log labels `{operation}` and `{outcome}` take values only from declared enumerations; an unlisted value fails the vocabulary test; every enumerated value has at least one producing path."
     },
     {
       "id": "R13",
-      "summary": "retrieval input contract \u2014 `retrieve_result` validates its input handler-side, never relying on a JSON-schema pattern for this built-in surface: a shape-invalid handle or page returns `invalid_arguments`, and a page beyond the entry's `total_pages"
+      "summary": "retrieval input contract — `retrieve_result` validates its input handler-side, never relying on a JSON-schema pattern for this built-in surface: a shape-invalid handle or page returns `invalid_arguments`, and a page beyond the entry's `total_pages"
     },
     {
       "id": "R14",
-      "summary": "terminal field semantics \u2014 A terminal's `StructuredContent` carries `retention`, whose allowed values are exactly the four terminal codes {`result_capacity_exceeded`, `result_aggregate_capacity_exceeded`, `result_namespace_retired`, `result_entrop"
+      "summary": "terminal field semantics — A terminal's `StructuredContent` carries `retention`, whose allowed values are exactly the four terminal codes {`result_capacity_exceeded`, `result_aggregate_capacity_exceeded`, `result_namespace_retired`, `result_entrop"
     },
     {
       "id": "R15",
-      "summary": "documentation \u2014 README and the `retrieve_result` tool description document the handle/page retrieval contract (handle, page, `total_pages`, bounded preview, byte-exact page concatenation) and replace the \"complete upstream CallToolResul"
+      "summary": "documentation — README and the `retrieve_result` tool description document the handle/page retrieval contract (handle, page, `total_pages`, bounded preview, byte-exact page concatenation) and replace the \"complete upstream CallToolResul"
     },
     {
       "id": "R16",
-      "summary": "sweep markers \u2014 Expiry and eviction install store-internal markers parallel to the tombstone: stated lifetime (`tombstone_ttl`), explicit clearing condition \u2014 cleared when the sweep observes marker age > lifetime \u2014 counted in `max_bytes"
+      "summary": "sweep markers — Expiry and eviction install store-internal markers parallel to the tombstone: stated lifetime (`tombstone_ttl`), explicit clearing condition — cleared when the sweep observes marker age > lifetime — counted in `max_bytes"
     }
   ],
   "authorization": {
@@ -229,7 +229,7 @@
         "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/owner-authorization-r40-t1.md",
         "sha256": "3474af1a12106b972524a1f1ecf34e1018539a63b059d124f1cb9b7e941d6ec6"
       },
-      "locator": "owner answer to the implementation-authorization form: 'auth: t1-only' \u2014 implement ticket 01 task T1 only, report before continuing",
+      "locator": "owner answer to the implementation-authorization form: 'auth: t1-only' — implement ticket 01 task T1 only, report before continuing",
       "recordedAt": "2026-11-27T01:14:48Z"
     },
     {
@@ -239,8 +239,18 @@
         "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/owner-amendment-r40-t3-write-roots.md",
         "sha256": "c76aaf9be7cb01264ce5e2009f412507ad857dfa44d8a6638f27055380d79745"
       },
-      "locator": "owner answer to the T3 write-root amendment form: 'extend-t3' \u2014 add the three inventory-pin test files to T3 effects",
+      "locator": "owner answer to the T3 write-root amendment form: 'extend-t3' — add the three inventory-pin test files to T3 effects",
       "recordedAt": "2026-11-27T00:00:00.000Z"
+    },
+    {
+      "id": "src-owner-reopen-5151daea07ec9968",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/owner-authorization-ticket01-ac14-repair-20261128.md",
+        "sha256": "c594d1318f1bd2b8436f128a8e10e30c4ba8c55b192b4846cde75b3070bbbdcb"
+      },
+      "locator": "owner decision form answer: {\"action\": \"repair\"}",
+      "recordedAt": "2026-11-28T11:54:10Z"
     }
   ],
   "decisions": [
@@ -320,6 +330,21 @@
       "rationale": "explicit-owner-amendment",
       "sourceIds": [
         "src-owner-amendment-r40-t3-roots"
+      ],
+      "affects": [
+        "T3"
+      ]
+    },
+    {
+      "id": "owner-reopen:T3:839c5dbd55501266",
+      "inputDigest": "79d4692cc4406155bc5238647d319b83527d9c9230325a7d48c8d29c6eeb442d",
+      "kind": "owner",
+      "status": "resolved",
+      "question": "Reopen T3 for the owner-authorized repair round?",
+      "answer": "Owner explicitly authorized one bounded repair round; T3 reopened for repair.",
+      "rationale": "explicit-owner-amendment",
+      "sourceIds": [
+        "src-owner-reopen-5151daea07ec9968"
       ],
       "affects": [
         "T3"
@@ -551,7 +576,7 @@
     {
       "id": "T3",
       "stage": "implementation",
-      "status": "done",
+      "status": "pending",
       "blockedBy": [
         "T1",
         "T2"
@@ -608,9 +633,7 @@
         "AC43",
         "AC44"
       ],
-      "evidenceIds": [
-        "ev-t3-tests-20261127"
-      ],
+      "evidenceIds": [],
       "agentRoles": [
         "engineer"
       ]
@@ -1410,7 +1433,7 @@
       "observedAt": "2026-11-27T01:51:24Z",
       "producer": "code-reviewer (owner-authorized out-of-gate run)",
       "details": {
-        "rubric": "R2, R11(a)-(k), \u00a76 defaults, oracle independence, T1 scope containment",
+        "rubric": "R2, R11(a)-(k), §6 defaults, oracle independence, T1 scope containment",
         "observedOutcome": "no blocking defect; findings 1/3/4/5 repaired under T1 write roots, finding 2 (maximal-envelope IsError pin) deferred to the planner before T3"
       },
       "contractAnchor": "9bc19506f4f2d64f75690978786f3d34885d12d97830534db43dc5ed2461d275",
@@ -2018,7 +2041,7 @@
       "acceptanceIds": [],
       "outcome": "pass",
       "observedAt": "2026-11-27T00:00:00Z",
-      "producer": "code-reviewer \u2014 r40 specification review observation",
+      "producer": "code-reviewer — r40 specification review observation",
       "details": {
         "rubric": "r40 spec review verdict pass (reviews.specification)",
         "observedOutcome": "verdict pass at r40; receipt source review-specification-771a5122d10c6e04968d38a1b4b9da1f8a58f1b26f8d4b41216bfbb3b8df3910"
@@ -2052,7 +2075,7 @@
       "acceptanceIds": [],
       "outcome": "pass",
       "observedAt": "2026-11-27T00:00:00Z",
-      "producer": "critic \u2014 r40 tasks review observation",
+      "producer": "critic — r40 tasks review observation",
       "details": {
         "rubric": "r40 tasks review verdict pass (reviews.tasks)",
         "observedOutcome": "verdict pass at r40; receipt source review-tasks-8a3f846b94660c4f15417ead3bb6c61aabdbdef011502c10cb58644714ebd4a5"

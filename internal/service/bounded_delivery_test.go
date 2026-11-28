@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"strconv"
 	"strings"
@@ -615,4 +617,130 @@ func TestLogLabelProducers(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPagingMetricsDeltas(t *testing.T) {
+	metrics := observe.NewMetrics(nil)
+	observe.BindLogOperationViolationCounter(metrics.RecordLogOperationViolation)
+	defer observe.BindLogOperationViolationCounter(nil)
+
+	counterSeries := []string{
+		"bridge_results_paged_total",
+		"bridge_result_pages_served_total",
+		`bridge_retention_rejections_total{retention="result_capacity_exceeded"}`,
+		`bridge_retention_rejections_total{retention="result_aggregate_capacity_exceeded"}`,
+		`bridge_retention_rejections_total{retention="result_namespace_retired"}`,
+		`bridge_retention_rejections_total{retention="result_entropy_unavailable"}`,
+		`bridge_retention_rejections_total{retention="result_epoch_unresolved"}`,
+		"bridge_retention_evictions_total",
+		"bridge_log_operation_violations_total",
+	}
+	scrape := func() map[string]float64 {
+		recorder := httptest.NewRecorder()
+		metrics.Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("metrics scrape status = %d, want %d", recorder.Code, http.StatusOK)
+		}
+		values := make(map[string]float64, len(counterSeries))
+		for _, series := range counterSeries {
+			values[series] = 0
+		}
+		for _, line := range strings.Split(recorder.Body.String(), "\n") {
+			fields := strings.Fields(line)
+			if len(fields) != 2 {
+				continue
+			}
+			if _, tracked := values[fields[0]]; !tracked {
+				continue
+			}
+			value, err := strconv.ParseFloat(fields[1], 64)
+			if err != nil {
+				t.Fatalf("parse counter sample %q: %v", line, err)
+			}
+			values[fields[0]] = value
+		}
+		return values
+	}
+	assertDeltas := func(before, after map[string]float64, expected map[string]float64) {
+		t.Helper()
+		for _, series := range counterSeries {
+			want := before[series] + expected[series]
+			if got := after[series]; got != want {
+				t.Errorf("counter %s = %v after delta, want %v", series, got, want)
+			}
+		}
+	}
+
+	store, owner, resolve, _ := newDeliveryOracle(t)
+	store.metrics = metrics
+	before := scrape()
+	preview := deliverBoundedResult(store, deliveryFixture(strings.Repeat("page", 300), false, ""), owner, resolve, "")
+	handle, ok := structuredResult(preview)["handle"].(string)
+	if !ok || handle == "" {
+		t.Fatalf("over-ceiling delivery did not issue a handle: %#v", structuredResult(preview))
+	}
+	after := scrape()
+	assertDeltas(before, after, map[string]float64{"bridge_results_paged_total": 1})
+
+	surface := &ToolSurface{results: store, cfg: ToolSurfaceConfig{Metrics: metrics}}
+	before = scrape()
+	page := retrieveForOracle(t, surface, `{"handle":"`+handle+`","page":1}`)
+	if page.IsError || structuredResult(page)["page"] != 1 {
+		t.Fatalf("page retrieval = %#v, want successful page 1", page)
+	}
+	after = scrape()
+	assertDeltas(before, after, map[string]float64{"bridge_result_pages_served_total": 1})
+
+	refusalStore, refusalOwner, refusalResolve, refusalBounds := newDeliveryOracle(t)
+	refusalStore.metrics = metrics
+	refusalBounds.MaxRetainedResultBytes = 1
+	refusalStore.bounds = refusalBounds
+	before = scrape()
+	terminal := deliverBoundedResult(refusalStore, deliveryFixture(strings.Repeat("refusal", 300), true, "code"), refusalOwner, refusalResolve, "code")
+	if structuredResult(terminal)["retention"] != "result_capacity_exceeded" {
+		t.Fatalf("retention terminal = %#v, want result_capacity_exceeded", structuredResult(terminal))
+	}
+	after = scrape()
+	assertDeltas(before, after, map[string]float64{`bridge_retention_rejections_total{retention="result_capacity_exceeded"}`: 1})
+
+	evictionStore, evictionOwner, evictionResolve, evictionBounds := newDeliveryOracle(t)
+	evictionStore.metrics = metrics
+	evictionBounds.MaxEntriesPerNamespace = 1
+	evictionStore.bounds = evictionBounds
+	before = scrape()
+	first := deliverBoundedResult(evictionStore, deliveryFixture(strings.Repeat("first", 150), false, ""), evictionOwner, evictionResolve, "")
+	if structuredResult(first)["handle"] == nil {
+		t.Fatalf("first FIFO fixture was not retained: %#v", structuredResult(first))
+	}
+	after = scrape()
+	assertDeltas(before, after, map[string]float64{"bridge_results_paged_total": 1})
+	before = scrape()
+	second := deliverBoundedResult(evictionStore, deliveryFixture(strings.Repeat("second", 150), false, ""), evictionOwner, evictionResolve, "")
+	if structuredResult(second)["handle"] == nil {
+		t.Fatalf("second FIFO fixture was not retained: %#v", structuredResult(second))
+	}
+	after = scrape()
+	assertDeltas(before, after, map[string]float64{
+		"bridge_results_paged_total":      1,
+		"bridge_retention_evictions_total": 1,
+	})
+
+	logger := observe.NewLogger(io.Discard, io.Discard)
+	logBefore := scrape()
+	logger.Log(observe.Entry{Level: "info", Event: "result_paged", Operation: "unlisted_operation", Outcome: "success"})
+	after = scrape()
+	assertDeltas(logBefore, after, map[string]float64{"bridge_log_operation_violations_total": 1})
+
+	before = scrape()
+	if err := observe.WriteJSONLine(io.Discard, observe.NewEnvelope("info", "result_paged", "ignored", "unlisted_operation", "success")); err != nil {
+		t.Fatalf("write rejected log record: %v", err)
+	}
+	after = scrape()
+	assertDeltas(before, after, map[string]float64{"bridge_log_operation_violations_total": 1})
+	assertDeltas(logBefore, after, map[string]float64{"bridge_log_operation_violations_total": 2})
+
+	before = scrape()
+	logger.Log(observe.Entry{Level: "info", Event: "result_paged", Operation: "call_tool", Outcome: "success"})
+	after = scrape()
+	assertDeltas(before, after, map[string]float64{})
 }

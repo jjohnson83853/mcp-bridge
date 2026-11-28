@@ -1,35 +1,35 @@
 {
   "schemaVersion": 2,
-  "feature": "token-efficient-tool-responses-ticket05-r21",
-  "revision": "r21",
+  "feature": "token-efficient-tool-responses",
+  "revision": "r40",
   "projectRoot": "/home/opencode/projects/default/mcp-bridge",
   "spec": {
-    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r21.md",
-    "sha256": "6427b9f5ed02ef6605c23e011466ff2e742f66bc40647585fa61c3b62b4d6cfd",
+    "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+    "sha256": "37dd21cee4cebdd8c5e4771741e05e594feb01292e43269ace89ee11d35ad686",
     "sectionBindings": {
       "requirements": {
-        "revision": "r21",
-        "sha256": "6215af6d552963729584decc29dad6e9097a2da07f6660d43fe3af12ac2efdd2"
+        "revision": "r40",
+        "sha256": "72f24b6400cb48fa7bb548b8ede5b49a92f592ae04bd94bc10432e7f4f253c3f"
       },
       "design": {
-        "revision": "r21",
-        "sha256": "46cd7c4d70a24756fc0de160d501107844b028855ae8d976066d764215ff8b7c"
+        "revision": "r40",
+        "sha256": "2cb96c5a86c61118796dd0df3f7553c325c7288fdba302c160ade88860538067"
       },
       "tasks": {
-        "revision": "r21",
-        "sha256": "b5e576df416854ac5eca1b8b27f3b18c470bbb96ccf84c60020eacf9ccc1cef0"
+        "revision": "r40",
+        "sha256": "78b5908a5f4c9af89d71c5ea660a4760e1c2576fc6f95ba33366e3b1a9047465"
       },
       "envelope": {
-        "revision": "r21",
-        "sha256": "d5e4eba0999c9195a1d940078886e4daa7a1e42b63b6fa1d9ab1444249c34fcc"
+        "revision": "r40",
+        "sha256": "9a8eb0f186ee0c99491dd761449036fdcb39ae31af28a7379935315774c05b04"
       }
     }
   },
   "packet": {
-    "digest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
+    "digest": "53a6908b6e97798a07907f95185e939bfe9c5a2830be1d0dc104135a308309d3",
     "branches": [
       {
-        "id": "token-efficient-tool-responses-ticket05-r21-r21",
+        "id": "token-efficient-tool-responses-ticket01-r40",
         "answerIds": [],
         "taskIds": [
           "CR1",
@@ -37,30 +37,31 @@
           "T1",
           "T2",
           "T3",
-          "T4"
+          "T4",
+          "T5"
         ],
         "envelopeId": "env-1",
         "sectionBindings": {
           "requirements": {
-            "revision": "r21",
-            "sha256": "6215af6d552963729584decc29dad6e9097a2da07f6660d43fe3af12ac2efdd2"
+            "revision": "r40",
+            "sha256": "72f24b6400cb48fa7bb548b8ede5b49a92f592ae04bd94bc10432e7f4f253c3f"
           },
           "design": {
-            "revision": "r21",
-            "sha256": "46cd7c4d70a24756fc0de160d501107844b028855ae8d976066d764215ff8b7c"
+            "revision": "r40",
+            "sha256": "2cb96c5a86c61118796dd0df3f7553c325c7288fdba302c160ade88860538067"
           },
           "tasks": {
-            "revision": "r21",
-            "sha256": "b5e576df416854ac5eca1b8b27f3b18c470bbb96ccf84c60020eacf9ccc1cef0"
+            "revision": "r40",
+            "sha256": "78b5908a5f4c9af89d71c5ea660a4760e1c2576fc6f95ba33366e3b1a9047465"
           },
           "envelope": {
-            "revision": "r21",
-            "sha256": "d5e4eba0999c9195a1d940078886e4daa7a1e42b63b6fa1d9ab1444249c34fcc"
+            "revision": "r40",
+            "sha256": "9a8eb0f186ee0c99491dd761449036fdcb39ae31af28a7379935315774c05b04"
           }
         }
       }
     ],
-    "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21"
+    "selectedBranchId": "token-efficient-tool-responses-ticket01-r40"
   },
   "actors": {
     "plannerId": "planner",
@@ -71,319 +72,282 @@
   "requirements": [
     {
       "id": "R1",
-      "summary": "Exactly two allowlisted operations: portainer EndpointList and portainer docker_proxy path /containers/json; Proxmox/OPNsense excluded."
+      "summary": "pass-through — A result whose measured bytes are ≤ `delivery_ceiling_bytes` is delivered byte-identically to the pre-change SDK marshaling."
     },
     {
       "id": "R2",
-      "summary": "Default projection on both paths with ONE disclosure schema {v,applied,entry,mode,fields,reason?}; fields=[] when nothing applied, entry=\"\" when no match; whole upstream_result re-derived."
+      "summary": "measurement — The measure is the byte length of the SDK-marshaled complete `mcp.CallToolResult`; every occurrence in the serialized form counts; no deduplication, reordering, or pretty-printing may reduce it"
     },
     {
       "id": "R3",
-      "summary": "Explicit full via call_tool returns unprojected objects; direct-path opt-out via call_tool projection.full; ceiling preserved."
+      "summary": "preview — An over-ceiling retainable result is delivered on every paged surface (call_tool, directly invoked projected tools, search_tools, describe_tool) as a preview ≤ `preview_ceiling_bytes` whose `Content` is a non-empty UTF-8"
     },
     {
       "id": "R4",
-      "summary": "Field selection overrides defaults, raw keys, unknown fields reject on non-empty lists, empty list+fields accepted, fields:[] rejected; bounds + runtime-derived budget; full XOR fields."
+      "summary": "handles — Handles are opaque `crypto/rand` values (43-char base64url), bound to one owner namespace (session + admitted epoch, or the session-less publisher namespace), and expire at `handle_ttl`"
     },
     {
       "id": "R5",
-      "summary": "Allowlist entries explicit identities justified by captured schemas/payloads; no patterns; non-matching docker_proxy paths labeled not_allowlisted."
+      "summary": "paging completeness — Each page is a rune-aligned valid-UTF-8 slice of the serialized retained bytes (cut points fall only on rune boundaries; SDK JSON marshaling is valid UTF-8), so concatenating all pages of a handle reproduces the retained"
     },
     {
       "id": "R6",
-      "summary": "Errors, empty lists, carrier failures, non-empty aggregate all-defaults-missing, non-object items, direct collisions degrade with per-row disclosure channels; forged members never bridge-authoritative."
+      "summary": "bounded retention — Retention is hard-bounded per namespace in bytes and entries, capped per entry by `max_retained_result_bytes`, and evicts FIFO / expires by TTL under those bounds"
     },
     {
       "id": "R7",
-      "summary": "Non-allowlisted tools and calls with no projection request byte-identical including page splits on both paths; disclosure metadata only when budget admits; engine decision out-of-band."
+      "summary": "retired namespace — Namespace retirement leaves a store-internal tombstone with a stated lifetime (`tombstone_ttl`) and an explicit clearing condition, counted in retention accounting; wire-level retrieval of a handle from a retired namespa"
+    },
+    {
+      "id": "R8",
+      "summary": "execution facts — `is_error` and `upstream_code` are preserved identically on the preview, every page, and every terminal; paging never re-executes the upstream; bridge-side dispatch failures remain small `errorResult` responses, never pa"
+    },
+    {
+      "id": "R9",
+      "summary": "pinning — The per-entry `upstream_code` bound and rendered value, and the page/preview sizing derived from the ceilings, are fixed at retention time; a config reload of `max_upstream_code_bytes`, `delivery_ceiling_bytes` or `previ"
+    },
+    {
+      "id": "R10",
+      "summary": "terminals — Each unretainable over-ceiling outcome — per-entry cap exceeded, aggregate cap exceeded, namespace retired before commit, entropy failure at handle generation — produces a distinct typed terminal preview (no handle), bou"
+    },
+    {
+      "id": "R11",
+      "summary": "config validation — All documented relations are validated at config load with typed diagnostics; startup fails closed: (a) `preview_ceiling_bytes < delivery_ceiling_bytes`, equal rejected; (b) `max_retained_result_bytes > delivery_ceiling_"
+    },
+    {
+      "id": "R12",
+      "summary": "finite labels — Log labels `{operation}` and `{outcome}` take values only from declared enumerations; an unlisted value fails the vocabulary test; every enumerated value has at least one producing path."
+    },
+    {
+      "id": "R13",
+      "summary": "retrieval input contract — `retrieve_result` validates its input handler-side, never relying on a JSON-schema pattern for this built-in surface: a shape-invalid handle or page returns `invalid_arguments`, and a page beyond the entry's `total_pages"
+    },
+    {
+      "id": "R14",
+      "summary": "terminal field semantics — A terminal's `StructuredContent` carries `retention`, whose allowed values are exactly the four terminal codes {`result_capacity_exceeded`, `result_aggregate_capacity_exceeded`, `result_namespace_retired`, `result_entrop"
+    },
+    {
+      "id": "R15",
+      "summary": "documentation — README and the `retrieve_result` tool description document the handle/page retrieval contract (handle, page, `total_pages`, bounded preview, byte-exact page concatenation) and replace the \"complete upstream CallToolResul"
+    },
+    {
+      "id": "R16",
+      "summary": "sweep markers — Expiry and eviction install store-internal markers parallel to the tombstone: stated lifetime (`tombstone_ttl`), explicit clearing condition — cleared when the sweep observes marker age > lifetime — counted in `max_bytes"
     }
   ],
-  "acceptance": [
+  "authorization": {
+    "mode": "bounded",
+    "id": "owner-authorization:d7ec6b45a95cee7e33fe6cbccc8950ea",
+    "packetDigest": "53a6908b6e97798a07907f95185e939bfe9c5a2830be1d0dc104135a308309d3",
+    "selectedBranchId": "token-efficient-tool-responses-ticket01-r40",
+    "receipt": {
+      "sourceId": "src-owner-authorization-4d0ac259170c4a11",
+      "recordedAt": "2026-11-27T01:14:48Z",
+      "response": {
+        "origin": "user",
+        "explicit": true,
+        "timedOut": false,
+        "automatic": false,
+        "packetDigest": "53a6908b6e97798a07907f95185e939bfe9c5a2830be1d0dc104135a308309d3",
+        "selectedBranchId": "token-efficient-tool-responses-ticket01-r40"
+      }
+    }
+  },
+  "reviews": {
+    "specification": {
+      "verdict": "pass",
+      "reviewerId": "code-reviewer",
+      "packetDigest": "53a6908b6e97798a07907f95185e939bfe9c5a2830be1d0dc104135a308309d3",
+      "receipt": {
+        "sourceId": "review-specification-771a5122d10c6e04968d38a1b4b9da1f8a58f1b26f8d4b41216bfbb3b8df3910",
+        "recordedAt": "2026-11-26T22:13:28.329Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    },
+    "tasks": {
+      "verdict": "pass",
+      "reviewerId": "critic",
+      "packetDigest": "53a6908b6e97798a07907f95185e939bfe9c5a2830be1d0dc104135a308309d3",
+      "receipt": {
+        "sourceId": "review-tasks-8a3f846b94660c4f15417ead3bb6c61aabdbdef011502c10cb58644714ebd4a5",
+        "recordedAt": "2026-11-27T01:12:09.310Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    }
+  },
+  "sources": [
     {
-      "id": "AC1",
-      "requirementIds": [
-        "R2",
-        "R5"
-      ],
-      "ownerTaskIds": [
-        "T1",
-        "T2"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
+      "id": "src-owner-kickoff",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/map.md",
+        "sha256": "5ed67dab601ea5360d693bda93df2fdb740426e33c5a36306f19b9ba58fda52c"
+      },
+      "locator": "owner prompt: review bridge token waste, file tickets, start the first ticket (RULES.md S14 backlog authority)",
+      "recordedAt": "2026-11-25T17:42:18.344Z"
     },
     {
-      "id": "AC2",
-      "requirementIds": [
-        "R3"
-      ],
-      "ownerTaskIds": [
-        "T2"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
+      "id": "src-owner-auth",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/owner-authorization-r4.md",
+        "sha256": "00a05dc0eb783c63d6336e4a67d4fa1337057fae2a45205df23c88426cef02a1"
+      },
+      "locator": "owner turns: reset+two reviews; authorized; add 4 to budget; add 4 and fix the two HIGHs",
+      "recordedAt": "2026-11-26T12:56:14.263Z"
     },
     {
-      "id": "AC3",
-      "requirementIds": [
-        "R4"
-      ],
-      "ownerTaskIds": [
-        "T1",
-        "T2"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
+      "id": "review-specification-771a5122d10c6e04968d38a1b4b9da1f8a58f1b26f8d4b41216bfbb3b8df3910",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/review-cr-r40-source-bfd8d4ce-21d0-4403-b59b-cb316fd05696.json",
+        "sha256": "90eff5e6f0ebcc48532f6cb4e060909c0bdd893dcfcd628458e525a20f19ce80"
+      },
+      "locator": "specification review observation for token-efficient-tool-responses-ticket01-spec@r40",
+      "recordedAt": "2026-11-26T22:13:28.329Z"
     },
     {
-      "id": "AC4",
-      "requirementIds": [
-        "R7",
-        "R1"
-      ],
-      "ownerTaskIds": [
-        "T2"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
+      "id": "review-tasks-8a3f846b94660c4f15417ead3bb6c61aabdbdef011502c10cb58644714ebd4a5",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/review-ct-r40-source-6cf9d20c-b91b-458d-8a9d-6acd9b95be3b.json",
+        "sha256": "e6d341ace66c9b8aa194606dc29d191ec0b456fdf435ca967a0535e6aa23ba17"
+      },
+      "locator": "tasks review observation for token-efficient-tool-responses-ticket01-spec@r40",
+      "recordedAt": "2026-11-27T01:12:09.310Z"
     },
     {
-      "id": "AC5",
-      "requirementIds": [
-        "R5",
-        "R1"
-      ],
-      "ownerTaskIds": [
-        "T1"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
+      "id": "src-owner-authorization-4d0ac259170c4a11",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/owner-authorization-r40-t1.md",
+        "sha256": "3474af1a12106b972524a1f1ecf34e1018539a63b059d124f1cb9b7e941d6ec6"
+      },
+      "locator": "owner answer to the implementation-authorization form: 'auth: t1-only' — implement ticket 01 task T1 only, report before continuing",
+      "recordedAt": "2026-11-27T01:14:48Z"
     },
     {
-      "id": "AC6",
-      "requirementIds": [
-        "R6"
-      ],
-      "ownerTaskIds": [
-        "T1",
-        "T2",
-        "T3"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
+      "id": "src-owner-amendment-r40-t3-roots",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/owner-amendment-r40-t3-write-roots.md",
+        "sha256": "c76aaf9be7cb01264ce5e2009f412507ad857dfa44d8a6638f27055380d79745"
+      },
+      "locator": "owner answer to the T3 write-root amendment form: 'extend-t3' — add the three inventory-pin test files to T3 effects",
+      "recordedAt": "2026-11-27T00:00:00.000Z"
     },
     {
-      "id": "AC7",
-      "requirementIds": [
-        "R1",
-        "R2",
-        "R3",
-        "R4",
-        "R5",
-        "R6"
+      "id": "src-owner-reopen-5151daea07ec9968",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/owner-authorization-ticket01-ac14-repair-20261128.md",
+        "sha256": "c594d1318f1bd2b8436f128a8e10e30c4ba8c55b192b4846cde75b3070bbbdcb"
+      },
+      "locator": "owner decision form answer: {\"action\": \"repair\"}",
+      "recordedAt": "2026-11-28T11:54:10Z"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D-OD1",
+      "inputDigest": "653398516c85e6cc81703e1c1de2dc9091e97ad9decc22ab5f20376f7a2c3c7b",
+      "kind": "technical",
+      "status": "resolved",
+      "question": "Which caller-visible surface should retrievable results use?",
+      "answer": "A fourth first-class built-in tool `retrieve_result` (planner recommendation OD1-A). Existing stored schemas are unchanged and the contract stays explicit.",
+      "rationale": "RULES.md S06: adopt the conservative documented recommendation of the planning specialist rather than leaving a reversible default open.",
+      "sourceIds": [
+        "src-owner-kickoff"
       ],
-      "ownerTaskIds": [
-        "T2",
+      "affects": [
+        "R6",
         "T3",
-        "T4"
-      ],
-      "method": "test",
-      "requiredEvidenceKinds": [
-        "test"
-      ]
-    }
-  ],
-  "tasks": [
-    {
-      "id": "CR1",
-      "stage": "research",
-      "status": "done",
-      "blockedBy": [],
-      "requires": [],
-      "effects": {
-        "kind": "read",
-        "paths": [
-          ".scratch/token-efficient-tool-responses/ticket05-spec-r21.md"
-        ]
-      },
-      "acceptanceIds": [],
-      "evidenceIds": [
-        "ev-cr1-review"
-      ],
-      "agentRoles": [
-        "code-reviewer"
-      ]
-    },
-    {
-      "id": "CT1",
-      "stage": "research",
-      "status": "done",
-      "blockedBy": [],
-      "requires": [],
-      "effects": {
-        "kind": "read",
-        "paths": [
-          ".scratch/token-efficient-tool-responses/ticket05-spec-r21.md"
-        ]
-      },
-      "acceptanceIds": [],
-      "evidenceIds": [
-        "ev-ct1-review"
-      ],
-      "agentRoles": [
-        "critic"
-      ]
-    },
-    {
-      "id": "T1",
-      "stage": "implementation",
-      "status": "done",
-      "blockedBy": [],
-      "requires": [],
-      "effects": {
-        "kind": "write",
-        "paths": [
-          "internal/service/field_projection.go",
-          "internal/service/field_projection_test.go"
-        ]
-      },
-      "acceptanceIds": [
-        "AC1",
-        "AC3",
-        "AC5",
         "AC6"
-      ],
-      "evidenceIds": [
-        "ev-t1-ac1-field-projection",
-        "ev-t1-ac3-field-projection",
-        "ev-t1-ac5-field-projection",
-        "ev-t1-ac6-field-projection"
-      ],
-      "agentRoles": [
-        "engineer"
       ]
     },
     {
-      "id": "T2",
-      "stage": "implementation",
-      "status": "done",
-      "blockedBy": [
-        "T1",
-        "T3"
+      "id": "D-OD2",
+      "inputDigest": "9231bb5069888087f5120035bb3347fb881ef9d71d5b6e0f5b66c7ea5790d8de",
+      "kind": "technical",
+      "status": "resolved",
+      "question": "What retained-result storage bounds apply by default?",
+      "answer": "Planner recommendation OD2-A: 16 entries and 8 MiB per session, 64 MiB aggregate, 8 MiB max retained result, 1h TTL.",
+      "rationale": "RULES.md S06: adopt the conservative documented recommendation of the planning specialist rather than leaving a reversible default open.",
+      "sourceIds": [
+        "src-owner-kickoff"
       ],
-      "requires": [],
-      "effects": {
-        "kind": "write",
-        "paths": [
-          "internal/service/tools.go",
-          "internal/service/direct_execution.go",
-          "internal/catalog/schema.go",
-          "internal/service/bounded_delivery.go",
-          "internal/service/result_handle.go",
-          "internal/service/field_projection_surface_test.go",
-          "README.md"
-        ]
-      },
-      "acceptanceIds": [
-        "AC1",
-        "AC2",
-        "AC3",
-        "AC4",
-        "AC6",
-        "AC7"
-      ],
-      "evidenceIds": [
-        "ev-t2-ac1-projection",
-        "ev-t2-ac2-projection",
-        "ev-t2-ac3-projection",
-        "ev-t2-ac4-projection",
-        "ev-t2-ac6-projection",
-        "ev-t2-ac7-projection"
-      ],
-      "agentRoles": [
-        "engineer"
-      ]
-    },
-    {
-      "id": "T3",
-      "stage": "implementation",
-      "status": "done",
-      "blockedBy": [
-        "T1"
-      ],
-      "requires": [],
-      "effects": {
-        "kind": "write",
-        "paths": [
-          "internal/observe/log.go",
-          "internal/observe/metrics.go",
-          "internal/observe/envelope.go",
-          "internal/observe/log_test.go",
-          "internal/observe/metrics_test.go",
-          "docs/logging-contract.md",
-          "cmd/mcp-bridge/config_envelope_test.go"
-        ]
-      },
-      "acceptanceIds": [
-        "AC6",
-        "AC7"
-      ],
-      "evidenceIds": [
-        "ev-t3-ac6-projection",
-        "ev-t3-ac7-projection"
-      ],
-      "agentRoles": [
-        "engineer"
-      ]
-    },
-    {
-      "id": "T4",
-      "stage": "verification",
-      "status": "done",
-      "blockedBy": [
+      "affects": [
+        "R9",
         "T2",
+        "AC9"
+      ]
+    },
+    {
+      "id": "D-OD3",
+      "inputDigest": "5f182f8f37848575039eda4883055a5fe24fa4d15d0f734583927473ae7343c1",
+      "kind": "technical",
+      "status": "resolved",
+      "question": "What handle expiry policy applies?",
+      "answer": "Planner recommendation OD3-A: fixed 1h handle_ttl plus purge on session idle-retire/delete.",
+      "rationale": "RULES.md S06: adopt the conservative documented recommendation of the planning specialist rather than leaving a reversible default open.",
+      "sourceIds": [
+        "src-owner-kickoff"
+      ],
+      "affects": [
+        "R8",
+        "T2",
+        "AC8"
+      ]
+    },
+    {
+      "id": "owner-amendment:T1:9ff46524981594c69520bc0bd03eb70ece5c09f361ec4a3ec45f8adcd6186b72",
+      "inputDigest": "4e255cf5f03aeaf454e693f4fe591207e07506b34b3706a25786fa4add32cf50",
+      "kind": "owner",
+      "status": "resolved",
+      "question": "Approve these named effects and resolve the listed execution blockers?",
+      "answer": "Owner explicitly directed this task amendment and retry.",
+      "rationale": "explicit-owner-amendment",
+      "sourceIds": [
+        "src-owner-authorization-4d0ac259170c4a11"
+      ],
+      "affects": [
+        "T1"
+      ]
+    },
+    {
+      "id": "owner-amendment:T3:184e22fa43201c04de30401e765f4ea8d33a9c54e91d70cb09110ec2614096c2",
+      "inputDigest": "79d4692cc4406155bc5238647d319b83527d9c9230325a7d48c8d29c6eeb442d",
+      "kind": "owner",
+      "status": "resolved",
+      "question": "Approve these named effects and resolve the listed execution blockers?",
+      "answer": "Owner explicitly directed this task amendment and retry.",
+      "rationale": "explicit-owner-amendment",
+      "sourceIds": [
+        "src-owner-amendment-r40-t3-roots"
+      ],
+      "affects": [
         "T3"
+      ]
+    },
+    {
+      "id": "owner-reopen:T3:839c5dbd55501266",
+      "inputDigest": "79d4692cc4406155bc5238647d319b83527d9c9230325a7d48c8d29c6eeb442d",
+      "kind": "owner",
+      "status": "resolved",
+      "question": "Reopen T3 for the owner-authorized repair round?",
+      "answer": "Owner explicitly authorized one bounded repair round; T3 reopened for repair.",
+      "rationale": "explicit-owner-amendment",
+      "sourceIds": [
+        "src-owner-reopen-5151daea07ec9968"
       ],
-      "requires": [],
-      "effects": {
-        "kind": "read",
-        "paths": [
-          ".scratch/token-efficient-tool-responses/ticket05-spec-r21.md",
-          "internal/service/tools.go",
-          "internal/service/direct_execution.go",
-          "internal/service/bounded_delivery.go",
-          "internal/service/result_handle.go",
-          "internal/service/field_projection.go",
-          "internal/service/field_projection_test.go",
-          "internal/service/field_projection_surface_test.go",
-          "internal/catalog/schema.go",
-          "internal/observe/log.go",
-          "internal/observe/metrics.go",
-          "internal/observe/envelope.go",
-          "internal/config/bounds.go",
-          "README.md"
-        ]
-      },
-      "acceptanceIds": [
-        "AC7"
-      ],
-      "evidenceIds": [
-        "ev-t4-ac7-integrated"
-      ],
-      "agentRoles": [
-        "engineer"
+      "affects": [
+        "T3"
       ]
     }
   ],
@@ -396,38 +360,66 @@
       "T1",
       "T2",
       "T3",
-      "T4"
+      "T4",
+      "T5"
     ],
     "readPaths": [
-      ".scratch/token-efficient-tool-responses/ticket05-spec-r21.md",
-      ".omp/artifacts/token-eff05",
-      ".scratch/token-efficient-tool-responses",
+      ".scratch/token-efficient-tool-responses/spec.md",
+      ".scratch/token-efficient-tool-responses/issues/01-bounded-results-with-paging.md",
+      ".scratch/token-efficient-tool-responses/map.md",
+      ".omp/artifacts/token-efficiency-ticket01-refinement.md",
+      ".omp/artifacts/token-efficiency-ticket01-review-packet.md",
+      ".omp/plans/decisions.md",
       "README.md",
-      "docs",
+      "CHANGELOG.md",
+      "docs/agents",
       ".omp/RULES.md",
       "internal/service",
-      "internal/catalog",
       "internal/config",
-      "internal/observe",
-      "cmd/mcp-bridge"
+      "internal/catalog",
+      "cmd/mcp-bridge",
+      "internal/observe"
     ],
     "writePaths": [
       "README.md",
+      "cmd/mcp-bridge/logging_contract_test.go",
+      "cmd/mcp-bridge/serve.go",
+      "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+      "cmd/mcp-bridge/serve_hybrid_reload_test.go",
+      "cmd/mcp-bridge/serve_test.go",
       "docs/logging-contract.md",
       "internal/catalog/schema.go",
+      "internal/config/bounds.go",
+      "internal/config/config.go",
+      "internal/config/diagnostics.go",
+      "internal/config/validate_edge_test.go",
       "internal/observe/envelope.go",
+      "internal/observe/httpdiagnostics.go",
       "internal/observe/log.go",
       "internal/observe/log_test.go",
       "internal/observe/metrics.go",
       "internal/observe/metrics_test.go",
       "internal/service/bounded_delivery.go",
+      "internal/service/bounded_delivery_test.go",
+      "internal/service/builtin_guidance_test.go",
       "internal/service/direct_execution.go",
-      "internal/service/field_projection.go",
-      "internal/service/field_projection_surface_test.go",
-      "internal/service/field_projection_test.go",
+      "internal/service/discovery_paging_test.go",
+      "internal/service/inbound.go",
+      "internal/service/progressive_concurrency_lifecycle_test.go",
+      "internal/service/progressive_session_test.go",
       "internal/service/result_handle.go",
+      "internal/service/result_handle_test.go",
+      "internal/service/result_measure.go",
+      "internal/service/result_measure_test.go",
+      "internal/service/result_paging_integration_test.go",
+      "internal/service/retrieve_result_test.go",
+      "internal/service/tool_metadata_test.go",
       "internal/service/tools.go",
-      "cmd/mcp-bridge/config_envelope_test.go"
+      "internal/service/tools_publish_atomic_test.go",
+      "internal/service/tools_test.go",
+      "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+      "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+      "cmd/mcp-bridge/serve_oauth_test.go"
     ],
     "allowedEffects": [
       "read",
@@ -443,7 +435,11 @@
       "infrastructure"
     ],
     "decisionPolicy": {
-      "technicalDecisionIds": [],
+      "technicalDecisionIds": [
+        "D-OD1",
+        "D-OD2",
+        "D-OD3"
+      ],
       "ownerCategories": []
     },
     "retryPolicy": {
@@ -454,1484 +450,1895 @@
       ]
     }
   },
+  "tasks": [
+    {
+      "id": "CR1",
+      "stage": "research",
+      "status": "done",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/spec.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [
+        "ev-cr1-spec-review-r40"
+      ],
+      "agentRoles": [
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "CT1",
+      "stage": "research",
+      "status": "done",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/spec.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [
+        "ev-ct1-tasks-review-r40"
+      ],
+      "agentRoles": [
+        "critic"
+      ]
+    },
+    {
+      "id": "T1",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/result_measure.go",
+          "internal/service/result_measure_test.go",
+          "internal/config/bounds.go",
+          "internal/config/config.go",
+          "internal/config/diagnostics.go",
+          "internal/config/validate_edge_test.go",
+          "docs/logging-contract.md"
+        ]
+      },
+      "acceptanceIds": [
+        "AC2",
+        "AC12",
+        "AC20",
+        "AC21",
+        "AC22",
+        "AC23",
+        "AC28",
+        "AC33",
+        "AC34",
+        "AC35",
+        "AC41",
+        "AC42"
+      ],
+      "evidenceIds": [
+        "ev-t1-tests-20261127",
+        "ev-t1-review-20261127"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T2",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [
+        "T1"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/result_handle.go",
+          "internal/service/result_handle_test.go",
+          "internal/observe/metrics.go",
+          "internal/observe/metrics_test.go",
+          "internal/observe/envelope.go",
+          "internal/observe/log_test.go",
+          "internal/observe/log.go",
+          "internal/observe/httpdiagnostics.go",
+          "docs/logging-contract.md"
+        ]
+      },
+      "acceptanceIds": [
+        "AC4",
+        "AC5",
+        "AC7",
+        "AC8",
+        "AC13",
+        "AC14",
+        "AC16",
+        "AC18",
+        "AC36",
+        "AC38",
+        "AC39"
+      ],
+      "evidenceIds": [
+        "ev-t2-tests-20261127"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T3",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [
+        "T1",
+        "T2"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/bounded_delivery.go",
+          "internal/service/bounded_delivery_test.go",
+          "internal/service/retrieve_result_test.go",
+          "internal/service/tools.go",
+          "internal/catalog/schema.go",
+          "internal/service/inbound.go",
+          "internal/service/tools_test.go",
+          "internal/service/builtin_guidance_test.go",
+          "internal/service/progressive_session_test.go",
+          "internal/service/progressive_concurrency_lifecycle_test.go",
+          "internal/service/tools_publish_atomic_test.go",
+          "internal/service/tool_metadata_test.go",
+          "cmd/mcp-bridge/serve_test.go",
+          "cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+          "cmd/mcp-bridge/serve_hybrid_reload_test.go",
+          "docs/logging-contract.md",
+          "cmd/mcp-bridge/logging_contract_test.go",
+          "internal/observe/log.go",
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+          "cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+          "cmd/mcp-bridge/serve_oauth_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC3",
+        "AC6",
+        "AC9",
+        "AC10",
+        "AC11",
+        "AC14",
+        "AC15",
+        "AC16",
+        "AC17",
+        "AC24",
+        "AC25",
+        "AC26",
+        "AC27",
+        "AC28",
+        "AC29",
+        "AC30",
+        "AC31",
+        "AC32",
+        "AC37",
+        "AC40",
+        "AC43",
+        "AC44"
+      ],
+      "evidenceIds": [
+        "ev-t3-ac14-repair-20261128"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T4",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [
+        "T3"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/tools.go",
+          "internal/service/direct_execution.go",
+          "internal/service/discovery_paging_test.go",
+          "internal/service/bounded_delivery_test.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC1",
+        "AC19"
+      ],
+      "evidenceIds": [
+        "ev-t4-tests-20261127"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    },
+    {
+      "id": "T5",
+      "stage": "implementation",
+      "status": "done",
+      "blockedBy": [
+        "T3",
+        "T4"
+      ],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/service/result_paging_integration_test.go",
+          "internal/catalog/schema.go",
+          "README.md",
+          "cmd/mcp-bridge/serve.go",
+          "internal/service/tools.go"
+        ]
+      },
+      "acceptanceIds": [
+        "AC19",
+        "AC27"
+      ],
+      "evidenceIds": [
+        "ev-t5-tests-20261127"
+      ],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC1",
+      "requirementIds": [
+        "R1"
+      ],
+      "ownerTaskIds": [
+        "T4"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC2",
+      "requirementIds": [
+        "R2"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC3",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC4",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC5",
+      "requirementIds": [
+        "R4",
+        "R16"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC6",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC7",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC8",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC9",
+      "requirementIds": [
+        "R8"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC10",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC11",
+      "requirementIds": [
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC12",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC13",
+      "requirementIds": [
+        "R12"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC14",
+      "requirementIds": [
+        "R12"
+      ],
+      "ownerTaskIds": [
+        "T2",
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC15",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC16",
+      "requirementIds": [
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T2",
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC17",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC18",
+      "requirementIds": [
+        "R6",
+        "R16"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC19",
+      "requirementIds": [
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T4",
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC20",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC21",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC22",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC23",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC24",
+      "requirementIds": [
+        "R13"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC25",
+      "requirementIds": [
+        "R13"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC26",
+      "requirementIds": [
+        "R14"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC27",
+      "requirementIds": [
+        "R15"
+      ],
+      "ownerTaskIds": [
+        "T3",
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC28",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1",
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC29",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC30",
+      "requirementIds": [
+        "R6",
+        "R16"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC31",
+      "requirementIds": [
+        "R4",
+        "R10"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC32",
+      "requirementIds": [
+        "R13",
+        "R4"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC33",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC34",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC35",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC36",
+      "requirementIds": [
+        "R6"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC37",
+      "requirementIds": [
+        "R5"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC38",
+      "requirementIds": [
+        "R6",
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC39",
+      "requirementIds": [
+        "R16"
+      ],
+      "ownerTaskIds": [
+        "T2"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC40",
+      "requirementIds": [
+        "R1",
+        "R3"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC41",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC42",
+      "requirementIds": [
+        "R11"
+      ],
+      "ownerTaskIds": [
+        "T1"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC43",
+      "requirementIds": [
+        "R7"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC44",
+      "requirementIds": [
+        "R12"
+      ],
+      "ownerTaskIds": [
+        "T3"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
   "evidence": [
     {
-      "id": "ev-t1-ac1-field-projection",
+      "id": "ev-t1-tests-20261127",
       "kind": "test",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/evidence-t1-field-projection-20261128T102641Z.log",
-        "sha256": "c43b8f8fc773a974a7a7d27963a693a96b032d4a0a7121cf37af0b2e308187a9"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-acceptance/acceptance.log",
+        "sha256": "513e1996db654ffb3dcb9b7f79957efb4798a44ee482986b58a47b117c675162"
       },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
+      "feature": "token-efficient-tool-responses",
+      "packetDigest": "53a6908b6e97798a07907f95185e939bfe9c5a2830be1d0dc104135a308309d3",
+      "selectedBranchId": "token-efficient-tool-responses-ticket01-r40",
       "taskIds": [
         "T1"
       ],
       "acceptanceIds": [
-        "AC1"
+        "AC2",
+        "AC12",
+        "AC20",
+        "AC21",
+        "AC22",
+        "AC23",
+        "AC28",
+        "AC33",
+        "AC34",
+        "AC35",
+        "AC41",
+        "AC42"
       ],
       "outcome": "pass",
-      "observedAt": "2026-11-28T10:26:42Z",
-      "producer": "engineer:EngineerT1-3",
+      "observedAt": "2026-11-27T01:51:24Z",
+      "producer": "engineer:T1 (dispatch ImplementTicket01T1 + RepairTicket01T1ReviewFindings), verified by coordinator",
       "details": {
-        "command": "go test ./internal/service -run TestFieldProjection -count=1; gofmt -l internal/service/field_projection.go internal/service/field_projection_test.go",
+        "command": "go build ./... && go test ./internal/config/ -count=1 && go test ./internal/service/ -run TestMeasurementIndependentOracle -count=1",
         "exitCode": 0
       },
-      "contractAnchor": "fd56f535efc50106310abe8b7befe77a529626546ede59ba8b10d9b1e8b0b39e",
+      "contractAnchor": "9bc19506f4f2d64f75690978786f3d34885d12d97830534db43dc5ed2461d275",
       "executionInput": {
         "argv": [
           "go",
+          "build",
+          "./...",
+          "&&",
+          "go",
           "test",
-          "./internal/service",
+          "./internal/config/",
+          "-count=1",
+          "&&",
+          "go",
+          "test",
+          "./internal/service/",
           "-run",
-          "TestFieldProjection",
-          "-count=1;",
-          "gofmt",
-          "-l",
-          "internal/service/field_projection.go",
-          "internal/service/field_projection_test.go"
+          "TestMeasurementIndependentOracle",
+          "-count=1"
         ],
         "cwd": "/home/opencode/projects/default/mcp-bridge",
         "timeoutMs": 120000,
         "declaredInputs": [
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection.go",
-            "sha256": "9d3643c492b4d4412b1e857222e2c5151dc75a2acae8016c852a3df438bbdde3"
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+            "sha256": "cb8076f7b439f8990a4bccf33c326f41bc1f33f63fc8b98a5cdd841434bd3c97"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_test.go",
-            "sha256": "e408c6abdcaffa15aa184d1323a214baccef49ac86a72177cfbdadda02fb2a7f"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+            "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/config.go",
+            "sha256": "95bdb74788151e9dc5aa8805eac6ccf2f0247d676b58dc533cf2703a9bd9e7ef"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/diagnostics.go",
+            "sha256": "7bc91e29599ccfde13b89338253b768d765dc78707f29c0ff1b946253d0b8aa2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/validate_edge_test.go",
+            "sha256": "ef4f37d145c483b48c909e90f244a31039f1d2296191336cb5fab8d8a8af75d5"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_measure.go",
+            "sha256": "5dc4864334833ae8916d496f65f0ccd4fe8503e84f085b2d6168ea72e13e8a86"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_measure_test.go",
+            "sha256": "939937384a7ebbf211d35d71c4d1805bdc51353209280ab64078a7d53800b196"
           }
         ],
         "effectPaths": [
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection.go",
-            "sha256": "9d3643c492b4d4412b1e857222e2c5151dc75a2acae8016c852a3df438bbdde3"
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+            "sha256": "cb8076f7b439f8990a4bccf33c326f41bc1f33f63fc8b98a5cdd841434bd3c97"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_test.go",
-            "sha256": "e408c6abdcaffa15aa184d1323a214baccef49ac86a72177cfbdadda02fb2a7f"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+            "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/config.go",
+            "sha256": "95bdb74788151e9dc5aa8805eac6ccf2f0247d676b58dc533cf2703a9bd9e7ef"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/diagnostics.go",
+            "sha256": "7bc91e29599ccfde13b89338253b768d765dc78707f29c0ff1b946253d0b8aa2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/validate_edge_test.go",
+            "sha256": "ef4f37d145c483b48c909e90f244a31039f1d2296191336cb5fab8d8a8af75d5"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_measure.go",
+            "sha256": "5dc4864334833ae8916d496f65f0ccd4fe8503e84f085b2d6168ea72e13e8a86"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_measure_test.go",
+            "sha256": "939937384a7ebbf211d35d71c4d1805bdc51353209280ab64078a7d53800b196"
           }
         ]
       }
     },
     {
-      "id": "ev-t1-ac3-field-projection",
-      "kind": "test",
+      "id": "ev-t1-review-20261127",
+      "kind": "inspection",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/evidence-t1-field-projection-20261128T102641Z.log",
-        "sha256": "c43b8f8fc773a974a7a7d27963a693a96b032d4a0a7121cf37af0b2e308187a9"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t1-acceptance/review-out-of-gate.md",
+        "sha256": "f932700caff39aaf5b1a2348eb50b3443b43488036e6b5995af95a230c940c48"
       },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
+      "feature": "token-efficient-tool-responses",
+      "packetDigest": "53a6908b6e97798a07907f95185e939bfe9c5a2830be1d0dc104135a308309d3",
+      "selectedBranchId": "token-efficient-tool-responses-ticket01-r40",
       "taskIds": [
         "T1"
       ],
       "acceptanceIds": [
-        "AC3"
+        "AC2",
+        "AC12",
+        "AC20",
+        "AC21",
+        "AC22",
+        "AC23",
+        "AC28",
+        "AC33",
+        "AC34",
+        "AC35",
+        "AC41",
+        "AC42"
       ],
       "outcome": "pass",
-      "observedAt": "2026-11-28T10:26:42Z",
-      "producer": "engineer:EngineerT1-3",
+      "observedAt": "2026-11-27T01:51:24Z",
+      "producer": "code-reviewer (owner-authorized out-of-gate run)",
       "details": {
-        "command": "go test ./internal/service -run TestFieldProjection -count=1; gofmt -l internal/service/field_projection.go internal/service/field_projection_test.go",
-        "exitCode": 0
+        "rubric": "R2, R11(a)-(k), §6 defaults, oracle independence, T1 scope containment",
+        "observedOutcome": "no blocking defect; findings 1/3/4/5 repaired under T1 write roots, finding 2 (maximal-envelope IsError pin) deferred to the planner before T3"
       },
-      "contractAnchor": "fd56f535efc50106310abe8b7befe77a529626546ede59ba8b10d9b1e8b0b39e",
+      "contractAnchor": "9bc19506f4f2d64f75690978786f3d34885d12d97830534db43dc5ed2461d275",
       "executionInput": {
-        "argv": [
-          "go",
-          "test",
-          "./internal/service",
-          "-run",
-          "TestFieldProjection",
-          "-count=1;",
-          "gofmt",
-          "-l",
-          "internal/service/field_projection.go",
-          "internal/service/field_projection_test.go"
-        ],
+        "argv": [],
         "cwd": "/home/opencode/projects/default/mcp-bridge",
         "timeoutMs": 120000,
         "declaredInputs": [
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection.go",
-            "sha256": "9d3643c492b4d4412b1e857222e2c5151dc75a2acae8016c852a3df438bbdde3"
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+            "sha256": "cb8076f7b439f8990a4bccf33c326f41bc1f33f63fc8b98a5cdd841434bd3c97"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_test.go",
-            "sha256": "e408c6abdcaffa15aa184d1323a214baccef49ac86a72177cfbdadda02fb2a7f"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+            "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/config.go",
+            "sha256": "95bdb74788151e9dc5aa8805eac6ccf2f0247d676b58dc533cf2703a9bd9e7ef"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/diagnostics.go",
+            "sha256": "7bc91e29599ccfde13b89338253b768d765dc78707f29c0ff1b946253d0b8aa2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/validate_edge_test.go",
+            "sha256": "ef4f37d145c483b48c909e90f244a31039f1d2296191336cb5fab8d8a8af75d5"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_measure.go",
+            "sha256": "5dc4864334833ae8916d496f65f0ccd4fe8503e84f085b2d6168ea72e13e8a86"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_measure_test.go",
+            "sha256": "939937384a7ebbf211d35d71c4d1805bdc51353209280ab64078a7d53800b196"
           }
         ],
         "effectPaths": [
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection.go",
-            "sha256": "9d3643c492b4d4412b1e857222e2c5151dc75a2acae8016c852a3df438bbdde3"
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+            "sha256": "cb8076f7b439f8990a4bccf33c326f41bc1f33f63fc8b98a5cdd841434bd3c97"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_test.go",
-            "sha256": "e408c6abdcaffa15aa184d1323a214baccef49ac86a72177cfbdadda02fb2a7f"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+            "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/config.go",
+            "sha256": "95bdb74788151e9dc5aa8805eac6ccf2f0247d676b58dc533cf2703a9bd9e7ef"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/diagnostics.go",
+            "sha256": "7bc91e29599ccfde13b89338253b768d765dc78707f29c0ff1b946253d0b8aa2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/validate_edge_test.go",
+            "sha256": "ef4f37d145c483b48c909e90f244a31039f1d2296191336cb5fab8d8a8af75d5"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_measure.go",
+            "sha256": "5dc4864334833ae8916d496f65f0ccd4fe8503e84f085b2d6168ea72e13e8a86"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_measure_test.go",
+            "sha256": "939937384a7ebbf211d35d71c4d1805bdc51353209280ab64078a7d53800b196"
           }
         ]
       }
     },
     {
-      "id": "ev-t1-ac5-field-projection",
+      "id": "ev-t2-tests-20261127",
       "kind": "test",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/evidence-t1-field-projection-20261128T102641Z.log",
-        "sha256": "c43b8f8fc773a974a7a7d27963a693a96b032d4a0a7121cf37af0b2e308187a9"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t2-acceptance/acceptance.log",
+        "sha256": "e23074af9af28b5e9577c81a36123ea25ebb5ab2bb0cdc5ae7674af71ba906da"
       },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
+      "feature": "token-efficient-tool-responses",
+      "packetDigest": "53a6908b6e97798a07907f95185e939bfe9c5a2830be1d0dc104135a308309d3",
+      "selectedBranchId": "token-efficient-tool-responses-ticket01-r40",
       "taskIds": [
-        "T1"
+        "T2"
       ],
       "acceptanceIds": [
-        "AC5"
+        "AC4",
+        "AC5",
+        "AC7",
+        "AC8",
+        "AC13",
+        "AC14",
+        "AC16",
+        "AC18",
+        "AC36",
+        "AC38",
+        "AC39"
       ],
       "outcome": "pass",
-      "observedAt": "2026-11-28T10:26:42Z",
-      "producer": "engineer:EngineerT1-3",
+      "observedAt": "2026-11-27T03:03:58Z",
+      "producer": "engineer:T2 (dispatch ImplementTicket01T2Attempt4 and its two resumes), verified by coordinator",
       "details": {
-        "command": "go test ./internal/service -run TestFieldProjection -count=1; gofmt -l internal/service/field_projection.go internal/service/field_projection_test.go",
+        "command": "go build ./... && go vet ./internal/service/ ./internal/observe/ && go test ./internal/observe/ -count=1 && go test ./internal/service/ -run 'TestHandle|TestRetention|TestMarker|TestEviction|TestRetired|TestRetirement' -count=1",
         "exitCode": 0
       },
-      "contractAnchor": "fd56f535efc50106310abe8b7befe77a529626546ede59ba8b10d9b1e8b0b39e",
       "executionInput": {
         "argv": [
           "go",
+          "build",
+          "./...",
+          "&&",
+          "go",
+          "vet",
+          "./internal/service/",
+          "./internal/observe/",
+          "&&",
+          "go",
           "test",
-          "./internal/service",
+          "./internal/observe/",
+          "-count=1",
+          "&&",
+          "go",
+          "test",
+          "./internal/service/",
           "-run",
-          "TestFieldProjection",
-          "-count=1;",
-          "gofmt",
-          "-l",
-          "internal/service/field_projection.go",
-          "internal/service/field_projection_test.go"
+          "TestHandle|TestRetention|TestMarker|TestEviction|TestRetired|TestRetirement",
+          "-count=1"
         ],
         "cwd": "/home/opencode/projects/default/mcp-bridge",
-        "timeoutMs": 120000,
+        "timeoutMs": 300000,
         "declaredInputs": [
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection.go",
-            "sha256": "9d3643c492b4d4412b1e857222e2c5151dc75a2acae8016c852a3df438bbdde3"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
+            "sha256": "744579103ff3b3bf3b2b51052767a7f5f50bca2b3536617ad14bdff5300202f5"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_test.go",
-            "sha256": "e408c6abdcaffa15aa184d1323a214baccef49ac86a72177cfbdadda02fb2a7f"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle_test.go",
+            "sha256": "cba6b86e42d029cf61d3b0eb17a54fdedc9ae3ea6a8643d47956c86f32dd9019"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+            "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics_test.go",
+            "sha256": "d5fe6e0ec78c26e4dc62dbda1e52788047ce508886f9880e0457224130038bd5"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+            "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
+            "sha256": "1385da47f57fa0fe0199a8dfced872f79d756bc7d2280d0e5efb7e6a6beeaf45"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+            "sha256": "fb3860c121846f2c0c0f9e0c8395f6bedd61f4ba9ca894754ad5b460832f215c"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/httpdiagnostics.go",
+            "sha256": "22c70c25dbddf1267d4e79206ecd64e2f2420d0c29d2833e2f96d09616c6fee5"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+            "sha256": "fda20b48208594169e20be339269080df5d0d788694c6d9c8ba59057e638fce7"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t2-acceptance/acceptance.log",
+            "sha256": "e23074af9af28b5e9577c81a36123ea25ebb5ab2bb0cdc5ae7674af71ba906da"
           }
         ],
         "effectPaths": [
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection.go",
-            "sha256": "9d3643c492b4d4412b1e857222e2c5151dc75a2acae8016c852a3df438bbdde3"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
+            "sha256": "744579103ff3b3bf3b2b51052767a7f5f50bca2b3536617ad14bdff5300202f5"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_test.go",
-            "sha256": "e408c6abdcaffa15aa184d1323a214baccef49ac86a72177cfbdadda02fb2a7f"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle_test.go",
+            "sha256": "cba6b86e42d029cf61d3b0eb17a54fdedc9ae3ea6a8643d47956c86f32dd9019"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+            "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics_test.go",
+            "sha256": "d5fe6e0ec78c26e4dc62dbda1e52788047ce508886f9880e0457224130038bd5"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+            "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
+            "sha256": "1385da47f57fa0fe0199a8dfced872f79d756bc7d2280d0e5efb7e6a6beeaf45"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+            "sha256": "fb3860c121846f2c0c0f9e0c8395f6bedd61f4ba9ca894754ad5b460832f215c"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/httpdiagnostics.go",
+            "sha256": "22c70c25dbddf1267d4e79206ecd64e2f2420d0c29d2833e2f96d09616c6fee5"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+            "sha256": "fda20b48208594169e20be339269080df5d0d788694c6d9c8ba59057e638fce7"
           }
         ]
       }
     },
     {
-      "id": "ev-t1-ac6-field-projection",
+      "id": "ev-t3-tests-20261127",
       "kind": "test",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/evidence-t1-field-projection-20261128T102641Z.log",
-        "sha256": "c43b8f8fc773a974a7a7d27963a693a96b032d4a0a7121cf37af0b2e308187a9"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t3-acceptance/acceptance.log",
+        "sha256": "76faff4b3414b70fe6756176fd5d0dc2f5047168cfc67c9437276de897293f61"
       },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
-      "taskIds": [
-        "T1"
-      ],
-      "acceptanceIds": [
-        "AC6"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-28T10:26:42Z",
-      "producer": "engineer:EngineerT1-3",
-      "details": {
-        "command": "go test ./internal/service -run TestFieldProjection -count=1; gofmt -l internal/service/field_projection.go internal/service/field_projection_test.go",
-        "exitCode": 0
-      },
-      "contractAnchor": "fd56f535efc50106310abe8b7befe77a529626546ede59ba8b10d9b1e8b0b39e",
-      "executionInput": {
-        "argv": [
-          "go",
-          "test",
-          "./internal/service",
-          "-run",
-          "TestFieldProjection",
-          "-count=1;",
-          "gofmt",
-          "-l",
-          "internal/service/field_projection.go",
-          "internal/service/field_projection_test.go"
-        ],
-        "cwd": "/home/opencode/projects/default/mcp-bridge",
-        "timeoutMs": 120000,
-        "declaredInputs": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection.go",
-            "sha256": "9d3643c492b4d4412b1e857222e2c5151dc75a2acae8016c852a3df438bbdde3"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_test.go",
-            "sha256": "e408c6abdcaffa15aa184d1323a214baccef49ac86a72177cfbdadda02fb2a7f"
-          }
-        ],
-        "effectPaths": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection.go",
-            "sha256": "9d3643c492b4d4412b1e857222e2c5151dc75a2acae8016c852a3df438bbdde3"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_test.go",
-            "sha256": "e408c6abdcaffa15aa184d1323a214baccef49ac86a72177cfbdadda02fb2a7f"
-          }
-        ]
-      }
-    },
-    {
-      "id": "ev-t3-ac6-projection",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/evidence-t3-projection-observability-20261128T103537Z.log",
-        "sha256": "1b920366d3f0f3c8109677c9fbc3ba61fb6f0ecf17324bb35608adc696115b64"
-      },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
+      "feature": "token-efficient-tool-responses",
+      "packetDigest": "53a6908b6e97798a07907f95185e939bfe9c5a2830be1d0dc104135a308309d3",
+      "selectedBranchId": "token-efficient-tool-responses-ticket01-r40",
       "taskIds": [
         "T3"
       ],
       "acceptanceIds": [
-        "AC6"
+        "AC3",
+        "AC6",
+        "AC9",
+        "AC10",
+        "AC11",
+        "AC14",
+        "AC15",
+        "AC16",
+        "AC17",
+        "AC24",
+        "AC25",
+        "AC26",
+        "AC27",
+        "AC28",
+        "AC29",
+        "AC30",
+        "AC31",
+        "AC32",
+        "AC37",
+        "AC40",
+        "AC43",
+        "AC44"
       ],
       "outcome": "pass",
-      "observedAt": "2026-11-28T10:35:38Z",
-      "producer": "engineer:EngineerT3Fix",
+      "observedAt": "2026-11-27T00:00:00Z",
+      "producer": "engineer dispatch chain ImplementTicket01T3Surgical, ImplementTicket01T3Completion (INCOMPLETE: cmd inventory pins outside packet), RefreshTicket01T3InventoryPins under owner amendment extend-t3; verified by coordinator",
       "details": {
-        "command": "go test ./internal/observe -count=1; go test ./cmd/mcp-bridge -run Envelope -count=1; gofmt -l ...",
+        "command": "go build ./... && go vet ./internal/service/ ./internal/observe/ && go test ./internal/service/ -run '<T3 oracle set>' -count=1 && go test ./internal/observe/ -count=1 && go test ./internal/service/ -count=1 && go test ./cmd/mcp-bridge/ -count=1",
         "exitCode": 0
       },
-      "contractAnchor": "3bcea648ac6c5f49434d110cc5e38fe3aa72b4b1ef7a051ac52a3d49c5f72309",
       "executionInput": {
         "argv": [
           "go",
-          "test",
-          "./internal/observe",
-          "-count=1;",
-          "go",
-          "test",
-          "./cmd/mcp-bridge",
-          "-run",
-          "Envelope",
-          "-count=1;",
-          "gofmt",
-          "-l",
-          "..."
+          "build",
+          "./..."
         ],
         "cwd": "/home/opencode/projects/default/mcp-bridge",
-        "timeoutMs": 120000,
+        "timeoutMs": 300000,
         "declaredInputs": [
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/config_envelope_test.go",
-            "sha256": "34b429ad62cf90d62d1a35f288171ec26cb0a8082d5c7045615ff90eee7be377"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+            "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+            "sha256": "ebaa23220191a7f6864a0271b27189f2811f3a808e165803e075c3c96ea74c60"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/retrieve_result_test.go",
+            "sha256": "9a38eea69a9283627f89ca76d991c9c08fbd63e36d7ff1599767b2c6652c4ff6"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+            "sha256": "ff9159245402a7352c6809dbaf3134feff967c7e3e1eaabf070c1e96b9292ec4"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+            "sha256": "45922147090b67651db66948847f61a91b27745d386ac4925c50a0bba3cd3deb"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/inbound.go",
+            "sha256": "d6efe1cbdd7b9c6ca60dd3dfbd00f1d806793a60d1a8bfeeef2634d59f6cef8a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_test.go",
+            "sha256": "4f77350b346e47f1cc1969a2c916243a3a8f87c183faefeb2a73d616fbb1dc54"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/builtin_guidance_test.go",
+            "sha256": "8ac99b5b0c9958104c9c3d76f21a8a6dd45a9c020e8ddf184688514648016ee1"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_session_test.go",
+            "sha256": "b78bab9f416b8926c24b3fb3c0eebb9a3080ae88042aebf8370aa8f327947bd2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_concurrency_lifecycle_test.go",
+            "sha256": "fdf22fd363b2be38aa585b5a55f3fdf677f3a41f493885a76c93ae87377b15a0"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_publish_atomic_test.go",
+            "sha256": "fdd918604960c90175d8b0e82a95e944aa510b29abb84b177f6a62d84486ffc8"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tool_metadata_test.go",
+            "sha256": "c4beaf9f745fc40ddf8a3f170d1ca3809251124eb2ec7f39cd7e4ca798770e27"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_test.go",
+            "sha256": "71775acd768f32f59b87dc2056a10088630cad4430abe1f009f55d96f85601a1"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+            "sha256": "fd1692cffe89d01aa05c9661aa584bdee124dfaabb61e30a2818c9fca5ee9833"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_reload_test.go",
+            "sha256": "0a137c08f4bed96cabb5c21431d96759893d5a05522b4c8d95cbd4cbfbb5d3df"
           },
           {
             "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
-            "sha256": "f82e86f28c7380fa60b1b57b04f58c0716391a716912587182fd0cf4fd048b28"
+            "sha256": "df8b3a6a0f3cd9606dd3dc23a51197163bbc78f2338d09331a770f9ff377f1dc"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
-            "sha256": "06e7af29c34d6bd8fc4427e7e91e398e76862452b4ea2d15031de0559aaf0082"
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/logging_contract_test.go",
+            "sha256": "55d8398fa1401e1a29bc6311209b7ea82e92f4f8c9143a6b6da86c1814058053"
           },
           {
             "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
-            "sha256": "6855df223b50355438673709929193876a398ff50a3d59b355f2849cff3214ec"
+            "sha256": "fb3860c121846f2c0c0f9e0c8395f6bedd61f4ba9ca894754ad5b460832f215c"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
-            "sha256": "342b4630920a9ca6a3d64a7ab134f6ec8d2ef25f0fbe1ec3aa5e1a5b60f6a4ee"
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "1a769dabff0b7ad22894e48ce8a549cd4a2c2cdcf2041b250de66bcec1a42610"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
-            "sha256": "75592d8c449ff64bda5dc30bf6fdfcdd116bc3cdfff43050be0e4d04e175f00b"
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+            "sha256": "d11aec137e6a910e181da9627cc06d63a1a688e5281a05d7689649a9264ed8fe"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics_test.go",
-            "sha256": "e3635ea83ba9fde9b35b4e52afe93458b50b5676cd7f8b81d0844746c139fc73"
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+            "sha256": "af682d9401ea0b04ac292346f528e9a18cd0205eab0a58895d9fe92e3ee168e4"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_oauth_test.go",
+            "sha256": "ef9e8895463cb2363a0638295ff2044f804694f519b3b97677b9549485a34948"
           }
         ],
         "effectPaths": [
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/config_envelope_test.go",
-            "sha256": "34b429ad62cf90d62d1a35f288171ec26cb0a8082d5c7045615ff90eee7be377"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+            "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+            "sha256": "ebaa23220191a7f6864a0271b27189f2811f3a808e165803e075c3c96ea74c60"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/retrieve_result_test.go",
+            "sha256": "9a38eea69a9283627f89ca76d991c9c08fbd63e36d7ff1599767b2c6652c4ff6"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+            "sha256": "ff9159245402a7352c6809dbaf3134feff967c7e3e1eaabf070c1e96b9292ec4"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+            "sha256": "45922147090b67651db66948847f61a91b27745d386ac4925c50a0bba3cd3deb"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/inbound.go",
+            "sha256": "d6efe1cbdd7b9c6ca60dd3dfbd00f1d806793a60d1a8bfeeef2634d59f6cef8a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_test.go",
+            "sha256": "4f77350b346e47f1cc1969a2c916243a3a8f87c183faefeb2a73d616fbb1dc54"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/builtin_guidance_test.go",
+            "sha256": "8ac99b5b0c9958104c9c3d76f21a8a6dd45a9c020e8ddf184688514648016ee1"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_session_test.go",
+            "sha256": "b78bab9f416b8926c24b3fb3c0eebb9a3080ae88042aebf8370aa8f327947bd2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_concurrency_lifecycle_test.go",
+            "sha256": "fdf22fd363b2be38aa585b5a55f3fdf677f3a41f493885a76c93ae87377b15a0"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_publish_atomic_test.go",
+            "sha256": "fdd918604960c90175d8b0e82a95e944aa510b29abb84b177f6a62d84486ffc8"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tool_metadata_test.go",
+            "sha256": "c4beaf9f745fc40ddf8a3f170d1ca3809251124eb2ec7f39cd7e4ca798770e27"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_test.go",
+            "sha256": "71775acd768f32f59b87dc2056a10088630cad4430abe1f009f55d96f85601a1"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+            "sha256": "fd1692cffe89d01aa05c9661aa584bdee124dfaabb61e30a2818c9fca5ee9833"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_reload_test.go",
+            "sha256": "0a137c08f4bed96cabb5c21431d96759893d5a05522b4c8d95cbd4cbfbb5d3df"
           },
           {
             "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
-            "sha256": "f82e86f28c7380fa60b1b57b04f58c0716391a716912587182fd0cf4fd048b28"
+            "sha256": "df8b3a6a0f3cd9606dd3dc23a51197163bbc78f2338d09331a770f9ff377f1dc"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
-            "sha256": "06e7af29c34d6bd8fc4427e7e91e398e76862452b4ea2d15031de0559aaf0082"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
-            "sha256": "6855df223b50355438673709929193876a398ff50a3d59b355f2849cff3214ec"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
-            "sha256": "342b4630920a9ca6a3d64a7ab134f6ec8d2ef25f0fbe1ec3aa5e1a5b60f6a4ee"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
-            "sha256": "75592d8c449ff64bda5dc30bf6fdfcdd116bc3cdfff43050be0e4d04e175f00b"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics_test.go",
-            "sha256": "e3635ea83ba9fde9b35b4e52afe93458b50b5676cd7f8b81d0844746c139fc73"
-          }
-        ]
-      }
-    },
-    {
-      "id": "ev-t3-ac7-projection",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/evidence-t3-projection-observability-20261128T103537Z.log",
-        "sha256": "1b920366d3f0f3c8109677c9fbc3ba61fb6f0ecf17324bb35608adc696115b64"
-      },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
-      "taskIds": [
-        "T3"
-      ],
-      "acceptanceIds": [
-        "AC7"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-28T10:35:38Z",
-      "producer": "engineer:EngineerT3Fix",
-      "details": {
-        "command": "go test ./internal/observe -count=1; go test ./cmd/mcp-bridge -run Envelope -count=1; gofmt -l ...",
-        "exitCode": 0
-      },
-      "contractAnchor": "3bcea648ac6c5f49434d110cc5e38fe3aa72b4b1ef7a051ac52a3d49c5f72309",
-      "executionInput": {
-        "argv": [
-          "go",
-          "test",
-          "./internal/observe",
-          "-count=1;",
-          "go",
-          "test",
-          "./cmd/mcp-bridge",
-          "-run",
-          "Envelope",
-          "-count=1;",
-          "gofmt",
-          "-l",
-          "..."
-        ],
-        "cwd": "/home/opencode/projects/default/mcp-bridge",
-        "timeoutMs": 120000,
-        "declaredInputs": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/config_envelope_test.go",
-            "sha256": "34b429ad62cf90d62d1a35f288171ec26cb0a8082d5c7045615ff90eee7be377"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
-            "sha256": "f82e86f28c7380fa60b1b57b04f58c0716391a716912587182fd0cf4fd048b28"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
-            "sha256": "06e7af29c34d6bd8fc4427e7e91e398e76862452b4ea2d15031de0559aaf0082"
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/logging_contract_test.go",
+            "sha256": "55d8398fa1401e1a29bc6311209b7ea82e92f4f8c9143a6b6da86c1814058053"
           },
           {
             "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
-            "sha256": "6855df223b50355438673709929193876a398ff50a3d59b355f2849cff3214ec"
+            "sha256": "fb3860c121846f2c0c0f9e0c8395f6bedd61f4ba9ca894754ad5b460832f215c"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
-            "sha256": "342b4630920a9ca6a3d64a7ab134f6ec8d2ef25f0fbe1ec3aa5e1a5b60f6a4ee"
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "1a769dabff0b7ad22894e48ce8a549cd4a2c2cdcf2041b250de66bcec1a42610"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
-            "sha256": "75592d8c449ff64bda5dc30bf6fdfcdd116bc3cdfff43050be0e4d04e175f00b"
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+            "sha256": "d11aec137e6a910e181da9627cc06d63a1a688e5281a05d7689649a9264ed8fe"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics_test.go",
-            "sha256": "e3635ea83ba9fde9b35b4e52afe93458b50b5676cd7f8b81d0844746c139fc73"
-          }
-        ],
-        "effectPaths": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/config_envelope_test.go",
-            "sha256": "34b429ad62cf90d62d1a35f288171ec26cb0a8082d5c7045615ff90eee7be377"
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+            "sha256": "af682d9401ea0b04ac292346f528e9a18cd0205eab0a58895d9fe92e3ee168e4"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
-            "sha256": "f82e86f28c7380fa60b1b57b04f58c0716391a716912587182fd0cf4fd048b28"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
-            "sha256": "06e7af29c34d6bd8fc4427e7e91e398e76862452b4ea2d15031de0559aaf0082"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
-            "sha256": "6855df223b50355438673709929193876a398ff50a3d59b355f2849cff3214ec"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
-            "sha256": "342b4630920a9ca6a3d64a7ab134f6ec8d2ef25f0fbe1ec3aa5e1a5b60f6a4ee"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
-            "sha256": "75592d8c449ff64bda5dc30bf6fdfcdd116bc3cdfff43050be0e4d04e175f00b"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics_test.go",
-            "sha256": "e3635ea83ba9fde9b35b4e52afe93458b50b5676cd7f8b81d0844746c139fc73"
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_oauth_test.go",
+            "sha256": "ef9e8895463cb2363a0638295ff2044f804694f519b3b97677b9549485a34948"
           }
         ]
       }
     },
     {
-      "id": "ev-t2-ac1-projection",
+      "id": "ev-t4-tests-20261127",
       "kind": "test",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/evidence-t2-projection-surface-20261128T113020Z.log",
-        "sha256": "2561eee4af1679c3b05ace7d903b8c395419f44b7cd9773cfd82f3dc864f567b"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t4-acceptance/acceptance.log",
+        "sha256": "e7ac2b620184b9f1ab04f1dd839935c241a667738209701d1e08961ff27fb30a"
       },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
-      "taskIds": [
-        "T2"
-      ],
-      "acceptanceIds": [
-        "AC1"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-28T11:30:26Z",
-      "producer": "engineer:EngineerT2Fix2",
-      "details": {
-        "command": "go test ./internal/service -run TestProjection|TestFieldProjection -count=1; go test ./internal/service ./internal/catalog -count=1",
-        "exitCode": 0
-      },
-      "contractAnchor": "439f931ad6ec520ef2c7ba06e525cb99d1b2dd5cb69386ef66e21ae4f18edbfb",
-      "executionInput": {
-        "argv": [
-          "go",
-          "test",
-          "./internal/service",
-          "-run",
-          "TestProjection|TestFieldProjection",
-          "-count=1;",
-          "go",
-          "test",
-          "./internal/service",
-          "./internal/catalog",
-          "-count=1"
-        ],
-        "cwd": "/home/opencode/projects/default/mcp-bridge",
-        "timeoutMs": 120000,
-        "declaredInputs": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
-            "sha256": "43c3bb77ca7aae3244c08f9bd087a0078f797fc059f9cd6e0863d9a3ce10fcb5"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
-            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
-            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
-            "sha256": "1e3d259cbcf73fb83f6f87495ff8235f9c6bfffeb9d88daccf90e1b001555e92"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_surface_test.go",
-            "sha256": "10652c5dd64afd99246d1d10e2b2b7838c8ed28bc0729c50f30489f43fd060d6"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
-            "sha256": "f29b8eb42d9c93ad5db9034304e6f80755ebf29950754bc996cce322e89c28bf"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
-            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
-          }
-        ],
-        "effectPaths": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
-            "sha256": "43c3bb77ca7aae3244c08f9bd087a0078f797fc059f9cd6e0863d9a3ce10fcb5"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
-            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
-            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
-            "sha256": "1e3d259cbcf73fb83f6f87495ff8235f9c6bfffeb9d88daccf90e1b001555e92"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_surface_test.go",
-            "sha256": "10652c5dd64afd99246d1d10e2b2b7838c8ed28bc0729c50f30489f43fd060d6"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
-            "sha256": "f29b8eb42d9c93ad5db9034304e6f80755ebf29950754bc996cce322e89c28bf"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
-            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
-          }
-        ]
-      }
-    },
-    {
-      "id": "ev-t2-ac2-projection",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/evidence-t2-projection-surface-20261128T113020Z.log",
-        "sha256": "2561eee4af1679c3b05ace7d903b8c395419f44b7cd9773cfd82f3dc864f567b"
-      },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
-      "taskIds": [
-        "T2"
-      ],
-      "acceptanceIds": [
-        "AC2"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-28T11:30:26Z",
-      "producer": "engineer:EngineerT2Fix2",
-      "details": {
-        "command": "go test ./internal/service -run TestProjection|TestFieldProjection -count=1; go test ./internal/service ./internal/catalog -count=1",
-        "exitCode": 0
-      },
-      "contractAnchor": "439f931ad6ec520ef2c7ba06e525cb99d1b2dd5cb69386ef66e21ae4f18edbfb",
-      "executionInput": {
-        "argv": [
-          "go",
-          "test",
-          "./internal/service",
-          "-run",
-          "TestProjection|TestFieldProjection",
-          "-count=1;",
-          "go",
-          "test",
-          "./internal/service",
-          "./internal/catalog",
-          "-count=1"
-        ],
-        "cwd": "/home/opencode/projects/default/mcp-bridge",
-        "timeoutMs": 120000,
-        "declaredInputs": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
-            "sha256": "43c3bb77ca7aae3244c08f9bd087a0078f797fc059f9cd6e0863d9a3ce10fcb5"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
-            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
-            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
-            "sha256": "1e3d259cbcf73fb83f6f87495ff8235f9c6bfffeb9d88daccf90e1b001555e92"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_surface_test.go",
-            "sha256": "10652c5dd64afd99246d1d10e2b2b7838c8ed28bc0729c50f30489f43fd060d6"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
-            "sha256": "f29b8eb42d9c93ad5db9034304e6f80755ebf29950754bc996cce322e89c28bf"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
-            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
-          }
-        ],
-        "effectPaths": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
-            "sha256": "43c3bb77ca7aae3244c08f9bd087a0078f797fc059f9cd6e0863d9a3ce10fcb5"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
-            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
-            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
-            "sha256": "1e3d259cbcf73fb83f6f87495ff8235f9c6bfffeb9d88daccf90e1b001555e92"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_surface_test.go",
-            "sha256": "10652c5dd64afd99246d1d10e2b2b7838c8ed28bc0729c50f30489f43fd060d6"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
-            "sha256": "f29b8eb42d9c93ad5db9034304e6f80755ebf29950754bc996cce322e89c28bf"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
-            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
-          }
-        ]
-      }
-    },
-    {
-      "id": "ev-t2-ac3-projection",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/evidence-t2-projection-surface-20261128T113020Z.log",
-        "sha256": "2561eee4af1679c3b05ace7d903b8c395419f44b7cd9773cfd82f3dc864f567b"
-      },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
-      "taskIds": [
-        "T2"
-      ],
-      "acceptanceIds": [
-        "AC3"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-28T11:30:26Z",
-      "producer": "engineer:EngineerT2Fix2",
-      "details": {
-        "command": "go test ./internal/service -run TestProjection|TestFieldProjection -count=1; go test ./internal/service ./internal/catalog -count=1",
-        "exitCode": 0
-      },
-      "contractAnchor": "439f931ad6ec520ef2c7ba06e525cb99d1b2dd5cb69386ef66e21ae4f18edbfb",
-      "executionInput": {
-        "argv": [
-          "go",
-          "test",
-          "./internal/service",
-          "-run",
-          "TestProjection|TestFieldProjection",
-          "-count=1;",
-          "go",
-          "test",
-          "./internal/service",
-          "./internal/catalog",
-          "-count=1"
-        ],
-        "cwd": "/home/opencode/projects/default/mcp-bridge",
-        "timeoutMs": 120000,
-        "declaredInputs": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
-            "sha256": "43c3bb77ca7aae3244c08f9bd087a0078f797fc059f9cd6e0863d9a3ce10fcb5"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
-            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
-            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
-            "sha256": "1e3d259cbcf73fb83f6f87495ff8235f9c6bfffeb9d88daccf90e1b001555e92"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_surface_test.go",
-            "sha256": "10652c5dd64afd99246d1d10e2b2b7838c8ed28bc0729c50f30489f43fd060d6"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
-            "sha256": "f29b8eb42d9c93ad5db9034304e6f80755ebf29950754bc996cce322e89c28bf"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
-            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
-          }
-        ],
-        "effectPaths": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
-            "sha256": "43c3bb77ca7aae3244c08f9bd087a0078f797fc059f9cd6e0863d9a3ce10fcb5"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
-            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
-            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
-            "sha256": "1e3d259cbcf73fb83f6f87495ff8235f9c6bfffeb9d88daccf90e1b001555e92"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_surface_test.go",
-            "sha256": "10652c5dd64afd99246d1d10e2b2b7838c8ed28bc0729c50f30489f43fd060d6"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
-            "sha256": "f29b8eb42d9c93ad5db9034304e6f80755ebf29950754bc996cce322e89c28bf"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
-            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
-          }
-        ]
-      }
-    },
-    {
-      "id": "ev-t2-ac4-projection",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/evidence-t2-projection-surface-20261128T113020Z.log",
-        "sha256": "2561eee4af1679c3b05ace7d903b8c395419f44b7cd9773cfd82f3dc864f567b"
-      },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
-      "taskIds": [
-        "T2"
-      ],
-      "acceptanceIds": [
-        "AC4"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-28T11:30:26Z",
-      "producer": "engineer:EngineerT2Fix2",
-      "details": {
-        "command": "go test ./internal/service -run TestProjection|TestFieldProjection -count=1; go test ./internal/service ./internal/catalog -count=1",
-        "exitCode": 0
-      },
-      "contractAnchor": "439f931ad6ec520ef2c7ba06e525cb99d1b2dd5cb69386ef66e21ae4f18edbfb",
-      "executionInput": {
-        "argv": [
-          "go",
-          "test",
-          "./internal/service",
-          "-run",
-          "TestProjection|TestFieldProjection",
-          "-count=1;",
-          "go",
-          "test",
-          "./internal/service",
-          "./internal/catalog",
-          "-count=1"
-        ],
-        "cwd": "/home/opencode/projects/default/mcp-bridge",
-        "timeoutMs": 120000,
-        "declaredInputs": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
-            "sha256": "43c3bb77ca7aae3244c08f9bd087a0078f797fc059f9cd6e0863d9a3ce10fcb5"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
-            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
-            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
-            "sha256": "1e3d259cbcf73fb83f6f87495ff8235f9c6bfffeb9d88daccf90e1b001555e92"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_surface_test.go",
-            "sha256": "10652c5dd64afd99246d1d10e2b2b7838c8ed28bc0729c50f30489f43fd060d6"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
-            "sha256": "f29b8eb42d9c93ad5db9034304e6f80755ebf29950754bc996cce322e89c28bf"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
-            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
-          }
-        ],
-        "effectPaths": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
-            "sha256": "43c3bb77ca7aae3244c08f9bd087a0078f797fc059f9cd6e0863d9a3ce10fcb5"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
-            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
-            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
-            "sha256": "1e3d259cbcf73fb83f6f87495ff8235f9c6bfffeb9d88daccf90e1b001555e92"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_surface_test.go",
-            "sha256": "10652c5dd64afd99246d1d10e2b2b7838c8ed28bc0729c50f30489f43fd060d6"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
-            "sha256": "f29b8eb42d9c93ad5db9034304e6f80755ebf29950754bc996cce322e89c28bf"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
-            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
-          }
-        ]
-      }
-    },
-    {
-      "id": "ev-t2-ac6-projection",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/evidence-t2-projection-surface-20261128T113020Z.log",
-        "sha256": "2561eee4af1679c3b05ace7d903b8c395419f44b7cd9773cfd82f3dc864f567b"
-      },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
-      "taskIds": [
-        "T2"
-      ],
-      "acceptanceIds": [
-        "AC6"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-28T11:30:26Z",
-      "producer": "engineer:EngineerT2Fix2",
-      "details": {
-        "command": "go test ./internal/service -run TestProjection|TestFieldProjection -count=1; go test ./internal/service ./internal/catalog -count=1",
-        "exitCode": 0
-      },
-      "contractAnchor": "439f931ad6ec520ef2c7ba06e525cb99d1b2dd5cb69386ef66e21ae4f18edbfb",
-      "executionInput": {
-        "argv": [
-          "go",
-          "test",
-          "./internal/service",
-          "-run",
-          "TestProjection|TestFieldProjection",
-          "-count=1;",
-          "go",
-          "test",
-          "./internal/service",
-          "./internal/catalog",
-          "-count=1"
-        ],
-        "cwd": "/home/opencode/projects/default/mcp-bridge",
-        "timeoutMs": 120000,
-        "declaredInputs": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
-            "sha256": "43c3bb77ca7aae3244c08f9bd087a0078f797fc059f9cd6e0863d9a3ce10fcb5"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
-            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
-            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
-            "sha256": "1e3d259cbcf73fb83f6f87495ff8235f9c6bfffeb9d88daccf90e1b001555e92"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_surface_test.go",
-            "sha256": "10652c5dd64afd99246d1d10e2b2b7838c8ed28bc0729c50f30489f43fd060d6"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
-            "sha256": "f29b8eb42d9c93ad5db9034304e6f80755ebf29950754bc996cce322e89c28bf"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
-            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
-          }
-        ],
-        "effectPaths": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
-            "sha256": "43c3bb77ca7aae3244c08f9bd087a0078f797fc059f9cd6e0863d9a3ce10fcb5"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
-            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
-            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
-            "sha256": "1e3d259cbcf73fb83f6f87495ff8235f9c6bfffeb9d88daccf90e1b001555e92"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_surface_test.go",
-            "sha256": "10652c5dd64afd99246d1d10e2b2b7838c8ed28bc0729c50f30489f43fd060d6"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
-            "sha256": "f29b8eb42d9c93ad5db9034304e6f80755ebf29950754bc996cce322e89c28bf"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
-            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
-          }
-        ]
-      }
-    },
-    {
-      "id": "ev-t2-ac7-projection",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/evidence-t2-projection-surface-20261128T113020Z.log",
-        "sha256": "2561eee4af1679c3b05ace7d903b8c395419f44b7cd9773cfd82f3dc864f567b"
-      },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
-      "taskIds": [
-        "T2"
-      ],
-      "acceptanceIds": [
-        "AC7"
-      ],
-      "outcome": "pass",
-      "observedAt": "2026-11-28T11:30:26Z",
-      "producer": "engineer:EngineerT2Fix2",
-      "details": {
-        "command": "go test ./internal/service -run TestProjection|TestFieldProjection -count=1; go test ./internal/service ./internal/catalog -count=1",
-        "exitCode": 0
-      },
-      "contractAnchor": "439f931ad6ec520ef2c7ba06e525cb99d1b2dd5cb69386ef66e21ae4f18edbfb",
-      "executionInput": {
-        "argv": [
-          "go",
-          "test",
-          "./internal/service",
-          "-run",
-          "TestProjection|TestFieldProjection",
-          "-count=1;",
-          "go",
-          "test",
-          "./internal/service",
-          "./internal/catalog",
-          "-count=1"
-        ],
-        "cwd": "/home/opencode/projects/default/mcp-bridge",
-        "timeoutMs": 120000,
-        "declaredInputs": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
-            "sha256": "43c3bb77ca7aae3244c08f9bd087a0078f797fc059f9cd6e0863d9a3ce10fcb5"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
-            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
-            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
-            "sha256": "1e3d259cbcf73fb83f6f87495ff8235f9c6bfffeb9d88daccf90e1b001555e92"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_surface_test.go",
-            "sha256": "10652c5dd64afd99246d1d10e2b2b7838c8ed28bc0729c50f30489f43fd060d6"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
-            "sha256": "f29b8eb42d9c93ad5db9034304e6f80755ebf29950754bc996cce322e89c28bf"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
-            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
-          }
-        ],
-        "effectPaths": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
-            "sha256": "43c3bb77ca7aae3244c08f9bd087a0078f797fc059f9cd6e0863d9a3ce10fcb5"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
-            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
-            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
-            "sha256": "1e3d259cbcf73fb83f6f87495ff8235f9c6bfffeb9d88daccf90e1b001555e92"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_surface_test.go",
-            "sha256": "10652c5dd64afd99246d1d10e2b2b7838c8ed28bc0729c50f30489f43fd060d6"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
-            "sha256": "f29b8eb42d9c93ad5db9034304e6f80755ebf29950754bc996cce322e89c28bf"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
-            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
-          }
-        ]
-      }
-    },
-    {
-      "id": "ev-t4-ac7-integrated",
-      "kind": "test",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/evidence-t4-integrated-20261128T113554Z.log",
-        "sha256": "3b93a978441772d4279a06f7ac5a6f8bfe1e4ad53c3ebb47c82df4d8038b3620"
-      },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
+      "feature": "token-efficient-tool-responses",
+      "packetDigest": "53a6908b6e97798a07907f95185e939bfe9c5a2830be1d0dc104135a308309d3",
+      "selectedBranchId": "token-efficient-tool-responses-ticket01-r40",
       "taskIds": [
         "T4"
       ],
       "acceptanceIds": [
-        "AC7"
+        "AC1",
+        "AC19"
       ],
       "outcome": "pass",
-      "observedAt": "2026-11-28T11:36:00Z",
-      "producer": "engineer:EngineerT4",
+      "observedAt": "2026-11-27T00:00:00Z",
+      "producer": "engineer dispatch ImplementTicket01T4-2; verified by coordinator",
       "details": {
-        "command": "go test ./internal/service ./internal/catalog ./internal/observe -count=1",
+        "command": "go build ./... && go vet ./internal/service/ ./internal/observe/ && go test ./internal/service/ -run '<T4 oracle set>' -count=1 && go test ./internal/service/ -count=1 && go test ./internal/observe/ -count=1 && go test ./cmd/mcp-bridge/ -count=1",
         "exitCode": 0
       },
-      "contractAnchor": "71522f774afd3d8a3d5cd30fada736605ad30a64a0ebfd10c2fea0ad397444f1",
       "executionInput": {
         "argv": [
           "go",
-          "test",
-          "./internal/service",
-          "./internal/catalog",
-          "./internal/observe",
-          "-count=1"
+          "build",
+          "./..."
         ],
         "cwd": "/home/opencode/projects/default/mcp-bridge",
-        "timeoutMs": 120000,
+        "timeoutMs": 300000,
         "declaredInputs": [
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r21.md",
-            "sha256": "6427b9f5ed02ef6605c23e011466ff2e742f66bc40647585fa61c3b62b4d6cfd"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
-            "sha256": "43c3bb77ca7aae3244c08f9bd087a0078f797fc059f9cd6e0863d9a3ce10fcb5"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
-            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
-            "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
-            "sha256": "06e7af29c34d6bd8fc4427e7e91e398e76862452b4ea2d15031de0559aaf0082"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
-            "sha256": "6855df223b50355438673709929193876a398ff50a3d59b355f2849cff3214ec"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
-            "sha256": "75592d8c449ff64bda5dc30bf6fdfcdd116bc3cdfff43050be0e4d04e175f00b"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
-            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+            "sha256": "8898bf4e4f3784cc18f0721e7fd8ba76f6b447c21420a97db3dbc38f0c43e33e"
           },
           {
             "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
-            "sha256": "1e3d259cbcf73fb83f6f87495ff8235f9c6bfffeb9d88daccf90e1b001555e92"
+            "sha256": "559c8c44341b7516327b6a5ce8684a57b39219e1c8f8c2b5b0789b9fe4947a75"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection.go",
-            "sha256": "9d3643c492b4d4412b1e857222e2c5151dc75a2acae8016c852a3df438bbdde3"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/discovery_paging_test.go",
+            "sha256": "306c9c2896d8d88e8949997874ffb35d2693cb150663382d45fd044025204372"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_surface_test.go",
-            "sha256": "10652c5dd64afd99246d1d10e2b2b7838c8ed28bc0729c50f30489f43fd060d6"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_test.go",
-            "sha256": "e408c6abdcaffa15aa184d1323a214baccef49ac86a72177cfbdadda02fb2a7f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
-            "sha256": "f29b8eb42d9c93ad5db9034304e6f80755ebf29950754bc996cce322e89c28bf"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
-            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+            "sha256": "4b3080089e71a4a751b5be2dfb53aad4b24c475a37cb429c190cc656c12ab62c"
           }
         ],
         "effectPaths": [
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r21.md",
-            "sha256": "6427b9f5ed02ef6605c23e011466ff2e742f66bc40647585fa61c3b62b4d6cfd"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
-            "sha256": "43c3bb77ca7aae3244c08f9bd087a0078f797fc059f9cd6e0863d9a3ce10fcb5"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
-            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
-            "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
-            "sha256": "06e7af29c34d6bd8fc4427e7e91e398e76862452b4ea2d15031de0559aaf0082"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
-            "sha256": "6855df223b50355438673709929193876a398ff50a3d59b355f2849cff3214ec"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
-            "sha256": "75592d8c449ff64bda5dc30bf6fdfcdd116bc3cdfff43050be0e4d04e175f00b"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
-            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+            "sha256": "8898bf4e4f3784cc18f0721e7fd8ba76f6b447c21420a97db3dbc38f0c43e33e"
           },
           {
             "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
-            "sha256": "1e3d259cbcf73fb83f6f87495ff8235f9c6bfffeb9d88daccf90e1b001555e92"
+            "sha256": "559c8c44341b7516327b6a5ce8684a57b39219e1c8f8c2b5b0789b9fe4947a75"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection.go",
-            "sha256": "9d3643c492b4d4412b1e857222e2c5151dc75a2acae8016c852a3df438bbdde3"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/discovery_paging_test.go",
+            "sha256": "306c9c2896d8d88e8949997874ffb35d2693cb150663382d45fd044025204372"
           },
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_surface_test.go",
-            "sha256": "10652c5dd64afd99246d1d10e2b2b7838c8ed28bc0729c50f30489f43fd060d6"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/field_projection_test.go",
-            "sha256": "e408c6abdcaffa15aa184d1323a214baccef49ac86a72177cfbdadda02fb2a7f"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
-            "sha256": "f29b8eb42d9c93ad5db9034304e6f80755ebf29950754bc996cce322e89c28bf"
-          },
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
-            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+            "sha256": "4b3080089e71a4a751b5be2dfb53aad4b24c475a37cb429c190cc656c12ab62c"
           }
         ]
       }
     },
     {
-      "id": "ev-cr1-review",
+      "id": "ev-t5-tests-20261127",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t5-acceptance/acceptance.log",
+        "sha256": "41c7639c1072d06d81fff41271be7e5838aef7d3a745c0aaa4b87b7e8782c1bb"
+      },
+      "feature": "token-efficient-tool-responses",
+      "packetDigest": "53a6908b6e97798a07907f95185e939bfe9c5a2830be1d0dc104135a308309d3",
+      "selectedBranchId": "token-efficient-tool-responses-ticket01-r40",
+      "taskIds": [
+        "T5"
+      ],
+      "acceptanceIds": [
+        "AC19",
+        "AC27"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-27T00:00:00Z",
+      "producer": "engineer dispatch ImplementTicket01T5 (README + integration oracles); full suite re-run by coordinator after an isolated timing flake in TestServeHybridSIGHUPReload/InvalidNewPinRejectedViaSIGHUP (passes isolated and in 3 subsequent full-package runs)",
+      "details": {
+        "command": "go build ./... && go vet ./internal/service/ && go test ./internal/service/ -run '<T5 oracle set>' -count=1 && go test ./...",
+        "exitCode": 0
+      },
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./..."
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 300000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_paging_integration_test.go",
+            "sha256": "737f9cd39f7a9216dfc4d7bcfea89c161e9b3b579542db00dcbc5623f15641e4"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+            "sha256": "45922147090b67651db66948847f61a91b27745d386ac4925c50a0bba3cd3deb"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+            "sha256": "74d95f8b785ca429e145e7c98501c6a9fdf4754310be6f58b4421d7f2b866b04"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "1a769dabff0b7ad22894e48ce8a549cd4a2c2cdcf2041b250de66bcec1a42610"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+            "sha256": "8898bf4e4f3784cc18f0721e7fd8ba76f6b447c21420a97db3dbc38f0c43e33e"
+          }
+        ],
+        "effectPaths": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_paging_integration_test.go",
+            "sha256": "737f9cd39f7a9216dfc4d7bcfea89c161e9b3b579542db00dcbc5623f15641e4"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+            "sha256": "45922147090b67651db66948847f61a91b27745d386ac4925c50a0bba3cd3deb"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+            "sha256": "74d95f8b785ca429e145e7c98501c6a9fdf4754310be6f58b4421d7f2b866b04"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "1a769dabff0b7ad22894e48ce8a549cd4a2c2cdcf2041b250de66bcec1a42610"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+            "sha256": "8898bf4e4f3784cc18f0721e7fd8ba76f6b447c21420a97db3dbc38f0c43e33e"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ev-cr1-spec-review-r40",
       "kind": "inspection",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r21-source-e3b84184-20261128T101422Z.json",
-        "sha256": "e3b8418422fcb20eaf4955d08480c8144ce9afbc575754b5d9a37715f34246a9"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/review-cr-r40-source-bfd8d4ce-21d0-4403-b59b-cb316fd05696.json",
+        "sha256": "90eff5e6f0ebcc48532f6cb4e060909c0bdd893dcfcd628458e525a20f19ce80"
       },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
+      "feature": "token-efficient-tool-responses",
+      "packetDigest": "53a6908b6e97798a07907f95185e939bfe9c5a2830be1d0dc104135a308309d3",
+      "selectedBranchId": "token-efficient-tool-responses-ticket01-r40",
       "taskIds": [
         "CR1"
       ],
       "acceptanceIds": [],
       "outcome": "pass",
-      "observedAt": "2026-11-28T11:37:11Z",
-      "producer": "coordinator",
+      "observedAt": "2026-11-27T00:00:00Z",
+      "producer": "code-reviewer — r40 specification review observation",
       "details": {
-        "rubric": "canonical independent review recorded for r21",
-        "observedOutcome": "CodeReviewer APPROVE (seq 120) on r21; canonical review recorded"
+        "rubric": "r40 spec review verdict pass (reviews.specification)",
+        "observedOutcome": "verdict pass at r40; receipt source review-specification-771a5122d10c6e04968d38a1b4b9da1f8a58f1b26f8d4b41216bfbb3b8df3910"
       },
-      "contractAnchor": "bcefb04ce1c952fdcf06f4fd21ecaabffeea99a206bebb72222341414e0676ab",
       "executionInput": {
         "argv": [],
         "cwd": "/home/opencode/projects/default/mcp-bridge",
         "timeoutMs": 120000,
         "declaredInputs": [
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r21.md",
-            "sha256": "6427b9f5ed02ef6605c23e011466ff2e742f66bc40647585fa61c3b62b4d6cfd"
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+            "sha256": "37dd21cee4cebdd8c5e4771741e05e594feb01292e43269ace89ee11d35ad686"
           }
         ],
-        "effectPaths": [
-          {
-            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r21.md",
-            "sha256": "6427b9f5ed02ef6605c23e011466ff2e742f66bc40647585fa61c3b62b4d6cfd"
-          }
-        ]
+        "effectPaths": []
       }
     },
     {
-      "id": "ev-ct1-review",
+      "id": "ev-ct1-tasks-review-r40",
       "kind": "inspection",
       "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-ct-r21-source-0bb3f311-20261128T101543Z.json",
-        "sha256": "0bb3f311fb6f5a6b7c9303c7673a2bd160ab5f349c4ce082c20db85f2f8ceb4a"
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff01-review/review-ct-r40-source-6cf9d20c-b91b-458d-8a9d-6acd9b95be3b.json",
+        "sha256": "e6d341ace66c9b8aa194606dc29d191ec0b456fdf435ca967a0535e6aa23ba17"
       },
-      "feature": "token-efficient-tool-responses-ticket05-r21",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
+      "feature": "token-efficient-tool-responses",
+      "packetDigest": "53a6908b6e97798a07907f95185e939bfe9c5a2830be1d0dc104135a308309d3",
+      "selectedBranchId": "token-efficient-tool-responses-ticket01-r40",
       "taskIds": [
         "CT1"
       ],
       "acceptanceIds": [],
       "outcome": "pass",
-      "observedAt": "2026-11-28T11:37:17Z",
-      "producer": "coordinator",
+      "observedAt": "2026-11-27T00:00:00Z",
+      "producer": "critic — r40 tasks review observation",
       "details": {
-        "rubric": "canonical independent review recorded for r21",
-        "observedOutcome": "Critic PASS on r21; canonical observation bound"
+        "rubric": "r40 tasks review verdict pass (reviews.tasks)",
+        "observedOutcome": "verdict pass at r40; receipt source review-tasks-8a3f846b94660c4f15417ead3bb6c61aabdbdef011502c10cb58644714ebd4a5"
       },
-      "contractAnchor": "70d76af6b83450f4546895e5fa16e4743fd811b104e0055bfcd554b8fdb85f2e",
       "executionInput": {
         "argv": [],
         "cwd": "/home/opencode/projects/default/mcp-bridge",
         "timeoutMs": 120000,
         "declaredInputs": [
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r21.md",
-            "sha256": "6427b9f5ed02ef6605c23e011466ff2e742f66bc40647585fa61c3b62b4d6cfd"
+            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/spec.md",
+            "sha256": "37dd21cee4cebdd8c5e4771741e05e594feb01292e43269ace89ee11d35ad686"
+          }
+        ],
+        "effectPaths": []
+      }
+    },
+    {
+      "id": "ev-t3-ac14-repair-20261128",
+      "kind": "test",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/t3-ac14-repair-oracles-1795867418.log",
+        "sha256": "5232afeca6d9df29d8b88ed832f856dd9ab3641c5afcfabd25a2e3d1a64814c5"
+      },
+      "feature": "token-efficient-tool-responses",
+      "packetDigest": "53a6908b6e97798a07907f95185e939bfe9c5a2830be1d0dc104135a308309d3",
+      "selectedBranchId": "token-efficient-tool-responses-ticket01-r40",
+      "taskIds": [
+        "T3"
+      ],
+      "acceptanceIds": [
+        "AC3",
+        "AC6",
+        "AC9",
+        "AC10",
+        "AC11",
+        "AC14",
+        "AC15",
+        "AC16",
+        "AC17",
+        "AC24",
+        "AC25",
+        "AC26",
+        "AC27",
+        "AC28",
+        "AC29",
+        "AC30",
+        "AC31",
+        "AC32",
+        "AC37",
+        "AC40",
+        "AC43",
+        "AC44"
+      ],
+      "outcome": "pass",
+      "observedAt": "2026-11-28T12:03:46Z",
+      "producer": "engineer",
+      "details": {
+        "command": "go test ./internal/service ./internal/observe ./internal/config -run '^(TestPagingMetricsDeltas|TestPagingMetricsRegistered|TestMeasurementIndependentOracle|TestPreviewBoundedAndMetadata|TestPagesConcatenateToOriginal|TestCeilingPlusOneBoundary|TestCeilingsPinnedAcrossReload|TestHandleOwnerEpochBinding|TestHandleExpiry|TestHandleRejectionUniformHandler|TestHandleRejectionUniformStore|TestPageRuneAlignment|TestPageBoundsValidated|TestRetrieveResultDefaultsPage|TestRetrieveShapeInvalid|TestRetrieveValidationPrecedence|TestRetrievalEvictionAtomicity|TestPendingRuneAlignment|TestTerminalPreviewsBounded|TestTerminalFieldSemantics|TestEscapingHeavyPagesWithinCeiling|TestEvictedHandleRetrieval|TestRetiredNamespaceTombstone|TestAggregateAdmissionHard|TestEvictionNamespaceIsolation|TestExecutionStateRegistry|TestUpstreamCodePinned|TestEpochUnresolvedNoHandle|TestLogLabelEnumeration|TestLogLabelProducers|TestPreviewRuneStraddle|TestConfigRelations.*|TestCeilingOrderRejected|TestEnvelopeHeadroomMaximalMetadata|TestConfigEnvelopeFeasibility|TestReadmeInventoryAndPromise|TestRetrievalContractDocumented|TestRetainedResultPagingExpiryMidSequence|TestPerSurfaceHandleRetrievalRoundTrip|TestPagingAllSurfaces)$' -count=1",
+        "exitCode": 0
+      },
+      "contractAnchor": "1068672da0909f28e146d5e9b1690d2538c3d21bf99bede83547eb49fb115d16",
+      "executionInput": {
+        "argv": [
+          "go",
+          "test",
+          "./internal/service",
+          "./internal/observe",
+          "./internal/config",
+          "-run",
+          "^(TestPagingMetricsDeltas|TestPagingMetricsRegistered|TestMeasurementIndependentOracle|TestPreviewBoundedAndMetadata|TestPagesConcatenateToOriginal|TestCeilingPlusOneBoundary|TestCeilingsPinnedAcrossReload|TestHandleOwnerEpochBinding|TestHandleExpiry|TestHandleRejectionUniformHandler|TestHandleRejectionUniformStore|TestPageRuneAlignment|TestPageBoundsValidated|TestRetrieveResultDefaultsPage|TestRetrieveShapeInvalid|TestRetrieveValidationPrecedence|TestRetrievalEvictionAtomicity|TestPendingRuneAlignment|TestTerminalPreviewsBounded|TestTerminalFieldSemantics|TestEscapingHeavyPagesWithinCeiling|TestEvictedHandleRetrieval|TestRetiredNamespaceTombstone|TestAggregateAdmissionHard|TestEvictionNamespaceIsolation|TestExecutionStateRegistry|TestUpstreamCodePinned|TestEpochUnresolvedNoHandle|TestLogLabelEnumeration|TestLogLabelProducers|TestPreviewRuneStraddle|TestConfigRelations.*|TestCeilingOrderRejected|TestEnvelopeHeadroomMaximalMetadata|TestConfigEnvelopeFeasibility|TestReadmeInventoryAndPromise|TestRetrievalContractDocumented|TestRetainedResultPagingExpiryMidSequence|TestPerSurfaceHandleRetrievalRoundTrip|TestPagingAllSurfaces)$",
+          "-count=1"
+        ],
+        "cwd": "/home/opencode/projects/default/mcp-bridge",
+        "timeoutMs": 120000,
+        "declaredInputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/logging_contract_test.go",
+            "sha256": "7fb6bf6ce79b23d4e38491ed01212fbcf81bb18bf93adaa3d36d64fe16346c34"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "518ce49bca90d9097bc6c10ab3da8f7b0b5239f4d6b435cd778713581ee653b0"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+            "sha256": "874337871f56ee3174168cf80bc62a77c81dd9be59648f226482abf33d03c76c"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+            "sha256": "758e39d949d0013921d081e0517edb85a3b147962f4cdcaf6f26b93d1ce572e3"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+            "sha256": "070e89dc508d19ce18db0d6ba99736fdca9bf2cf3f9024ab2d418d3da83b2c4f"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_reload_test.go",
+            "sha256": "81b517f15e0b58661a69777257ae66ef109239eaa30a8b63eccb1a27a0ff74ed"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_oauth_test.go",
+            "sha256": "f615e7ec61e676e4cd57636a428ce499b2cf37b2146fd38d3959be5b81bb52c7"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_test.go",
+            "sha256": "c178d13c35bc08c0366f92723922f247fcd138fc81e3fad3e46c3dd82a74feaf"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+            "sha256": "f82e86f28c7380fa60b1b57b04f58c0716391a716912587182fd0cf4fd048b28"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+            "sha256": "250965d49d3dca7e83259441a0c1d3b9e84017ecc2cf04677a96e1c1910a2400"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+            "sha256": "0aa5094b0bbc60e41b7888715e953f98d0bc822f8fcfef143f91a9fd4aaaefa2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/builtin_guidance_test.go",
+            "sha256": "be9e356318d999da0e9e95fb044bb0952e9489ae681e9ceb267ca3cd6ac18cde"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/inbound.go",
+            "sha256": "d6efe1cbdd7b9c6ca60dd3dfbd00f1d806793a60d1a8bfeeef2634d59f6cef8a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_concurrency_lifecycle_test.go",
+            "sha256": "7c4d036ef3dedf235a06c82151ef8d832037d521799e5397e44658f86f981271"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_session_test.go",
+            "sha256": "1187cc3cdf792258df6dca1f81af619e3804d9bcbd6e5b3bba2f1f6f877f08b5"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/retrieve_result_test.go",
+            "sha256": "9a38eea69a9283627f89ca76d991c9c08fbd63e36d7ff1599767b2c6652c4ff6"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tool_metadata_test.go",
+            "sha256": "8a3d74425dce83db59ed5aa517b23313e044169d80492fad843d2bb29ea3c2f0"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_publish_atomic_test.go",
+            "sha256": "da5882e1823e0412d13707f012b4daffb4fca8bfd2ab33aa195bbe642bdff30a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_test.go",
+            "sha256": "92e7ea76fd250bbf51bc88c0b4b6fa3ccf223b29b1cc1dcbbd0fc5b8dc0897dd"
           }
         ],
         "effectPaths": [
           {
-            "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r21.md",
-            "sha256": "6427b9f5ed02ef6605c23e011466ff2e742f66bc40647585fa61c3b62b4d6cfd"
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/logging_contract_test.go",
+            "sha256": "7fb6bf6ce79b23d4e38491ed01212fbcf81bb18bf93adaa3d36d64fe16346c34"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+            "sha256": "518ce49bca90d9097bc6c10ab3da8f7b0b5239f4d6b435cd778713581ee653b0"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_exposure_test.go",
+            "sha256": "874337871f56ee3174168cf80bc62a77c81dd9be59648f226482abf33d03c76c"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_lifecycle_test.go",
+            "sha256": "758e39d949d0013921d081e0517edb85a3b147962f4cdcaf6f26b93d1ce572e3"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_progressive_reveal_test.go",
+            "sha256": "070e89dc508d19ce18db0d6ba99736fdca9bf2cf3f9024ab2d418d3da83b2c4f"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_hybrid_reload_test.go",
+            "sha256": "81b517f15e0b58661a69777257ae66ef109239eaa30a8b63eccb1a27a0ff74ed"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_oauth_test.go",
+            "sha256": "f615e7ec61e676e4cd57636a428ce499b2cf37b2146fd38d3959be5b81bb52c7"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve_test.go",
+            "sha256": "c178d13c35bc08c0366f92723922f247fcd138fc81e3fad3e46c3dd82a74feaf"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+            "sha256": "f82e86f28c7380fa60b1b57b04f58c0716391a716912587182fd0cf4fd048b28"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+            "sha256": "3375590ab43a7a5ee7197b6d262d40201dbdfe732c084858e7048fc6c1c2b68f"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+            "sha256": "250965d49d3dca7e83259441a0c1d3b9e84017ecc2cf04677a96e1c1910a2400"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+            "sha256": "4fe50822897d3a4c52ae86b6e8e4f8651d3793f84d03a11cb27fd073bc668cc3"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+            "sha256": "0aa5094b0bbc60e41b7888715e953f98d0bc822f8fcfef143f91a9fd4aaaefa2"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/builtin_guidance_test.go",
+            "sha256": "be9e356318d999da0e9e95fb044bb0952e9489ae681e9ceb267ca3cd6ac18cde"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/inbound.go",
+            "sha256": "d6efe1cbdd7b9c6ca60dd3dfbd00f1d806793a60d1a8bfeeef2634d59f6cef8a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_concurrency_lifecycle_test.go",
+            "sha256": "7c4d036ef3dedf235a06c82151ef8d832037d521799e5397e44658f86f981271"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/progressive_session_test.go",
+            "sha256": "1187cc3cdf792258df6dca1f81af619e3804d9bcbd6e5b3bba2f1f6f877f08b5"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/retrieve_result_test.go",
+            "sha256": "9a38eea69a9283627f89ca76d991c9c08fbd63e36d7ff1599767b2c6652c4ff6"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tool_metadata_test.go",
+            "sha256": "8a3d74425dce83db59ed5aa517b23313e044169d80492fad843d2bb29ea3c2f0"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+            "sha256": "2df1e31b766b9385f7738d9f885e3df51ade1e618f8d38406c0e76ac420da67e"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_publish_atomic_test.go",
+            "sha256": "da5882e1823e0412d13707f012b4daffb4fca8bfd2ab33aa195bbe642bdff30a"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools_test.go",
+            "sha256": "92e7ea76fd250bbf51bc88c0b4b6fa3ccf223b29b1cc1dcbbd0fc5b8dc0897dd"
           }
         ]
       }
     }
   ],
-  "capabilities": [],
   "blockers": [],
-  "decisions": [
-    {
-      "id": "owner-amendment:T3:d33a228113ff374541acc5778d47f9c04ae901b4ce71065e591247709bca0848",
-      "inputDigest": "29339fc6244bb8b7763decce920c5d8cbb3d7351477d06a0478535a971d719be",
-      "kind": "owner",
-      "status": "resolved",
-      "question": "Approve these named effects and resolve the listed execution blockers?",
-      "answer": "Owner explicitly directed this task amendment and retry.",
-      "rationale": "explicit-owner-amendment",
-      "sourceIds": [
-        "src-owner-amendment-t3-envelope"
-      ],
-      "affects": [
-        "T3"
-      ]
-    }
-  ],
-  "sources": [
-    {
-      "id": "src-issue-119",
-      "kind": "repository",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/issue-119.md",
-        "sha256": "caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81"
-      },
-      "locator": "GitHub jjohnson83853/mcp-bridge#119 snapshot; body sha256 caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81",
-      "recordedAt": "2026-11-27T22:05:00.000Z"
-    },
-    {
-      "id": "src-refinement-119",
-      "kind": "observation",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/refinement.md",
-        "sha256": "0889c58aa753869ac92acaa7f39a22fd4f9b6fd85e659fd0c37121914f76cc6b"
-      },
-      "locator": "issue-refiner READY assessment for #119",
-      "recordedAt": "2026-11-27T22:05:00.000Z"
-    },
-    {
-      "id": "src-schema-endpointlist",
-      "kind": "observation",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_endpointlist.json",
-        "sha256": "a7167d80f4151eee2a31092beb2817b39c8c542888f338f9aa1e344f0c3ff398"
-      },
-      "locator": "describe_tool portainer__EndpointList stored schema",
-      "recordedAt": "2026-11-27T22:05:00.000Z"
-    },
-    {
-      "id": "src-schema-dockerproxy",
-      "kind": "observation",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_docker_proxy.json",
-        "sha256": "a91db42a4a79684e3863a0ad6abf73a7ec1898dfca9ef9be45d0efed0486f1d1"
-      },
-      "locator": "describe_tool portainer__docker_proxy stored schema",
-      "recordedAt": "2026-11-27T22:05:00.000Z"
-    },
-    {
-      "id": "src-endpoint-observed",
-      "kind": "observation",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/endpointlist-observed-20261128T093237Z.json",
-        "sha256": "335bc53f28112105abf4bfaee1f5cb018435077c15041aa2f04997d3bc0278ca"
-      },
-      "locator": "live read-only portainer__EndpointList call through the bridge; Id/Name/Type observed on all 3 endpoints",
-      "recordedAt": "2026-11-28T09:32:37.000Z"
-    },
-    {
-      "id": "src-critic-r16",
-      "kind": "observation",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-ct-r16-source-bcd2aac8-20261128T093310Z.json",
-        "sha256": "bcd2aac8a75cbb6144e4e68abd61a8e234e11f40d3c73eca6708b9dbd3fe5084"
-      },
-      "locator": "Critic REVISE observations for r16 (C1, C2)",
-      "recordedAt": "2026-11-28T09:33:10.000Z"
-    },
-    {
-      "id": "src-review-ct-r20",
-      "kind": "observation",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-ct-r20-source-0f15c597-20261128T100655Z.json",
-        "sha256": "0f15c5978918e0b46e0c720674ff8f9433c5b42ee34dec896b255660a60af870"
-      },
-      "locator": "prior CodeReviewer observations (ct-r20)",
-      "recordedAt": "2026-11-28T00:00:00.000Z"
-    },
-    {
-      "id": "review-specification-00a232f1b127243d879979f76c2167ee2dc662863ecb1e2b158c111f9de5c9b1",
-      "kind": "observation",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r21-source-e3b84184-20261128T101422Z.json",
-        "sha256": "e3b8418422fcb20eaf4955d08480c8144ce9afbc575754b5d9a37715f34246a9"
-      },
-      "locator": "specification review observation for token-efficient-tool-responses-ticket05-spec-r21@r21",
-      "recordedAt": "2026-11-28T10:14:22.568Z"
-    },
-    {
-      "id": "review-tasks-00d77cc99b41e34718e13959a5401bc45b4177e817cc4dd5fde9fb947e314db2",
-      "kind": "observation",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-ct-r21-source-0bb3f311-20261128T101543Z.json",
-        "sha256": "0bb3f311fb6f5a6b7c9303c7673a2bd160ab5f349c4ce082c20db85f2f8ceb4a"
-      },
-      "locator": "tasks review observation for token-efficient-tool-responses-ticket05-spec-r21@r21",
-      "recordedAt": "2026-11-28T10:15:43Z"
-    },
-    {
-      "id": "src-owner-authorization-4989f54aa8a746a6",
-      "kind": "user-message",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/owner-authorization-r21-20261128T101620Z.txt",
-        "sha256": "273d0ac7b41523001e062f1665f86af91bfa68335bc20e5702f14bcb1296d2b9"
-      },
-      "locator": "Owner answer to milestone authorization form: auth=implement",
-      "recordedAt": "2026-11-28T10:16:20Z"
-    },
-    {
-      "id": "src-owner-amendment-t3-envelope",
-      "kind": "user-message",
-      "artifact": {
-        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/owner-amendment-t3-envelope-20261128T102835Z.txt",
-        "sha256": "72bbd21d35250ba5076f0e7089d156445a67163decf2a031937a470b2a622395"
-      },
-      "locator": "Owner answer to T3 envelope expansion form: amend=allow",
-      "recordedAt": "2026-11-28T10:28:35Z"
-    }
-  ],
   "gate": {
-    "markerPath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/token-efficient-tool-responses-ticket05-r21/marker.json",
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/token-efficient-tool-responses-repair/marker.json",
     "activationEvidenceIds": []
-  },
-  "authorization": {
-    "mode": "bounded",
-    "id": "owner-authorization:dd8977868ae10904d9f6afa03d034f8e",
-    "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-    "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21",
-    "receipt": {
-      "sourceId": "src-owner-authorization-4989f54aa8a746a6",
-      "recordedAt": "2026-11-28T10:16:20Z",
-      "response": {
-        "origin": "user",
-        "explicit": true,
-        "timedOut": false,
-        "automatic": false,
-        "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-        "selectedBranchId": "token-efficient-tool-responses-ticket05-r21-r21"
-      }
-    }
-  },
-  "reviews": {
-    "specification": {
-      "verdict": "pass",
-      "reviewerId": "code-reviewer",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "receipt": {
-        "sourceId": "review-specification-00a232f1b127243d879979f76c2167ee2dc662863ecb1e2b158c111f9de5c9b1",
-        "recordedAt": "2026-11-28T10:14:22.568Z",
-        "response": {
-          "origin": "reviewer",
-          "verdict": "pass"
-        }
-      }
-    },
-    "tasks": {
-      "verdict": "pass",
-      "reviewerId": "critic",
-      "packetDigest": "bf53896121b7395f8c3e0da2551265d0889d766420cdd7daddc2a5b2ce7b0ecb",
-      "receipt": {
-        "sourceId": "review-tasks-00d77cc99b41e34718e13959a5401bc45b4177e817cc4dd5fde9fb947e314db2",
-        "recordedAt": "2026-11-28T10:15:43Z",
-        "response": {
-          "origin": "reviewer",
-          "verdict": "pass"
-        }
-      }
-    }
   }
 }
