@@ -1,12 +1,17 @@
 package service_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
+	"github.com/jjohnson83853/mcp-bridge/internal/observe"
 	"github.com/jjohnson83853/mcp-bridge/internal/search"
 	"github.com/jjohnson83853/mcp-bridge/internal/service"
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
@@ -208,7 +213,8 @@ func TestStartupServesTheDurableCatalogAndKeepsCurrentVectors(t *testing.T) {
 }
 
 // AC-15/AC-16: a server the config has since dropped is purged to unreachable
-// and tombstoned at startup, so it never rebinds and its cache never returns.
+// and tombstoned at startup; a later configuration can reinstate it without
+// reviving its cached catalog.
 func TestStartupTombstonesAServerTheConfigDropped(t *testing.T) {
 	base := publishedSnapshot(t)
 	dropped := durableServer{
@@ -247,8 +253,8 @@ func TestStartupTombstonesAServerTheConfigDropped(t *testing.T) {
 	if !tombstoned {
 		t.Fatal("startup did not tombstone the dropped server")
 	}
-	// The tombstone must outlive the restart: a config that puts the server
-	// back refuses to rebind it rather than reviving its cache.
+	// The tombstone must outlive the restart: putting the server back into config
+	// reinstates its binding but does not revive its cached catalog.
 	replayed := parseReloadConfig(t, reloadTwoServers)
 	if _, err := cold.runtime.Reload(replayed, cold.deps()); err != nil {
 		t.Fatalf("Reload after startup: %v", err)
@@ -421,5 +427,567 @@ func TestToolSurfaceUsesOnlyCurrentDurableVectors(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+func tombstonedDurableSnapshot(t *testing.T, serverIDs ...string) *storage.Snapshot {
+	t.Helper()
+	base := publishedSnapshot(t)
+	snapshot := durableSnapshot(t, base, alphaDurableServer(strings.Repeat("a", 64)), betaDurableServer(strings.Repeat("a", 64)))
+	retired := make(map[string]bool, len(serverIDs))
+	for _, serverID := range serverIDs {
+		retired[serverID] = true
+	}
+	for index := range snapshot.Bindings {
+		if retired[snapshot.Bindings[index].ServerID] {
+			snapshot.Bindings[index].Retired = true
+		}
+	}
+	servers := snapshot.Servers[:0]
+	for _, server := range snapshot.Servers {
+		if !retired[server.ServerID] {
+			servers = append(servers, server)
+		}
+	}
+	snapshot.Servers = servers
+	tools := snapshot.Tools[:0]
+	for _, tool := range snapshot.Tools {
+		if !retired[tool.ServerID] {
+			tools = append(tools, tool)
+		}
+	}
+	snapshot.Tools = tools
+	embeddings := snapshot.Embeddings[:0]
+	for _, embedding := range snapshot.Embeddings {
+		serverID, _, _ := strings.Cut(embedding.ToolIdentity, "\x00")
+		if !retired[serverID] {
+			embeddings = append(embeddings, embedding)
+		}
+	}
+	snapshot.Embeddings = embeddings
+	if err := snapshot.Validate(); err != nil {
+		t.Fatalf("tombstoned durable snapshot: %v", err)
+	}
+	return snapshot
+}
+
+func reinstatementPromptSnapshot(t *testing.T, prompts ...storage.Prompt) *storage.PromptSnapshot {
+	t.Helper()
+	snapshot := &storage.PromptSnapshot{SchemaVersion: storage.PromptSchemaVersion, Prompts: prompts}
+	checksum, err := snapshot.ChecksumValue()
+	if err != nil {
+		t.Fatalf("prompt checksum: %v", err)
+	}
+	snapshot.Checksum = checksum
+	return snapshot
+}
+
+func reinstatementPrompt(serverID, rawName string) storage.Prompt {
+	return storage.Prompt{
+		ServerID: serverID, RawName: rawName,
+		PublicName: core.PublicName(serverID, rawName), Title: rawName,
+	}
+}
+
+func assertNoServerPrompts(t *testing.T, prompts []storage.Prompt, serverID string) {
+	t.Helper()
+	for _, prompt := range prompts {
+		if prompt.ServerID == serverID {
+			t.Fatalf("prompt row for %q survived: %+v", serverID, prompt)
+		}
+	}
+}
+
+func decodeServiceLogRecords(t *testing.T, output string) []map[string]any {
+	t.Helper()
+	decoder := json.NewDecoder(strings.NewReader(output))
+	var records []map[string]any
+	for {
+		var record map[string]any
+		err := decoder.Decode(&record)
+		if errors.Is(err, io.EOF) {
+			return records
+		}
+		if err != nil {
+			t.Fatalf("decode service log record: %v: %q", err, output)
+		}
+		records = append(records, record)
+	}
+}
+
+func TestStartupReinstatesConfiguredRetiredServerUnbound(t *testing.T) {
+	reloadEnv(t)
+	durable := tombstonedDurableSnapshot(t, "alpha")
+	h := newReloadHarness(t)
+	deps := h.deps()
+	loadedPrompts := reinstatementPromptSnapshot(t,
+		reinstatementPrompt("alpha", "old"),
+		reinstatementPrompt("beta", "keep"),
+	)
+	var persistedPrompts *storage.PromptSnapshot
+	var persistedSnapshot *storage.Snapshot
+	var persistOrder []string
+	deps.LoadPrompts = func() (*storage.PromptSnapshot, error) { return loadedPrompts, nil }
+	deps.PersistPrompts = func(prompts *storage.PromptSnapshot) error {
+		persistOrder = append(persistOrder, "prompts")
+		persistedPrompts = prompts
+		return nil
+	}
+	deps.Persist = func(snapshot *storage.Snapshot) error {
+		persistOrder = append(persistOrder, "snapshot")
+		persistedSnapshot = snapshot
+		return nil
+	}
+
+	assembly, err := h.runtime.AdmitStartup(parseReloadConfig(t, reloadTwoServers), deps, durable)
+	if err != nil {
+		t.Fatalf("AdmitStartup: %v", err)
+	}
+	if _, ok := assembly.Catalog().Binding(core.PublicName("alpha", "read")); ok {
+		t.Fatal("startup restored tools for the reinstated server")
+	}
+	if rows := snapshotTools(assembly.Snapshot(), "alpha"); len(rows) != 0 {
+		t.Fatalf("startup restored %d tool rows for alpha", len(rows))
+	}
+	for _, embedding := range assembly.Snapshot().Embeddings {
+		if strings.HasPrefix(embedding.ToolIdentity, "alpha\x00") {
+			t.Fatalf("startup restored alpha embedding %q", embedding.ToolIdentity)
+		}
+	}
+	health, ok := assembly.Health("alpha")
+	if !ok || health.Status != storage.StatusNone {
+		t.Fatalf("reinstated health = %+v, %v; want a non-success health row", health, ok)
+	}
+	assertNoServerPrompts(t, assembly.Prompts(), "alpha")
+	if persistedPrompts == nil {
+		t.Fatal("startup did not persist the purged prompt snapshot")
+	}
+	assertNoServerPrompts(t, persistedPrompts.Prompts, "alpha")
+	if persistedSnapshot == nil || len(snapshotTools(persistedSnapshot, "alpha")) != 0 {
+		t.Fatalf("persisted snapshot = %+v; want no alpha catalog", persistedSnapshot)
+	}
+	if !reflect.DeepEqual(persistOrder, []string{"prompts", "snapshot"}) {
+		t.Fatalf("persistence order = %v; want prompts before snapshot", persistOrder)
+	}
+}
+
+func TestStartupReinstatementDropsStalePromptRowsAcrossRestarts(t *testing.T) {
+	reloadEnv(t)
+	store, err := storage.Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	defer store.Close()
+	initialPrompts := reinstatementPromptSnapshot(t,
+		reinstatementPrompt("alpha", "stale"),
+		reinstatementPrompt("beta", "keep"),
+	)
+	if err := store.SavePrompts(initialPrompts); err != nil {
+		t.Fatalf("seed prompt rows: %v", err)
+	}
+	durable := tombstonedDurableSnapshot(t, "alpha")
+	cfg := parseReloadConfig(t, reloadTwoServers)
+
+	first := newReloadHarness(t)
+	firstDeps := first.deps()
+	firstDeps.LoadPrompts = store.LoadPrompts
+	firstDeps.PersistPrompts = store.SavePrompts
+	firstDeps.Persist = store.Save
+	firstAssembly, err := first.runtime.AdmitStartup(cfg, firstDeps, durable)
+	if err != nil {
+		t.Fatalf("first startup: %v", err)
+	}
+	assertNoServerPrompts(t, firstAssembly.Prompts(), "alpha")
+	storedPrompts, err := store.LoadPrompts()
+	if err != nil {
+		t.Fatalf("load prompts after first startup: %v", err)
+	}
+	assertNoServerPrompts(t, storedPrompts.Prompts, "alpha")
+	storedSnapshot, err := store.Load()
+	if err != nil {
+		t.Fatalf("load snapshot after first startup: %v", err)
+	}
+	if rows := snapshotTools(storedSnapshot, "alpha"); len(rows) != 0 {
+		t.Fatalf("stored snapshot kept %d alpha tools", len(rows))
+	}
+
+	second := newReloadHarness(t)
+	secondDeps := second.deps()
+	secondDeps.LoadPrompts = store.LoadPrompts
+	secondDeps.PersistPrompts = store.SavePrompts
+	secondDeps.Persist = store.Save
+	secondAssembly, err := second.runtime.AdmitStartup(cfg, secondDeps, storedSnapshot)
+	if err != nil {
+		t.Fatalf("second startup: %v", err)
+	}
+	assertNoServerPrompts(t, secondAssembly.Prompts(), "alpha")
+	storedPrompts, err = store.LoadPrompts()
+	if err != nil {
+		t.Fatalf("load prompts after second startup: %v", err)
+	}
+	assertNoServerPrompts(t, storedPrompts.Prompts, "alpha")
+	if rows := snapshotTools(secondAssembly.Snapshot(), "alpha"); len(rows) != 0 {
+		t.Fatalf("second startup served %d alpha tools", len(rows))
+	}
+}
+
+func TestStartupReinstatementEmitsExactlyOneWarnAtCommit(t *testing.T) {
+	reloadEnv(t)
+	h := newReloadHarness(t)
+	durable := tombstonedDurableSnapshot(t, "alpha", "beta")
+	var output bytes.Buffer
+	deps := h.deps()
+	deps.Logger = observe.NewLogger(&output, &output)
+	deps.LoadPrompts = func() (*storage.PromptSnapshot, error) {
+		return reinstatementPromptSnapshot(t), nil
+	}
+	deps.PersistPrompts = func(*storage.PromptSnapshot) error { return nil }
+	deps.Persist = func(*storage.Snapshot) error { return nil }
+
+	if _, err := h.runtime.AdmitStartup(parseReloadConfig(t, reloadTwoServers), deps, durable); err != nil {
+		t.Fatalf("AdmitStartup: %v", err)
+	}
+	records := decodeServiceLogRecords(t, output.String())
+	seen := make(map[string]bool)
+	for _, record := range records {
+		if record["event"] != "binding_reinstated" {
+			continue
+		}
+		serverID, _ := record["server"].(string)
+		if seen[serverID] {
+			t.Errorf("server %q was emitted more than once: %+v", serverID, record)
+		}
+		seen[serverID] = true
+		if record["level"] != "warn" || record["operation"] != "startup" || record["outcome"] != "degraded" {
+			t.Errorf("binding reinstated record = %+v; want warn/startup/degraded", record)
+		}
+	}
+	if len(seen) != 2 || !seen["alpha"] || !seen["beta"] {
+		t.Fatalf("reinstated server emissions = %v; want exactly alpha and beta", seen)
+	}
+
+	for _, missing := range []string{"Persist", "PersistPrompts", "LoadPrompts"} {
+		t.Run("missing "+missing, func(t *testing.T) {
+			h := newReloadHarness(t)
+			deps := h.deps()
+			deps.LoadPrompts = func() (*storage.PromptSnapshot, error) {
+				return reinstatementPromptSnapshot(t), nil
+			}
+			deps.PersistPrompts = func(*storage.PromptSnapshot) error { return nil }
+			deps.Persist = func(*storage.Snapshot) error { return nil }
+			var logOutput bytes.Buffer
+			deps.Logger = observe.NewLogger(&logOutput, &logOutput)
+			switch missing {
+			case "Persist":
+				deps.Persist = nil
+			case "PersistPrompts":
+				deps.PersistPrompts = nil
+			case "LoadPrompts":
+				deps.LoadPrompts = nil
+			}
+			if _, err := h.runtime.AdmitStartup(parseReloadConfig(t, reloadTwoServers), deps, tombstonedDurableSnapshot(t, "alpha")); err == nil {
+				t.Fatal("startup without a required dependency succeeded")
+			}
+			if h.runtime.Current() != nil {
+				t.Fatal("failed reinstatement published a generation")
+			}
+			for _, record := range decodeServiceLogRecords(t, logOutput.String()) {
+				if record["event"] == "binding_reinstated" {
+					t.Fatalf("failed reinstatement emitted a commit record: %+v", record)
+				}
+			}
+		})
+	}
+
+	t.Run("only no snapshot is absorbed", func(t *testing.T) {
+		h := newReloadHarness(t)
+		deps := h.deps()
+		deps.LoadPrompts = func() (*storage.PromptSnapshot, error) { return nil, storage.ErrNoSnapshot }
+		deps.PersistPrompts = func(*storage.PromptSnapshot) error { return nil }
+		deps.Persist = func(*storage.Snapshot) error { return nil }
+		if _, err := h.runtime.AdmitStartup(parseReloadConfig(t, reloadTwoServers), deps, tombstonedDurableSnapshot(t, "alpha")); err != nil {
+			t.Fatalf("startup with no prompt snapshot: %v", err)
+		}
+	})
+
+	t.Run("prompt load error fails closed", func(t *testing.T) {
+		h := newReloadHarness(t)
+		var logOutput bytes.Buffer
+		deps := h.deps()
+		deps.Logger = observe.NewLogger(&logOutput, &logOutput)
+		deps.LoadPrompts = func() (*storage.PromptSnapshot, error) { return nil, errors.New("load failed") }
+		deps.PersistPrompts = func(*storage.PromptSnapshot) error { return nil }
+		deps.Persist = func(*storage.Snapshot) error { return nil }
+		if _, err := h.runtime.AdmitStartup(parseReloadConfig(t, reloadTwoServers), deps, tombstonedDurableSnapshot(t, "alpha")); err == nil {
+			t.Fatal("startup with an unreadable prompt snapshot succeeded")
+		}
+		if h.runtime.Current() != nil {
+			t.Fatal("prompt load failure published a generation")
+		}
+		records := decodeServiceLogRecords(t, logOutput.String())
+		if len(records) != 1 || records[0]["operation"] != "prompt_load" {
+			t.Fatalf("prompt load warnings = %+v; want exactly one prompt_load warning", records)
+		}
+	})
+
+	t.Run("prompt persist error warns once and fails closed", func(t *testing.T) {
+		h := newReloadHarness(t)
+		var logOutput bytes.Buffer
+		deps := h.deps()
+		deps.Logger = observe.NewLogger(&logOutput, &logOutput)
+		deps.LoadPrompts = func() (*storage.PromptSnapshot, error) {
+			return reinstatementPromptSnapshot(t), nil
+		}
+		deps.PersistPrompts = func(*storage.PromptSnapshot) error { return errors.New("persist failed") }
+		snapshotWrites := 0
+		deps.Persist = func(*storage.Snapshot) error {
+			snapshotWrites++
+			return nil
+		}
+		if _, err := h.runtime.AdmitStartup(parseReloadConfig(t, reloadTwoServers), deps, tombstonedDurableSnapshot(t, "alpha")); err == nil {
+			t.Fatal("startup with a failed prompt persist succeeded")
+		}
+		if h.runtime.Current() != nil || snapshotWrites != 0 {
+			t.Fatalf("failed prompt persistence published state: current=%v snapshot writes=%d", h.runtime.Current(), snapshotWrites)
+		}
+		records := decodeServiceLogRecords(t, logOutput.String())
+		if len(records) != 1 || records[0]["event"] != "internal_warning" || records[0]["operation"] != "prompt_persist" {
+			t.Fatalf("prompt persist warnings = %+v; want exactly one prompt_persist warning", records)
+		}
+	})
+}
+
+func TestStartupReinstatementPostRenamePersistFailure(t *testing.T) {
+	reloadEnv(t)
+	store, err := storage.Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	defer store.Close()
+	if err := store.SavePrompts(reinstatementPromptSnapshot(t, reinstatementPrompt("alpha", "stale"))); err != nil {
+		t.Fatalf("seed prompt rows: %v", err)
+	}
+	var output bytes.Buffer
+	h := newReloadHarness(t)
+	deps := h.deps()
+	deps.Logger = observe.NewLogger(&output, &output)
+	deps.LoadPrompts = store.LoadPrompts
+	deps.PersistPrompts = store.SavePrompts
+	deps.Persist = func(snapshot *storage.Snapshot) error {
+		if err := store.Save(snapshot); err != nil {
+			return err
+		}
+		return errors.New("post-save uncertainty")
+	}
+	durable := tombstonedDurableSnapshot(t, "alpha")
+	if _, err := h.runtime.AdmitStartup(parseReloadConfig(t, reloadTwoServers), deps, durable); err == nil {
+		t.Fatal("post-save error was accepted")
+	}
+	if h.runtime.Current() != nil {
+		t.Fatal("post-save error published a generation")
+	}
+	onDisk, err := store.Load()
+	if err != nil {
+		t.Fatalf("load snapshot after post-save error: %v", err)
+	}
+	var alphaBindingFound bool
+	for _, binding := range onDisk.Bindings {
+		if binding.ServerID != "alpha" {
+			continue
+		}
+		alphaBindingFound = true
+		if binding.Retired {
+			t.Fatal("real Store.Save did not persist the active binding")
+		}
+	}
+	if !alphaBindingFound {
+		t.Fatal("real Store.Save did not persist the alpha binding")
+	}
+	storedPrompts, err := store.LoadPrompts()
+	if err != nil {
+		t.Fatalf("load prompts after post-save error: %v", err)
+	}
+	assertNoServerPrompts(t, storedPrompts.Prompts, "alpha")
+	restartOutput := &bytes.Buffer{}
+	restart := newReloadHarness(t)
+	restartDeps := restart.deps()
+	restartDeps.Logger = observe.NewLogger(restartOutput, restartOutput)
+	restartDeps.Persist = func(*storage.Snapshot) error {
+		return errors.New("restart admission failed")
+	}
+	_, restartErr := restart.runtime.AdmitStartup(parseReloadConfig(t, reloadTwoServers), restartDeps, onDisk)
+	if restartErr == nil || restartErr.Error() != "service: startup persist: restart admission failed" {
+		t.Fatalf("restart admission error = %v; want persisted admission error", restartErr)
+	}
+	var restartReinstated int
+	for _, record := range decodeServiceLogRecords(t, restartOutput.String()) {
+		if record["event"] == "binding_reinstated" {
+			restartReinstated++
+		}
+	}
+	if restartReinstated != 0 {
+		t.Fatalf("restart emitted %d binding_reinstated records; want 0", restartReinstated)
+	}
+}
+
+func TestStartupPreservesPromptsWithoutReinstatement(t *testing.T) {
+	reloadEnv(t)
+	h := newReloadHarness(t)
+	prompts := reinstatementPromptSnapshot(t, reinstatementPrompt("alpha", "keep"))
+	deps := h.deps()
+	deps.LoadPrompts = func() (*storage.PromptSnapshot, error) { return prompts, nil }
+	deps.PersistPrompts = func(*storage.PromptSnapshot) error {
+		t.Fatal("ordinary startup persisted prompts")
+		return nil
+	}
+	assembly, err := h.runtime.AdmitStartup(parseReloadConfig(t, reloadTwoServers), deps, publishedSnapshot(t))
+	if err != nil {
+		t.Fatalf("AdmitStartup: %v", err)
+	}
+	got := assembly.Prompts()
+	if len(got) != 1 || got[0].ServerID != "alpha" || got[0].RawName != "keep" {
+		t.Fatalf("ordinary startup prompts = %+v; want the existing alpha prompt", got)
+	}
+}
+
+func TestReloadReinstatesDroppedThenReaddedServer(t *testing.T) {
+	reloadEnv(t)
+	h := newReloadHarness(t)
+	initialPrompts := reinstatementPromptSnapshot(t,
+		reinstatementPrompt("alpha", "old"),
+		reinstatementPrompt("beta", "keep"),
+	)
+	var promptFile []storage.Prompt
+	deps := h.deps()
+	deps.LoadPrompts = func() (*storage.PromptSnapshot, error) { return initialPrompts, nil }
+	if _, err := h.runtime.AdmitStartup(parseReloadConfig(t, reloadTwoServers), deps, publishedSnapshot(t)); err != nil {
+		t.Fatalf("initial startup: %v", err)
+	}
+
+	promptPersistFails := true
+	var persistedPromptSnapshot *storage.PromptSnapshot
+	deps.PersistPrompts = func(prompts *storage.PromptSnapshot) error {
+		if promptPersistFails {
+			return errors.New("prompt persist failed")
+		}
+		persistedPromptSnapshot = prompts
+		promptFile = append([]storage.Prompt(nil), prompts.Prompts...)
+		return nil
+	}
+	betaOnly := `schema_version: 1
+servers:
+  - id: beta
+    endpoint: https://beta.invalid/mcp
+    credentials:
+      bearer: {env: RELOAD_BETA_SECRET}
+client_auth:
+  bearer_tokens:
+    - {env: RELOAD_CLIENT_TOKEN}
+pins: []
+`
+	if _, err := h.runtime.Reload(parseReloadConfig(t, betaOnly), deps); err != nil {
+		t.Fatalf("drop alpha: %v", err)
+	}
+	dropped := h.runtime.Current()
+	if dropped == nil {
+		t.Fatal("drop reload removed the accepted generation")
+	}
+	var retainedDroppedPrompt bool
+	for _, prompt := range dropped.Prompts() {
+		if prompt.ServerID == "alpha" {
+			retainedDroppedPrompt = true
+			break
+		}
+	}
+	if !retainedDroppedPrompt {
+		t.Fatal("failed drop prompt persistence did not restore alpha's previous prompt rows")
+	}
+	var logOutput bytes.Buffer
+	deps.Logger = observe.NewLogger(&logOutput, &logOutput)
+	beforeFailedAdd := len(h.persisted())
+	if _, err := h.runtime.Reload(parseReloadConfig(t, reloadTwoServers), deps); err == nil {
+		t.Fatal("re-add with failed prompt persistence succeeded")
+	}
+	if len(h.persisted()) != beforeFailedAdd {
+		t.Fatal("snapshot persistence ran after prompt persistence failed")
+	}
+	current := h.runtime.Current()
+	if current == nil {
+		t.Fatal("failed re-add removed the previously accepted generation")
+	}
+	if _, exists := current.Server("alpha"); exists {
+		t.Fatal("failed re-add published alpha")
+	}
+	var retainedFailedReaddPrompt bool
+	for _, prompt := range current.Prompts() {
+		if prompt.ServerID == "alpha" {
+			retainedFailedReaddPrompt = true
+			break
+		}
+	}
+	if !retainedFailedReaddPrompt {
+		t.Fatal("failed re-add did not preserve the accepted generation's previous prompt rows")
+	}
+	promptPersistFails = false
+	readded, err := h.runtime.Reload(parseReloadConfig(t, reloadTwoServers), deps)
+	if err != nil {
+		t.Fatalf("retry re-add: %v", err)
+	}
+	assertNoServerPrompts(t, readded.Prompts(), "alpha")
+	assertNoServerPrompts(t, promptFile, "alpha")
+	if persistedPromptSnapshot == nil {
+		t.Fatal("successful re-add did not persist a prompt snapshot")
+	}
+	assertNoServerPrompts(t, persistedPromptSnapshot.Prompts, "alpha")
+	records := decodeServiceLogRecords(t, logOutput.String())
+	var promptWarnings, reinstatedWarnings int
+	for _, record := range records {
+		switch record["event"] {
+		case "internal_warning":
+			if record["operation"] == "prompt_persist" {
+				promptWarnings++
+			}
+		case "binding_reinstated":
+			if record["server"] == "alpha" && record["operation"] == "reload" && record["level"] == "warn" && record["outcome"] == "degraded" {
+				reinstatedWarnings++
+			}
+		}
+	}
+	if promptWarnings != 1 || reinstatedWarnings != 1 {
+		t.Fatalf("warning counts prompt_persist=%d binding_reinstated=%d; want one each: %+v", promptWarnings, reinstatedWarnings, records)
+	}
+}
+func TestRefreshNeverEmitsReinstatement(t *testing.T) {
+	reloadEnv(t)
+	h := newReloadHarness(t)
+	durable := tombstonedDurableSnapshot(t, "alpha")
+
+	startupConfig := parseReloadConfig(t, reloadTwoServers)
+	for index := range startupConfig.Servers {
+		if startupConfig.Servers[index].ID == "alpha" {
+			startupConfig.Servers = append(startupConfig.Servers[:index], startupConfig.Servers[index+1:]...)
+			break
+		}
+	}
+	if _, err := h.runtime.AdmitStartup(startupConfig, h.deps(), durable); err != nil {
+		t.Fatalf("initial startup: %v", err)
+	}
+
+	var output bytes.Buffer
+	deps := refreshDeps(h)
+	deps.Logger = observe.NewLogger(&output, &output)
+	deps.PersistPrompts = func(*storage.PromptSnapshot) error { return nil }
+	_, err := h.runtime.Refresh(parseReloadConfig(t, reloadTwoServers), deps)
+	const want = `service: refresh reinstatement invariant violated for server "alpha"`
+	if err == nil || err.Error() != want {
+		t.Fatalf("refresh error = %v; want %q", err, want)
+	}
+	var reinstated int
+	for _, record := range decodeServiceLogRecords(t, output.String()) {
+		if record["event"] == "binding_reinstated" {
+			reinstated++
+		}
+	}
+	if reinstated != 0 {
+		t.Fatalf("refresh emitted %d binding_reinstated records; want 0", reinstated)
 	}
 }

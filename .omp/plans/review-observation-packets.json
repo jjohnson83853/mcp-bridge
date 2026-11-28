@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "packets": [
+    {
+      "candidateId": "binding-reinstatement-spec-r17",
+      "revision": "r17",
+      "source": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/review-cr-r17.txt",
+        "sha256": "4175b19bb0fa53592e03743a12ecdba185bbea7d2588392b26873e6d33e0b621"
+      },
+      "packet": {
+        "role": "code-reviewer",
+        "reviewerId": "code-reviewer",
+        "candidateId": "binding-reinstatement-spec-r17",
+        "revision": "r17",
+        "invocationId": "2333b74d-e8dc-4738-baca-dcfe3d7866d8",
+        "authorIds": [
+          "planner"
+        ],
+        "inputs": [
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/spec.md",
+            "sha256": "97a416df9df4d1913292555ac8fe9636ecbea06d4524c6f6d01dce4b61d8bb40"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/reconcile.go",
+            "sha256": "31bd45e827f0d99fb3c23cc10ead6470c0c57ded0cd9450b6fd7707fd0b38194"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/reconcile_test.go",
+            "sha256": "385bdb885037ad5b6de57c752c384b5ef5008a61cf772402e459806c32a0aae0"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/reload.go",
+            "sha256": "313a30b017bb1f5f120d8ed7b6b43a3c93b81e20a7b7e1ff3f75793d87a11a5d"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/service/durable_test.go",
+            "sha256": "7d93ef7b460a110ef33d864da24d06641dcb735c418a441eaa8566e95c505825"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+            "sha256": "fb3860c121846f2c0c0f9e0c8395f6bedd61f4ba9ca894754ad5b460832f215c"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
+            "sha256": "99cf687373c0c6251aa64361f9f5c9c8e7ab07bd9b38497a6cb510c64a0dfde0"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+            "sha256": "df8b3a6a0f3cd9606dd3dc23a51197163bbc78f2338d09331a770f9ff377f1dc"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/logging_contract_test.go",
+            "sha256": "55d8398fa1401e1a29bc6311209b7ea82e92f4f8c9143a6b6da86c1814058053"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/CHANGELOG.md",
+            "sha256": "4ede091062752a1ecfd6b1991331ada96ddea2c3dba3dedbd30fdd85aed07ecc"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/review-cr-r16.txt",
+            "sha256": "6ca4fbb25faffa44b90135bb7994c6b928ec7f436bfeb93afeb13059ae101280"
+          },
+          {
+            "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/owner-decision-r17.json",
+            "sha256": "c79685adfec3ebe23a309229195a5ff2695401dd07926524e5a37d282cf4591b"
+          }
+        ],
+        "dispatches": [
+          {
+            "name": "RemedyAR17CodeReview",
+            "taskId": "CR1",
+            "agent": "code-reviewer",
+            "effects": {
+              "kind": "read",
+              "paths": [
+                "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/spec.md"
+              ]
+            },
+            "targetCandidateId": "binding-reinstatement-spec-r17",
+            "targetRevision": "r17",
+            "reviewerId": "code-reviewer",
+            "taskSha256": "2685a3f2d6bc2aa155f425e71902114c5e60207bbf908e1dc24a3df1f5387393",
+            "instructionsSha256": "2685a3f2d6bc2aa155f425e71902114c5e60207bbf908e1dc24a3df1f5387393",
+            "requestSha256": "293a2c1bc36a1073363710d00e99b842d7422f16f5509bba3d6d5798d9179b98"
+          },
+          {
+            "name": "RemedyAR17Critique",
+            "taskId": "CT1",
+            "agent": "critic",
+            "effects": {
+              "kind": "read",
+              "paths": [
+                "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/spec.md"
+              ]
+            },
+            "targetCandidateId": "binding-reinstatement-spec-r17",
+            "targetRevision": "r17",
+            "reviewerId": "critic",
+            "taskSha256": "0fe391c5d66b8c5d8d35c17f5e14acf5c65f1339e3c3fc3f8f21d4aec392e97e",
+            "instructionsSha256": "0fe391c5d66b8c5d8d35c17f5e14acf5c65f1339e3c3fc3f8f21d4aec392e97e",
+            "requestSha256": "cb977d24f332bcafe25b003095f4e236b225a42ea008d1c9a6b058c5aa05f545"
+          }
+        ],
+        "output": "## Code Review Summary\n\nMode: specification (implementation-readiness); pass: initial for r17 (content-identical r16 rebind). Candidate `.omp/artifacts/binding-reinstatement/spec.md`, r17, HEAD `fa832293`, read-only review; no hash recomputation or test execution available.\n\n**Files Reviewed:** 22\n**Total Issues:** 4 (all LOW, carried from round 16)\n\n### By Severity\n- CRITICAL 0 / HIGH 0 / MEDIUM 0 / LOW 4\n\n### Verified (W09E)\n- **Anchors:** reconcile.go :13, :35-40, :46-50, :80-99, :111-149, :164-167; snapshot.go :102, :179-190, :225, :313-315, :330-336; snapshot_v1.go :31,:34, :97-130, :135-153; reload.go build sites :486/:509, :536-552, :584-588, :601-604, :674, :718-750, :791-796, :805-817; loop.go :157-160; serve.go :276-283; startup_failure.go :28, :108-117; log.go :15,:20, :176-179, :282-355; docs :76, :549, :562-563. All say what the spec claims (stale ranges below).\n- **R9→AC22-26→T5:** falsifiable; ADR2 is retirement/config-state based, not fingerprint-diff; equal-fp incident shape pinned in AC22 and AC24, distinguishing the wrong implementation. Each AC names a test and exact command; AC23 is correctly a preservation guard.\n- **Lifecycle:** one emission site, inside `commitMu` after `accept`/`published`; per-server; no double-emit (post-commit base is non-retired); refresh cannot reinstate (candidate == published config; fresh-client refusal reload.go:584-588), so the retained `in.mode != buildRefresh` condition is inert.\n- **Purge:** retired bindings structurally cannot carry tools/embeddings/health rows (Validate:313-315, :334); startup restore refuses retired (:817); prompt purge in both modes (ADR9a) with fail-closed pre-snapshot persist (ADR9b); residue/uncertainty classes match real `Store.Save` (:288-306).\n- **Authority:** T5's 9 paths equal the owner delta write set; no missing write path; the r17 rebind decision exists (`owner-decision-r17.json`).\n- **Sentinel:** only reconcile.go:13,:81 and reconcile_test.go:187-188 (both granted); no doc refs.\n- **§8 rollback:** no schema/JSON change; the non-retired candidate validates under the old reader; pre-rename failure resumes the original refusal.\n\n### Issues\n[LOW][verifiability] CR17-1 (retained)\nAnchor: spec.md:88-89 — \"ELEVEN deliverables: NINE behavioral-RED\" but 12 tests/10 RED are listed. Fix: \"TWELVE: TEN RED + TWO guards\".\n\n[LOW][anchor-accuracy] CR17-2 (retained)\nAnchor: internal/storage/store.go — cited `Load :193-211` is :199-217; `Save :213-238` is :219-245. Publish anchors are exact. Fix: correct ranges.\n\n[LOW][verifiability] CR17-3 (retained)\nAnchor: spec.md:76 / durable_test.go:1 — AC25(b) asserts unexported `pendingReinstatement` is empty from `package service_test`; \"exactly one rejection signal\" is undefined. Fix: assert successful restart + zero `binding_reinstated` records; define the signal as the returned admission error.\n\n[LOW][observability] CR17-4 (retained)\nAnchor: spec.md:108 — \"repeated warn = tombstone re-created while configured\" is unreachable after the rewrite. Fix: describe it as a persisted-retired-binding signal after a failed/partial admission.\n\n### Open Questions\n- ADR8 retains `in.mode != buildRefresh` while T5 says \"NO refresh-mode guard\" (spec.md:41 vs :88). Confirm these mean different things (emission condition vs the deleted ADR16 build-failure guard); behaviorally inert either way.\n- `CHANGELOG.md` is granted with no AC pinning its entry; §1/§10 still say \"r16\" while bound as r17. Editorial.\n\n### Positive Observations\nHonest two-class durability split matching the real save protocol; disclosed untestable not-survived branch rather than a faked fixture; explicit per-server and two-server emission oracles; fixture discipline (capturing Logger, explicit dependency overrides) closes the vacuous-oracle risk; unconfigured-tombstone semantics preserved and guarded.\n\n### Recommendation\nAPPROVE"
+      }
+    }
+  ]
+}

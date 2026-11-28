@@ -1,0 +1,47 @@
+{
+  "candidateId": "binding-reinstatement-spec-r4",
+  "revision": "r4",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR4-H1",
+      "class": "contract/repair-closure",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR4-M1",
+      "class": "observability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR4-M2",
+      "class": "observability/authority",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR4-M3",
+      "class": "lifecycle",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR4-L1",
+      "class": "atomicity",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR4-L2",
+      "class": "anchor",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR4-L3",
+      "class": "consistency",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r4.txt",
+  "dispatchName": "RemedyAR4CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-27T21:42:58Z"
+}

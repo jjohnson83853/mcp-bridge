@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "feature": "config-admission-resilience",
+  "origin": "owner-answer-in-session",
+  "ownerInstruction": "1, and keep the guard",
+  "decision": "reopen-r6-F1-authorize-refresh-emission-guard-and-round-21",
+  "revision": "r21",
+  "explicit": true,
+  "automatic": false,
+  "timedOut": false,
+  "recordedAt": "2026-11-28T01:21:29Z",
+  "scope": "Reopens owner ruling r6/F1: authorizes restoring the `in.mode != buildRefresh` emission guard plus the refresh no-emission regression test, and authorizes A1-r21 to align AC22/AC25/AC26 with the asserted oracles and fix ADR17 early-return closure. Authorizes one CodeReviewer round (21 of 21) and the eligible Critic, then engineer attempt 3 (guard + missing assertions + serve.go cancel/join/close) and delivery. Envelope stays 11 paths; AC22-AC26 ceiling unchanged except the assertions now actually asserted.",
+  "rulings": [
+    {
+      "id": "S15-budget",
+      "value": 21
+    },
+    {
+      "id": "r6/F1",
+      "value": "reopened: refresh emission guard authorized",
+      "note": "Owner answer \"1, and keep the guard\"."
+    }
+  ]
+}

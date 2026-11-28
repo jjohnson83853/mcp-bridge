@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "feature": "config-admission-resilience",
+  "origin": "owner-answer-in-session",
+  "ownerInstruction": "Option 1: remove the unauthorized scope and authorize one more review round",
+  "decision": "extend-review-budget-to-16-and-remove-unauthorized-scope",
+  "revision": "r16",
+  "explicit": true,
+  "automatic": false,
+  "timedOut": false,
+  "recordedAt": "2026-11-27T23:51:45Z",
+  "scope": "Authorizes A1-r16 only: delete ADR16, AC25(h) and AC27 (r6/F1 ruling stands; no refresh guard, no new acceptance criterion), fold the docs :76 assertion into AC25, fix AC25(e1) sequencing, add a two-retired-server emission fixture, and require a capturing Logger with explicit dependency clearing. Authorizes one further CodeReviewer round (16 of 16) and the subsequent eligible Critic. No implementation is granted by this record until the review pair passes; the existing 9-path envelope and owner acceptance delta AC22-AC26 remain the ceiling.",
+  "rulings": [
+    {
+      "id": "S15-budget",
+      "value": 16,
+      "note": "Adds one round to the extension to 15."
+    },
+    {
+      "id": "r6/F1",
+      "value": "stands",
+      "note": "No refresh guard, no new AC; ADR16/AC25(h)/AC27 must be removed."
+    }
+  ]
+}

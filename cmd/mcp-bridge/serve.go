@@ -135,7 +135,15 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 	if err != nil {
 		return stateDirectoryFailure(settings.StorageDirectory)
 	}
-	defer store.Close()
+	storeClosed := false
+	closeStore := func() {
+		if storeClosed {
+			return
+		}
+		storeClosed = true
+		_ = store.Close()
+	}
+	defer closeStore()
 
 	if quarantineEnabled(os.Getenv("MCP_SNAPSHOT_QUARANTINE")) {
 		result, recoveryErr := store.RecoverRejected()
@@ -162,10 +170,10 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 		return embeddingProviderFailure()
 	}
 	surface, err := service.NewToolSurface(runtime, service.ToolSurfaceConfig{
-		Search:   searchSettings(settings.Search),
-		Provider: provider,
-		Model:    model,
-		PageSize:       pageSize,
+		Search:          searchSettings(settings.Search),
+		Provider:        provider,
+		Model:           model,
+		PageSize:        pageSize,
 		RetainedResults: func() config.RetainedResultBounds { return liveRetainedResultBounds(holder) },
 		Metrics:         metrics,
 		Logger:          logger,
@@ -340,13 +348,14 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 	}
 
 	var failure error
-	drained := false
+	loopJoined := false
 	select {
 	case failure = <-loopErr:
-		drained = true
+		loopJoined = true
 	case failure = <-listenerErr:
 	case <-ctx.Done():
 	}
+	cancel()
 
 	// Drain the listeners and the loop concurrently under one budget: an open
 	// bridged stream can keep Shutdown waiting, and serializing the two would
@@ -372,19 +381,20 @@ func serveWithToolPageSize(ctx context.Context, path string, stdout, stderr io.W
 		}
 		servers.Wait()
 	}()
-	if !drained {
-		draining.Add(1)
-		go func() {
-			defer draining.Done()
-			select {
-			case err := <-loopErr:
-				failure = firstError(failure, err)
-			case <-drainCtx.Done():
-				failure = firstError(failure, carryStartupStage(errors.New("the catalog loop did not drain"), startupStageCatalogLoopDrain, "", ""))
-			}
-		}()
+	if !loopJoined {
+		select {
+		case err := <-loopErr:
+			failure = firstError(failure, err)
+			loopJoined = true
+		case <-drainCtx.Done():
+			failure = firstError(failure, carryStartupStage(errors.New("the catalog loop did not drain"), startupStageCatalogLoopDrain, "", ""))
+		}
 	}
 	draining.Wait()
+	if !loopJoined {
+		failure = firstError(failure, <-loopErr)
+	}
+	closeStore()
 	if failure == nil {
 		return nil
 	}
@@ -424,6 +434,7 @@ func publishAcceptedAssembly(
 	publishObserver(assembly)
 	return err
 }
+
 // liveRetainedResultBounds mirrors configHolder.bounds for the retained-result
 // ceilings: the published generation once one exists, the staged candidate
 // before the first admission. It lives here because cmd/mcp-bridge/serve.go is

@@ -73,7 +73,8 @@ object.
 | `snapshot_retention_failed` | `startup` | `warn` / `failure` |
 | `prompt_publication_failed` | `publish` | `warn` / `failure` |
 | `reload_rejected` | `reload` | `warn` / `failure` |
-| `internal_warning` | `reload` | `warn` / `failure` |
+| `internal_warning` | `reload`, `prompt_load`, `prompt_persist` | `warn` / `failure` or `degraded` |
+| `binding_reinstated` | `startup`, `reload` | `warn` / `degraded` |
 | `upstream_ephemeral_handshake` | `handshake` | `info` / `success` |
 | `config_reload_applied` | `reload` | `info` / `success` |
 | `catalog_refresh_started` | `refresh` | `info` / `unknown` |
@@ -547,6 +548,8 @@ invented source positions.
 | `reload_rejected` | `warn` | `reload` | `failure` | `internal_error` | `internal` | `false` | `inspect the bridge logs and configuration` | `configuration reload rejected` |
 | `reload_publication_failed` | `warn` | `publish` | `failure` | `internal_error` | `internal` | `false` | `inspect the bridge logs and configuration` | `configuration reload publication failed` |
 | `internal_warning` | `warn` | `reload` | `failure` | `internal_error` | `internal` | `false` | `inspect the bridge logs and configuration` | `bridge encountered an internal warning` |
+| `internal_warning` | `warn` | `prompt_load` or `prompt_persist` | `degraded` | `internal_error` | `internal` | `false` | `inspect the bridge logs and configuration` | `bridge encountered an internal warning` |
+| `binding_reinstated` | `warn` | `startup`, `reload` | `degraded` | — | — | — | — | `configured server binding reinstated` |
 
 For `startup_snapshot_rejected`, `failure_reason` is the finite union of the
 existing upstream-discovery reasons and `corrupt_json`, `checksum_mismatch`,
@@ -559,8 +562,11 @@ All these messages are fixed event messages; raw error strings are dropped. A
 publication failure after accepting a reload has exactly one emitter,
 `operatorLog`; startup publication failure is a separate `startup_publication_failed`
 record and is emitted once. No legacy fallback record is emitted. An
-`internal_warning` indicates an unclassified lifecycle producer and is a defect
-to report against this table, not a normal operator action.
+`internal_warning` is reserved for failures without a dedicated lifecycle event.
+Its `prompt_load` and `prompt_persist` variants are classified above; any other
+producer is a defect to report against this table, not a normal operator action.
+`binding_reinstated` has no error object; its `server` field identifies the
+reinstated binding.
 
 ### AD7 validation-success record
 

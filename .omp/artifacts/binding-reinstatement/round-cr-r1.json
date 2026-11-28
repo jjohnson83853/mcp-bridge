@@ -1,0 +1,57 @@
+{
+  "candidateId": "binding-reinstatement-spec-r1d",
+  "revision": "r1",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR-R1-01",
+      "class": "contract/completeness",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR-R1-02",
+      "class": "authority",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR-R1-03",
+      "class": "lifecycle/observability",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR-R1-04",
+      "class": "purge/repair-closure",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR-R1-05",
+      "class": "release/rollback",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR-R1-06",
+      "class": "falsifiability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR-R1-07",
+      "class": "contract-test",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR-R1-08",
+      "class": "anchors",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR-R1-09",
+      "class": "lifecycle/double-emit",
+      "severity": "MEDIUM"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r1.txt",
+  "dispatchName": "RemedyASpecReviewA1",
+  "format": "installed",
+  "recordedAt": "2026-11-27T21:16:08Z"
+}

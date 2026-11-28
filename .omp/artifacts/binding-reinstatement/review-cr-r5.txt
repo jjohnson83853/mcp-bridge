@@ -1,0 +1,38 @@
+## Code Review Summary
+
+**Mode/pass:** specification, initial. **Candidate:** `.omp/artifacts/binding-reinstatement/spec.md`, sha256 `4a7b304e…6442`, self-declared r5/id `binding-reinstatement-spec-r5`; HEAD `fa832293`. The prompt's "r2 (r1)" conflicts with the artifact (admission-metadata limit).
+**Files Reviewed:** 12 (9 T5 paths + cited tests/docs).
+
+### By Severity
+CRITICAL 0 · HIGH 1 · MEDIUM 2 · LOW 2
+
+### Issues
+**F1 [HIGH][lifecycle/verifiability][conf HIGH] ADR11 has no reachable oracle; AC25(h)/T5 guard test is infeasible in the 9 granted files.**
+Anchors: spec §3 ADR11, §5 AC25(h), §6; `internal/service/reload.go:588-592,674`; `internal/service/durable_test.go:1` (`package service_test`).
+Counterexample: a `Refresh` candidate re-adding a dropped server fails at `reload.go:591` ("refresh cannot adopt a new client") before `Reconcile` (`:674`) and the guard; it passes pre/post identically and never executes ADR11, so "passes pre-implementation via Reconcile's error" is false. No public path publishes a retired binding for a *configured* server (pre-fix it errors; post-fix it reinstates), so the guard base is unreachable and an external test cannot construct an `Assembly`.
+Fix: grant an in-package service test (new file) driving `build` with a violating `Assembly`, or drop ADR11/AC25(h) and assert the existing client-adoption rejection (zero records).
+
+**F2 [MEDIUM][durability/data-loss][conf HIGH] ADR9(b) fail-closed is asymmetric; nil `LoadPrompts` is unguarded.**
+Anchors: spec ADR9/ADR10; `reload.go:538-541`; ADR9(b).
+Counterexample: startup reinstatement with `deps.LoadPrompts == nil` (the `newReloadHarness.deps()` shape) leaves `next.prompts` empty; ADR9(b) persists an empty `PromptSnapshot`, deleting durable prompt rows for all servers while committing a non-retired binding.
+Fix: fail closed on nil `LoadPrompts` for a non-empty reinstatement set; pin as an AC25 case.
+
+**F3 [MEDIUM][contract/oracle][conf HIGH] AC26 can pass without testing schema-1 decode.**
+Anchors: spec §5 AC26, §3 `snapshot_v1.go:31,34`; `store.go:199-209`.
+Counterexample: setting `previous.SchemaVersion = 1` in-memory (`reconcile_test.go`, `package storage_test`) satisfies all AC22 assertions without `decodeSnapshotV1`/checksum; "reinstates identically post-decode" stays untested, and no testdata file is granted.
+Fix: require real v1 bytes (retired, no server/tool rows, valid v1 checksum) built in-test and loaded via `Store.Load`, or restate AC26 as legacy-input acceptance and defer decode to `snapshot_v1_compat_test`.
+
+**F4 [LOW][docs][conf HIGH] `reconcile.go:35-40` still says a tombstoned server "never rebinds"** — false for configured retired bindings after the rewrite; update it (and `reconcile_test.go:175`).
+
+**F5 [LOW][anchors][conf HIGH] ADR12 cites `loop.go:157-160`; the `AdmitStartup` call/return is `:161-165`.** §3's ":584-586 guard" is the adoption test; the refresh rejection is `:588-592`.
+
+### Open Questions
+- R9's absolute "on every later start" is unenforceable if `prompts.json` is externally reintroduced after commit (non-retired binding ⇒ empty reinstatement set ⇒ ADR10 unarmed); r5 withdrew the hand-repair claim but did not narrow R9. Confirm the trust model or scope R9. [confidence MEDIUM]
+- One `eventOperations` pin (`startup`) vs runtime `reload` (`logging_contract_test.go:739-750`) is a deliberate "canonical" relaxation; confirm the contract accepts two emitters under one pin. [confidence MEDIUM]
+
+### Positive Observations
+- Anchors largely exact (`reconcile.go:13,80-81,93-99,164-167`; `reload.go:538,553,601-602,674,718,720,745,747`; `snapshot.go:179,225,314`; `store.go:84,112`; `log.go:176,282`; pin `logging_contract_test.go:777-778`).
+- Sentinel audit complete (only `reconcile.go:13,80-81`, `reconcile_test.go:187-188`); build call sites verified (`refresh.go:57`, `reload.go:486,509`); `validateAcceptance` (`projection.go:132-145`) + `commitMu` prevents double-commit/emission; owner grant matches the 9 paths and AC22-AC26; §8 rollback holds for the snapshot.
+
+### Recommendation
+REQUEST CHANGES

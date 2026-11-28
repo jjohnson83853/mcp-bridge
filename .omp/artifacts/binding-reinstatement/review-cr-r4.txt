@@ -1,0 +1,30 @@
+## Code Review Summary
+Mode: specification (implementation readiness), pass: initial. Candidate: `.omp/artifacts/binding-reinstatement/spec.md` r4 (dispatch id binding-reinstatement-spec-r4; prompt's "r2/r1" is stale). Files reviewed: spec + cited source/doc inputs. Total issues: 7 (1 HIGH, 3 MEDIUM, 3 LOW).
+
+### Issues
+[HIGH][contract/repair-closure] ADR10 contradicts R9's absolute prompt-durability clause; retired-era prompts can resurrect.
+Anchor: spec R9 §2, ADR10, AC25(d); `internal/service/reload.go:537-549`; `internal/storage/store.go:84-93`; `cmd/mcp-bridge/wiring.go:580-590`; `serve.go:39-41,140-148`.
+Confidence: HIGH (reachability MEDIUM).
+Issue: ADR10 skips the durable prompt rewrite and COMMITS a non-retired binding on ANY LoadPrompts error. promptLoader maps only ErrNoSnapshot to (nil,nil), so a read/permission error leaves a valid `prompts.json` with retired-era rows. With `MCP_SNAPSHOT_QUARANTINE=off`, RecoverRejected is skipped; a later successful LoadPrompts serves those rows for the now configured, non-retired server, and the next reload re-persists them. R9 requires zero stale rows on every later start; rows carry no binding-era discriminator, so ADR10's "hand-repaired file cannot resurrect" is false. AC25(d) asserts only "no empty set persisted".
+Fix: fail closed on any LoadPrompts error during reinstatement (loader already absorbs ErrNoSnapshot), or quarantine/remove the file before commit; extend AC25(d)/AC24 with a post-load second start asserting zero rows.
+
+[MEDIUM][observability] `binding_reinstated` emits `startup` or `reload`, but the docs pins row and AD13 Operation column pin only `startup`; `eventOperations["binding_reinstated"]="startup"` is synthetic. Anchor: ADR8, wiring L45, AC25; `docs/logging-contract.md:61-83,543-549`; `logging_contract_test.go:739,777`. Fix: document both operations and define the map's canonical pin.
+
+[MEDIUM][observability/authority] ADR9 failures are not "typed" as §8/§9 claim: `serve.go:321` + `startup_failure.go:107-117` map only `storage.ErrCorrupt` to admission_persist_failed; a nil-dep/publish error yields cause=generic_loop_start, the incident's code. §7's signal is only the absence of a warn. startup_failure.go is outside the 9-file grant. Fix: state emitted stage/cause per branch or request a separate decision for a new cause.
+
+[MEDIUM][lifecycle] Refresh unreachability rests on the wrong guard (`reload.go:584-586` rejects only client adoption). The real guarantee is the unstated invariant "no published snapshot carries retired+configured"; if violated, refresh emits unpinned operation `refresh`. Fix: state the invariant and fail closed (or exclude buildRefresh) in the reinstatement path, with a guard test.
+
+### Open Questions (LOW)
+- §8 "no partial commit is possible": ADR9(b) persist can succeed before deps.Persist fails (safe, not atomic). Restate.
+- T5 inputs: newReloadHarness/parseReloadConfig are reload_test.go:118/59, not durable_test.go.
+- ADR3 "no other production/test reference": reconcile_test.go:187-188 references it.
+- §5 "byte-identical to §6" commands are actually subsets.
+- AD13 row omits required error.code/Kind/Retryable cells.
+- AC23 command omits TestValidateRejectsBoundsAndIdentityConflicts, a stated clause.
+
+Positive: anchors, purge proof, AC falsifiability labels, and sentinel-removal scope otherwise check out.
+
+Limits: sha256 not independently verified (read-only, no hash tool); no tests run (specification mode). Minor drift: `service_edge_test.go:545` (test starts :538), `log.go:94` (func :90).
+
+### Recommendation
+REQUEST CHANGES

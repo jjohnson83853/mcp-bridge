@@ -1,0 +1,48 @@
+## Code Review Summary
+Mode: specification (initial pass). Candidate: `.omp/artifacts/binding-reinstatement/spec.md` (declared r18). Limits: read-only tools only; no shell/LSP, no test or `-race` execution, digest not recomputable.
+
+**Files reviewed:** 11 · **Findings:** 8
+**By Severity:** CRITICAL 0 · HIGH 2 · MEDIUM 4 · LOW 2
+
+### Issues
+
+**[HIGH][lifecycle] CR-R18-01 — ADR17's join is cut short by the drain budget**
+Anchor: spec.md:51,92; `cmd/mcp-bridge/serve.go:354-388`.
+Invariant: `Store.Close` never runs concurrently with refresh persistence.
+Counterexample: a refresh pass outlives `shutdownTimeout` (10s); cancel is issued, `drainCtx` expires (`:382-387`), serve returns, deferred `Close` (`store.go:66`) races `SavePrompts` (`store.go:101`). Confidence HIGH.
+Fix: pin "Close only after `loop.Start` returns; on budget expiry skip `Close` (process exit reclaims)" in ADR17/T5, with a slow-pass test.
+
+**[HIGH][oracle] CR-R18-02 — r18 regression is not deterministic**
+Anchor: spec.md:93, T5 cmd 7; `startup_failure_test.go:244`; `serve_test.go:125-133` (5m interval); `refresh.go:186-198`.
+Issue: one startup `Trigger`, then a 5m ticker; `Close` occurs ~10s later, so the only writer is normally idle. No race-report artifact is cited; pre-fix RED (and post-fix GREEN) is unproven. Confidence MEDIUM.
+Fix: force overlap (blocking `SavePrompts` hook or 100ms interval) and attach the pre-fix `-race` report.
+
+**[MEDIUM][contract] CR-R18-03 — refresh-emission contract contradicts itself**
+Anchor: spec.md:44,58 (`in.mode != buildRefresh` guard) vs :92 ("NO refresh-mode guard") vs :81 docs oracle; `docs/logging-contract.md:77` lists `refresh`; `reload.go:799-808` emits unguarded; §7 says startup/reload only. Confidence HIGH.
+Fix: choose one; align ADR8/Q2/§7/T5/docs oracle; restore `TestRefreshNeverEmitsReinstatement` if the guard stays.
+
+**[MEDIUM][traceability] CR-R18-04 — ADR2 predicate differs from the tree**
+Anchor: spec.md:39,58,92; `reload.go:523-524,874-891`.
+Issue: spec requires post-Reconcile `reinstatedServers(base,next,configured)` incl. `next !Retired`; the tree uses a 2-arg pre-Reconcile diff, so emission/purge omit the third conjunct and no test pins it. Confidence HIGH.
+Fix: require the 3-arg post-Reconcile form and test it, or restate ADR2/AC22/AC25.
+
+**[MEDIUM][evidence] CR-R18-05 — §3 "current tree" anchors are stale**
+Anchor: spec.md:15-27; `reconcile.go:13,80-81`; `reload.go:537-552`; `log.go:282`; docs:76,549,562.
+Counterexample: zero `ErrRebindTombstoned` under `internal/` or `cmd/`; `reconcile.go:80-81` is the reinstatement arm; `reconcile_test.go:175` is the new test; `reload.go:523/805`, `log.go:328`, docs 77/552/568. Confidence HIGH.
+Fix: re-anchor to the tree the engineer will edit (or declare HEAD-only) and state which T5 edits already exist.
+
+**[MEDIUM][authority] CR-R18-06 — state binds different bytes**
+Anchor: `.omp/plans/execution-state.json:11` `spec.sha256=97e5bbe2…` vs dispatched candidate `b131c4a2…`.
+Fix: re-run `prepare-dispatch` so the reviewed bytes are the bound bytes before approval.
+
+**[LOW][accounting] CR-R18-07** — "NINE RED + TWO guards = ELEVEN" but 10 RED / 12 tests are listed; AC25's test cites undefined case (g).
+
+**[LOW][maintainability] CR-R18-08** — `reload.go:815-821`: the `reconcileBase` doc comment is attached to `promptsForServers`.
+
+### Positive Observations
+- Authority covers exactly 11 paths (widening-5's 9 + r18's 2); AC22–AC26 each bind a behavioral test, exact command and `-list` gate.
+- Purge proof holds: `purged[id]` resets health to `StatusNone`/current fp, drops tools, embeddings topple transitively; prompts replaced before persist in both modes; `definitionsFromSnapshot` rejects retired bindings; unconfigured tombstones retained.
+- Durability split matches `Store.Save`'s temp-write/rename/fsync surface; §8 rollback is coherent; sentinel removal has no residual production/test reference.
+
+### Recommendation
+REQUEST CHANGES

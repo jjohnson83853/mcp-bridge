@@ -1,0 +1,32 @@
+{
+  "candidateId": "binding-reinstatement-spec-r17",
+  "revision": "r17",
+  "reviewerId": "code-reviewer",
+  "verdict": "APPROVE",
+  "findings": [
+    {
+      "id": "CR17-01",
+      "class": "verifiability",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR17-02",
+      "class": "anchors",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR17-03",
+      "class": "verifiability",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR17-04",
+      "class": "observability",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r17.txt",
+  "dispatchName": "RemedyAR17CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-28T00:17:09Z"
+}

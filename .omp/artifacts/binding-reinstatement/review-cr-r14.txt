@@ -1,0 +1,52 @@
+## Code Review Summary
+
+Mode: **specification / initial (implementation readiness)**. Candidate `binding-reinstatement-spec-r14` (sha256 `6a73c6d7…`, HEAD `fa832293`, clean tree). Inputs: spec (119 lines), owner decision r22, 12 cited source/doc anchors. Hash recomputation and test execution were not possible with the granted read-only toolset — review limits.
+
+**Total issues: 7** — CRITICAL 0 / HIGH 1 / MEDIUM 3 / LOW 3
+
+### Issues
+
+**[CR1][HIGH][contract]** AC25 contradict itself
+Anchor: `spec.md:75` (AC25 row). Invariant: R9→AC24/AC25→T5 one oracle per case.
+Issue: the case list is bracketed "**(each asserts ZERO `binding_reinstated` records)**", yet (e1)/(e2) require "one warn operation `reload`" and (f) requires "emits exactly one record" on retry. Coding AC25 literally yields mutually exclusive assertions for the same named tests (`TestReloadReinstatesDroppedThenReaddedServer`, `TestStartupReinstatementEmitsExactlyOneWarnAtCommit`).
+Fix: split into a zero-record group (a,b,c,d,g,h) and a one-record group (e1,e2,f); keep (f)'s pinned retry wording.
+
+**[CR2][MEDIUM][verifiability]** docs deliverable has no oracle
+Anchor: `spec.md:87` (T5 docs), `:93-96` (commands 5–6); `docs/logging-contract.md:76,549,562-563`.
+Issue: no command asserts the new `binding_reinstated` row, the `internal_warning` variant rows, or the `:562-563` prose exist. The only exact-row check (`logging_contract_test.go:660-685`) covers classified events only, so the docs edit is silently skippable while AC20/AC25/AC26 stay green.
+Fix: add a containment assertion for the new row in the granted `logging_contract_test.go` and name it in command 5/6.
+
+**[CR3][MEDIUM][contract]** predicate undefined; incident shape unpinned
+Anchor: `spec.md:44` (ADR2), `:71` (AC22 does pin equal fp), `:75` (AC24/AC25 do not), `:119` (§9 risk 9).
+Issue: `pendingReinstatement`/`reinstatedServers` are named, never defined. A fingerprint-diff implementation returns "no change" for the live shape (`retired`, same fp) → no purge, no warning; only a Critic note asks for equal-fp *service* fixtures.
+Fix: state the predicate in §4 (`base binding.Retired && configured && next !Retired`) and require "EQUAL fingerprint (incident shape)" in AC24/AC25.
+
+**[CR4][MEDIUM][durability]** nil-dependency rule under-enumerated
+Anchor: `spec.md:41` (ADR9b), `:43` (ADR13).
+Issue: only `LoadPrompts` (startup) is named. A reinstatement with nil `Persist` would publish a non-durable generation and emit the warn → reinstatement repeats every start (the §7 defect signal), violating R9's durability clause.
+Fix: name `Persist`, `PersistPrompts` (both modes) and `LoadPrompts` (startup).
+
+**[CR5][LOW][doc]** §8 misattributes reload restoration
+Anchor: `spec.md:111`; `reload.go:630` (startup-only use), `:618` (reload discovery), `:805-817`.
+Issue: rollback prose says reload rows are restored via `definitionsFromSnapshot`; that path runs only for `buildStartup`. Crash-loop outcome claim is unaffected.
+
+**[CR6][LOW][anchor]** wrong store.go line
+Anchor: `spec.md:21`; `store.go:301` rename, `:305` trusted, `:306` `return syncDirectory`; `:327-336` is the helper body.
+Issue: the text cites `:327-336` as the return site. ADR15's (a)/(b) boundary is still correct.
+
+**[CR7][LOW][coverage]** AC26 decode leg deferred
+Anchor: `spec.md:75` (AC26); `snapshot_v1.go:34` (`bindingV1.Retired`), `:109`.
+Issue: schema-1 durable retired state is real (v1 carries `retired`), but only in-memory schema-1 is tested. Disclosed as owner-gated follow-up — recorded, not blocking.
+
+### Verified (no findings)
+- Anchors checked and correct: `reconcile.go:13,35-40,46-50,80-81,82-99,111-149,164-167`; `snapshot.go:102,179-190,225-232,313-315`; `store.go:288-306`; `reload.go:537,553,599-604,618,638,643,674,718-750,777-791,805-817,900`; `refresh.go:57`; `loop.go:156-160`; `serve.go:276-278,283,321`; `startup_failure.go:108-117`; `log.go:15,20,176-179,282-356`; docs `61-76,549,562-563`. Exactly three build sites (`refresh.go:57`, `reload.go:486,509`).
+- No refresh emission / no double emit: no committed in-memory generation can hold a configured retired binding (retirement arm only for unconfigured; ADR15 class (b) fails before `accept`, and `accept` cannot fail after `validateAcceptance` under the same barrier).
+- Purge: retired-era tools/embeddings/health rows are unrepresentable (`Validate` requires a non-retired binding for any server row; tools require a row), so zero-row clauses are honestly defense-in-depth; prompts are the only residue and ADR9 covers both modes; startup restores nothing retired (`:817`).
+- Sentinel: only `reconcile.go:13,81` + `reconcile_test.go:187-188` (inside the replaced test). No existing test depends on the refusal (`durable_test.go:212` never re-adds the dropped server; `store_test.go:443,676` stay valid).
+- Owner grant: the nine T5 paths match the decision exactly; no additional write path is needed. Quarantine does cover `prompts.json` (`recovery.go:75-90`), so ADR10 has its stated escape. Rollback is safe on the survived branch.
+
+### Positive Observations
+Honest RED/green classification, the two-class durability split (ADR15), explicit disclosure of the pre-rename prompt-purge residue, and the recognition that only prompts are a falsifiable residue oracle are unusually rigorous.
+
+### Recommendation
+REQUEST CHANGES

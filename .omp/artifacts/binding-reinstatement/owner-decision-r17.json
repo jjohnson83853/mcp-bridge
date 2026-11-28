@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "feature": "config-admission-resilience",
+  "origin": "owner-answer-in-session",
+  "ownerInstruction": "authorize 1 more round",
+  "decision": "extend-review-budget-to-17-rebind-with-changelog-input",
+  "revision": "r17",
+  "explicit": true,
+  "automatic": false,
+  "timedOut": false,
+  "recordedAt": "2026-11-28T00:10:48Z",
+  "scope": "Authorizes one rebind round for binding-reinstatement: the r16 specification content, unchanged, registered as r17 with CHANGELOG.md included in the review input set (the r16 candidate omitted it, so canonical receipts could not be recorded). Authorizes one CodeReviewer round (17 of 17) and the subsequent eligible Critic. No implementation until the pair passes; existing envelope and owner acceptance delta unchanged.",
+  "rulings": [
+    {
+      "id": "S15-budget",
+      "value": 17,
+      "note": "Adds one round to the extension to 16."
+    },
+    {
+      "id": "review-inputs",
+      "value": "spec + all 9 T5 effect paths incl. CHANGELOG.md",
+      "note": "Required by record-reviews."
+    }
+  ]
+}

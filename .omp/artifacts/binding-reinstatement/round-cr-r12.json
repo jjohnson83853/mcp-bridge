@@ -1,0 +1,37 @@
+{
+  "candidateId": "binding-reinstatement-spec-r12",
+  "revision": "r12",
+  "reviewerId": "code-reviewer",
+  "verdict": "APPROVE",
+  "findings": [
+    {
+      "id": "CR12-01",
+      "class": "observability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR12-02",
+      "class": "anchors",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR12-03",
+      "class": "invariant",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR12-04",
+      "class": "coverage",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR12-05",
+      "class": "wording",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r12.txt",
+  "dispatchName": "RemedyAR12CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-27T23:11:43Z"
+}

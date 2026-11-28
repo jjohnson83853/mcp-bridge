@@ -2,7 +2,6 @@ package storage_test
 
 import (
 	"encoding/json"
-	"errors"
 	"reflect"
 	"sort"
 	"strings"
@@ -12,9 +11,10 @@ import (
 	// T-07 membership reconciliation RED gate (r8 plan §4.9/§4.10 steps 2-3):
 	// reconcile the current flat config against the durable snapshot — retain
 	// matching servers with their catalog and vectors, purge removed servers so
-	// their cache is unreachable, tombstone them so they never rebind, rebind a
-	// live server whose endpoint identity changed with its cache purged, and stay
-	// deterministic across a restart.
+	// their cache is unreachable, keep unconfigured tombstones retired, reinstate
+	// configured tombstones without their cached data, rebind a live server whose
+	// endpoint identity changed with its cache purged, and stay deterministic
+	// across a restart.
 	"github.com/jjohnson83853/mcp-bridge/internal/storage"
 )
 
@@ -171,9 +171,117 @@ func TestReconcilePurgesRemovalsAndKeepsConfiguredServers(t *testing.T) {
 	}
 }
 
-// §4.9: a tombstoned server never rebinds, on any endpoint; other servers are
-// unaffected by the rejection.
-func TestReconcileRejectsTombstonedRebind(t *testing.T) {
+// Reinstatement clears a retirement tombstone and purges data regardless of
+// whether the configured endpoint fingerprint changed.
+func TestReconcileReinstatesConfiguredTombstonedServer(t *testing.T) {
+	for name, fingerprint := range map[string]func(string) string{
+		"same fingerprint":    func(previous string) string { return previous },
+		"changed fingerprint": func(string) string { return strings.Repeat("6", 64) },
+	} {
+		t.Run(name, func(t *testing.T) {
+			previous := twoServerSnapshot()
+			original := twoServerSnapshot()
+			oldFingerprint := previous.Bindings[0].EndpointFingerprint
+			for _, snapshot := range []*storage.Snapshot{previous, original} {
+				snapshot.Bindings[0].Retired = true
+				snapshot.Servers = snapshot.Servers[1:]
+				snapshot.Tools = snapshot.Tools[1:]
+				snapshot.Embeddings = snapshot.Embeddings[1:]
+			}
+			configuredFingerprint := fingerprint(oldFingerprint)
+
+			next, err := storage.Reconcile(previous, reconcileInput(
+				storage.ConfiguredServer{ServerID: "portainer", EndpointFingerprint: configuredFingerprint},
+				storage.ConfiguredServer{ServerID: "developer", EndpointFingerprint: developerFingerprint},
+			))
+			if err != nil {
+				t.Fatalf("Reconcile: %v", err)
+			}
+			if next == nil {
+				t.Fatal("Reconcile returned no snapshot")
+			}
+			if next.Envelope.GenerationSequence != previous.Envelope.GenerationSequence+1 {
+				t.Fatalf("generation = %d; want %d", next.Envelope.GenerationSequence, previous.Envelope.GenerationSequence+1)
+			}
+			if !reflect.DeepEqual(previous, original) {
+				t.Fatal("Reconcile mutated the previous snapshot")
+			}
+			if err := next.Validate(); err != nil {
+				t.Fatalf("reconciled snapshot is invalid: %v", err)
+			}
+			if !next.BindingAllowed("portainer", configuredFingerprint) {
+				t.Fatalf("reinstated server rejected configured fingerprint %q", configuredFingerprint)
+			}
+			if configuredFingerprint != oldFingerprint && next.BindingAllowed("portainer", oldFingerprint) {
+				t.Fatal("reinstated server still accepts its old endpoint fingerprint")
+			}
+			var binding *storage.Binding
+			for index := range next.Bindings {
+				if next.Bindings[index].ServerID == "portainer" {
+					binding = &next.Bindings[index]
+					break
+				}
+			}
+			if binding == nil || binding.Retired || binding.EndpointFingerprint != configuredFingerprint {
+				t.Fatalf("reinstated binding = %+v; want active fingerprint %q", binding, configuredFingerprint)
+			}
+			var reinstatedHealth *storage.Server
+			for index := range next.Servers {
+				if next.Servers[index].ServerID == "portainer" {
+					reinstatedHealth = &next.Servers[index]
+					break
+				}
+			}
+			if reinstatedHealth == nil || reinstatedHealth.CatalogStatus != storage.StatusNone {
+				t.Fatalf("reinstated server health = %+v; want status %q", reinstatedHealth, storage.StatusNone)
+			}
+			for _, tool := range next.Tools {
+				if tool.ServerID == "portainer" {
+					t.Fatalf("reinstated server retained tool %q", tool.PublicName)
+				}
+			}
+			for _, embedding := range next.Embeddings {
+				if strings.HasPrefix(embedding.ToolIdentity, "portainer\x00") {
+					t.Fatalf("reinstated server retained embedding %q", embedding.ToolIdentity)
+				}
+			}
+		})
+	}
+}
+func TestReconcileReinstatementIsolatesSiblingServers(t *testing.T) {
+	previous := twoServerSnapshot()
+	previous.Bindings[0].Retired = true
+	previous.Servers = previous.Servers[1:]
+	previous.Tools = previous.Tools[1:]
+	previous.Embeddings = previous.Embeddings[1:]
+	sibling := previous.Servers[0]
+
+	next, err := storage.Reconcile(previous, reconcileInput(
+		storage.ConfiguredServer{ServerID: "portainer", EndpointFingerprint: previous.Bindings[0].EndpointFingerprint},
+		storage.ConfiguredServer{ServerID: "developer", EndpointFingerprint: developerFingerprint},
+	))
+	if err != nil {
+		t.Fatalf("Reconcile: %v", err)
+	}
+	var gotSibling *storage.Server
+	for index := range next.Servers {
+		if next.Servers[index].ServerID == sibling.ServerID {
+			gotSibling = &next.Servers[index]
+			break
+		}
+	}
+	if gotSibling == nil || !reflect.DeepEqual(*gotSibling, sibling) {
+		t.Fatalf("sibling health = %+v; want unchanged %+v", gotSibling, sibling)
+	}
+	if len(next.Tools) != 1 || next.Tools[0].ServerID != "developer" {
+		t.Fatalf("sibling tool rows = %+v; want only developer", next.Tools)
+	}
+	if len(next.Embeddings) != 1 || next.Embeddings[0].ToolIdentity != storage.ToolIdentity("developer", "read_file") {
+		t.Fatalf("sibling embedding rows = %+v; want only developer", next.Embeddings)
+	}
+}
+
+func TestReconcileKeepsUnconfiguredTombstone(t *testing.T) {
 	previous := twoServerSnapshot()
 	previous.Bindings[0].Retired = true
 	previous.Servers = previous.Servers[1:]
@@ -181,14 +289,56 @@ func TestReconcileRejectsTombstonedRebind(t *testing.T) {
 	previous.Embeddings = previous.Embeddings[1:]
 
 	next, err := storage.Reconcile(previous, reconcileInput(
-		storage.ConfiguredServer{ServerID: "portainer", EndpointFingerprint: fingerprintValue},
 		storage.ConfiguredServer{ServerID: "developer", EndpointFingerprint: developerFingerprint},
 	))
-	if !errors.Is(err, storage.ErrRebindTombstoned) {
-		t.Fatalf("Reconcile = %v; want ErrRebindTombstoned", err)
+	if err != nil {
+		t.Fatalf("Reconcile: %v", err)
 	}
-	if next != nil {
-		t.Fatal("a rejected reconcile returned a snapshot")
+	var tombstone *storage.Binding
+	for index := range next.Bindings {
+		if next.Bindings[index].ServerID == "portainer" {
+			tombstone = &next.Bindings[index]
+			break
+		}
+	}
+	if tombstone == nil || !tombstone.Retired {
+		t.Fatalf("unconfigured binding = %+v; want preserved tombstone", tombstone)
+	}
+	if len(next.Servers) != 1 || next.Servers[0].ServerID != "developer" {
+		t.Fatalf("health rows = %+v; want developer only", next.Servers)
+	}
+}
+
+func TestReconcileReinstatesSchema1RetiredBinding(t *testing.T) {
+	previous := twoServerSnapshot()
+	previous.SchemaVersion = 1
+	previous.Bindings[0].Retired = true
+	previous.Servers = previous.Servers[1:]
+	previous.Tools = previous.Tools[1:]
+	previous.Embeddings = previous.Embeddings[1:]
+
+	next, err := storage.Reconcile(previous, reconcileInput(
+		storage.ConfiguredServer{ServerID: "portainer", EndpointFingerprint: previous.Bindings[0].EndpointFingerprint},
+		storage.ConfiguredServer{ServerID: "developer", EndpointFingerprint: developerFingerprint},
+	))
+	if err != nil {
+		t.Fatalf("Reconcile schema 1 snapshot: %v", err)
+	}
+	var reinstated *storage.Binding
+	for index := range next.Bindings {
+		if next.Bindings[index].ServerID == "portainer" {
+			reinstated = &next.Bindings[index]
+			break
+		}
+	}
+	if reinstated == nil {
+		t.Fatal("schema 1 tombstone lost its binding during reinstatement")
+	}
+	if reinstated.Retired {
+		t.Fatal("schema 1 tombstone remained retired after reinstatement")
+	}
+	if reinstated.EndpointFingerprint != previous.Bindings[0].EndpointFingerprint {
+		t.Fatalf("schema 1 reinstated fingerprint = %q; want %q", reinstated.EndpointFingerprint, previous.Bindings[0].EndpointFingerprint)
 	}
 }
 

@@ -1,0 +1,25 @@
+## Code Review — specification mode, initial pass on r9 (with r8-ledger closure audit)
+
+**Inputs:** `.omp/artifacts/binding-reinstatement/spec.md` sha256 `8aca718a…` (r9, 34,564 B), `owner-envelope-widening-5.json` (authorize-binding-reinstatement, 2026-11-27T21:00:59Z), HEAD `fa832293`. Read-only; no tests/vet/build executed (review limit).
+
+**Must-verify**
+1. Anchors exist and match (raw-verified): reconcile.go `:13,47-51,80-81,82-91,93-99(:97),111-127(:119),129-139,140-149,164-167`; snapshot.go `:102,179-190,225-232,313-315,330-336`; reload.go `:345-354,537-552(:541-547,:550),553,566,584-588(:587),599-605,643,674-682,718,720,724,728-745(:741),745,777-790,791-796,817`; loop.go `:157-160,206-212`; serve.go `:39-41,140-148,321`; startup_failure.go `:28,108-117(:110-111)`; log.go `:15,20,176,282-355`; docs `:63-76(:76),549,562-563`; store.go `:84-98(:94),110-113`; snapshot_v1.go `:31,34,97-130(:109),134-153`; reconcile_test `:15,174-175,176-192,187-188`; durable_test `:210-211,250-251`; reload_test `:59,118,134,750-758`; compat `:17,55,80`; edge_test `:94,149`; wiring `:580-590`. One mismatch (F1).
+2. AC22–AC26 name exact, subset-consistent commands; RED list (8) matches §6; no tautology (distinct fingerprints, per-server warn, failure cases a–g).
+3. ADR2 equivalence holds (base-retired ∧ configured ⇒ rewrite; no other arm un-retires; duplicate bindings rejected at snapshot.go:292). Emission is post-`accept`/`published`, once per build; build sites are refresh.go:57, reload.go:486,509. Refresh invariant is sound: a re-add needs a client and is rejected at `:587`.
+4. Purge: health/tool/embedding purge is defensive (Validate makes them unrepresentable); the material residue is prompts, and ADR9(a)/(b)+ADR10/ADR13 close it in both modes, including the e1 hazard (`previous.Prompts()` carrying retired-era rows). `Validate` accepts schema-1, so AC26 is feasible.
+5. Authority: widening-5 `delta.T5.add` equals the 9 spec paths 1:1; no ungranted edit needed (`operationVocabulary` already has startup/reload/prompt_load/prompt_persist; production `Logger`/`LoadPrompts`/`PersistPrompts` wired at serve.go:273-279).
+6. ADR3: sentinel occurs only at reconcile.go:13/:81 and reconcile_test.go:187-188 (replaced); historical plan doc only.
+7. §8 holds for committed reinstatements (non-retired binding, unchanged schema 2); caveat F3.
+
+**Findings**
+- **F1 [LOW][accuracy]** Invariant: every cited oracle says what is claimed. Anchor: spec §3 reload_test bullet `internal/service/reload_test.go:750-758`. Counterexample: those lines are the `AdmitStartup`/`Reload` calls plus the prompt-preservation assertion of `TestPersistPromptsFailureEmitsWarningAndRestoresPreviousPrompts` (starts :735); there is no outage-refresh flow and no `StatusNone` base row, and its restore branch cannot fail for an over-broad purge. Fix: describe it as the persist-failure restore guard and name `TestStartupPreservesPromptsWithoutReinstatement` as the preservation oracle.
+- **F2 [LOW][contract]** §4 Q2 places the ADR10 gate "before `:537`", but a `LoadPrompts` error is observable only inside `:537-552`. ADR10 itself is correct. Fix: "compute `pending` before `:537`; consult it in the `:541-547` error branch after logging the warning, then return the wrapped error".
+- **F3 [LOW][accuracy]** §8's "rollback is safe" covers committed states only; the ADR9 partial state (prompts purged, snapshot unwritten, binding retired) reverts to the pre-upgrade crash loop if the previous image runs. Fix: name that state explicitly.
+- **F4 [LOW][verifiability]** ADR8's defensive `mode != buildRefresh` is untested by design; the invariant is covered indirectly (AC25(f), existing refresh tests). Fix: record it as an untested hardening, not a tested guarantee.
+
+**Closure (r8):** CR8-01 verified — `loggingContractClassRow` (logging_contract_test.go:490) matches event+code on the first row, so appending variant rows after `:549` is safe and `:76` breaks no test. CR8-02/03/04/06 verified true (durable_test:250-251 text confirmed; fixtures carry no retired binding). CR8-05 is the basis of F1.
+
+**Positives:** anchors are unusually exact, RED labeling is honest, ADR2/ADR8 proofs are sound, the fail-closed ordering sits correctly inside `commitMu`, and production wiring was verified.
+
+### Recommendation
+APPROVE

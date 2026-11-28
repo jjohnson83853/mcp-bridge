@@ -1,0 +1,52 @@
+{
+  "candidateId": "binding-reinstatement-spec-r20",
+  "revision": "r20",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR20-01",
+      "class": "falsifiability",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR20-02",
+      "class": "falsifiability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR20-03",
+      "class": "lifecycle",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR20-04",
+      "class": "falsifiability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR20-05",
+      "class": "anchors",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR20-06",
+      "class": "lifecycle",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR20-07",
+      "class": "anchors",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR20-08",
+      "class": "identity",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r20.txt",
+  "dispatchName": "RemedyAR20CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-28T01:17:32Z"
+}

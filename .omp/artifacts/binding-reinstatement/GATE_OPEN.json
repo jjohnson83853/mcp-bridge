@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 2,
+  "feature": "binding-reinstatement",
+  "revision": "r23",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "authorizationId": "owner-authorization:a41011a925407568c89424df1f1a8de9",
+  "envelopeId": "env-1",
+  "packetDigest": "8c08710d85d1ae9d965b29a99d0aeb175fbb7b44f3ab4465d40b946817690fb3",
+  "selectedBranchId": "binding-reinstatement-r1"
+}

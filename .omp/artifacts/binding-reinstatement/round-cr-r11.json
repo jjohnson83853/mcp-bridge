@@ -1,0 +1,37 @@
+{
+  "candidateId": "binding-reinstatement-spec-r11",
+  "revision": "r11",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR11-01",
+      "class": "skip-range",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR11-02",
+      "class": "anchors",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR11-03",
+      "class": "anchors",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR11-04",
+      "class": "tautology",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR11-05",
+      "class": "side-effect",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r11.txt",
+  "dispatchName": "RemedyAR11CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-27T22:59:04Z"
+}

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "feature": "binding-reinstatement",
+  "entries": [
+    {
+      "id": "binding-reinstatement:binding-reinstatement-spec-r23:r23:reviews.specification",
+      "feature": "binding-reinstatement",
+      "candidateId": "binding-reinstatement-spec-r23",
+      "revision": "r23",
+      "checkpoint": "reviews.specification",
+      "reason": "Owner waived the remaining review precision findings (CR23-01..07; 0 HIGH) and authorized shipping after engineer attempt 3; guard form fixed by owner-decision-r24.",
+      "receipt": {
+        "sourceId": "src-owner-authorization-8584a831abe6c508",
+        "recordedAt": "2026-11-28T01:52:38Z",
+        "response": {
+          "origin": "user",
+          "explicit": true,
+          "timedOut": false,
+          "automatic": false,
+          "packetDigest": "8c08710d85d1ae9d965b29a99d0aeb175fbb7b44f3ab4465d40b946817690fb3",
+          "selectedBranchId": "binding-reinstatement-r1"
+        }
+      },
+      "reportIds": [],
+      "recordedAt": "2026-11-28T01:52:38Z",
+      "legacy": true
+    },
+    {
+      "id": "binding-reinstatement:binding-reinstatement-spec-r23:r23:reviews.tasks",
+      "feature": "binding-reinstatement",
+      "candidateId": "binding-reinstatement-spec-r23",
+      "revision": "r23",
+      "checkpoint": "reviews.tasks",
+      "reason": "Owner waived the remaining review precision findings (CR23-01..07; 0 HIGH) and authorized shipping after engineer attempt 3; guard form fixed by owner-decision-r24.",
+      "receipt": {
+        "sourceId": "src-owner-authorization-8584a831abe6c508",
+        "recordedAt": "2026-11-28T01:52:38Z",
+        "response": {
+          "origin": "user",
+          "explicit": true,
+          "timedOut": false,
+          "automatic": false,
+          "packetDigest": "8c08710d85d1ae9d965b29a99d0aeb175fbb7b44f3ab4465d40b946817690fb3",
+          "selectedBranchId": "binding-reinstatement-r1"
+        }
+      },
+      "reportIds": [],
+      "recordedAt": "2026-11-28T01:52:38Z",
+      "legacy": true
+    }
+  ]
+}

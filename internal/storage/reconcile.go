@@ -10,8 +10,7 @@ import (
 
 // Reconciliation failures. A rejected cycle changes nothing (plan §4.10 step 4).
 var (
-	ErrRebindTombstoned = errors.New("storage: tombstoned server cannot be rebound")
-	ErrEndpointChanged  = errors.New("storage: server endpoint identity changed")
+	ErrEndpointChanged = errors.New("storage: server endpoint identity changed")
 )
 
 // ConfiguredServer is one server of the current flat config membership.
@@ -35,10 +34,10 @@ type ReconcileInput struct {
 // (plan §4.9/§4.10). Matching servers are retained with their exact catalog;
 // a live server whose endpoint identity changed rebinds to the new endpoint
 // with its catalog and cache purged; a server that left the config is purged
-// so its cache is unreachable and tombstoned so it never rebinds; a newly
-// configured server enters unbound; a model identity change invalidates
-// vectors but never exact definitions. The previous snapshot is never mutated
-// and a rejected cycle publishes nothing.
+// and tombstoned; a configured tombstone is reinstated at the current endpoint
+// with its catalog and cache purged; a newly configured server enters unbound;
+// a model identity change invalidates vectors but never exact definitions. The
+// previous snapshot is never mutated and a rejected cycle publishes nothing.
 func Reconcile(previous *Snapshot, input ReconcileInput) (*Snapshot, error) {
 	if err := input.validate(); err != nil {
 		return nil, err
@@ -78,7 +77,10 @@ func Reconcile(previous *Snapshot, input ReconcileInput) (*Snapshot, error) {
 		server, stillConfigured := configured[binding.ServerID]
 		switch {
 		case stillConfigured && binding.Retired:
-			return nil, fmt.Errorf("%w: server %q", ErrRebindTombstoned, binding.ServerID)
+			binding.Retired = false
+			binding.EndpointFingerprint = server.EndpointFingerprint
+			purged[binding.ServerID] = true
+			nextBindings = append(nextBindings, binding)
 		case stillConfigured && binding.EndpointFingerprint != server.EndpointFingerprint:
 			purged[binding.ServerID] = true
 			nextBindings = append(nextBindings, Binding{

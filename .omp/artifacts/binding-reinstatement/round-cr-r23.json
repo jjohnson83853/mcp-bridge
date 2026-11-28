@@ -1,0 +1,47 @@
+{
+  "candidateId": "binding-reinstatement-spec-r23",
+  "revision": "r23",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR23-01",
+      "class": "anchors",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR23-02",
+      "class": "authority",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR23-03",
+      "class": "status",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR23-04",
+      "class": "oracle",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR23-05",
+      "class": "falsifiability",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR23-06",
+      "class": "oracle",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR23-07",
+      "class": "oracle",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r23.txt",
+  "dispatchName": "RemedyAR23CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-28T01:50:38Z"
+}

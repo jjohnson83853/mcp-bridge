@@ -1,0 +1,43 @@
+## Code Review Summary
+
+**Subject mode:** specification · **Pass:** repair (r7 closes r6) · **Candidate:** `binding-reinstatement-spec-r7`, sha256 `ca55ac58…`, HEAD `fa832293` · **Files reviewed:** 12 (read-only) · **Issues:** 0 CRITICAL, 0 HIGH, 4 MEDIUM, 3 LOW
+
+### Issues
+
+**[MEDIUM][falsifiability] F1 — `configured` operand does not exist at ADR2's insertion point**
+Anchor: spec §4 Q2 / ADR2; `reload.go:566,643` vs `:537`.
+Counterexample: the `configured []storage.ConfiguredServer` slice is built *inside* the discovery loop (`NewClient`/`Discover`); hoisting it above `:537` is impossible. The tempting alternative — moving the prompt-load block below the loop — makes `:546` (`append(nil, loaded...)`) discard freshly discovered prompts: a regression, not a refactor.
+Fix: pin `pendingReinstatement(base *storage.Snapshot, servers []config.Server) []string` fed from `in.candidate.Servers`; allow the post-Reconcile diff to use the `ConfiguredServer` slice.
+
+**[MEDIUM][falsifiability] F2 — AC25(e2) prompt oracle is indeterminate**
+Anchor: AC25(e2); §4 Q3(v); `reload.go:599-604,:728`.
+Counterexample: ADR9(a) purges the freshly discovered rows in the same build, so "zero rows" and "current-era discovered rows" both satisfy "prompt rows current-era only"; two different implementations pass.
+Fix: assert exactly zero rows for the reinstated server at commit (plus repopulation on the next `buildRefresh`), and state that discard in Q3(v)/§8.
+
+**[MEDIUM][falsifiability] F3 — AC25(e1) scenario is unsatisfiable as worded**
+Anchor: AC25(e1); `reload.go:626-627`.
+Counterexample: a failed `deps.Discover` on a reload returns before `:674`, so nothing commits — "commits a non-retired binding … exactly one warn" cannot hold; only a failed `deps.DiscoverPrompts` (`:602`, ignored) is committable.
+Fix: write "`deps.DiscoverPrompts` fails while `deps.Discover` succeeds".
+
+**[MEDIUM][observability] F4 — the branch signal contradicts the published contract**
+Anchor: `docs/logging-contract.md:549,:562`; `reload.go:540-549`; §7; AC25(d).
+Issue: docs pin `internal_warning` as operation `reload`/outcome `failure` and call it "a defect"; the record AC25(d) relies on is `prompt_load`/`degraded`, undocumented. An operator querying the documented cells misses the only load-failure signal.
+Fix (granted file): document the `prompt_load`/`prompt_persist` variants and `degraded` in the existing row; name the operation in AC25(d).
+
+**[LOW][accuracy] F5 — five off-by anchors:** prompt restore is `reload.go:741` (cited `:742`, twice); stage constant is `startup_failure.go:28` (cited `:42`); `buildMode.String` is `:345-354`, pinned at `service_edge_test.go:545` (cited `:351`/`:538`); `StampServerEmpty` is `:225-232` (cited `:237`); discovery block is `:599-605`.
+
+**[LOW][accuracy] F6 — REOPENED CR6-01.** §6 still says "five new tests, plus one existing preservation guard" while listing 10 (8 behavioral RED + 2 green-on-arrival). Gates 1/3 (`=6`) are correct; gate 5's `-ge 1` cannot detect a missing named test.
+
+**[LOW][accuracy] F7 — ADR3 "no other reference"** omits `.omp/plans/headless-mcp-bridge-checkpoints.md:236,253` (historical, outside the write set). Say "no other production/test reference".
+
+### Closure ledger (r6)
+CR6-02 ✓ (each branch asserts zero `binding_reinstated`); CR6-05 ✓ (`ErrCorrupt` reaches `catalogLoopStartFailure` via `startupStageError.Unwrap []error`; the save-gate refusal `%w`-wraps it); CR6-06/07 ✓ (§8 rollback verified: `Save` unchanged, schema/checksum identical, old `Reconcile` retains non-retired bindings); CR6-08 ✓ (`deps()` nil at `reload_test.go:134`; both fields settable); CR6-01 **reopened** (F6); CR6-03/04 partially (F1–F3).
+
+### Verified
+Every other cited anchor exists and says what is claimed: `reconcile.go:13,35-40,47-51,80-99,97,111-149,164-167`; `snapshot.go:179-190,225,313-315`; `snapshot_v1.go:31,34,97-132,109`; `store.go:84-98,94,104-113`; `reload.go:537,553,584-588,587,674,681-683,718-750,777,791,817`; `loop.go:157-160`; `startup_failure.go:108-111`; `serve.go:140-148,272-278`; `wiring.go:580-590`. Build call sites are exactly `refresh.go:57, reload.go:486, reload.go:509`. ADR2's equivalence holds against every switch arm (first-bind cannot match a base-retired id; `:82-87` never alters retirement). Sentinel references are exactly `reconcile.go:13,:81` and `reconcile_test.go:187-188`. The 9-path grant matches `owner-envelope-widening-5.json` exactly, and production wiring supplies `PersistPrompts`/`LoadPrompts`, so ADR9/ADR10/ADR13 are satisfiable on the live host. ADR8 refresh unreachability holds. AC22's row assertions are honestly disclosed as structurally guaranteed (`Validate:313-315` makes retired-era tools/embeddings unrepresentable), so the prompt file is correctly named the falsifiable residue oracle. Positive: single-switch-case change, disclosed tautologies, clean sentinel removal.
+
+### Limits
+No implementation exists; no tests or diagnostics were run. W09E text was not available for quotation, so admission remains the installed handler's decision.
+
+### Recommendation
+REQUEST CHANGES

@@ -1,0 +1,32 @@
+## Code Review Summary
+**Mode:** specification · **Pass:** initial (r22). Candidate binding-reinstatement-spec-r22; HEAD `fa832293` + landed T5. **Files verified:** spec + 9 authoritative sources (reconcile.go, snapshot.go, reload.go, refresh.go, loop.go, serve.go, startup_failure.go, log.go, docs, tests).
+
+### Issues (3 MEDIUM, 3 LOW)
+
+**CR22-01 [MEDIUM][falsifiability]** AC25(b) claims oracles its fixture lacks.
+Anchor: spec §5 AC25(b); `internal/service/durable_test.go:758-806`.
+It asserts unpublished runtime, zero records, disk=new snapshot — never "one rejection signal", never "restart with EMPTY pending ⇒ ZERO new records". Counterexample: a survived-branch regression that re-emits `binding_reinstated` after restart passes undetected. Fix: add the restart leg (durable=`onDisk`, capturing Logger) + rejection assertion, or strike both clauses.
+
+**CR22-02 [MEDIUM][contract]** Comment-fix work internally inconsistent.
+Anchor: spec §4 Q7 vs §10 CR21-09; `durable_test.go:215-216`, `:255-256`.
+Those comments still assert "so it never rebinds" / "a config that puts the server back refuses to rebind it" — false under ADR5. CR21-09 cites `durable_test.go:210-211`/`:250-251` (code, not comments) and `reconcile_test.go:35-40`/`:174-175` (code); Q7 omits the durable_test comments. Counterexample: engineer follows Q7; false contract comments persist. Fix: cite `:215-216`/`:255-256`, add to Q7, drop stale refs.
+
+**CR22-03 [MEDIUM][falsifiability]** Guard insertion point unpinned vs nil-dep gates (`reload.go:525-534`).
+Anchor: spec §2 R9, ADR8, AC25 guard case. Harness deps (`reload_test.go:134-183`) supply `Persist` but not `PersistPrompts`; if the guard lands after `if pending`, the guard test fails with "requires prompt persistence", not `service: refresh reinstatement invariant violated for server %q`. Fix: state "immediately after `:524`, before `:525`", or require `PersistPrompts` in the fixture.
+
+**CR22-04 [LOW][anchor]** "`promptsForServers` `:553`": `:553` is `if err != nil {`; call is `:580`, definition `:821`. Fix: cite `:580`/`:821`.
+
+**CR22-05 [LOW][anchor]** "Regenerated" table drift: rows `:111-127`→`113-128`; tombstone-creation `:93-100`→`94-100` (`:92` case, `:93` retention append); `previous.Validate` `:46-50`→`44-48`.
+
+**CR22-06 [LOW][oracle rationale]** AC22's "Validate already forbids" is false: once `Retired` is cleared, Validate accepts stale rows for that server (`snapshot.go:313-315` rejects only a still-retired binding with a live row). The real oracle is `reconcile_test.go:216-226`. Fix: keep assertions, drop the rationale.
+
+### Open Questions
+- Asymmetric skew: a refresh with a stale candidate lacking a just-added/reinstated server can tombstone it (base non-retired, candidate absent). Pre-existing for adds, newly reachable for re-adds; ADR8 covers only the mirrored direction. LOW confidence it is in scope.
+- "RED against current test bodies" is tautological for AC22/AC26 additions; genuinely behavioral-RED = guard test + race test.
+- Limits: no shell/git/go tools; candidate sha256 unverified; anchors read from the HEAD+landed-T5 tree.
+
+### Positive Observations
+Purge chain verified (`purged` map → tools/embeddings dropped, rows reset, prompts `:711-713` then `:753-770` persist); `definitionsFromSnapshot` (`:901`) returns nil for retired bindings; ADR17 feasible (cancel `serve.go:85`, defer Close `:138`); 3 build sites enumerated (`refresh.go:57`, `reload.go:486`,`:509`); guard cannot fire on committed bases; sentinel absent repo-wide; docs/log pins correct (`docs:76/77`, `log.go:328-329`, test `:796-797`).
+
+### Recommendation
+REQUEST CHANGES

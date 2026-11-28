@@ -1,0 +1,28 @@
+## Code Review Summary
+**Mode:** specification (implementation readiness); candidate `spec.md` r13, HEAD `fa832293`; pass: initial.
+**Files reviewed:** 1 candidate + 12 source/doc anchors. **Issues:** 9 (HIGH 2, MEDIUM 3, LOW 4).
+
+**Anchors verified exactly, except CR13-06/07:** reconcile.go:13,35-40,46-50,80-99,111-149,164-167; snapshot.go:102,179-190,225-232,313-315; store.go:301-306,327-336; reload.go:486,509,537-553,566,601-618,674-683,718-750,777-796,805-817,900-905; loop.go:157-160; startup_failure.go:108-111; serve.go:276-283; log.go:15,176,282-355; docs:61-80,544-563; logging_contract_test.go:508,700,777-778. Sentinel refs: reconcile.go:13,81 + reconcile_test.go:187-188 only (ADR3 exact). Authority: owner-envelope-widening-5 T5 equals the 9-path write set; owner-decision-r13 authorizes narrowed durability and no `store.go`. ADR8/ADR16 invariant holds: `Reload` sets `l.candidate` only post-admission (loop.go:113-115) and refresh cannot add membership (reload.go:587), so refresh never sees retired+configured.
+
+### Issues
+[CR13-01][HIGH][falsifiability] AC22 pins DISTINCT `oldFp != currentFp`; the incident shape (unchanged endpoint => equal fp) is untested, and the replaced test used the equal case (reconcile_test.go:183-185 uses `fingerprintValue` = portainer's binding fp, store_test.go:23,47). Counterexample: reinstate only in the endpoint-change arm - distinct case passes; equal case retains `Retired`, so `Validate` (snapshot.go:313-315) rejects and the `generic_loop_start` crash-loop persists. Fix: add an equal-fp sub-case (purge, `StatusNone`, `BindingAllowed(id,sameFp)` true); scope "`BindingAllowed(oldFp)` false" to the distinct case.
+
+[CR13-02][HIGH][untestable clause] AC25(b) asserts disk is EITHER the new snapshot OR the old tombstone and that restart follows "the corresponding ADR15 branch". The granted seam `Persist func(*storage.Snapshot) error` cannot induce a post-rename fsync failure (store.go:306,327-336); real `Store.Save` followed by an error deterministically exercises only the survived branch, and T5 forbids faking the other. Fix: split AC25(b) into deterministic survived-branch assertions plus an explicit untested residual.
+
+[CR13-03][MEDIUM][ordering] Q2 hoists `base` "before :674" yet computes `pending` "before :537"; ADR10/ADR13 need pending before the prompt-load block :537-552. A literal read computes pending after :537, dropping the fail-closed `LoadPrompts` gate (errors are only warned today, reload.go:538-548). Fix: hoist `base := in.reconcileBase(previous)` above :537.
+
+[CR13-04][MEDIUM][contradiction] AC25(b) "successful retry emits exactly one" vs ADR15 "survived => no new warn"; a disk-loaded retry has empty pending => zero records. Fix: pin which base each retry uses.
+
+[CR13-05][MEDIUM][premise] `Reconcile` validates previous first (reconcile.go:46-50); `Validate` rejects retired+live-row (snapshot.go:313-315) and orphan tool rows. If the incident snapshot keeps a mysql server/tool row, failure precedes :80-81 and Remedy A does not clear the crash-loop (both classes map to `generic_loop_start`). Fix: evidence the live snapshot validates, or a disposition.
+
+[CR13-06][LOW][anchor] "configured loop-built (:566,:638)": :638 is `catalog.Register`; the append is :642-646.
+[CR13-07][LOW][anchor] store.go ":295-300" sync/close is actually :292-300.
+[CR13-08][LOW][misclassification] `TestStartupPreservesPromptsWithoutReinstatement` is under "Existing tests" but is absent from the tree; T5 lists it as new.
+[CR13-09][LOW][disclosure] ADR9(b) persists purged prompts before the snapshot, so a pre-rename `Persist` failure can leave `prompts.json` purged while the binding stays retired; §8/AC25 do not cover it.
+
+Positive: ADR15 is anchored to the real Save protocol; commit-point emission after :750 with :745 unconditional; pending/reinstated equivalence over the loop-built configured set; grant alignment; zero-row clauses honestly labeled defense-in-depth.
+
+Limits: read-only, no tests run; the live snapshot content is not in the repo.
+
+### Recommendation
+REQUEST CHANGES

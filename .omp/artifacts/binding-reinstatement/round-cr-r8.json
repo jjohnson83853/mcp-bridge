@@ -1,0 +1,42 @@
+{
+  "candidateId": "binding-reinstatement-spec-r8",
+  "revision": "r8",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR8-01",
+      "class": "observability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR8-02",
+      "class": "accuracy",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR8-03",
+      "class": "accuracy",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR8-04",
+      "class": "anchors",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR8-05",
+      "class": "accuracy",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR8-06",
+      "class": "accuracy",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r8.txt",
+  "dispatchName": "RemedyAR8CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-27T22:26:39Z"
+}

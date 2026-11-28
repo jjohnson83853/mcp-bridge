@@ -1,0 +1,37 @@
+{
+  "candidateId": "binding-reinstatement-spec-r10",
+  "revision": "r10",
+  "reviewerId": "code-reviewer",
+  "verdict": "APPROVE",
+  "findings": [
+    {
+      "id": "CR10-L1",
+      "class": "anchors",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR10-L2",
+      "class": "accuracy",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR10-L3",
+      "class": "rollback",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR10-L4",
+      "class": "durability",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR10-L5",
+      "class": "observability",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r10.txt",
+  "dispatchName": "RemedyAR10CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-27T22:47:54Z"
+}

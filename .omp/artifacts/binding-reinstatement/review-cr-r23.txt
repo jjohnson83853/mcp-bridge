@@ -1,0 +1,26 @@
+## Code Review Summary
+Mode: specification · Pass: initial (r23). Candidate `binding-reinstatement-spec-r23` (spec.md, sha256 12443b3f…, r23), HEAD fa832293 + landed T5. 2 MEDIUM, 5 LOW.
+
+**CR23-01 [MEDIUM][anchor] §3 "regenerated r23" citations are stale.** `replaceServerPrompts :777-790` → actual definition `reload.go:837` (calls :627/:630/:711-712; :777-790 is the else-branch prompt block). "persist prompts :737" → actual wrap `reload.go:765`. "retention arm :90; retention append :93" omits the :92 case CR22-05 required; state ":90-91 retention; :92-93 tombstone-retention". "prompt-discovery ignored errors :627-628" → :629. Invariant: every anchor says what it claims (owner-decision-r23 requires "corrected line citations/anchor drifts"). Fix: regenerate these entries.
+
+**CR23-02 [MEDIUM][authority] Guard form contradicts the r22 owner ruling.** `owner-decision-r22.json` ruling `guard-form`: "emission condition only… no pre-commit build error"; ADR8/R9 makes the :524 check FAIL the refresh with a new error class. `owner-decision-r23.json` pins only the insertion point. Counterexample: a drop-window refresh (`loop.go:114-115`/`:218-222`) now returns/logs `candidate_rejected` instead of silently suppressing emission. Fix: cite r23's `guard-insertion` ruling as superseding the r22 form, or implement the authorized emission-only suppression at :524 and update ADR18/AC25.
+
+**CR23-03 [LOW][status]** §3 labels the docs wiring "LANDED", but `docs/logging-contract.md:77`/`:552` and `logging_contract_test.go:704`/`:706` still read `startup`, `reload`, or `refresh`; the wording amendment is listed remaining in T5. Relabel.
+
+**CR23-04 [LOW][oracle]** AC25(g): a capturing Logger over all of `TestStartupTombstonesAServerTheConfigDropped` observes the later re-add record; pin the ZERO assertion to the startup admission where the server is unconfigured.
+
+**CR23-05 [LOW][falsifiability]** "The AC22/AC26 assertion additions are RED against the current test bodies" is not a valid RED claim; only the guard and race tests are behavioral RED (the same paragraph concedes this). Restate.
+
+**CR23-06 [LOW][oracle]** AC26 "FAILS on the NIL-BINDING schema-1 input" names no fixture construction or expected failure. Specify both.
+
+**CR23-07 [LOW][oracle]** AC25 quotes the format string `…for server %q` as the "EXACT error"; pin the formatted message for a named server (e.g. `…server "alpha"`).
+
+### Closures verified
+CR22-01 (restart leg coherent), CR22-02 (comments `durable_test.go:216`/`:256`, `reconcile_test.go:14-16` added to Q7/T5), CR22-03 (guard after :524 before :526; fixture supplies `PersistPrompts`), CR22-04 (:580/:821), CR22-06 (false "Validate already forbids" rationale deleted). CR22-05 partial → CR23-01.
+
+### Positives
+AD-R2 sound: build sites `refresh.go:57`, `reload.go:487`/`:510`; one emission loop after `published = true`; `Validate` rejects duplicate bindings (no double-emit); predicate equals Reconcile's arm on the same `base` (no miss); guard blocks refresh emission. Purge: prompts are the only falsifiable residue — `Validate` (`snapshot.go:313-314`) forbids retired+live rows and tools for retired servers, so tool/embedding/health purge is correctly labeled defense-in-depth; the (e3) oracle design discriminates and the current test does not (correctly flagged). Authority: 11 paths = widening-5 (9) ∪ r18 (2); all needed paths granted. `ErrRebindTombstoned` absent from internal/cmd/docs/CHANGELOG. §8 rollback correct: non-retired snapshot + `StatusNone` row pass old `Validate`; old reconcile retains at equal fp; not-survived resumes the old refusal. Anchors verified: `reconcile.go:79-83/90-91/93/94-100/121/136/166-167`; `snapshot.go:179-190/313-314/225`; `log.go:15/20/176-179/328-329`; `reload.go:523/524/580/645/701/709/711-712/726/748/750/753-770/771-792/794/796-799/802-813/821/851/857/874-891/901`; `docs:76/77/549/551-552/568`.
+Limits: read-only; no shell/go/`-race` execution; anchors inspected against the current tree only.
+
+### Recommendation
+REQUEST CHANGES

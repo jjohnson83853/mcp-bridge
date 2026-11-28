@@ -1,0 +1,97 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "binding-reinstatement-spec-r17",
+  "revision": "r17",
+  "invocationId": "ct-r17-454e4a8925e0",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/spec.md",
+      "sha256": "97a416df9df4d1913292555ac8fe9636ecbea06d4524c6f6d01dce4b61d8bb40"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/reconcile.go",
+      "sha256": "31bd45e827f0d99fb3c23cc10ead6470c0c57ded0cd9450b6fd7707fd0b38194"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/reconcile_test.go",
+      "sha256": "385bdb885037ad5b6de57c752c384b5ef5008a61cf772402e459806c32a0aae0"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/reload.go",
+      "sha256": "313a30b017bb1f5f120d8ed7b6b43a3c93b81e20a7b7e1ff3f75793d87a11a5d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/durable_test.go",
+      "sha256": "7d93ef7b460a110ef33d864da24d06641dcb735c418a441eaa8566e95c505825"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "fb3860c121846f2c0c0f9e0c8395f6bedd61f4ba9ca894754ad5b460832f215c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
+      "sha256": "99cf687373c0c6251aa64361f9f5c9c8e7ab07bd9b38497a6cb510c64a0dfde0"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "df8b3a6a0f3cd9606dd3dc23a51197163bbc78f2338d09331a770f9ff377f1dc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "55d8398fa1401e1a29bc6311209b7ea82e92f4f8c9143a6b6da86c1814058053"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/CHANGELOG.md",
+      "sha256": "4ede091062752a1ecfd6b1991331ada96ddea2c3dba3dedbd30fdd85aed07ecc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/review-cr-r16.txt",
+      "sha256": "6ca4fbb25faffa44b90135bb7994c6b928ec7f436bfeb93afeb13059ae101280"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/owner-decision-r17.json",
+      "sha256": "c79685adfec3ebe23a309229195a5ff2695401dd07926524e5a37d282cf4591b"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "RemedyAR17CodeReview",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/spec.md"
+        ]
+      },
+      "targetCandidateId": "binding-reinstatement-spec-r17",
+      "targetRevision": "r17",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "2685a3f2d6bc2aa155f425e71902114c5e60207bbf908e1dc24a3df1f5387393",
+      "instructionsSha256": "2685a3f2d6bc2aa155f425e71902114c5e60207bbf908e1dc24a3df1f5387393",
+      "requestSha256": "293a2c1bc36a1073363710d00e99b842d7422f16f5509bba3d6d5798d9179b98"
+    },
+    {
+      "name": "RemedyAR17Critique",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/spec.md"
+        ]
+      },
+      "targetCandidateId": "binding-reinstatement-spec-r17",
+      "targetRevision": "r17",
+      "reviewerId": "critic",
+      "taskSha256": "0fe391c5d66b8c5d8d35c17f5e14acf5c65f1339e3c3fc3f8f21d4aec392e97e",
+      "instructionsSha256": "0fe391c5d66b8c5d8d35c17f5e14acf5c65f1339e3c3fc3f8f21d4aec392e97e",
+      "requestSha256": "cb977d24f332bcafe25b003095f4e236b225a42ea008d1c9a6b058c5aa05f545"
+    }
+  ],
+  "output": "### Verdict\nPASS\n\nSpec ID: binding-reinstatement-spec-r17\nRevision: r17\nFindings by ID: C1, C2\n\nReviewed `.omp/artifacts/binding-reinstatement/spec.md`, hash `97a416df9df4d1913292555ac8fe9636ecbea06d4524c6f6d01dce4b61d8bb40`. Identity follows the exact r17 registry/dispatch binding and `owner-decision-r17.json`, not the stale supplied r1/r2 labels.\n\n**Verified coverage**\n- R9→AC22–AC26→T5 is coherent. Equal-fingerprint fixtures distinguish the incident from ordinary endpoint-change rebinding. AC23 preserves unconfigured tombstones and `BindingAllowed == false`.\n- **Residue counterexamples:** `Snapshot.Validate` prohibits retired bindings with health/tool rows; embeddings require valid tool identities (`snapshot.go:313–336,389–395`). Stale `prompts.json` is the meaningful surviving-state counterexample. ADR9’s purge-before-snapshot ordering, first/second-start assertions and failed-drop→re-add sequence address it.\n- **Shared state/lifecycle:** retirement/configuration comparison is the appropriate service seam without changing pure `Reconcile`’s signature. `commitMu` and expected-generation validation reject competing stale builds before persistence/emission (`reload.go:718–750`; `projection.go:132–170`). Committed reinstatement clears the next comparison; refresh cannot re-add a missing client (`reload.go:584–588`) and is defensively excluded from emission.\n- **Query cache:** the searcher key includes runtime generation (`tools.go:424`), preventing reuse across accepted generations; no query cache is durable.\n- **Claimed repairs independently verified:** unauthorized refresh guard/AC removed; docs assertions folded into AC25; feasible prompt-persist-failing drop sequence; two-server emission oracle; explicit capturing Logger/dependency overrides.\n- **Authority:** `owner-envelope-widening-5.json` grants exactly the nine T5 paths and AC22–AC26; its remedy covers R9. Subsequent owner decisions cover narrowed trust/durability and r16/r17 repairs. No fresh scope ask is needed for these clauses.\n- **Compatibility/recovery:** pre-rename rejection versus post-rename uncertainty matches `store.go:288–306`. Schema-1 conversion preserves `Retired` (`snapshot_v1.go:109`). Rollback does not promise recovery when the tombstone survives.\n- **Observability:** §7 uses existing sinks, bounded fields and static messages. AC25/T5 bind delivery-to-sink, warning-count and documentation assertions; envelope, metrics and Loki-delivery exceptions disclose reasons/consequences.\n\n**Advisories—retained, not reopened blockers**\n- **C1 — MINOR; high confidence.** §6 says eleven tests/nine RED but lists twelve/ten RED. Consequence: misleading completion accounting. Amend both counts to twelve deliverables, ten RED plus two guards.\n- **C2 — MINOR; high confidence.** AC25(b) names private `pendingReinstatement`, inaccessible from `durable_test.go`’s `service_test` package. Assert successful restart plus zero reinstatement records; define “one rejection signal” as the returned admission error.\n\n**Limits:** Static, read-only review; no tests, live probes or digest recomputation. Schema-1 retired decode coverage and post-power-loss non-survival remain disclosed residuals. No tasks/approvals invalidated. PASS is technical only; execution checkpoints remain required."
+}

@@ -1,0 +1,37 @@
+## Code Review Summary
+
+**Subject:** specification mode, **initial pass**. Candidate `binding-reinstatement-spec-r3`, sha256 `ddde90…2385`, rev r3, HEAD `fa832293`; prior ledger `review-cr-r2.txt`. Dispatch prose says "r2 (r1)" — stale; the bound file/state agree on r3.
+**Files Reviewed:** spec + owner decision + 13 source/doc files (read-only).
+
+### Issues
+
+**[CR3-H1][falsifiability][HIGH]** H3 is only half-closed. §5 header (:57) claims "all `-run` patterns use real `|`", but AC22–AC25 commands still contain `\|` (`spec.md:61-64`), and backslash escapes are literal inside code spans. `go test -run 'A\|B'` matches zero tests and exits 0 → the AC oracle is falsely green; §6 (lines 80+) is correct, so the artifact now carries two conflicting oracles.
+Fix: replace `\|` with `|` in the §5 table (copy §6 cmds 2/4/6).
+
+**[CR3-H2][R9-residue][HIGH, reachability MEDIUM]** ADR9's reload premise is false. `reload.go:535` starts from `previous.Prompts()`; on `PersistPrompts` failure `:730-742` restores the *pre-filter* prompts; prompt-discovery errors are ignored `:601-604`. Counterexample: drop reload whose prompt persist fails (rows restored, `:741`) → SIGHUP re-add whose prompt discovery fails → binding committed non-retired with retired-era prompt rows persisted (`:553` keeps them); later starts have no retirement evidence, so R9's "no stale prompt rows … every later start" fails permanently.
+Fix: `replaceServerPrompts(id,nil)` for the reinstatement set in reload builds too (discovery repopulates), or defer emission until prompt discovery succeeds; add an AC25 case.
+
+**[CR3-M1][ADR9 undefined branch][MEDIUM]** `LoadPrompts` failure (`reload.go:537-549`) leaves `next.prompts` empty; ADR9 then persists an empty set. `Store.SavePrompts`'s trust gate (`store.go:100-113`) converts a corrupt/unreadable `prompts.json` into a build failure → a new startup crash-loop classified identically to the incident (`startup_failure.go:106-115` → `catalog_loop_start`/`generic_loop_start`); §7's "no warn ⇒ persist failing" is not discriminating.
+Fix: state the rule (skip durable rewrite vs fail closed), name recovery, add an AC25 fixture; consider a finite cause.
+
+**[CR3-M2][anchor][MEDIUM]** ADR9/§3 cite prompt discovery at `:566-570`; that range is the credential/client block — discovery is `reload.go:599-604`. The reload-freshness justification is unverifiable from its anchor.
+
+**[CR3-M3][convention][MEDIUM]** Q2/ADR8 prescribe a new `modeOperation(in.mode)`; `buildMode.String()` already yields "startup"/"reload"/"refresh" (`reload.go:345-351`, pinned by `service_edge_test.go:545`). Fix: use `in.mode.String()`.
+
+**[CR3-L1][oracle vacuity][LOW]** AC22/AC24/AC26 "zero tool/embedding rows / no stale health row" cannot fail: `Validate` requires tool→server-row→non-retired binding (`snapshot.go:314,330-336`), so retired-era rows are unrepresentable. State the structural guarantee; keep the prompts oracle.
+
+**[CR3-L2][anchor drift][LOW]** `next.snapshot` cited `:746` (actual 745); Reconcile call `:674` (675); error check `:680-682` (682-684); `bindingV1` type `:33` (31); `reconcileBase` `:791-803` (791-796).
+
+**[CR3-L3][nil dep][LOW]** ADR9 omits `deps.PersistPrompts == nil` on the reinstatement path; copying the `:728` nil guard silently skips the durable purge while the build commits. State nil ⇒ build failure.
+
+### Positive Observations
+- 9 expected files equal `env-1.writePaths` exactly; sentinel only at `reconcile.go:13` + `reconcile_test.go:187`.
+- ADR2 diff is sound over the three `build` sites (`refresh.go:57`, `reload.go:486,509`); refresh is structurally blocked (`:584-588`), so no double-emit/miss.
+- ADR7 correct: only `accept` writes `acceptedGeneration` (`projection.go:168`), serialized by `commitMu`, so `:747` cannot fail after `validateAcceptance`.
+- Rollback claim verified against `Validate:313-315`/`BindingAllowed:179-190`; `SavePrompts` trust gate prevents a silent all-server wipe.
+
+### Review Limits
+No execution, hash, or git tools: test claims unverified; `\|` is a static RE2 fact. Prior ledger labels 5 HIGH but enumerates H1–H4.
+
+### Recommendation
+REQUEST CHANGES

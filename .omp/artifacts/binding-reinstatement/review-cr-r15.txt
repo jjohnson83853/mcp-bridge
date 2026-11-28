@@ -1,0 +1,50 @@
+## Code Review Summary
+
+Mode: **specification / initial (implementation readiness)**. Candidate: `.omp/artifacts/binding-reinstatement/spec.md` (A1-r15; dispatch target `binding-reinstatement-spec-r15`, sha `838840bb…`). Seed header says "spec-r2 (r1)"; content/sha/dispatch are r15 — reconcile before dispatch. Limits: sha not recomputed, no test execution (read-only toolset).
+
+**Total issues: 6 — HIGH 1 / MEDIUM 4 / LOW 1**
+
+### Issues
+
+**[H1][HIGH][authority] Refresh guard + AC25(h) reintroduced against owner ruling**
+Anchor: `spec.md:48` (ADR16), `:76` (AC25(h)), `:88` (T5); `owner-decision-r6.json` ruling F1; `amendment-A1-r13` CR12-03 row.
+Invariant: owner ruling binds until explicitly reopened.
+Issue: r6/F1: "drop ADR11 and AC25(h); no refresh guard, no new file." r13 re-adds ADR16 and AC25(h) claiming the "r13 owner-authorized instruction", but `owner-decision-r13.json` authorizes only durability narrowing + the publish-then-error fixture + one review round; r14 is budget-only. Counterexample: T5 would add a `buildRefresh` fail-closed guard and an AC the owner removed, with no recorded consent.
+Fix: drop ADR16/AC25(h), or record a new explicit owner decision superseding F1.
+
+**[M1][MEDIUM][authority] AC27 has no recorded acceptance authority**
+Anchor: `spec.md:78`; `owner-envelope-widening-5.json` `delta.acceptance.add` = AC22–AC26 only.
+Counterexample: implementation satisfies an AC absent from every owner decision.
+Fix: owner record adding AC27, or fold its assertions into AC25/AC22.
+
+**[M2][MEDIUM][verifiability] AC25(e1) infeasible as worded**
+Anchor: `spec.md:76`(e1); `reload.go:791-796`.
+Counterexample: "re-add reload after a failed drop-reload persist" — a failed `deps.Persist` publishes nothing, so the reload base is still the live in-memory snapshot; `pendingReinstatement` is empty, no purge, zero records, contradicting "one warn".
+Fix: name the prompt-persist failure at the drop (tombstone published, prompts stale) or sequence a committed drop + restart before the re-add.
+
+**[M3][MEDIUM][verifiability] No per-server emission oracle**
+Anchor: `spec.md:12` (R9 "per reinstated server"), `:76`, `:89`.
+Counterexample: all named tests reinstate one server; emitting once per build (outside the loop) passes AC22–AC27 while two configured retired servers get one record.
+Fix: two-reinstated-server fixture asserting exactly two records naming each server.
+
+**[M4][MEDIUM][verifiability] Docs `:76` update has no oracle**
+Anchor: `spec.md:48,88` require `:76` updated; AC27 (`:78`) asserts only the `binding_reinstated` row, appended variant rows, `:549`, `:562-563`.
+Counterexample: skipping the `internal_warning` pin-row update leaves docs inconsistent while AC27 is green.
+Fix: extend AC27 to assert the `:76` row.
+
+**[M5][MEDIUM][accuracy] Fixture defaults misstated; oracles can be vacuous**
+Anchor: `spec.md:88` ("`deps()` `:134` leaves them nil"); `reload_test.go:154` sets `Persist`; `deps()` sets no `Logger`.
+Counterexample: nil-`Persist` test using `deps()` keeps it non-nil; zero-record assertions on nil Logger trivially pass.
+Fix: require a capturing Logger and explicit clearing of each dependency.
+
+**[L1][LOW][metadata] Candidate identity mismatch** (see mode note).
+
+### Verified
+- Anchors exist and match: `reconcile.go:13,47-51,80-99,111-149,164-167`; `snapshot.go:179-190,225-232,313-315`; `reload.go:537-552,601-604,618,643-646,674-683,718-750,777-796,805-817,900-905`; `refresh.go:57`; `reload.go:486/509`; `loop.go:157-160`; `serve.go:276-283,321`; `startup_failure.go:108-117`; `log.go:15,20,176-179,282-355`; docs `63-76,549,562-563`.
+- ADR2 predicate correct (not a fingerprint diff); 3 build sites; refresh cannot emit; `commitMu`+`validateAcceptance` forbid double-emit; purge proof sound (tools/embeddings/health via `purged[]`; prompts via ADR9 both modes); sentinel refs only `reconcile.go:13,81` + `reconcile_test.go:187-188`; 9-path grant matches exactly; §8 rollback holds (same schema, non-retired binding, `StatusNone` row accepted by old `Validate`).
+
+### Positive Observations
+Precise anchors, honest RED/green classification, the two-class durability split, and explicit residue disclosure.
+
+### Recommendation
+REQUEST CHANGES

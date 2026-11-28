@@ -1,0 +1,111 @@
+{
+  "candidateId": "binding-reinstatement-spec-r7",
+  "revision": "r7",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/spec.md",
+      "sha256": "ca55ac58f35deb45cc465129ad1c331b5385c84d7c87def8492a7c6f9ddcea2d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/config-admission-resilience/owner-envelope-widening-5.json",
+      "sha256": "57e354263bbd56c94e941c296b2c013e38249ab48ba81650910cf6f12a34fc05"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/owner-decision-r6.json",
+      "sha256": "b02448546e9480cdc9c0d405f898c9421efaf480271307a46dcd161808ed7abb"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/owner-request.json",
+      "sha256": "a839bb95f629977d78bdf915a00927d62d90b3248230de172311aa01691dd036"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/review-cr-r1.txt",
+      "sha256": "ee62f813251f168f408c0e639452760afd69253c00c34fa29e11d05adaa72dc3"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/review-cr-r2.txt",
+      "sha256": "8e21bfe694d5ffaecc6effb78b0fb136c8d845bdd9b68f304fd9a75d51cce4e9"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/review-cr-r3.txt",
+      "sha256": "1a2a0711d2eb464dd289f9ee534fe77842d4d18269aba30b269742343fdf7e49"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/review-cr-r4.txt",
+      "sha256": "2201206c1f33f2405150602dbbd388399075f80f202d34a75e09296b4f5fc572"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/review-cr-r5.txt",
+      "sha256": "8eecbdffcf373e41674178c66e0a643b35ea68e0e081655ab2bb63183973443d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/review-cr-r6.txt",
+      "sha256": "9eb6df0d0491213fe9effe6b680fc9028df9e7d2f3fa22d3777c18da9f28a709"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/reconcile.go",
+      "sha256": "31bd45e827f0d99fb3c23cc10ead6470c0c57ded0cd9450b6fd7707fd0b38194"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/snapshot.go",
+      "sha256": "50b5d6bb69ea617c98542d520ef6ca9a067af4367cce06756e82e2bc0bf0fa59"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/reconcile_test.go",
+      "sha256": "385bdb885037ad5b6de57c752c384b5ef5008a61cf772402e459806c32a0aae0"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/store.go",
+      "sha256": "cedcbb68f9a65d1b00ded7169a49d01a5d05007e1a2f1a2835a879c0d825ddbf"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/reload.go",
+      "sha256": "313a30b017bb1f5f120d8ed7b6b43a3c93b81e20a7b7e1ff3f75793d87a11a5d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/durable_test.go",
+      "sha256": "7d93ef7b460a110ef33d864da24d06641dcb735c418a441eaa8566e95c505825"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/reload_test.go",
+      "sha256": "2c9db9e8c9001bea0571e25f471418bfc68ab3debf3edc9f349f55fbee9f13e1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "fb3860c121846f2c0c0f9e0c8395f6bedd61f4ba9ca894754ad5b460832f215c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/edge_test.go",
+      "sha256": "0b2efbcde7765af2fc087ea91670085204de39e4a3bc1f34b774096e61674bc3"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
+      "sha256": "99cf687373c0c6251aa64361f9f5c9c8e7ab07bd9b38497a6cb510c64a0dfde0"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "df8b3a6a0f3cd9606dd3dc23a51197163bbc78f2338d09331a770f9ff377f1dc"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "55d8398fa1401e1a29bc6311209b7ea82e92f4f8c9143a6b6da86c1814058053"
+    }
+  ],
+  "reviewers": [
+    {
+      "name": "RemedyAR7CodeReview",
+      "taskId": "CR1",
+      "reviewerId": "code-reviewer",
+      "payloadPath": ".omp/artifacts/binding-reinstatement/payload-cr.json"
+    },
+    {
+      "name": "RemedyAR7Critique",
+      "taskId": "CT1",
+      "reviewerId": "critic",
+      "payloadPath": ".omp/artifacts/binding-reinstatement/payload-ct.json"
+    }
+  ]
+}

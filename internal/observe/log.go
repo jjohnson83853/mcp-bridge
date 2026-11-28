@@ -325,6 +325,8 @@ func eventMessage(event string) string {
 		return "logging write failed"
 	case "internal_warning":
 		return "bridge encountered an internal warning"
+	case "binding_reinstated":
+		return "configured server binding reinstated"
 	case "reload":
 		return "configuration reload diagnostic"
 	case "result_paged":

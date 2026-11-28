@@ -1,0 +1,47 @@
+{
+  "candidateId": "binding-reinstatement-spec-r7",
+  "revision": "r7",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR7-F1",
+      "class": "falsifiability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR7-F2",
+      "class": "falsifiability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR7-F3",
+      "class": "falsifiability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR7-F4",
+      "class": "observability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR7-F5",
+      "class": "anchors",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR7-F6",
+      "class": "gate-arithmetic",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR7-F7",
+      "class": "accuracy",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r7.txt",
+  "dispatchName": "RemedyAR7CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-27T22:13:29Z"
+}

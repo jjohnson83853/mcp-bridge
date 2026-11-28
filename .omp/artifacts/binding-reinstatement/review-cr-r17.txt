@@ -1,0 +1,41 @@
+## Code Review Summary
+
+Mode: specification (implementation-readiness); pass: initial for r17 (content-identical r16 rebind). Candidate `.omp/artifacts/binding-reinstatement/spec.md`, r17, HEAD `fa832293`, read-only review; no hash recomputation or test execution available.
+
+**Files Reviewed:** 22
+**Total Issues:** 4 (all LOW, carried from round 16)
+
+### By Severity
+- CRITICAL 0 / HIGH 0 / MEDIUM 0 / LOW 4
+
+### Verified (W09E)
+- **Anchors:** reconcile.go :13, :35-40, :46-50, :80-99, :111-149, :164-167; snapshot.go :102, :179-190, :225, :313-315, :330-336; snapshot_v1.go :31,:34, :97-130, :135-153; reload.go build sites :486/:509, :536-552, :584-588, :601-604, :674, :718-750, :791-796, :805-817; loop.go :157-160; serve.go :276-283; startup_failure.go :28, :108-117; log.go :15,:20, :176-179, :282-355; docs :76, :549, :562-563. All say what the spec claims (stale ranges below).
+- **R9→AC22-26→T5:** falsifiable; ADR2 is retirement/config-state based, not fingerprint-diff; equal-fp incident shape pinned in AC22 and AC24, distinguishing the wrong implementation. Each AC names a test and exact command; AC23 is correctly a preservation guard.
+- **Lifecycle:** one emission site, inside `commitMu` after `accept`/`published`; per-server; no double-emit (post-commit base is non-retired); refresh cannot reinstate (candidate == published config; fresh-client refusal reload.go:584-588), so the retained `in.mode != buildRefresh` condition is inert.
+- **Purge:** retired bindings structurally cannot carry tools/embeddings/health rows (Validate:313-315, :334); startup restore refuses retired (:817); prompt purge in both modes (ADR9a) with fail-closed pre-snapshot persist (ADR9b); residue/uncertainty classes match real `Store.Save` (:288-306).
+- **Authority:** T5's 9 paths equal the owner delta write set; no missing write path; the r17 rebind decision exists (`owner-decision-r17.json`).
+- **Sentinel:** only reconcile.go:13,:81 and reconcile_test.go:187-188 (both granted); no doc refs.
+- **§8 rollback:** no schema/JSON change; the non-retired candidate validates under the old reader; pre-rename failure resumes the original refusal.
+
+### Issues
+[LOW][verifiability] CR17-1 (retained)
+Anchor: spec.md:88-89 — "ELEVEN deliverables: NINE behavioral-RED" but 12 tests/10 RED are listed. Fix: "TWELVE: TEN RED + TWO guards".
+
+[LOW][anchor-accuracy] CR17-2 (retained)
+Anchor: internal/storage/store.go — cited `Load :193-211` is :199-217; `Save :213-238` is :219-245. Publish anchors are exact. Fix: correct ranges.
+
+[LOW][verifiability] CR17-3 (retained)
+Anchor: spec.md:76 / durable_test.go:1 — AC25(b) asserts unexported `pendingReinstatement` is empty from `package service_test`; "exactly one rejection signal" is undefined. Fix: assert successful restart + zero `binding_reinstated` records; define the signal as the returned admission error.
+
+[LOW][observability] CR17-4 (retained)
+Anchor: spec.md:108 — "repeated warn = tombstone re-created while configured" is unreachable after the rewrite. Fix: describe it as a persisted-retired-binding signal after a failed/partial admission.
+
+### Open Questions
+- ADR8 retains `in.mode != buildRefresh` while T5 says "NO refresh-mode guard" (spec.md:41 vs :88). Confirm these mean different things (emission condition vs the deleted ADR16 build-failure guard); behaviorally inert either way.
+- `CHANGELOG.md` is granted with no AC pinning its entry; §1/§10 still say "r16" while bound as r17. Editorial.
+
+### Positive Observations
+Honest two-class durability split matching the real save protocol; disclosed untestable not-survived branch rather than a faked fixture; explicit per-server and two-server emission oracles; fixture discipline (capturing Logger, explicit dependency overrides) closes the vacuous-oracle risk; unconfigured-tombstone semantics preserved and guarded.
+
+### Recommendation
+APPROVE

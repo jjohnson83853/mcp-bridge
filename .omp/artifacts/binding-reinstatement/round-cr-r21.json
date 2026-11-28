@@ -1,0 +1,62 @@
+{
+  "candidateId": "binding-reinstatement-spec-r21",
+  "revision": "r21",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR21-01",
+      "class": "contract",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR21-02",
+      "class": "oracle",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR21-03",
+      "class": "oracle",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR21-04",
+      "class": "anchors",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR21-05",
+      "class": "falsifiability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR21-06",
+      "class": "lifecycle",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR21-07",
+      "class": "oracle",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR21-08",
+      "class": "authority",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR21-09",
+      "class": "doc",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR21-10",
+      "class": "wording",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r21.txt",
+  "dispatchName": "RemedyAR21CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-28T01:30:41Z"
+}

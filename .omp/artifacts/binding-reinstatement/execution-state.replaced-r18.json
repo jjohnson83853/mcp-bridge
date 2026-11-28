@@ -1,0 +1,360 @@
+{
+  "schemaVersion": 2,
+  "feature": "binding-reinstatement",
+  "revision": "r17",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/spec.md",
+    "sha256": "97a416df9df4d1913292555ac8fe9636ecbea06d4524c6f6d01dce4b61d8bb40",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r17",
+        "sha256": "5659816faace016f7522aa24f24fd309bc28be72faf85baecd1b395783cb6804"
+      },
+      "design": {
+        "revision": "r17",
+        "sha256": "a12d8582dd763e31ee84f28109c9b7a8a8038b6c44729ef0c41177923f994212"
+      },
+      "tasks": {
+        "revision": "r17",
+        "sha256": "b169196344312311cbafbc7bbf3c81d893740a7f8f80a0793ba5ebebbecd6e73"
+      },
+      "envelope": {
+        "revision": "r17",
+        "sha256": "42a30a8407950412a30368ae4ee1cf0a739e3216c13c6529952f83cc3e48c476"
+      }
+    }
+  },
+  "packet": {
+    "digest": "8c3084af353d8383e6e4b055d00fdf2c727050fe745b85b9af208b69d5ad3bb1",
+    "branches": [
+      {
+        "id": "binding-reinstatement-r1",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T5"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r17",
+            "sha256": "5659816faace016f7522aa24f24fd309bc28be72faf85baecd1b395783cb6804"
+          },
+          "design": {
+            "revision": "r17",
+            "sha256": "a12d8582dd763e31ee84f28109c9b7a8a8038b6c44729ef0c41177923f994212"
+          },
+          "tasks": {
+            "revision": "r17",
+            "sha256": "b169196344312311cbafbc7bbf3c81d893740a7f8f80a0793ba5ebebbecd6e73"
+          },
+          "envelope": {
+            "revision": "r17",
+            "sha256": "42a30a8407950412a30368ae4ee1cf0a739e3216c13c6529952f83cc3e48c476"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "binding-reinstatement-r1"
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R9",
+      "summary": "A configured server whose durable binding is retired is reinstated unbound (tombstone cleared, current endpoint fingerprint, no tools/embeddings/health/prompt rows of the retired era) with exactly one bounded warn record per admission; unconfigured tombstones keep their current semantics."
+    }
+  ],
+  "authorization": {
+    "mode": "bounded",
+    "id": "owner-authorization:bad0d570517ec553f9e0f9001b4da95e",
+    "packetDigest": "8c3084af353d8383e6e4b055d00fdf2c727050fe745b85b9af208b69d5ad3bb1",
+    "selectedBranchId": "binding-reinstatement-r1",
+    "receipt": {
+      "sourceId": "src-owner-authorization-cf042d8445008b54",
+      "recordedAt": "2026-11-28T00:21:49Z",
+      "response": {
+        "origin": "user",
+        "explicit": true,
+        "timedOut": false,
+        "automatic": false,
+        "packetDigest": "8c3084af353d8383e6e4b055d00fdf2c727050fe745b85b9af208b69d5ad3bb1",
+        "selectedBranchId": "binding-reinstatement-r1"
+      }
+    }
+  },
+  "reviews": {
+    "specification": {
+      "verdict": "pass",
+      "reviewerId": "code-reviewer",
+      "packetDigest": "8c3084af353d8383e6e4b055d00fdf2c727050fe745b85b9af208b69d5ad3bb1",
+      "receipt": {
+        "sourceId": "review-specification-65cdfbc21e096be602fdedd88cb9ed23a6a821ccf720dbea136dee5dd1e2619e",
+        "recordedAt": "2026-11-28T00:17:09Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    },
+    "tasks": {
+      "verdict": "pass",
+      "reviewerId": "critic",
+      "packetDigest": "8c3084af353d8383e6e4b055d00fdf2c727050fe745b85b9af208b69d5ad3bb1",
+      "receipt": {
+        "sourceId": "review-tasks-00428c2677d482582e3fd515d9fc81118bce258cc55592e7814a720ff6e6ac1f",
+        "recordedAt": "2026-11-28T00:19:54Z",
+        "response": {
+          "origin": "reviewer",
+          "verdict": "pass"
+        }
+      }
+    }
+  },
+  "sources": [
+    {
+      "id": "src-owner-binding-reinstatement",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/owner-request.json",
+        "sha256": "a839bb95f629977d78bdf915a00927d62d90b3248230de172311aa01691dd036"
+      },
+      "locator": "conversation: owner answered \"A\" then \"lets do 1 / run managed T5\"",
+      "recordedAt": "2026-11-27T21:15:00Z"
+    },
+    {
+      "id": "review-specification-65cdfbc21e096be602fdedd88cb9ed23a6a821ccf720dbea136dee5dd1e2619e",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/review-cr-r17.txt",
+        "sha256": "4175b19bb0fa53592e03743a12ecdba185bbea7d2588392b26873e6d33e0b621"
+      },
+      "locator": "specification review observation for binding-reinstatement-spec-r17@r17",
+      "recordedAt": "2026-11-28T00:17:09Z"
+    },
+    {
+      "id": "review-tasks-00428c2677d482582e3fd515d9fc81118bce258cc55592e7814a720ff6e6ac1f",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/critic-observation-r17.json",
+        "sha256": "4d475334e6f43e0e7b4431c44f4de0bff30f31ffba3fddb99ac35b6ffad14d71"
+      },
+      "locator": "tasks review observation for binding-reinstatement-spec-r17@r17",
+      "recordedAt": "2026-11-28T00:19:54Z"
+    },
+    {
+      "id": "src-owner-authorization-cf042d8445008b54",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/config-admission-resilience/owner-envelope-widening-5.json",
+        "sha256": "57e354263bbd56c94e941c296b2c013e38249ab48ba81650910cf6f12a34fc05"
+      },
+      "locator": "delta.write[0..8] — 9-path envelope grant for binding-reinstatement",
+      "recordedAt": "2026-11-28T00:21:49Z"
+    }
+  ],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "CR1",
+      "CT1",
+      "T5"
+    ],
+    "readPaths": [
+      "internal/storage",
+      "internal/service",
+      "internal/observe",
+      "docs",
+      "cmd/mcp-bridge",
+      ".omp/artifacts/binding-reinstatement",
+      ".omp/plans"
+    ],
+    "writePaths": [
+      "internal/storage/reconcile.go",
+      "internal/storage/reconcile_test.go",
+      "internal/service/reload.go",
+      "internal/service/durable_test.go",
+      "internal/observe/log.go",
+      "internal/observe/log_test.go",
+      "docs/logging-contract.md",
+      "cmd/mcp-bridge/logging_contract_test.go",
+      "CHANGELOG.md"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "CR1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/spec.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "CT1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/spec.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "critic"
+      ]
+    },
+    {
+      "id": "T5",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/storage/reconcile.go",
+          "internal/storage/reconcile_test.go",
+          "internal/service/reload.go",
+          "internal/service/durable_test.go",
+          "internal/observe/log.go",
+          "internal/observe/log_test.go",
+          "docs/logging-contract.md",
+          "cmd/mcp-bridge/logging_contract_test.go",
+          "CHANGELOG.md"
+        ]
+      },
+      "acceptanceIds": [
+        "AC22",
+        "AC23",
+        "AC24",
+        "AC25",
+        "AC26"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC22",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC23",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC24",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC25",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC26",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/GATE_OPEN.json",
+    "activationEvidenceIds": []
+  }
+}

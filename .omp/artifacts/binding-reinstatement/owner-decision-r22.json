@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "feature": "config-admission-resilience",
+  "origin": "owner-answer-in-session",
+  "ownerInstruction": "1 (round 22)",
+  "decision": "extend-review-budget-to-22",
+  "revision": "r22",
+  "explicit": true,
+  "automatic": false,
+  "timedOut": false,
+  "recordedAt": "2026-11-28T01:32:09Z",
+  "scope": "Authorizes A1-r22 only: collapse the refresh protection to the single owner-authorized EMISSION guard (no pre-commit build error), rewrite ADR17 as cancel -> join -> close unconditionally, make the refresh regression assert the guard error (RED), fix the reload prompt-purge oracle, regenerate anchors from HEAD, tighten AC22 falsifiability. One CodeReviewer round (22 of 22) and eligible Critic, then engineer attempt 3 and delivery. Envelope 11 paths; AC22-AC26 ceiling.",
+  "rulings": [
+    {
+      "id": "S15-budget",
+      "value": 22
+    },
+    {
+      "id": "guard-form",
+      "value": "emission condition only: in.mode != buildRefresh"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+## Code Review Summary
+
+**Subject:** binding-reinstatement-spec-r12 (id r1) — implementation readiness, specification mode, initial pass. **Files reviewed:** 12 (spec, owner decision, reconcile.go, snapshot.go, store.go, reload.go, refresh.go, loop.go, serve.go, startup_failure.go, log.go/envelope.go, docs/logging-contract.md, logging_contract_test.go).
+
+**Issues:** CRITICAL 0 · HIGH 0 · MEDIUM 1 · LOW 4
+
+**CR12-01 [MEDIUM][observability][HIGH confidence]** — Invariant: R9 failure must stay diagnosable. Anchor: ADR12/reload.go:728-744 (skipped), :730-738 (existing `internal_warning`/`prompt_persist` emitter). Counterexample: reinstated admission, `PersistPrompts` fails → build returns error with no `internal_warning`, only `startup_failed`/reload rejection. The spec treats this as forced, but the new pre-`:724` persist can emit the same record before returning; no classifier change needed. Fix: emit it in ADR9(b)'s error branch; AC25(a) unaffected (zero `binding_reinstated` only).
+
+**CR12-02 [LOW][anchor][HIGH]** — Q3(iv) cites `reload.go:601-604` for "reload registers current-era tools"; those lines are prompt discovery (`DiscoverPrompts`, :602). Tools: `:618` `Discover`, `:638` `catalog.Register`. Fix: correct citation.
+
+**CR12-03 [LOW][invariant][MEDIUM]** — ADR8's refresh no-emission proof is the invariant only; no test or guard. Anchor reload.go:584-587, :791-796. Counterexample: any future path leaving a committed retired binding for a configured server → refresh reinstates silently. Fix: one `buildRefresh` test in `durable_test.go` asserting zero records, plus a fail-closed check when `pendingReinstatement(base)≠∅` in refresh.
+
+**CR12-04 [LOW][coverage][HIGH]** — AC26 decode leg untested (disclosed; ungranted file). Accept as gated follow-up.
+
+**CR12-05 [LOW][wording][HIGH]** — R9 "Exactly one … per committed admission" vs per-server emission; AC25 states it correctly. Fix R9 to "per reinstated server".
+
+**Verified:** all cited anchors exist and match (reconcile.go:13,46-50,80-99,111-127,129-149,164-167; snapshot.go:102,179-190,225-232,313-315,330-336; snapshot_v1.go:31/34,109,135; reload.go:537-552 (549/550/551-552 confirmed),553,566,584-597,601-604,674,681-683,718-720,723-726,728-744,745,747-750,777-790,791-796,817,900-905; loop.go:157-160,206-212; serve.go:88,276-278,283; startup_failure.go:28,108-117; log.go:15,20,176-179,282-355; docs :61,:76,:549,:562). CR11-01 closed: :745 is outside :728-744. Build call sites: exactly 3 (refresh.go:57, reload.go:486,509); emission is post-accept inside `commitMu` → no double/miss. Sentinel refs only reconcile.go:13 + reconcile_test.go:187-188. Owner grant = the 9 write paths exactly; no ungranted file needed (`startup`/`reload` already in `operationVocabulary`; envelope unchanged; `Validate` accepts schema 1; empty `PromptSnapshot` valid). Purge proof sound (prompts are the only falsifiable residue; zero-row clauses honestly labeled). §8 rollback claim correct for committed states; uncommitted states disclosed.
+
+**Positives:** fail-closed ordering (prompts before snapshot), exact anchor discipline, honest RED/guard labeling.
+
+### Recommendation
+APPROVE

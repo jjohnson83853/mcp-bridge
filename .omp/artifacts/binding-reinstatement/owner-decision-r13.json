@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "feature": "config-admission-resilience",
+  "origin": "owner-answer-in-session",
+  "ownerInstruction": "Recommended option 1: amend the contract and authorize one more review round",
+  "decision": "extend-review-budget-to-13-and-authorize-narrowed-durability-guarantee",
+  "revision": "r13",
+  "explicit": true,
+  "automatic": false,
+  "timedOut": false,
+  "recordedAt": "2026-11-27T23:18:47Z",
+  "scope": "Authorizes A1-r13: narrow the reinstatement durability guarantee to distinguish pre-rename failures (tombstone remains) from post-rename/fsync publication uncertainty (admission rejected, disk state uncertain), plus one deterministic publish-then-error fixture in internal/service/durable_test.go. Authorizes one further CodeReviewer round (13 of 13) and the subsequent eligible Critic. Does NOT authorize a storage-protocol change, internal/storage/store.go, or any source path outside the existing 9-path envelope.",
+  "rulings": [
+    {
+      "id": "S15-budget",
+      "value": 13,
+      "note": "Adds one round to the extension to 12."
+    },
+    {
+      "id": "durability-guarantee",
+      "value": "narrowed",
+      "note": "Post-rename/fsync failure is genuine durability uncertainty, not diagnostic-only."
+    }
+  ]
+}

@@ -519,6 +519,23 @@ func (r *Runtime) AdmitStartup(candidate *config.Config, deps ReloadDeps, durabl
 // current generation. Nothing is published on failure (plan §4.10 step 4).
 func (r *Runtime) build(in buildInput) (*Assembly, error) {
 	previous := in.previous
+	base := in.reconcileBase(previous)
+	pending := pendingReinstatement(base, in.candidate.Servers)
+	reinstated := reinstatedServers(base, in.candidate.Servers)
+	if in.mode == buildRefresh && len(reinstated) != 0 {
+		return nil, fmt.Errorf("service: refresh reinstatement invariant violated for server %q", reinstated[0])
+	}
+	if pending {
+		if in.deps.Persist == nil {
+			return nil, fmt.Errorf("service: %s reinstatement requires snapshot persistence", in.mode)
+		}
+		if in.deps.PersistPrompts == nil {
+			return nil, fmt.Errorf("service: %s reinstatement requires prompt persistence", in.mode)
+		}
+		if in.mode == buildStartup && in.deps.LoadPrompts == nil {
+			return nil, errors.New("service: startup reinstatement requires prompt loading")
+		}
+	}
 	at := in.deps.Now().UTC()
 	next := &Assembly{
 		generation:   1,
@@ -537,7 +554,20 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 	if in.mode == buildStartup && in.deps.LoadPrompts != nil {
 		loaded, err := in.deps.LoadPrompts()
 		if err != nil {
-			if in.deps.Logger != nil {
+			if pending {
+				if !errors.Is(err, storage.ErrNoSnapshot) {
+					if in.deps.Logger != nil {
+						in.deps.Logger.Log(observe.Entry{
+							Level:     "warn",
+							Event:     "internal_warning",
+							Operation: "prompt_load",
+							Outcome:   "degraded",
+							Error:     observe.RuntimeErrorInfo("internal_error"),
+						})
+					}
+					return nil, fmt.Errorf("service: startup load prompts: %w", err)
+				}
+			} else if in.deps.Logger != nil {
 				in.deps.Logger.Log(observe.Entry{
 					Level:     "warn",
 					Event:     "internal_warning",
@@ -671,7 +701,7 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 		next.pinMetadata = pinMetadata
 	}
 
-	snapshot, err := storage.Reconcile(in.reconcileBase(previous), storage.ReconcileInput{
+	snapshot, err := storage.Reconcile(base, storage.ReconcileInput{
 		CreatedAt:               at,
 		ConfigPublicFingerprint: next.fingerprint,
 		CatalogRevision:         next.revision,
@@ -680,6 +710,9 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 	})
 	if err != nil {
 		return nil, fmt.Errorf("service: %s reconcile: %w", in.mode, err)
+	}
+	for _, serverID := range reinstated {
+		next.prompts = replaceServerPrompts(next.prompts, serverID, nil)
 	}
 	for _, outcome := range outcomes {
 		switch {
@@ -720,12 +753,7 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 	if err := r.validateAcceptance(previous); err != nil {
 		return nil, fmt.Errorf("service: %s accept runtime: %w", in.mode, err)
 	}
-	if in.deps.Persist != nil {
-		if err := in.deps.Persist(snapshot); err != nil {
-			return nil, fmt.Errorf("service: %s persist: %w", in.mode, err)
-		}
-	}
-	if in.mode != buildStartup && in.deps.PersistPrompts != nil {
+	if pending {
 		candidatePrompts := &storage.PromptSnapshot{SchemaVersion: storage.PromptSchemaVersion, Prompts: append([]storage.Prompt(nil), next.prompts...)}
 		if err := in.deps.PersistPrompts(candidatePrompts); err != nil {
 			if in.deps.Logger != nil {
@@ -737,8 +765,32 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 					Error:     observe.RuntimeErrorInfo("internal_error"),
 				})
 			}
-			if previous != nil {
-				next.prompts = previous.Prompts()
+			return nil, fmt.Errorf("service: %s persist prompts: %w", in.mode, err)
+		}
+		if err := in.deps.Persist(snapshot); err != nil {
+			return nil, fmt.Errorf("service: %s persist: %w", in.mode, err)
+		}
+	} else {
+		if in.deps.Persist != nil {
+			if err := in.deps.Persist(snapshot); err != nil {
+				return nil, fmt.Errorf("service: %s persist: %w", in.mode, err)
+			}
+		}
+		if in.mode != buildStartup && in.deps.PersistPrompts != nil {
+			candidatePrompts := &storage.PromptSnapshot{SchemaVersion: storage.PromptSchemaVersion, Prompts: append([]storage.Prompt(nil), next.prompts...)}
+			if err := in.deps.PersistPrompts(candidatePrompts); err != nil {
+				if in.deps.Logger != nil {
+					in.deps.Logger.Log(observe.Entry{
+						Level:     "warn",
+						Event:     "internal_warning",
+						Operation: "prompt_persist",
+						Outcome:   "degraded",
+						Error:     observe.RuntimeErrorInfo("internal_error"),
+					})
+				}
+				if previous != nil {
+					next.prompts = previous.Prompts()
+				}
 			}
 		}
 	}
@@ -749,6 +801,17 @@ func (r *Runtime) build(in buildInput) (*Assembly, error) {
 	}
 	published = true
 	retirePrevious(previous, next, in.deps)
+	if in.deps.Logger != nil {
+		for _, serverID := range reinstated {
+			in.deps.Logger.Log(observe.Entry{
+				Level:     "warn",
+				Event:     "binding_reinstated",
+				Server:    serverID,
+				Operation: in.mode.String(),
+				Outcome:   "degraded",
+			})
+		}
+	}
 	return next, nil
 }
 
@@ -793,6 +856,42 @@ func (in buildInput) reconcileBase(previous *Assembly) *storage.Snapshot {
 		return in.durable
 	}
 	return previousSnapshot(previous)
+}
+func pendingReinstatement(base *storage.Snapshot, servers []config.Server) bool {
+	if base == nil {
+		return false
+	}
+	for _, binding := range base.Bindings {
+		if !binding.Retired {
+			continue
+		}
+		for _, server := range servers {
+			if server.ID == binding.ServerID {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func reinstatedServers(base *storage.Snapshot, servers []config.Server) []string {
+	if base == nil {
+		return nil
+	}
+	var reinstated []string
+	for _, binding := range base.Bindings {
+		if !binding.Retired {
+			continue
+		}
+		for _, server := range servers {
+			if server.ID == binding.ServerID {
+				reinstated = append(reinstated, binding.ServerID)
+				break
+			}
+		}
+	}
+	sort.Strings(reinstated)
+	return reinstated
 }
 
 // definitionsFromSnapshot reconstructs one server's exact tool definitions from

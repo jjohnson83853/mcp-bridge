@@ -1,0 +1,19 @@
+## Code Review — binding-reinstatement-spec-r6 (spec mode, initial)
+Candidate r6, sha256 fe4a…d443 (state-bound; hash not recomputed — no shell tool). Prompt label “r2 (r1)” is stale. HEAD fa832293; read-only static review.
+
+**Findings**
+- **CR6-01 [HIGH]** Invariant: every §6 required gate exits 0 at GREEN. Anchor: §6 gate 3. Counterexample: its `grep -cxE` alternation enumerates exactly 6 tests (5 `TestStartup…` + `TestReloadReinstates…`), so it prints 6; `test … = 7` can never pass, and §6 says “six tests below” while listing 5 new. Fix: assert 6 (or name the intended 7th).
+- **CR6-02 [MED]** Invariant: AC25 failure branches falsifiable without contradicting ADR10. Anchor: AC25(a)(b)(d); ADR10; §7. Counterexample: a corrupt `prompts.json` on a startup reinstatement logs `internal_warning`/`prompt_load` (reload.go:537-549) then fails, so “ZERO records” is false and contradicts the mandated signal. Fix: “ZERO `binding_reinstated` records”; assert the warning separately.
+- **CR6-03 [MED]** Invariant: fail-closed predicate defined before Reconcile. Anchor: ADR10/ADR13; reload.go:537 vs :674/:681-683. Counterexample: nil `LoadPrompts` + configured retired binding — the “non-empty reinstatement set” exists only post-Reconcile, yet the check runs at :537. Fix: define `pendingReinstatement(base, configured)` and prove equivalence to the post-Reconcile diff.
+- **CR6-04 [MED]** Invariant: R9 “admitted unbound” consistent in both modes. Anchor: R9; §4 Q3(iv); AC25(e); reload.go:599-611. Counterexample: drop→re-add reload with successful `Discover` registers tools, then `StampServerSuccess` marks fresh before Reconcile — server is admitted bound, and no AC pins this branch. Fix: define “unbound” as no retired-era/restored rows (startup empty) and add a reload-success AC.
+- **CR6-05 [MED]** Invariant: ADR12/§7 cause claim accurate. Anchor: ADR12; §7; startup_failure.go:109-111,42. Counterexample: `prompts.json` decode error (quarantine off) makes the ADR10 error wrap `storage.ErrCorrupt` (store.go:94); `errors.Is` yields `admission_persist_failed`, not `generic_loop_start`. Same for a `SavePrompts` trust-gate error. Fix: state both mappings; drop the universal cause claim.
+- **CR6-06 [LOW]** Anchor error: refresh rejection cited at reload.go:588-592 (return :590-591); actual `if buildRefresh` is :584-588, return :587. Fix the citation. Other drifts: `toCanonical` :100-131→97-130 (conversion :109); `BindingAllowed` :179-192→179-190; `LoadPrompts` :84-93→84-98; prompt restore :741→:742; docs pins :61-83→:63-100.
+- **CR6-07 [LOW]** §8 rollback: “empty catalog” is false for a reload reinstatement with successful discovery — `IndexTools` persists current tool rows, which the old binary’s `definitionsFromSnapshot` restores (reload.go:805-817). No-crash/no-reject still holds. Fix: scope to startup or “current-era rows”.
+- **CR6-08 [LOW]** Fixtures: reinstatement tests require non-nil `PersistPrompts` (ADR9b) as well as `LoadPrompts`; harness `deps()` (reload_test.go:134) leaves both nil. Also stale “never rebinds” comments remain in granted durable_test.go:211-212 and reconcile_test.go:15 (F4 names only :174-175).
+
+**Positives**: ADR2 diff (`base retired ∧ next armed ∧ configured`) is sound across all build sites (refresh.go:57, reload.go:486/:509); refresh emission is structurally unreachable (client-adoption rejection precedes Reconcile); commit-point emission inside `commitMu` prevents pre-commit and double emission; `purged` drives row reset/tool/embedding drops, and the prompt purge is scoped, durable-before-snapshot, fail-closed; `bindingV1`→`Binding` field-identical conversion preserves `Retired`; sentinel refs are only reconcile.go:13/81 + test :187-188, all granted; owner grant’s 9 paths exactly match T5.
+
+**Limits**: no shell/git/LSP; hash not recomputed; no tests/vet run. The deferred schema-1 decode fixture is owner-gated and mechanism-sound.
+
+### Recommendation
+REQUEST CHANGES

@@ -1,0 +1,83 @@
+{
+  "candidateId": "binding-reinstatement-spec-r22",
+  "revision": "r22",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/spec.md",
+      "sha256": "be3caa0974cdb003b4f2410a2d70e95db1f241aee39de80e0cbdb860879e072c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/reconcile.go",
+      "sha256": "658e0823ef005d4a447f15f294715960693ba25593509a60bcd94930fce1f268"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/storage/reconcile_test.go",
+      "sha256": "640d22185fd311fec944b2f474303429c41a045a407ebd81c39ef8a1915ea403"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/reload.go",
+      "sha256": "8af0abb1dcb631568c9afc49d8e8e6a0dcc49e4343acb3b683188d257366b0f4"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/durable_test.go",
+      "sha256": "63cfdb016d9a85ed16e635ba339e84056f3e95156951a34f4663d1ba979d1876"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "a5999feaf2750a5093d2d17414aff7608f82edf19a37ee21ced2cf1749869f07"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log_test.go",
+      "sha256": "62693acf460b5352cf55c08eda5d1dd5bac29a04eddda20996d96d13c094f6af"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/logging_contract_test.go",
+      "sha256": "246e97b44e2e627c87f71b130602a8b1a05c1840a06923b0b163b698fe6bb389"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/serve.go",
+      "sha256": "1a769dabff0b7ad22894e48ce8a549cd4a2c2cdcf2041b250de66bcec1a42610"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/cmd/mcp-bridge/startup_failure_test.go",
+      "sha256": "95da06a4dae10187a0cdf3995a4e8616cd0c5d62956b07a03d4021eeef20ed1a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "43861996f7c0335250ac6e537d57047ad73a18e6b42225b113c3135d47cc79bf"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/CHANGELOG.md",
+      "sha256": "c25e03e0fc81219a921ddcff92849c8da35238ff3d88a5e703485f655511e041"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/review-cr-r21.txt",
+      "sha256": "28826be811fc24b8576a7637c03e5aefc7afcfddd00084291d72f728bc6d501f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/t5-verification-blockers.md",
+      "sha256": "9688695ae1a65fc45a517d973bff9e696dd846b8d1a073e16416fbafe62e8c42"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/owner-decision-r22.json",
+      "sha256": "1c2a10c7a2bae7fcd6c9db256851866460c7b1728c8b9dac84850264aac0b9ac"
+    }
+  ],
+  "reviewers": [
+    {
+      "name": "RemedyAR22CodeReview",
+      "taskId": "CR1",
+      "reviewerId": "code-reviewer",
+      "payloadPath": ".omp/artifacts/binding-reinstatement/payload-cr.json"
+    },
+    {
+      "name": "RemedyAR22Critique",
+      "taskId": "CT1",
+      "reviewerId": "critic",
+      "payloadPath": ".omp/artifacts/binding-reinstatement/payload-ct.json"
+    }
+  ]
+}

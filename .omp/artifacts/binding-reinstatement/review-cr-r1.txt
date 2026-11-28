@@ -1,0 +1,38 @@
+## Code Review Summary
+Mode: specification (pre-implementation), initial pass. Candidate `binding-reinstatement-spec-r1` (`spec.md`, sha256 `94cae8ee…`, HEAD `fa832293`).
+**Files Reviewed:** 17 (bound spec, owner decision, execution-state, reconcile/snapshot/reload/refresh/loop/log/envelope sources, tests, docs, cmd)
+
+### By Severity
+HIGH: 4 · MEDIUM: 5 · CRITICAL/LOW: 0
+
+### Issues
+
+**CR-R1-01 [HIGH][conf HIGH][contract/completeness]** Bound spec.md contains only requirements/design/tasks/envelope; it has no §3 evidence, §5 AC22–AC26 table, §8 recovery, or commands, yet T5 requires "§3 anchors" (`spec.md:31`) and `:33` cites §5 commands. Counterexample: an implementer bound to this hash cannot read AC22's observable clauses; state acceptance holds IDs/method only (`execution-state.json:238-282`). Fix: bind the full amendment (or inline §3/§5/§8), recompute `sectionBindings`, put AC clauses into state acceptance.
+
+**CR-R1-02 [HIGH][conf HIGH][authority]** T5 says "11 paths" but lists 10 (`spec.md:32,39`), while owner delta and env-1 grant 9 (`owner-envelope-widening-5.json` delta.T5.add; `execution-state.json:141-151`). T5-required `internal/observe/edge_test.go` (real warn fixtures at `edge_test.go:94,149`) and `.scratch/…/02-…md` are ungranted; the grant instead has `internal/observe/log_test.go`. Counterexample: the warn-shape edit is outside env-1. Fix: re-scope to granted paths (or obtain a new owner widening), correct the count.
+
+**CR-R1-03 [HIGH][conf HIGH][lifecycle/observability]** Reload reinstatement is reachable after a drop→re-add: base is the published tombstoned snapshot (`reload.go:674`, `791-796`), reload may build a new client (`reload.go:580-592`), so the hardcoded `Operation:"startup"` (`spec.md:15`) is wrong for `buildReload`. The "published snapshots never hold retired bindings for configured servers" proof is invalid; only refresh is saved by the new-client guard (`reload.go:584-587`). Fix: derive operation from `in.mode`, pin both operations, add an AC25 drop→re-add reload case.
+
+**CR-R1-04 [HIGH][conf HIGH][purge/repair closure]** Prompt purge is keyed to the retirement diff (`spec.md:15`). Startup persists the snapshot (`reload.go:723-726`) but never prompts (`:728`). After a crash before the first refresh, the next startup sees a non-retired binding, the diff is empty, and stale `prompts.json` rows load (`reload.go:537-551`) and are served — AD-R4's "idempotent" claim is false. Fix: make the prompt purge durable or key it on persisted non-fresh evidence; extend AC24 to a second start.
+
+**CR-R1-05 [MEDIUM][conf HIGH][release/rollback]** The candidate omits §8, and `amendment…md:75-77` is false: after upgrade persists a non-retired binding, the old binary reads/validates it and starts (empty catalog), not "crash-loops again"/"rejects identically". Fix: correct rollback expectations or preserve the tombstone.
+
+**CR-R1-06 [MEDIUM][conf MEDIUM][falsifiability]** AC26 ("reinstates identically") names no assertions; a test asserting only `err == nil` passes. Fix: state binding/rows/tools/embeddings/Validate/previous-immutability assertions.
+
+**CR-R1-07 [MEDIUM][conf HIGH][contract test]** T5 only says "add to required-strings oracle"; the exhaustive map is count-pinned at 36 (`logging_contract_test.go:777-778`), the new event's static message is unspecified, and "classification row" implies an AD13 error object (`docs/logging-contract.md:542-549`) the planned Entry does not emit. Fix: pin message, extend both maps and 36→37, or explicitly limit docs to the pin table.
+
+**CR-R1-08 [MEDIUM][conf HIGH][anchors]** Wrong anchors: `reconcile.go:95-99` is the tombstone-creation arm (retention is `:90-91`); `:166-175`→canonicalize/Validate `:164-167`; `reload.go:784-798`→helper `:777-790`; `:813`→guard `:817`; `:601-611` fresh client is `:584-597`; `log.go:94,149` are `observe/edge_test.go:94,149`; `log.go:121-124` mutex write is `:176-179`. Fix anchors.
+
+**CR-R1-09 [MEDIUM][conf MEDIUM][lifecycle/double-emit]** Warn is emitted before persist/accept (`reload.go:674-683` vs `:718-749`); a later failure logs a reinstatement never committed, and a retry logs it again. Fix: emit after successful persist/accept, or state per-attempt semantics.
+
+### Open Questions
+Does `TestStartupReinstatementDropsStalePromptRows` run two starts? If yes, CR-R1-04 surfaces at GREEN rather than in production.
+
+### Positive Observations
+Branch rewrite mirrors the proven purge path; previous-snapshot immutability and `Validate` invariants hold; AD-R3 sentinel removal is clean (`reconcile.go:13,81`, `reconcile_test.go:187-188`, historical doc only); the dedicated event avoids `internal_warning` misuse.
+
+### Review Limits
+Read-only tools only; no shell/Git/LSP, so hashes were not recomputed and no tests were run.
+
+### Recommendation
+REQUEST CHANGES

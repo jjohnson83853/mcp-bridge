@@ -1,0 +1,56 @@
+## Code Review Summary
+
+Mode: specification (implementation readiness); pass: initial for r16, with closure check of all six r15 dispositions. Candidate: `.omp/artifacts/binding-reinstatement/spec.md` (sha256 `e6eba588…`, r16, id `binding-reinstatement-spec-r16`, HEAD `fa832293`, clean). Note: the request header says "r2 (r1)"; the dispatch payload binds r16, which is what I reviewed.
+
+**Files Reviewed:** 22
+
+**Total Issues:** 5
+
+### By Severity
+- CRITICAL: 0
+- HIGH: 0
+- MEDIUM: 0
+- LOW: 5
+
+### Issues
+
+[LOW][verifiability] Test-ledger count/letter drift
+File: spec.md:88-89
+Issue: :88 says "ELEVEN deliverables: NINE behavioral-RED" and `cases a/c/d/g/f`; the list contains 12 tests, 10 marked [RED]. AC25 (:76) labels only (a)-(d),(e1),(e2),(f); r15's (g) survives unlabelled as "Preservation: an unconfigured tombstone…". :89 "nine [RED]" omits a failing fixture.
+Fix: "TWELVE: TEN RED + TWO guards"; label the preservation clause "(g)"; correct :89.
+
+[LOW][anchor-accuracy] Stale store.go/wiring.go anchors
+File: internal/storage/store.go; cmd/mcp-bridge/wiring.go
+Issue: claimed `Store.Load :193-211` is :199-211; `Save :213-238` is :219-245; `LoadPrompts :84-98` is :84-97; `wiring.go:580-590` covers :583 but not the :571 `ErrNoSnapshot` absorption. Publish anchors :288-306/:327-336 are exact.
+Fix: correct the ranges.
+
+[LOW][verifiability] Untestable internal-predicate assertion
+File: spec.md:76; internal/service/durable_test.go:1
+Issue: AC25(b) requires "`pendingReinstatement` EMPTY", but the fixture is `package service_test`; the unexported predicate is inaccessible. "exactly one rejection signal" is undefined.
+Fix: assert successful restart + zero `binding_reinstated` records; define the signal as the returned error.
+
+[LOW][verifiability] Docs-oracle exact strings unpinned
+File: spec.md:76 vs r15 amendment:72 (AC27)
+Issue: the fold keeps the four elements and quoted prose, but drops AC27's concrete variant-row values (`warn`/`degraded`/`internal_error`); the `:76` pin row is derivable from ADR8 (`startup` canonical) but not pinned.
+Fix: pin exact expected rows in AC25.
+
+[LOW][observability] Unreachable diagnostic
+File: spec.md:108
+Issue: "repeated warn … tombstone is re-created while configured" cannot occur after the rewrite (tombstones only for unconfigured servers; a configured retired binding is reinstated). A repeat means a durable snapshot still carries the retired binding after a failed/partial admission.
+Fix: reword that recovery signal.
+
+### Open Questions (low-confidence, non-blocking)
+- spec.md:12 "NO refresh-mode guard" vs ADR8 (:41) retained `in.mode != buildRefresh`. r15 defined ADR16 as the refresh *build-failure* check, so the retained emission condition appears compliant; confirm no refresh-specific condition was meant to be forbidden.
+- `logging_contract_test.go:660-685` returns the first row for event+code; appended `internal_warning` variants share `internal_error`. Safe today (that test emits only reload/failure); a future variant record fed there will mismatch.
+
+### Positive Observations
+- ADR2 is explicit, non-fingerprint, with the equal-fp incident discriminator pinned in both storage and service fixtures; AC22-26 each name tests and exact commands, and AC23's green-on-arrival guard is justified.
+- Durability split matches real `Store.Save` (:301 rename, :305 trusted, :306 fsync); the not-survived branch is honestly left untested/owner-gated.
+- Purge proof complete: `purged` resets health (:111-127), drops tools/embeddings (:129-149); `definitionsFromSnapshot` refuses retired (:817); prompts via ADR9(a)/(b); production deps non-nil (serve.go:276-278).
+- Authority: T5 write set exactly the 9 owner-granted paths (spec §11).
+- Sentinel removal clean: only reconcile.go:13,81 + reconcile_test.go:187-188; no docs refs; `TestTombstoneRejectsRebind` (store_test.go:468-483) tests `BindingAllowed` only and stays green.
+- Build sites verified (refresh.go:57, reload.go:486,509); refresh condition + invariant prevent refresh emission; per-server emission is one-per-admission.
+- §8 rollback holds: no schema/JSON change; old binary validates the non-retired snapshot; pre-rename path honestly resumes the crash-loop.
+
+### Recommendation
+APPROVE

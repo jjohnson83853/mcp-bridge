@@ -8,10 +8,14 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httptest"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -248,26 +252,82 @@ func TestStartupListenerServeFailureClassified(t *testing.T) {
 	httpAddress, operationsAddress := freeAddress(t), freeAddress(t)
 	configPath := filepath.Join(t.TempDir(), "bridge.yaml")
 	embeddings := fakeEmbeddings(t)
-	upstream := fakeUpstream(t, "read", `{"type":"object","properties":{},"additionalProperties":true}`)
-	writeBridgeConfig(t, configPath, httpAddress, operationsAddress, filepath.Join(t.TempDir(), "state"), embeddings.URL, []bridgeServerSpec{{id: "alpha", endpoint: upstream.URL}})
+	baseUpstream := fakeUpstream(t, "read", `{"type":"object","properties":{},"additionalProperties":true}`)
+	target, err := url.Parse(baseUpstream.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	proxy := httputil.NewSingleHostReverseProxy(target)
+	refreshStarted := make(chan struct{}, 1)
+	releaseRefresh := make(chan struct{})
+	gatedUpstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case refreshStarted <- struct{}{}:
+		default:
+		}
+		<-releaseRefresh
+		proxy.ServeHTTP(w, r)
+	}))
+	t.Cleanup(gatedUpstream.Close)
+	writeBridgeConfigInterval(t, configPath, httpAddress, operationsAddress, filepath.Join(t.TempDir(), "state"), embeddings.URL, "1ms", []bridgeServerSpec{{id: "alpha", endpoint: gatedUpstream.URL}})
+
+	allowListenerFailure := make(chan struct{})
+	operationsStopped := make(chan struct{})
+	var failureOnce, releaseOnce sync.Once
+	allowFailure := func() { failureOnce.Do(func() { close(allowListenerFailure) }) }
+	release := func() { releaseOnce.Do(func() { close(releaseRefresh) }) }
+	t.Cleanup(allowFailure)
+	t.Cleanup(release)
 	original := serveListenerFn
 	serveListenerFn = func(server *http.Server, listener net.Listener) error {
-		if listener.Addr().String() == httpAddress {
+		switch listener.Addr().String() {
+		case httpAddress:
+			<-allowListenerFailure
 			_ = listener.Close()
 			return errors.New("synthetic listener serve failure")
+		case operationsAddress:
+			err := serveListener(server, listener)
+			close(operationsStopped)
+			return err
+		default:
+			return serveListener(server, listener)
 		}
-		return serveListener(server, listener)
 	}
 	defer func() { serveListenerFn = original }()
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	stdout, stderr := &syncWriter{}, &syncWriter{}
 	done := make(chan int, 1)
 	go func() { done <- runContext(ctx, []string{"--config", configPath}, stdout, stderr) }()
+	select {
+	case <-refreshStarted:
+	case <-time.After(5 * time.Second):
+		t.Fatalf("refresh pass did not start; stderr=%q", stderr.String())
+	}
+
+	failureAt := time.Now()
+	allowFailure()
+	select {
+	case <-operationsStopped:
+	case <-time.After(5 * time.Second):
+		release()
+		t.Fatalf("listener teardown did not start; stderr=%q", stderr.String())
+	}
+	release()
 	var code int
 	select {
 	case code = <-done:
-	case <-time.After(20 * time.Second):
-		t.Fatalf("listener failure did not finish within 20s; stderr=%q", stderr.String())
+	case <-time.After(3 * time.Second):
+		cancel()
+		select {
+		case code = <-done:
+		case <-time.After(3 * time.Second):
+			t.Fatalf("listener failure did not finish after cancellation; stderr=%q", stderr.String())
+		}
+		t.Fatalf("listener failure took too long to drain; exit=%d stderr=%q", code, stderr.String())
+	}
+	if elapsed := time.Since(failureAt); elapsed > 3*time.Second {
+		t.Fatalf("listener failure took %s to drain; want at most 3s", elapsed)
 	}
 	if code != 1 {
 		t.Fatalf("exit=%d, want 1; stderr=%q", code, stderr.String())

@@ -1,0 +1,34 @@
+## Code Review Summary
+**Subject:** specification · **Pass:** repair (r8 closes r7) · **Candidate:** `binding-reinstatement-spec-r8`, sha256 `738a718e…f4bb6b`, HEAD `fa832293`. Files reviewed: 14 (read-only). **Issues:** 0 CRITICAL, 0 HIGH, 1 MEDIUM, 5 LOW.
+
+### Issues
+[CR8-01][observability][MEDIUM][confidence HIGH] F4 partially closed — the contract still calls the ADR10 signal a defect.
+Anchor: `docs/logging-contract.md:549`, `:562-563`, `:76`.
+Invariant: the documented `internal_warning` variants are expected, queryable signals (§7; AC25(d)).
+Counterexample: after adding `prompt_load`/`prompt_persist` rows, `:562-563` still reads “An `internal_warning` … is a defect”; and editing `:549`'s cells breaks `TestLoggingContractProducerOperationPairs`, which computes the expected row from `operatorLog`'s default record (`warn`/`reload`/`failure`/`internal_error`/`internal`/`false`/…).
+Fix: keep `:549` byte-identical and first (it is the machine-matched row); append variant rows after it; update `:76` and `:562-563`. Both files are granted.
+
+[CR8-02][accuracy][LOW] ADR8's refresh proof is wrong for removals.
+Anchor: `reload.go:584-588,:587,:674`; `reconcile.go:90-99`.
+Counterexample: a refresh candidate that drops a server needs no new client, passes `:587`, reconciles at `:674`, and tombstones — “membership changed ⇒ rejected before Reconcile” is false. No-emission still holds via the invariant that no committed snapshot has a retired binding for a configured server.
+Fix: restate the proof on that invariant (or add a defensive `mode != buildRefresh` emit condition).
+
+[CR8-03][accuracy][LOW] F4 comment scope incomplete/mis-anchored.
+Anchor: `durable_test.go:209-211` (cited `:211-212`) and `:250-251`.
+Counterexample: `:250-251` “a config that puts the server back refuses to rebind it” becomes false; `TestStartupTombstonesAServerTheConfigDropped` stays green only because `reloadTwoServers` never re-adds “gone”.
+Fix: add `:250-251` to F4 and correct the anchor.
+
+[CR8-04][accuracy][LOW] Anchor drift: loaded-prompts append is `reload.go:550` (cited `:546`); `catalogLoopStartFailure` is `startup_failure.go:108-117` with `errors.Is`/cause at `:110-111` (cited `:107-117`/`:108-111`); `SavePrompts` trust gate is `store.go:110-113` (cited `:104-113`).
+
+[CR8-05][accuracy][LOW] `prompts_edge_test.go:54-65` does not support “flows prohibiting row-absence/`StatusNone`-keyed purge” — it is the corrupt-prompt isolation loop; ADR6 is superseded. Drop/replace the cite.
+
+[CR8-06][accuracy][LOW] AC26 overstates “exercised by the existing `snapshot_v1_compat_test.go` fixtures”: those fixtures contain no retired binding (the spec itself says so). Reword to “conversion exercised; Retired-preservation fixture is the gated follow-up”.
+
+### Verified
+All other anchors exist and say what is claimed. R9→AC22–AC26→T5 traces; AC25(a)–(g) are discriminating, AC22/23/24/26 viable (schema-1 canonical input passes `Validate`; distinct fingerprints). ADR2 equivalence holds across every switch arm. Purge proof holds: `Validate` forbids retired binding+row (`:313-315,:330-336`), `definitionsFromSnapshot` returns nil for retired (`:817`), ADR9 persists prompts before the snapshot, ADR10/13 fail closed, `replaceServerPrompts` covers both modes. Write set = the 9 granted paths exactly. Sentinel refs only `reconcile.go:13,:81` and `reconcile_test.go:187-188`. §8 rollback core holds (format/checksum unchanged; non-retired binding+`StatusNone` row passes old `Validate`; old refusal needs a retired binding). Closures: F1,F2,F3,F5(the five),F6,F7 ✓; F4 partial (CR8-01).
+
+### Limits
+No implementation or checks run; sha not independently recomputed (trusted from `candidate-request-r8.json` first input, which matches). Prose labels “spec-r2 (r1)”/“id …-r1” conflict with the dispatch/request r8 — reviewed content is the sha-bound r8. Review-budget accounting (7 prior CR artifacts vs owner-decision-r6 “6 completed”) is the coordinator/S15 lane, not adjudicated here.
+
+### Recommendation
+REQUEST CHANGES

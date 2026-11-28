@@ -1,0 +1,30 @@
+## Code Review Summary
+
+Mode: specification / implementation-readiness, initial pass. Reviewed `.omp/artifacts/binding-reinstatement/spec.md` (r19, sha256 8e0a…4f78) against the r18/r19 owner decisions and the working tree (fa832293 + landed T5).
+
+**Findings**
+
+**CR19-01 [MEDIUM][repair-closure]** `internal/service/reload.go:815-821` — the comment documents `reconcileBase`, but it is attached to `promptsForServers` (:821); `reconcileBase` (:851) has none. Spec §3 claims CR18-08 closed. Fix: attach it to :851 and list the edit in T5's remaining work.
+
+**CR19-02 [MEDIUM][authority]** §1 attributes the 11-path write set to `owner-decision-r19.json`; r19 is budget-only and states "No further envelope widening". `owner-envelope-widening-5.json` grants 9 paths; `serve.go` + `startup_failure_test.go` are granted only by `owner-decision-r18.json`. Fix: cite the r18+widening-5 union. No path lacks authority.
+
+**CR19-03 [MEDIUM][falsifiability]** AC22's command (`TestReconcileReinstatesConfiguredTombstonedServer|IsolatesSiblingServers`) asserts neither generation+1, previous-unmutated, `next.Validate()==nil`, nor `BindingAllowed(oldFp)==false` on the reinstatement path. Counterexample: delete the generation increment — command still green. Fix: add those assertions (both fp sub-cases) or narrow AC22.
+
+**CR19-04 [MEDIUM][falsifiability]** AC26 claims "AC22's assertions in both sub-cases"; `TestReconcileReinstatesSchema1RetiredBinding` (:293) sets `SchemaVersion=1` in memory, uses one fp case, asserts only non-retired. Fix: add both sub-cases/assertions or restate AC26.
+
+**CR19-05 [MEDIUM][falsifiability]** AC25(g) requires zero records "on an explicitly SET capturing Logger"; `TestStartupTombstonesAServerTheConfigDropped` uses `h.deps()` (no Logger, reload_test.go:134-175) and `reload.go:801` skips emission when nil — assertion vacuous. Fix: set a capturing Logger and assert zero.
+
+**CR19-06 [LOW]** AC25 docs-oracle claims the test asserts docs :562-563 prose; only the :568 sentence is asserted.
+
+**CR19-07 [LOW]** AC25(e2) "fresh stamp" is not asserted by `TestReloadReinstatesDroppedThenReaddedServer`.
+
+**CR19-08 [LOW][anchors]** Drift vs P04 exactness: prompt-persist-before-Persist cited :765-767/:769, actual :755/:767; commitMu :718-719 vs :748; `next.snapshot` :797 vs :794; `definitionsFromSnapshot` :817 vs :901; reconcile doc :37 vs :36.
+
+**CR19-09 [LOW][lifecycle]** ADR8's unguarded emission is reached by `buildRefresh` (refresh.go:57 → reload.go:800-811). Unreachable today (base is a committed snapshot; loop candidate advances only on successful reload, loop.go:107-111), but after removing the r6/F1 test there is no oracle, and docs now name startup/reload only. State the invariant as a documented precondition or add a cheap guard test.
+
+**Verified:** sentinel absent from `internal/`, `cmd/`, `docs/`; purge drops tools/embeddings/health; prompts purged before snapshot persist; unconfigured tombstone retained; anchors exact at serve.go:138/:321, snapshot.go:179-192/:313-315, log.go:176/:328-329, docs:77/:552/:568, startup_failure.go:108-110, contract test :700/:704/:706/:741/:780. ADR17's cancel→join→close is correct given `Loop.Start`'s drivers.Wait+Drain. §8 rollback holds in both branches.
+
+**Limits:** no shell/git; HEAD cleanliness and the pre-T5 binary source could not be confirmed; working tree reviewed as authoritative. Not verified: `else`-block "byte-identical to pre-T5" claim.
+
+### Recommendation
+REQUEST CHANGES

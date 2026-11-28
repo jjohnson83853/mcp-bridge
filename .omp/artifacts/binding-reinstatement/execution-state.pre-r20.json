@@ -1,0 +1,370 @@
+{
+  "schemaVersion": 2,
+  "feature": "binding-reinstatement",
+  "revision": "r19",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "spec": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/spec.md",
+    "sha256": "8e0a21857f83b902e726e3822025dcc8e7227f36f15dc5ba6a85f0596fcd4f78",
+    "sectionBindings": {
+      "requirements": {
+        "revision": "r19",
+        "sha256": "5735bfeb5a6e4872736ff1a71c4a296a7a87f2c7d0e6844da1f330a696d44db5"
+      },
+      "design": {
+        "revision": "r19",
+        "sha256": "232ff103c06d5a7a6bf298791094ff939cb87c4a5b7bec0fb8acf62b4e994648"
+      },
+      "tasks": {
+        "revision": "r19",
+        "sha256": "4d495dacd805efcaf2b64162cd6eb9a70a458094bd16a0ff0d7bd240a0b1eabe"
+      },
+      "envelope": {
+        "revision": "r19",
+        "sha256": "5e50a8a8e7cec88bc1b095c44e1ffdb1fde333c2d60798ecff1fd3c256ed5deb"
+      }
+    }
+  },
+  "packet": {
+    "digest": "eaf98c6756f74199ade2024dc84c3a7a67bbba1242895d9adeb1245a5827a373",
+    "branches": [
+      {
+        "id": "binding-reinstatement-r1",
+        "answerIds": [],
+        "taskIds": [
+          "CR1",
+          "CT1",
+          "T5"
+        ],
+        "envelopeId": "env-1",
+        "sectionBindings": {
+          "requirements": {
+            "revision": "r19",
+            "sha256": "5735bfeb5a6e4872736ff1a71c4a296a7a87f2c7d0e6844da1f330a696d44db5"
+          },
+          "design": {
+            "revision": "r19",
+            "sha256": "232ff103c06d5a7a6bf298791094ff939cb87c4a5b7bec0fb8acf62b4e994648"
+          },
+          "tasks": {
+            "revision": "r19",
+            "sha256": "4d495dacd805efcaf2b64162cd6eb9a70a458094bd16a0ff0d7bd240a0b1eabe"
+          },
+          "envelope": {
+            "revision": "r19",
+            "sha256": "5e50a8a8e7cec88bc1b095c44e1ffdb1fde333c2d60798ecff1fd3c256ed5deb"
+          }
+        }
+      }
+    ],
+    "selectedBranchId": "binding-reinstatement-r1"
+  },
+  "actors": {
+    "plannerId": "planner",
+    "implementerIds": [
+      "engineer"
+    ]
+  },
+  "requirements": [
+    {
+      "id": "R9",
+      "summary": "A configured server whose durable binding is retired is reinstated unbound (tombstone cleared, current endpoint fingerprint, no tools/embeddings/health/prompt rows of the retired era) with exactly one bounded warn record per admission; unconfigured tombstones keep their current semantics."
+    }
+  ],
+  "authorization": {
+    "mode": "bounded",
+    "id": "owner-authorization:47d43ea9c128eea38f3e57a758b10d21",
+    "packetDigest": "eaf98c6756f74199ade2024dc84c3a7a67bbba1242895d9adeb1245a5827a373",
+    "selectedBranchId": "binding-reinstatement-r1",
+    "receipt": {
+      "sourceId": "src-owner-authorization-a61e273568256680",
+      "recordedAt": "2026-11-28T01:02:25Z",
+      "response": {
+        "origin": "user",
+        "explicit": true,
+        "timedOut": false,
+        "automatic": false,
+        "packetDigest": "eaf98c6756f74199ade2024dc84c3a7a67bbba1242895d9adeb1245a5827a373",
+        "selectedBranchId": "binding-reinstatement-r1"
+      }
+    }
+  },
+  "reviews": {
+    "specification": null,
+    "tasks": null
+  },
+  "sources": [
+    {
+      "id": "src-owner-binding-reinstatement",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/owner-request.json",
+        "sha256": "a839bb95f629977d78bdf915a00927d62d90b3248230de172311aa01691dd036"
+      },
+      "locator": "conversation: owner answered \"A\" then \"lets do 1 / run managed T5\"",
+      "recordedAt": "2026-11-27T21:15:00Z"
+    },
+    {
+      "id": "review-specification-65cdfbc21e096be602fdedd88cb9ed23a6a821ccf720dbea136dee5dd1e2619e",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/review-cr-r17.txt",
+        "sha256": "4175b19bb0fa53592e03743a12ecdba185bbea7d2588392b26873e6d33e0b621"
+      },
+      "locator": "specification review observation for binding-reinstatement-spec-r17@r17",
+      "recordedAt": "2026-11-28T00:17:09Z"
+    },
+    {
+      "id": "review-tasks-00428c2677d482582e3fd515d9fc81118bce258cc55592e7814a720ff6e6ac1f",
+      "kind": "observation",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/critic-observation-r17.json",
+        "sha256": "4d475334e6f43e0e7b4431c44f4de0bff30f31ffba3fddb99ac35b6ffad14d71"
+      },
+      "locator": "tasks review observation for binding-reinstatement-spec-r17@r17",
+      "recordedAt": "2026-11-28T00:19:54Z"
+    },
+    {
+      "id": "src-owner-authorization-cf042d8445008b54",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/config-admission-resilience/owner-envelope-widening-5.json",
+        "sha256": "57e354263bbd56c94e941c296b2c013e38249ab48ba81650910cf6f12a34fc05"
+      },
+      "locator": "delta.write[0..8] — 9-path envelope grant for binding-reinstatement",
+      "recordedAt": "2026-11-28T00:21:49Z"
+    },
+    {
+      "id": "src-owner-authorization-f89e4950c2434855",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/owner-decision-r18.json",
+        "sha256": "8a8ce640353e9e2ccde2d312237ad907888e13a2cc63006e8c868efae30bbbdf"
+      },
+      "locator": "owner answer \"1\": expand the T5 envelope by cmd/mcp-bridge/serve.go and cmd/mcp-bridge/startup_failure_test.go for the pre-existing shutdown race",
+      "recordedAt": "2026-11-28T00:51:35Z"
+    },
+    {
+      "id": "src-owner-authorization-d664461cc83f442e",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/owner-decision-r18.json",
+        "sha256": "8a8ce640353e9e2ccde2d312237ad907888e13a2cc63006e8c868efae30bbbdf"
+      },
+      "locator": "owner answer \"1\": expand the T5 envelope by cmd/mcp-bridge/serve.go and cmd/mcp-bridge/startup_failure_test.go for the pre-existing shutdown race",
+      "recordedAt": "2026-11-28T00:52:00Z"
+    },
+    {
+      "id": "src-owner-authorization-a61e273568256680",
+      "kind": "user-message",
+      "artifact": {
+        "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/owner-decision-r19.json",
+        "sha256": "55a6da0dc3140ff553947187c0097177f14debef173c71f10a5048b831cf9536"
+      },
+      "locator": "owner answer: add two to the plan (rounds 19-20)",
+      "recordedAt": "2026-11-28T01:02:25Z"
+    }
+  ],
+  "decisions": [],
+  "envelope": {
+    "id": "env-1",
+    "root": "/home/opencode/projects/default/mcp-bridge",
+    "allowedTaskIds": [
+      "CR1",
+      "CT1",
+      "T5"
+    ],
+    "readPaths": [
+      "internal/storage",
+      "internal/service",
+      "internal/observe",
+      "docs",
+      "cmd/mcp-bridge",
+      ".omp/artifacts/binding-reinstatement",
+      ".omp/plans"
+    ],
+    "writePaths": [
+      "internal/storage/reconcile.go",
+      "internal/storage/reconcile_test.go",
+      "internal/service/reload.go",
+      "internal/service/durable_test.go",
+      "internal/observe/log.go",
+      "internal/observe/log_test.go",
+      "cmd/mcp-bridge/logging_contract_test.go",
+      "cmd/mcp-bridge/serve.go",
+      "cmd/mcp-bridge/startup_failure_test.go",
+      "docs/logging-contract.md",
+      "CHANGELOG.md"
+    ],
+    "allowedEffects": [
+      "read",
+      "write",
+      "test"
+    ],
+    "forbiddenEffects": [
+      "network",
+      "publish",
+      "deploy",
+      "schedule",
+      "credentials",
+      "infrastructure"
+    ],
+    "decisionPolicy": {
+      "technicalDecisionIds": [],
+      "ownerCategories": []
+    },
+    "retryPolicy": {
+      "maxAttempts": 1,
+      "resetOn": [
+        "owner-signal",
+        "material-evidence"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "id": "CR1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/spec.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "code-reviewer"
+      ]
+    },
+    {
+      "id": "CT1",
+      "stage": "research",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "read",
+        "paths": [
+          "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/spec.md"
+        ]
+      },
+      "acceptanceIds": [],
+      "evidenceIds": [],
+      "agentRoles": [
+        "critic"
+      ]
+    },
+    {
+      "id": "T5",
+      "stage": "implementation",
+      "status": "pending",
+      "blockedBy": [],
+      "requires": [],
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/storage/reconcile.go",
+          "internal/storage/reconcile_test.go",
+          "internal/service/reload.go",
+          "internal/service/durable_test.go",
+          "internal/observe/log.go",
+          "internal/observe/log_test.go",
+          "cmd/mcp-bridge/logging_contract_test.go",
+          "cmd/mcp-bridge/serve.go",
+          "cmd/mcp-bridge/startup_failure_test.go",
+          "docs/logging-contract.md",
+          "CHANGELOG.md"
+        ]
+      },
+      "acceptanceIds": [
+        "AC22",
+        "AC23",
+        "AC24",
+        "AC25",
+        "AC26"
+      ],
+      "evidenceIds": [],
+      "agentRoles": [
+        "engineer"
+      ]
+    }
+  ],
+  "capabilities": [],
+  "acceptance": [
+    {
+      "id": "AC22",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC23",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC24",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC25",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    },
+    {
+      "id": "AC26",
+      "requirementIds": [
+        "R9"
+      ],
+      "ownerTaskIds": [
+        "T5"
+      ],
+      "method": "test",
+      "requiredEvidenceKinds": [
+        "test"
+      ]
+    }
+  ],
+  "evidence": [],
+  "blockers": [],
+  "gate": {
+    "markerPath": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/binding-reinstatement/GATE_OPEN.json",
+    "activationEvidenceIds": []
+  }
+}

@@ -1,0 +1,22 @@
+## Code Review — specification mode, initial pass
+
+**Candidate:** binding-reinstatement-spec-r2, sha256 `53cfd0e2…0537`, rev r2, HEAD `fa832293`. Reviewed spec.md, owner decision, and live anchors in reconcile.go/snapshot.go/snapshot_v1.go/reconcile_test.go/store_test.go/reload.go/refresh.go/projection.go/prompts.go/prompts_edge_test.go/reload_test.go/durable_test.go/loop.go/serve.go/startup_failure.go/log.go/log_test.go/log_manifest_test.go/logging_contract_test.go/logging-contract.md. 5 HIGH, 3 MEDIUM, 2 LOW.
+
+**H1 [purge-closure] ADR6 over-purges legitimate persisted prompts** — spec.md:33, reload.go:553. Key "base row absent or StatusNone" matches flows with valid prompts. Counterexample: `prompts_edge_test.go:54` calls `AdmitStartup(cfg,deps,nil)` with `PersistPrompts` set and expects 1 restored prompt (:58); base nil ⇒ every row "absent" ⇒ purge ⇒ fail. Same test's `:61` outage Refresh (base row StatusNone) fails at :65; `reload_test.go:750-758` fails likewise. Both files are outside the 9-path envelope, so AC20 cannot pass in-envelope; this is also an LKG-behavior regression. Fix: key the purge only on the reinstatement set (base binding retired); add an AC24 negative (nil durable ⇒ prompts preserved); delete the StatusNone arm.
+
+**H2 [durability/R9] prompt persist is best-effort and ordered after snapshot persist** — spec.md:33, reload.go:724-745. Counterexample: reinstatement start, `Persist` succeeds, `PersistPrompts` fails ⇒ durable snapshot is non-retired; with H1's required narrowing, start 2 has no retirement evidence and serves the stale rows (reload variant ends `StatusFresh`). Fix: persist prompts before the snapshot on the reinstatement path and fail the build on error, leaving the retired binding as the durable recovery signal.
+
+**H3 [falsifiability] every AC/T5 `-run` pattern is vacuous** — AC22–AC26, spec.md:78-80. In Go's RE2 `\|` is a literal pipe, so `go test -run 'A\|B'` selects zero tests and exits 0; the RED gate is falsely green. Fix: `-run 'A|B'` inside single quotes, plus a `go test -list` existence check.
+
+**H4 [completeness] AC23's oracle does not exist** — spec.md:61,78. `TestReconcileKeepsUnconfiguredTombstone` is absent; AC23 passes vacuously. `reconcile_test.go:176-192` `TestReconcileRejectsTombstonedRebind` references the removed sentinel and is mislabeled "GREEN-on-arrival" (spec.md:75); it must be rewritten/replaced. The Validate clause is covered only by `store_test.go:443` (ungranted, outside AC23's command). Fix: name the new test as a T5 deliverable and cite `TestValidateRejectsBoundsAndIdentityConflicts` in AC23.
+
+**M1** AC25's "unconfigured tombstones emit none" leans on `durable_test.go:212`, which asserts no records at all (no logger assertions); add a captured-record assertion. **M2** AC25's acceptance-failure clause is untestable: once `validateAcceptance` (reload.go:720) passes under `commitMu`, `accept` (:747) cannot fail (only it stores `r.current`); drop it or name an injection seam. **M3** spec.md:73's "no fresh widening is requested" is falsified by H1: satisfying AC20 requires ungranted `prompts_edge_test.go`/`reload_test.go` edits or the ADR6 redesign.
+
+**L1** Anchor drift: reload.go commit 718/720/745/747 vs cited 719-720/721-723/747/748-749; reconcile.go:165 vs :166-167; snapshot.go:179 vs :180-192; snapshot_v1.go:33 vs :34; log.go:16-28 vs :15-26; `config/command.go:55-56` is QueryCacheTTL/Weight, not the in-memory evidence (cf. snapshot.go:102). **L2** AC22's `BindingAllowed(oldFp)==false` is tautological unless a distinct retired fingerprint is pinned.
+
+**Verified sound:** anchors substantively correct; ADR2 diff cannot double-emit or fire on refresh (3 build sites — refresh.go:57, reload.go:486,509; refresh guard :584-586) and cannot miss the branch precondition; tool/embedding/health purge via `purged[]` is proven (reconcile.go:83,119,134,141-149); sentinel has no other production/test reference; §8 rollback holds (same schema, non-retired binding, StatusNone row accepted by old `Validate`); envelope equals the 9 granted paths exactly.
+
+**Limits:** read-only, no test execution; H3 is a static RE2 fact. The coordinator's anchor list (reload.go:502,520,601-611,688-692) predates r2; r2's own anchors were verified.
+
+### Recommendation
+REQUEST CHANGES

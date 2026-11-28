@@ -1,0 +1,52 @@
+{
+  "candidateId": "binding-reinstatement-spec-r3",
+  "revision": "r3",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR3-H1",
+      "class": "falsifiability",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR3-H2",
+      "class": "R9-residue",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR3-M1",
+      "class": "branch-undefined",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR3-M2",
+      "class": "anchor",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR3-M3",
+      "class": "convention",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR3-L1",
+      "class": "oracle-vacuity",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR3-L2",
+      "class": "anchor-drift",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR3-L3",
+      "class": "nil-dep",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r3.txt",
+  "dispatchName": "RemedyAR3CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-27T21:34:18Z"
+}

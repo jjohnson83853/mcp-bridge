@@ -1,0 +1,31 @@
+## Code Review — specification mode, initial pass
+Candidate: `.omp/artifacts/binding-reinstatement/spec.md` (self-bound `binding-reinstatement-spec-r10`, rev r10, HEAD fa832293). Issues: 5 LOW, 0 MEDIUM/HIGH, plus 1 review limit.
+
+### Findings
+**L1 LOW, confidence HIGH.** Invariant: every cited anchor resolves. `snapshot_v1.go:134-153` is actually 135-153; `reload.go:599-605` is 601-604; `reconcile.go:47-51` body ends at 50; `durable_test.go:210-211` comment is at 211. Counterexample: a verifier reading the stated range ends outside the construct. Fix: correct the ranges.
+
+**L2 LOW, HIGH.** Invariant: the purge proof matches enforcement. Spec §4 Q3(vii) calls retired-era tool/embedding/health rows "structurally unrepresentable" after reinstatement; false — `snapshot.go:313-315` rejects them only while `Retired` is true. The real guarantee is `purged[id]` in the rewritten branch. Counterexample: clear the binding but omit `purged[id]`; `Validate` accepts stale rows; AC22's `StatusNone`/zero-row assertions fail. Fix: attribute the guarantee to `purged[id]`, not `Validate`.
+
+**L3 LOW, HIGH.** Invariant: rollback states enumerated. Spec §8 discloses only prompt-purged/snapshot-failed. It omits the no-persist-yet states (nil prompt dep, `LoadPrompts` error, prompt-persist error): durable binding stays retired and prompts intact, so the old binary hits `reconcile.go:80-81` and the original crash-loop resumes. Fix: state every uncommitted state is rollback-incompatible.
+
+**L4 LOW, MED.** Invariant: reinstatement durability is enforced. ADR7 leaves `deps.Persist == nil` non-failing (`reload.go:723`), so a "committed" reinstatement can be memory-only and re-emit on the next start. Production always supplies it (`serve.go:276`), so no live defect. Fix: fail closed on nil `Persist` for a non-empty reinstatement set, or document why it is safe.
+
+**L5 LOW, HIGH.** Invariant: failure branches are queryable. ADR9(b) prompt-persist failure fails the build, but with `:728-745` skipped there is no `internal_warning/prompt_persist` record; only `startup_failed` or `reload_rejected`. Fix: state the intended branch signal explicitly.
+
+**L6 review limit (not a defect).** No shell access, so sha256 could not be recomputed; the assignment's id/sha (`...-r1`, 49d1a5…) conflicts with the file's r10 self-binding and workflowDispatch r10. Reviewed as r10.
+
+### Verified
+- R9→AC22-26→T5 traceable; every RED AC names a failing test and exact command; new names absent today (§6 existence gates).
+- ADR2 equivalence holds: `configured` is 1:1 from `candidate.Servers`; only the rewritten arm alters retirement for a configured server. The rewrite sets `purged[id]`, so health→`StatusNone`, tools/embeddings drop, sibling untouched (`snapshot.go:179,313-315,330-390`).
+- Build sites confirmed: `refresh.go:57`, `reload.go:486/509`; refresh invariant is sound (re-add needs a client, rejected at `reload.go:584-588`); no miss/double-emit path found.
+- Prompt durability is real: `store.go:94,110-113`; recovery quarantines prompts (`recovery.go:89,167`); `wiring.go:580-590` and `serve.go:272-278` supply non-nil deps.
+- Sentinel refs only `reconcile.go:13/81` and the replaced `reconcile_test.go:187-188`; plan doc is outside the write set. Owner grant covers exactly the 9 T5 paths.
+- docs `:549` remains first; `loggingContractClassRow` first-match keeps `TestLoggingContractProducerOperationPairs` green with appended rows; pin 36→37 at `:777-778` real; `:76`/`:562` editable without test breakage.
+- §8 committed rollback holds: schema unchanged, non-retired binding admitted by the old binary.
+- Closure: r9 C1 (gofmt on 7 `.go` files) present; C3 oracle corrected (`TestStartupPreservesPromptsWithoutReinstatement`); C2 qualified but incomplete (L3).
+
+### Positive
+Decisive anchors are raw-precise; RED/green labelling is honest; ADR2/ADR8/ADR9 survive counterexample attempts; the docs first-match ordering hazard was correctly identified and constrained.
+
+### Recommendation
+APPROVE

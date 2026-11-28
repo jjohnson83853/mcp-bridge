@@ -697,6 +697,23 @@ func TestLoggingContractDocumentsR8EventsAndSchemaEvolution(t *testing.T) {
 	}
 }
 
+func TestLoggingContractDocumentsBindingReinstatedAndWarningVariants(t *testing.T) {
+	document := readLoggingContract(t)
+	for _, row := range []string{
+		"| `internal_warning` | `reload`, `prompt_load`, `prompt_persist` | `warn` / `failure` or `degraded` |",
+		"| `binding_reinstated` | `startup`, `reload` | `warn` / `degraded` |",
+		"| `internal_warning` | `warn` | `prompt_load` or `prompt_persist` | `degraded` | `internal_error` | `internal` | `false` | `inspect the bridge logs and configuration` | `bridge encountered an internal warning` |",
+		"| `binding_reinstated` | `warn` | `startup`, `reload` | `degraded` | — | — | — | — | `configured server binding reinstated` |",
+	} {
+		if !strings.Contains(document, row) {
+			t.Errorf("logging contract is missing binding reinstatement row %q", row)
+		}
+	}
+	if !strings.Contains(document, "`binding_reinstated` has no error object; its `server` field identifies the") {
+		t.Fatal("logging contract does not document the binding reinstatement server field")
+	}
+}
+
 func TestLoggingContractR8EventMessagesOperationsAndSchemaVersion(t *testing.T) {
 	eventMessages := map[string]string{
 		"http_complete":                      "http request completed",
@@ -721,6 +738,7 @@ func TestLoggingContractR8EventMessagesOperationsAndSchemaVersion(t *testing.T) 
 		"pin_blocker_detail":                 "mandatory pin blocks catalog refresh",
 		"logging_write_failed":               "logging write failed",
 		"internal_warning":                   "bridge encountered an internal warning",
+		"binding_reinstated":                 "configured server binding reinstated",
 		"reload":                             "configuration reload diagnostic",
 		"snapshot_retention_failed":          "quarantine retention failed",
 		"result_paged":                       "tool result retained for paging",
@@ -759,6 +777,7 @@ func TestLoggingContractR8EventMessagesOperationsAndSchemaVersion(t *testing.T) 
 		"pin_blocker_detail":                 "refresh",
 		"logging_write_failed":               "logging",
 		"internal_warning":                   "reload",
+		"binding_reinstated":                 "startup",
 		"reload":                             "reload",
 		"snapshot_retention_failed":          "startup",
 		"result_paged":                       "call_tool",
@@ -774,8 +793,8 @@ func TestLoggingContractR8EventMessagesOperationsAndSchemaVersion(t *testing.T) 
 		"result_epoch_unresolved":            "call_tool",
 		"log_vocabulary_violation":           "logging",
 	}
-	if len(eventMessages) != 36 || len(eventOperations) != len(eventMessages) {
-		t.Fatalf("event contract has %d messages and %d operation pins; want 36 each", len(eventMessages), len(eventOperations))
+	if len(eventMessages) != 37 || len(eventOperations) != len(eventMessages) {
+		t.Fatalf("event contract has %d messages and %d operation pins; want 37 each", len(eventMessages), len(eventOperations))
 	}
 	var output bytes.Buffer
 	logger := observe.NewLogger(&output, &output)

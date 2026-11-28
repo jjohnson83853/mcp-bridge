@@ -1,0 +1,47 @@
+{
+  "candidateId": "binding-reinstatement-spec-r14",
+  "revision": "r14",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR14-01",
+      "class": "contract",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR14-02",
+      "class": "verifiability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR14-03",
+      "class": "contract",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR14-04",
+      "class": "durability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR14-05",
+      "class": "doc",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR14-06",
+      "class": "anchor",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR14-07",
+      "class": "coverage",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r14.txt",
+  "dispatchName": "RemedyAR14CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-27T23:41:24Z"
+}

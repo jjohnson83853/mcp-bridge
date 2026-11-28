@@ -1,0 +1,32 @@
+{
+  "candidateId": "binding-reinstatement-spec-r9",
+  "revision": "r9",
+  "reviewerId": "code-reviewer",
+  "verdict": "APPROVE",
+  "findings": [
+    {
+      "id": "CR9-F1",
+      "class": "accuracy",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR9-F2",
+      "class": "contract-ordering",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR9-F3",
+      "class": "rollback-scope",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR9-F4",
+      "class": "verifiability",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r9.txt",
+  "dispatchName": "RemedyAR9CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-27T22:35:57Z"
+}

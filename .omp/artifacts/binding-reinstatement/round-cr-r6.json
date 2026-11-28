@@ -1,0 +1,52 @@
+{
+  "candidateId": "binding-reinstatement-spec-r6",
+  "revision": "r6",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR6-01",
+      "class": "gate-arithmetic",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR6-02",
+      "class": "falsifiability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR6-03",
+      "class": "predicate-order",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR6-04",
+      "class": "mode-consistency",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR6-05",
+      "class": "cause-mapping",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR6-06",
+      "class": "anchors",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR6-07",
+      "class": "rollback-scope",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR6-08",
+      "class": "fixtures",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r6.txt",
+  "dispatchName": "RemedyAR6CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-27T22:05:10Z"
+}

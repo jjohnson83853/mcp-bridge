@@ -1,0 +1,11 @@
+{
+  "feature": "binding-reinstatement",
+  "instructions": [
+    "A",
+    "lets do 1",
+    "run managed T5 — I bind r22/A1 into a new canonical feature state, run the CodeReviewer + Critic pair on the A1 candidate, record your A authorization against the emitted packet digest, then dispatch engineer → verify → push."
+  ],
+  "recordedAt": "2026-11-27T21:15:00Z",
+  "decision": "authorize-binding-reinstatement",
+  "semantics": "Configured server with retired binding is reinstated unbound with one warn record; unconfigured tombstones unchanged."
+}

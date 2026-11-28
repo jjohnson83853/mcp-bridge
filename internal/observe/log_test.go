@@ -43,6 +43,29 @@ func TestLoggerEmitsSafeCorrelationAndServer(t *testing.T) {
 		t.Fatalf("legacy field appeared in envelope: %s", output.String())
 	}
 }
+func TestBindingReinstatedEntryRecordShape(t *testing.T) {
+	var output bytes.Buffer
+	NewLogger(&output, &output).Log(Entry{
+		Level: "warn", Event: "binding_reinstated", Server: "alpha",
+		Operation: "startup", Outcome: "degraded",
+	})
+	var record map[string]json.RawMessage
+	if err := json.Unmarshal(output.Bytes(), &record); err != nil {
+		t.Fatalf("decode binding reinstated record: %v: %q", err, output.String())
+	}
+	for field, want := range map[string]string{
+		"level": `"warn"`, "event": `"binding_reinstated"`,
+		"message":   `"configured server binding reinstated"`,
+		"operation": `"startup"`, "outcome": `"degraded"`, "server": `"alpha"`,
+	} {
+		if got := string(record[field]); got != want {
+			t.Errorf("%s = %s; want %s", field, got, want)
+		}
+	}
+	if _, exists := record["error"]; exists {
+		t.Fatalf("unexpected error object in binding reinstated record: %s", output.String())
+	}
+}
 func TestEnvelopeFieldNamesMatchesIndependentR8Union(t *testing.T) {
 	want := []string{
 		"auth_mode", "backend_call_id", "backend_id", "binding_relation", "blocker_class", "build_state",

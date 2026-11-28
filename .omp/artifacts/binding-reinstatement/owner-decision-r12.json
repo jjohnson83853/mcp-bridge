@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "feature": "config-admission-resilience",
+  "origin": "owner-answer-in-session",
+  "ownerInstruction": "Reply \"1\" to the checkpoint and budget question",
+  "decision": "extend-review-budget-to-12",
+  "revision": "r12",
+  "explicit": true,
+  "automatic": false,
+  "timedOut": false,
+  "recordedAt": "2026-11-27T23:04:37Z",
+  "scope": "Authorizes one further CodeReviewer round (round 12 of 12) and the subsequent eligible Critic for binding-reinstatement r12 only. Closes CR11-01 (skip range :728-744) plus CR11-02..05. No source implementation, deployment, or container effect is granted by this record; implementation still requires the passed review pair and the existing 9-path envelope.",
+  "rulings": [
+    {
+      "id": "S15-budget",
+      "value": 12,
+      "note": "Adds one round to the prior extension of 5 (11 total)."
+    }
+  ]
+}

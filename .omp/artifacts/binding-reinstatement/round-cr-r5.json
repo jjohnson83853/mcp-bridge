@@ -1,0 +1,37 @@
+{
+  "candidateId": "binding-reinstatement-spec-r5",
+  "revision": "r5",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR5-F1",
+      "class": "lifecycle/verifiability",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR5-F2",
+      "class": "durability/data-loss",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR5-F3",
+      "class": "contract/oracle",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR5-F4",
+      "class": "docs",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR5-F5",
+      "class": "anchors",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r5.txt",
+  "dispatchName": "RemedyAR5CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-27T21:53:10Z"
+}

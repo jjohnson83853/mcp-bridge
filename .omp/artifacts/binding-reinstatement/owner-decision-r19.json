@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "feature": "config-admission-resilience",
+  "origin": "owner-answer-in-session",
+  "ownerInstruction": "add two to the plan",
+  "decision": "extend-review-budget-to-20",
+  "revision": "r19",
+  "explicit": true,
+  "automatic": false,
+  "timedOut": false,
+  "recordedAt": "2026-11-28T01:00:16Z",
+  "scope": "Adds two CodeReviewer rounds (19 and 20, each with eligible Critic) to finish binding-reinstatement after round 18 was voided (CR-R18-06 byte mismatch): align the spec to the implemented T5 tree and the 11-path envelope, pin the serve lifecycle contract, then run engineer attempt 3 (serve.go race fix + full verification). No further envelope widening; AC22-AC26 unchanged.",
+  "rulings": [
+    {
+      "id": "S15-budget",
+      "value": 20,
+      "note": "Adds two rounds to the extension to 18."
+    }
+  ]
+}

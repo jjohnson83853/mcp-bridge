@@ -1,0 +1,57 @@
+{
+  "candidateId": "binding-reinstatement-spec-r2",
+  "revision": "r2",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR-R2-H1",
+      "class": "purge-closure",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR-R2-H2",
+      "class": "durability",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR-R2-H3",
+      "class": "falsifiability",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR-R2-H4",
+      "class": "completeness",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR-R2-M1",
+      "class": "observability-oracle",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR-R2-M2",
+      "class": "untestable-clause",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR-R2-M3",
+      "class": "scope",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR-R2-L1",
+      "class": "anchor-drift",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR-R2-L2",
+      "class": "tautology",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r2.txt",
+  "dispatchName": "RemedyAR2CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-27T21:24:50Z"
+}

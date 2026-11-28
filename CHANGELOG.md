@@ -6,6 +6,8 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Configured server reinstatement.** Re-adding a tombstoned configured server now admits it unbound, purges stale catalog and prompt rows before snapshot publication, and emits a structured warning after commit.
+
 - **Structured logging contract.** Application logs and CLI failures now use
   schema-versioned JSON lines with typed configuration attribution, stable
   error classifications, unified reload/startup events, and bounded HTTP

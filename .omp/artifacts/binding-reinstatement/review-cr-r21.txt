@@ -1,0 +1,35 @@
+## Code Review — `binding-reinstatement-spec-r21` (specification mode, initial pass)
+
+**Inputs:** `spec.md` (self-declared r21, sha256 `4c9bb76f…`), `owner-envelope-widening-5.json`, `owner-decision-r18.json`, `owner-decision-r21.json`, HEAD `fa832293` source. **Limits:** read-only toolkit has no shell/hash, so the supplied sha256 is unverified; no test was run (specification mode). Packet label "binding-reinstatement-spec-r2 (r1)" conflicts with the artifact and dispatch target (r21) — I reviewed r21.
+
+### Issues
+
+**[HIGH] CR21-01 — guard mechanism contradicts the owner decision, ADR18, AC25(h) and §9.**
+`spec.md` Q2 says the guard is the emission condition `in.deps.Logger != nil && in.mode != buildRefresh` added at the post-commit emission loop (`reload.go:802-813`, after `published = true` `:799`). ADR18/AC25(h)/§9 instead require a pre-commit build error (`service: refresh reinstatement invariant violated…`) with "generation UNCHANGED" and placement "before any purge/persist work". These are mutually exclusive: Q2 cannot fail a build and leaves a committed refresh reinstatement with zero records (contradicting R9's one-record-per-committed-admission). `owner-decision-r21.json` authorizes only "restoring the `in.mode != buildRefresh` **emission** guard plus the refresh no-emission regression test" — the build-error form is not granted. **Fix:** adopt the emission guard as the sole normative design, delete ADR18's build-error semantics, and restate R9/AC25(h) as "zero `binding_reinstated` records; a reachable refresh pass is still rejected by the existing client-adoption check (`reload.go:611-614`)"; or obtain a new owner decision for the build-error guard.
+
+**[MEDIUM] CR21-02 — AC25(h)/ADR18's oracle cannot fail on current code.**
+`durable_test.go` (new `TestRefreshNeverEmitsReinstatement`) is declared "green-on-arrival": on HEAD the refresh already fails at `reload.go:611-614` (new client), zero records, generation unchanged. It therefore stays green if the guard is never added and cannot "pin the guard's earlier classified failure" (that requires asserting the guard's error string, which would make it RED — contradicting the green-on-arrival label). **Fix:** state the test's real oracle (no emission, rejection observed) and drop the guard-attribution, or assert the guard message and reclassify as RED.
+
+**[MEDIUM] CR21-03 — reload-leg prompt purge is unverified.**
+AC25(e1) uses `TestReloadReinstatesDroppedThenReaddedServer`: the drop's prompt persist *succeeds* and `promptsForServers` (`reload.go:580`) already filtered alpha, so no retired-era prompt rows ever exist at the re-add. The `:711-713` purge and the durable-before-snapshot persist (`:753-770`) are thus not exercised for reload, leaving R9's "reload: zero prompt rows at commit" without a discriminating oracle (startup is covered by `:572`). **Fix:** make the drop's `PersistPrompts` fail so the else-branch (`:783-785`) restores `previous.Prompts()` containing alpha — or seed alpha rows into the published generation — then assert the persisted `PromptSnapshot` has no alpha rows.
+
+**[MEDIUM] CR21-04 — anchor set is stale despite the "re-verified at r21 (CR20-07)" claim.**
+Against HEAD: `reload.go:601-604`→626-631, `:618`→645, `:638`→665, `:642-646`→670-674, `:584-597`→607-620, `:681-683` is `next.revision=…` (errors are `:709/:726/:737`); `store.go` `Close :66`→62, `Save :213-238`→219, `Load :193-211`→198; `logging_contract_test.go` pin count `:777-778`→796-797; and the CR20-05 rationale misidentifies `docs:549` — line 549 is the `reload_publication_failed` row, not a table separator. **Fix:** regenerate the anchor table from HEAD or delete the re-verification claim.
+
+**[MEDIUM] CR21-05 — AC22 is non-falsifiable by its own command.**
+`TestReconcileReinstatesConfiguredTombstonedServer` and `TestReconcileReinstatementIsolatesSiblingServers` pass today; the named command cannot detect whether the "missing assertions" landed. Also the "zero tool/embedding rows, no stale health row" clauses are structurally vacuous — the fixture strips those rows (`reconcile_test.go:186-188`) and `Validate` (`snapshot.go:313-315`) forbids such input. **Fix:** make `BindingAllowed`/`GenerationSequence`/previous-`DeepEqual` the AC's stated falsifiable additions (per the r21 owner instruction "assertions now actually asserted") and restate the row clauses as structural invariants.
+
+**[MEDIUM] CR21-06 — ADR17 deviates from the authorized remedy and names a non-existent seam.**
+`owner-decision-r21.json` authorizes "serve.go **cancel/join/close**"; ADR17 instead skips `Close` on drain expiry, leaving the loop writing after `serve` returns (the 10 s drain still elapses and writes continue). Also the stated forcing mechanism "BLOCKING SavePrompts/persistence hook" does not exist — `serve.go` builds `persist`/`persistPrompts` inline (`:186-198`) and only `serveListenerFn`/`testServeNow` are swappable. **Fix:** cancel the run ctx before awaiting `loopErr`, join, then close unconditionally (also removes the pre-existing 10 s listener-failure hang), and specify the real overlap mechanism (listener failure + drain window + refresh interval).
+
+### Low
+- **CR21-07** `reconcile_test.go:293-317` passes if the portainer binding is *absent* (loop-only check). Add nil-binding failure + fingerprint assertion.
+- **CR21-08** AC25(b)'s "NOT-SURVIVED = owner-gated untested residual" cites no recorded owner decision in this packet.
+- **CR21-09** `reconcile_test.go:14-16` still says tombstones "never rebind", contradicting R9; not in the remaining-work list.
+- **CR21-10** R9's "per committed admission" should read "per committed startup/reload admission" to match the emission guard.
+
+### Positive
+Purge path is sound (`:79-83` arm, `purged[id]`, `definitionsFromSnapshot :901` retired-guard, prompts purge before persist); `ErrRebindTombstoned` is fully gone (repo grep: zero references); all three `build` call sites (`refresh.go:57`, `reload.go:486/509`) route through the single emission point; §8 rollback is accurate (new snapshot validates under the old binary, non-retired, no crash-loop; not-survived disclosed); the 11-path envelope is fully covered by widening-5 ∪ r18 with no missing write path; ADR17's join reasoning (`loop.Start` → `drivers.Wait` → `Drain`) is correct.
+
+### Recommendation
+REQUEST CHANGES

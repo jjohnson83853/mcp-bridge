@@ -1,0 +1,12 @@
+{
+  "artifact": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/config-admission-resilience/owner-envelope-widening-5.json",
+    "sha256": "57e354263bbd56c94e941c296b2c013e38249ab48ba81650910cf6f12a34fc05"
+  },
+  "branchId": "binding-reinstatement-r1",
+  "locator": "delta.write[0..8] — 9-path envelope grant for binding-reinstatement",
+  "recordedAt": "2026-11-28T00:20:18Z",
+  "taskIds": [
+    "T5"
+  ]
+}

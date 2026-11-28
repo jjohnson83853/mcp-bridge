@@ -1,0 +1,29 @@
+## Code Review Summary
+Mode: specification, initial pass. Candidate `.omp/artifacts/binding-reinstatement/spec.md`, self-bound `binding-reinstatement-spec-r11` (dispatch r11; request text says r2/r1). HEAD fa832293. Files reviewed: 12. sha256 e09d… corroborated by `candidate-request-r11.json` (not recomputed: no hashing tool granted).
+
+### Issues
+**CR11-01 HIGH/HIGH — skip range includes a mandatory assignment.**
+Invariant: T5's exact-line instruction names only the removable block. Anchor: ADR9(b), T5 and §3 say skip "`:728-745`"; the `if in.mode != buildStartup && in.deps.PersistPrompts != nil` block is `:728-744`; `:745` is `next.snapshot = snapshot` (spec §3 cites it separately). Counterexample: a literal skip leaves `assembly.snapshot` nil; `previousSnapshot` (reload.go:901-905) then returns nil, so the next refresh/Reload calls `storage.Reconcile(nil,…)`, resets `GenerationSequence` to 1 and drops every tombstone and cached catalog. Fix: use `:728-744`; state that `:745` always executes.
+
+**CR11-02 LOW/HIGH — prompt-load anchors drift.** Block is `:537-553` (not 552); loaded-prompts append is `:551` (not 550); `promptsForServers` is `:555` (not 553). Fix ranges.
+
+**CR11-03 LOW/HIGH — replaced-test range.** `TestReconcileRejectsTombstonedRebind` spans `:176-193` (not 176-192); the `previous != nil` guard is `:46`, omitted by the cited `:47-50`. Fix.
+
+**CR11-04 LOW/HIGH — purge oracle is tautological.** Reconcile validates `previous` (:46-49); `Validate` rejects a retired binding with a live row (snapshot.go:313-315) and any tool whose server has no live row (:330-336), so no valid input can carry retired-era tools/embeddings/health rows, and `purged[id]` is effect-free there. AC22/AC26's zero-row/`StatusNone` clauses therefore cannot fail through the purge and are not "regression guards" of guarantee (b). Fix: relabel as defense-in-depth; prompts remain the only falsifiable residue oracle (already so).
+
+**CR11-05 LOW/HIGH — undisclosed durable side effect.** Startup reinstatement now writes `next.prompts`, already filtered by `promptsForServers` (:555-573) to configured, prompt-enabled servers, so the first startup prompt write also prunes rows of every unconfigured/disabled server. Consistent with the bridge-owned trust model but unstated in R9/AC24/§8. Fix: disclose or scope.
+
+### Closure (r10 L1-L5)
+L1 closed (`snapshot_v1 :135-153`, `reload :601-604`, `reconcile :47-50` verified). L2 partial: Q3(vii) split added, residual overclaim CR11-04. L3 closed (§8 enumerates every uncommitted state). L4 closed (nil `Persist` fails; AC25(c); serve.go:276-278 verified). L5 closed (ADR12 branch signal stated).
+
+### Verified
+Load-bearing anchors resolve as claimed: reconcile :13/:80-99/:111-149/:164-167; snapshot :102/:179-190/:225-232/:313-315/:330-336; store.go :84-98/:94/:110-113; reload :486/:509/:537/:541-547/:601-604/:674/:681-683/:718-750/:777-796/:817/:904; loop :157-160/:206-212; startup_failure :28/:108-117; log.go :176/:282-355; docs :61-76/:549/:562; pin 36 at :777-778; first-match matcher (:490-506) keeps `:549` first with appended variant rows; canonical `startup` pin plus documented `reload` is consistent with the map tests. R9 falsifiable; RED/green labels honest; ADR2 equality holds; build sites exactly refresh.go:57, reload.go:486/509; refresh cannot emit (the stale-candidate direction is blocked by the client-adoption guard :584-587, stronger than ADR8's stated invariant); sentinel refs only reconcile.go:13/81 plus the replaced test; owner `delta.T5` covers exactly the 9 paths and AC22-26; §8 committed rollback holds (format unchanged; old binary admits a non-retired binding); no ungranted file needs editing (log_test vocabulary already has `startup`/`reload`; no exhaustive docs-row gate).
+
+### Open Question
+LOW/LOW: `deps.Logger == nil` silently suppresses the "exactly one" record; production always supplies it (serve.go:283).
+
+### Positive
+Incident-path anchors are raw-precise; fail-closed ordering is explicit; the docs first-row hazard is correctly constrained.
+
+### Recommendation
+REQUEST CHANGES

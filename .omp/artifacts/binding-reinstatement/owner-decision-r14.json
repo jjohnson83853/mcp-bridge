@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "feature": "config-admission-resilience",
+  "origin": "owner-answer-in-session",
+  "ownerInstruction": "add 2 to the budget",
+  "decision": "extend-review-budget-to-15",
+  "revision": "r14",
+  "explicit": true,
+  "automatic": false,
+  "timedOut": false,
+  "recordedAt": "2026-11-27T23:31:27Z",
+  "scope": "Authorizes two further CodeReviewer rounds (14 and 15) with eligible Critic each, for binding-reinstatement only: CR13-01..09 closure, including the equal-fingerprint AC22 sub-case and the incident evidence from the live mcp-bridge-network snapshot. No source implementation is granted by this record; implementation still requires a passing review pair and the existing 9-path envelope.",
+  "rulings": [
+    {
+      "id": "S15-budget",
+      "value": 15,
+      "note": "Adds two rounds to the extension to 13."
+    },
+    {
+      "id": "incident-evidence",
+      "value": "Snapshot.Validate passes; mysql retired+configured; reconcile.go:80-81 is the live fault point",
+      "note": "Read-only telemetry-scout evidence, 2026-11-27."
+    }
+  ]
+}

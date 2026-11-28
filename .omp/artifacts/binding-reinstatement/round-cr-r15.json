@@ -1,0 +1,47 @@
+{
+  "candidateId": "binding-reinstatement-spec-r15",
+  "revision": "r15",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR15-01",
+      "class": "authority",
+      "severity": "HIGH"
+    },
+    {
+      "id": "CR15-02",
+      "class": "authority",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR15-03",
+      "class": "verifiability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR15-04",
+      "class": "verifiability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR15-05",
+      "class": "verifiability",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR15-06",
+      "class": "accuracy",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR15-07",
+      "class": "metadata",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/binding-reinstatement/review-cr-r15.txt",
+  "dispatchName": "RemedyAR15CodeReview",
+  "format": "installed",
+  "recordedAt": "2026-11-27T23:50:43Z"
+}

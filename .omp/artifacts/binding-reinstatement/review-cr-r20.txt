@@ -1,0 +1,49 @@
+## Code Review Summary
+
+**Mode:** specification, initial pass. **Candidate:** `.omp/artifacts/binding-reinstatement/spec.md` (self-ID `binding-reinstatement-spec-r20`, sha256 `3b4df88c…`), HEAD `fa832293`. All anchors below re-read from the tree; tests not executed (read-only, no shell granted).
+
+### Issues
+
+**CR20-01 [HIGH][falsifiability] AC22 "LANDED; assertions pinned" is false.**
+Anchor: `internal/storage/reconcile_test.go:175-231`; AC22 §5.
+Issue: test asserts only non-retired binding/fingerprint, `StatusNone`, zero tools/embeddings. Missing the five pinned assertions: `GenerationSequence+1`, previous `DeepEqual`-unmutated, `next.Validate()==nil`, `BindingAllowed(id, sameFp)`, `!BindingAllowed(id, oldFp)`. §6/T5 lists `reconcile_test.go` as Landed and adds none of them. Counterexample: a build that mutates `previous` or keeps the old generation still passes AC22's command. The purge-flags are also unfalsifiable: the fixture strips portainer's rows (`:181-184`) and `Validate` forbids retired+live rows (`snapshot.go:313-314`), so no purge can be observed.
+Fix: add the assertions and list `reconcile_test.go` under remaining work, or restate AC22 to the implemented oracle.
+
+**CR20-02 [MEDIUM][falsifiability] AC26 (CR19-04 "closed") still overstates.**
+Anchor: `reconcile_test.go:293-317`; AC26.
+Issue: asserts only "no retired binding remains"; claims "`purged[id]` purge effects (zero rows, `StatusNone`)" that the test never checks.
+Fix: restate AC26 to the binding-only oracle.
+
+**CR20-03 [MEDIUM][lifecycle/contract] ADR8's documented precondition is false; emission safety rests on an uncited guard.**
+Anchor: ADR8 (loop.go:107-111); `loop.go:114-115` (candidate advances after publish), `:218-222`; `refresh.go:57`; `reload.go:607-614`, `:857/874`.
+Issue: after a drop-reload commits a tombstone and before `l.candidate` is reassigned, a refresh pass has cfg still containing the dropped server and base = the new snapshot with it retired, so `pendingReinstatement` is true — a committed generation *can* hold retired+configured. Emission does not occur only because the pass fails later at the refresh client-adoption rejection (`:611-614`), not because of the stated precondition. `loop.go:107-111` is the `runtime.Reload` call, not the advancement.
+Fix: cite the real guard chain, and either add a `mode != buildRefresh` emission guard with an oracle, or add the skew regression (refresh with a server absent from the published generation but retired in its binding ⇒ error, zero records, generation unchanged).
+
+**CR20-04 [MEDIUM][falsifiability] AC25(b)/(f) survived-restart zero-record oracle absent.**
+Anchor: `internal/service/durable_test.go:758-806`.
+Issue: the test never restarts and never asserts "restart with EMPTY pending ⇒ ZERO new records"; no anti-double-emission restart assertion exists anywhere (only `:651/:693/:802/:906`).
+Fix: add the restart assertion or move the leg to the disclosed residual.
+
+**CR20-05 [MEDIUM][anchors] AC25 docs oracle cites a non-existent assertion.**
+Anchor: AC25 ("`:549` FIRST/byte-identical"); `docs/logging-contract.md:549` is a table separator; the document contains no "FIRST"/"byte-identical" text and `logging_contract_test.go:700-714` asserts none.
+Fix: delete the claim or name the real assertion.
+
+**CR20-06 [MEDIUM][lifecycle] ADR17 teardown leaves pre-loop returns unclosed.**
+Anchor: ADR17; `serve.go:138`; early returns after `storage.Open` at `:143-148,151-154,160-163,173-179,294-309`.
+Issue: replacing `defer store.Close()` with "Store.Close ONLY after that join" does not define closure on the many returns before the loop exists; a literal implementation leaks the store fd.
+Fix: specify a guard (defer that closes when the loop never started or has returned), or enumerate the early-return rule.
+
+**CR20-07 [LOW][anchors] Residual citation drift despite CR19-08 "closed".**
+`published = true` is `:799` (not `:801`; emission `:802-813` correct); retention arm `:90` not `:92`; tombstone literal ends `:100`; `canonicalize`/`Validate` `:166-167`; nil-dep gates close `:534`; "second pending-gated persist branch `:554`" is actually the LoadPrompts-error `if pending` (`:554-556`).
+
+**CR20-08 [LOW][identity] Candidate identity mismatch.**
+Brief names `binding-reinstatement-spec-r1`/`r2`; artifact self-IDs and dispatch `targetCandidateId` are `…-r20`. Bind one revision in the receipt.
+
+### Positive Observations
+Prompt purge is durable-before-snapshot with a real two-start disk oracle; nil-dep fail-closed with zero-record asserts; per-server emission tested with two servers; docs containment plus the `:568` sentence; `ErrRebindTombstoned` fully removed (no source refs); authority is exactly widening-5 (9 paths) ∪ r18 (2 paths) per verified owner records; §8 survived/not-survived rollback matches the schema-stable snapshot; ADR2's base-predicate equivalence to the reconcile arm holds.
+
+### Verification Limits
+RED/`-race`/covcheck commands were not run; the "fails on HEAD" claim is accepted only as reported in `t5-verification-blockers.md`.
+
+### Recommendation
+REQUEST CHANGES
