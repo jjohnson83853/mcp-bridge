@@ -97,6 +97,8 @@ object.
 | `result_namespace_retired` | `call_tool` | `warn` / `degraded` |
 | `result_entropy_unavailable` | `call_tool` | `warn` / `degraded` |
 | `result_epoch_unresolved` | `call_tool` | `warn` / `degraded` |
+| `projection_skipped` | `call_tool` | `warn` / `degraded` |
+| `projection_rejected` | `call_tool` | `warn` / `denied` |
 | `log_vocabulary_violation` | `logging` | `warn` / `failure` |
 
 The HTTP operation classification is finite: `initialize`, `initialized`,
@@ -206,6 +208,7 @@ auth_mode
  policy_source
  process_id
  process_state
+projection_reason
  protocol_version
  publication_impact
  quarantine_path
@@ -662,6 +665,25 @@ collector. In Loki, use only bounded `service` and `level` as labels; query
 operator-supplied `config.path` out of label indexes. The deployment's
 shipping pipeline is outside this repository, so local verification proves
 emitted lines and stream selection, not collector delivery.
+
+### Projection decisions
+
+`projection_skipped` (`call_tool`, `warn` / `degraded`) and
+`projection_rejected` (`call_tool`, `warn` / `denied`) each emit one record for
+their log-channel decisions. Applied projections emit no event; `full_requested`
+and `upstream_error` skips are log-free. Every emitted reason is a bounded,
+payload-free `projection_reason` value from this closed set:
+
+- Skips: `full_requested`, `upstream_select_present`, `upstream_error`,
+  `payload_unparseable`, `payload_shape_unexpected`, `item_shape_unexpected`,
+  `structured_content_not_mirrorable`, `disclosure_key_collision`.
+- Rejections: `malformed_request`, `not_supported`, `select_conflict`,
+  `unknown_field_selection`.
+
+`bridge_projection_total{server,tool,outcome}` counts projection decisions.
+The bounded `tool` values are `EndpointList`, `docker_proxy`, and
+`not_allowlisted`; `outcome` is exactly `applied`, `skipped`, or `rejected`.
+APPLY rows increment `applied`; no payload or free-text value is a label.
 
 Removed, renamed, retyped, or semantically changed fields increment `schema_version`;
 optional event-specific additions do not. The current schema starts at version 1.

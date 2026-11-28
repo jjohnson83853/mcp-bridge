@@ -1,0 +1,12 @@
+{
+  "i": "Critic review ticket 119 specification r13",
+  "context": "{\"instructions\":\"# Shared review packet \\u2014 ticket #119, revision r13 (specification review)\\n\\nRepo: /home/opencode/projects/default/mcp-bridge (Go MCP bridge). Read-only.\\nCandidate: `.scratch/token-efficient-tool-responses/ticket05-spec-r13.md`, sha256 24c3299fe058a34aa62535373b2320dec5681bf0e2b0331a8cd309817394c58a, revision r13, candidate id token-efficient-tool-responses-ticket05-spec-r13, author planner.\\nRepair review: CR-R12-1 carrier-failure on both paths; multiplexer envelope written on skip; AC6(d) qualification; fields-on-skip and rewrite-scope pins\\nPrior review observation: `.omp/artifacts/token-eff05/review-cr-r12-source-6b6a4ea2-20261128T051209Z.json` (cr-r12).\\n\\n## Review scope\\nApply W09E. Verify the claimed closures at their root invariants; preserve earlier closures; check adjacent cases, AC1\\u2013AC7 semantics, D-table totality, out-of-band decision threading, write-set arithmetic and ticket-01 compatibility.\\n\\nReport APPROVE or REQUEST CHANGES with taxonomy-classified findings and anchors.\\n\",\"workflowDispatch\":{\"statePath\":\"/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json\",\"schemaVersion\":1,\"projectRoot\":\"/home/opencode/projects/default/mcp-bridge\",\"feature\":\"token-efficient-tool-responses-ticket05-r13\",\"revision\":\"r13\",\"requests\":[{\"name\":\"CriticTicket119SpecR13\",\"taskId\":\"CT1\",\"agent\":\"critic\",\"effects\":{\"kind\":\"read\",\"paths\":[\".scratch/token-efficient-tool-responses/ticket05-spec-r13.md\"]},\"targetCandidateId\":\"token-efficient-tool-responses-ticket05-spec-r13\",\"targetRevision\":\"r13\"}]}}",
+  "tasks": [
+    {
+      "name": "CriticTicket119SpecR13",
+      "agent": "critic",
+      "task": "# Target\nIndependently assess `.scratch/token-efficient-tool-responses/ticket05-spec-r13.md` (sha256 24c3299fe058a34aa62535373b2320dec5681bf0e2b0331a8cd309817394c58a) for ticket #119.\n\n# Method\nRead the candidate, prior finding ledger, evidence bundle and sources. Apply your full installed assessment. Do not implement or edit.\n\n# Output\nReturn PASS or REVISE with residual findings and verdict basis. No writes or repo-mutating commands.",
+      "solutionSpace": "independent critic assessment for ticket #119 r13"
+    }
+  ]
+}

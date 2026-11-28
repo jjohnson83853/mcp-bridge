@@ -1,0 +1,124 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r3",
+  "revision": "r3",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r3.md",
+      "sha256": "7636a826da9bc79f0123f629e41a67481ef0a42e05113cb5cb857d485727c922"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/issue-119.md",
+      "sha256": "caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/refinement.md",
+      "sha256": "0889c58aa753869ac92acaa7f39a22fd4f9b6fd85e659fd0c37121914f76cc6b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/planner-evidence.md",
+      "sha256": "74acd6a6e9dc70cec955c787784ee377cfa37f8c2c31cc4b56d285e3fd25954d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_endpointlist.json",
+      "sha256": "a7167d80f4151eee2a31092beb2817b39c8c542888f338f9aa1e344f0c3ff398"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_docker_proxy.json",
+      "sha256": "a91db42a4a79684e3863a0ad6abf73a7ec1898dfca9ef9be45d0efed0486f1d1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r1-source-4fc401e5-20261128T030855Z.json",
+      "sha256": "4fc401e52ba0203bff2beb842d57d13c148e7bb2e67428656d8adbab368475b6"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r2-source-f3a60598-20261128T033817Z.json",
+      "sha256": "f3a60598b804c1a748070d95f7e359587b1e4a6c56acac0d6f70686e1323b2c1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "161ff8201f76368e9e6b4a98ba786fcf36c74e346676bb2bc16f71857bb916b1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+      "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
+      "sha256": "744579103ff3b3bf3b2b51052767a7f5f50bca2b3536617ad14bdff5300202f5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle_test.go",
+      "sha256": "cba6b86e42d029cf61d3b0eb17a54fdedc9ae3ea6a8643d47956c86f32dd9019"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "df2102ab178fdf4928da5d21bf5c296bef06d32066fe10ea035055b40e23f1e5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "a5999feaf2750a5093d2d17414aff7608f82edf19a37ee21ced2cf1749869f07"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "99d72a5b60e087f89341033ea3d8b3bcc272b382c4b5fb7d43cb31bf25df0163"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "399482e76d6ed7a99f4ccfbaa97e37b194be8d3f1b4c82ccdef77f0809327ed7"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket119SpecR3",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r3.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r3",
+      "targetRevision": "r3",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "afe0ebaf6ce7da47a5eab64a5bbac9e0394f7c71b1318b427a95f12d95cfa7de",
+      "instructionsSha256": "0a6baaba0486c15eb7a8afdc9899b55dd095ffbf12f81469cee9c0dc520ac027",
+      "requestSha256": "452b1c1327491beb44f74a699392c1d6c879c6869083314ac34bcde5fd486335"
+    },
+    {
+      "name": "CriticTicket119SpecR3",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r3.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r3",
+      "targetRevision": "r3",
+      "reviewerId": "critic",
+      "taskSha256": "299f78653d6b2fa29d78575e44b9147e60d9862b13f5dfd0908df304b567ca74",
+      "instructionsSha256": "0a6baaba0486c15eb7a8afdc9899b55dd095ffbf12f81469cee9c0dc520ac027",
+      "requestSha256": "33b2e19f456876abbfe3ae8cdf8b8251383936cae392e15ace5f1271dd371a5d"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** specification, repair pass (review round 3; repairs round 2 N1\u2013N8). Candidate sha supplied, not recomputed (no shell/hash tool). **Files Reviewed:** 1 candidate + 12 cited sources (`tools.go`, `bounded_delivery.go`, `direct_execution.go`, `result_handle.go`, `result_handle_test.go`, `bounded_delivery_test.go`, `result_measure.go`, `config/bounds.go`, `catalog/schema.go`, `observe/log.go`, `observe/metrics.go`, `observe/envelope.go`). **Total Issues:** 7.\n\n### By Severity\n- CRITICAL: 0 | HIGH: 2 | MEDIUM: 3 | LOW: 2\n\n### Issues\n\n**N2 (reopen) [HIGH][statement-contradiction]** Encoded max disclosure does not fit preview/terminal headroom\nFile: spec:14 / spec:30 / config/bounds.go:226,233,314 / bounded_delivery.go:197-216\nConfidence: HIGH. Issue: R4 admits 16\u00d764-char fields, but `boundedResultPrefix` computes `baseBytes = measured + MaxUpstreamCodeBytes(512) \u2212 codeWidth` and returns `\"\"` when `>= PreviewCeilingBytes(1536)`. The fields array alone encodes to 16\u00d766+15+2 = 1073 B (+`\"fields\":` = 1082) > 1536\u2212512 = 1024 B, before `applied/mode/entry` or the envelope. A legal maximal request therefore yields an empty preview/terminal body, and T3's `maximalPreviewMetadata` feasibility (measured+D+512+6 > 1536) makes `retained_results` validation fail. Fix: bound total encoded field-name bytes (e.g. \u2264512) and re-derive against 1536\u2212512; add the arithmetic to the oracle.\n\n**N9 [HIGH][statement-contradiction]** `fields: []` is ABSENT per R4 but rejected per AC3 (F7 regression)\nFile: spec:14 vs spec:87; r2 spec:82 (\u201cabsent \u2260 empty\u201d)\nConfidence: HIGH. Issue: R4 treats \u201cneither `full:true` nor a non-empty `fields`\u201d as ABSENT; AC3 mandates `fields: []` pre-dispatch rejection. Same input, opposite outcomes; `{\"full\":true,\"fields\":[]}` is likewise two-outcome. This reverses round-1 F7 (\u201cabsent \u2260 empty \u2026 present but empty is rejected\u201d), contradicting spec:5/spec:146 \u201cno reopening\u201d. Fix: a present `fields` member (even `[]`) is a fields request subject to the 1\u201316 bound; only an absent/null member is ABSENT.\n\n**N10 [MEDIUM][statement-contradiction]** Aggregate vs per-item skip predicate\nFile: spec:52 vs spec:90 (AC6(d)/(e))\nConfidence: MEDIUM. Issue: D-table skips only when \u201call items miss ALL default fields\u201d; AC6(e) projects \u201cpresent fields only\u201d for an item missing some. A one-item list whose only item lacks all defaults satisfies both \u2192 SKIP vs APPLY `[{{}}]`. Fix: define the predicate explicitly as \u201cevery item\u201d, and scope (e) to partial misses.\n\n**N11 [MEDIUM][r-ac-coverage-gap]** Pinned/direct execution path delivers allowlisted operations unprojected\nFile: spec:85 (AC1), spec:12 (R2), spec:114; direct_execution.go:53,60-64,72; tools.go:300,352,412\nConfidence: MEDIUM. Issue: the engine hooks only `callTool` (tools.go:1000). A pinned `portainer__EndpointList` is client-invoked via `callPinnedTool`\u2192`boundDirectExecution.call`\u2192`boundedCallToolResult`: full 25128 B, no disclosure. AC1 says \u201cthe allowlisted list tools\u201d, not just the multiplexer path; the write set omits direct_execution.go. Fix: state the exclusion with an oracle, or include the hook (noting pinned calls have no `projection` opt-out).\n\n**N12 [MEDIUM][statement-contradiction]** `terminalResult` arity breaks an existing test outside the write set\nFile: spec:68, spec:114; bounded_delivery_test.go:353\nConfidence: HIGH. Issue: an \u201cexplicit disclosure parameter\u201d on `terminalResult` (5 args today at :353) fails compilation; bounded_delivery_test.go is absent from the 3+12 write set, contradicting \u201cexisting tests \u2026 pass unmodified\u201d. Fix: variadic options (as for `commit`), or add the test file to T2/T8 ledger.\n\n**N8 (reopen) [LOW][stale-citation]** Two corrected anchors remain wrong\nFile: spec:25, spec:68; bounded_delivery.go:147,187; observe/metrics.go:132\nConfidence: HIGH. Issue: `terminalResult` is :147 (cited :148); `terminalSizingMetadata` is :187 (cited :178, which is inside `pageSizingMetadata`); metrics.go:132 is a struct field, not a precedent method (use `RecordRetentionRejection` :300). Fix: correct anchors.\n\n**N13 [LOW][undefined-term]** `projection_reason` closed enum never enumerated\nFile: spec:120\nConfidence: HIGH. Issue: \u201cclosed-enum\u201d is asserted but no value set is declared, so T3 cannot bound/test the union. Fix: list the D-table reasons in \u00a77 and the contract doc.\n\n### Closure ledger\nCLOSED: N1 (empty-list rule consistent at R4:14, AC3:87, AC6(c):90, D-table:58, T1/T2, AC7:91); N3 (:31, C1:65, :122); N4 (C4:68, AC2:86; threading feasible from `deliverBoundedResult`); N5 (`commit` result_handle.go:115, five 5-arg sites at 61/121/166/211/304; variadic compiles); N6 (D-table total across entry/request/select/isError/shape; full+error precedence). DEFINED BUT REGRESSIVE: N7 \u2192 N9. NOT CLOSED: N2, N8. Preserved: F1 (E11:24 verified), F3, F4, F5, F8 (3+12 arithmetic, acyclic deps); F7 regressed (N9).\n\n### Positive Observations\n- D-table is now mechanically total; the select/isError partition is explicit and single-outcome.\n- Entry-match labelling (N3) is consistent across C1/C7/AC4/\u00a77.\n- N5 fix verified against every `commit` call site.\n- T1/T2/T3 oracle inventory is distinct; no shared sole oracle.\n\n### Review limits\nNo diagnostics/execution run (read-only; no shell). N2 arithmetic is derived from cited constants, not executed. Spec sha not verified.\n\n**Admission note:** this is review round 3; per the taxonomy's Round discipline these findings do not block admission and belong in the residual register. The technical defects remain unresolved.\n\n### Recommendation\nREQUEST CHANGES\n"
+}

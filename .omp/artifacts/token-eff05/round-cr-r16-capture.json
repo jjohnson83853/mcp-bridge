@@ -1,0 +1,31 @@
+{
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r16",
+  "revision": "r16",
+  "reviewerId": "code-reviewer",
+  "verdict": "APPROVE",
+  "findings": [
+    {
+      "id": "CR-R16-1",
+      "class": "statement-ambiguity",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR-R16-2",
+      "class": "statement-ambiguity",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR-R16-3",
+      "class": "documentation",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR-R16-4",
+      "class": "traceability",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/token-eff05/review-cr-r16-source-bae28ecb-20261128T053149Z.json",
+  "dispatchName": "ReviewTicket119SpecR16",
+  "format": "installed"
+}

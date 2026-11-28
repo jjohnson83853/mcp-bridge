@@ -1,0 +1,4 @@
+Owner answer to T3 envelope expansion request.
+
+Question: "Adding projection_reason to EnvelopeFieldNames() makes the count 133, but cmd/mcp-bridge/config_envelope_test.go:168-169 hard-codes 132. Authorize the extra path?"
+Owner answer (form): {"amend":"allow"} — Yes: add cmd/mcp-bridge/config_envelope_test.go to T3 and update 132 -> 133.

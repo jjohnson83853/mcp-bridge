@@ -1,0 +1,12 @@
+{
+  "i": "Review ticket 119 specification r12",
+  "context": "{\"instructions\":\"# Shared review packet — ticket #119, revision r12 (specification review)\\n\\nRepo: /home/opencode/projects/default/mcp-bridge (Go MCP bridge). Read-only.\\nCandidate: `.scratch/token-efficient-tool-responses/ticket05-spec-r12.md`, sha256 e4d4152534c3a1c46754138b3b6766ce5313252f3f4cf6f6cd18617bf6dc40d4, revision r12, candidate id token-efficient-tool-responses-ticket05-spec-r12, author planner.\\nRepair review: CR-R11-1..4 closures; SC-absent writable carrier; multiplexer non-object SC; README enumeration; direct-error collision and bound-reason pins\\nPrior review observation: `.omp/artifacts/token-eff05/review-cr-r11-source-7b7b5ac8-20261128T050430Z.json` (cr-r11).\\n\\n## Review scope\\nApply W09E. Verify the claimed closures at their root invariants; preserve earlier closures; check adjacent cases, AC1–AC7 semantics, D-table totality, out-of-band decision threading, write-set arithmetic and ticket-01 compatibility.\\n\\nReport APPROVE or REQUEST CHANGES with taxonomy-classified findings and anchors.\\n\",\"workflowDispatch\":{\"statePath\":\"/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json\",\"schemaVersion\":1,\"projectRoot\":\"/home/opencode/projects/default/mcp-bridge\",\"feature\":\"token-efficient-tool-responses-ticket05-r12\",\"revision\":\"r12\",\"requests\":[{\"name\":\"ReviewTicket119SpecR12\",\"taskId\":\"CR1\",\"agent\":\"code-reviewer\",\"effects\":{\"kind\":\"read\",\"paths\":[\".scratch/token-efficient-tool-responses/ticket05-spec-r12.md\"]},\"targetCandidateId\":\"token-efficient-tool-responses-ticket05-spec-r12\",\"targetRevision\":\"r12\"}]}}",
+  "tasks": [
+    {
+      "name": "ReviewTicket119SpecR12",
+      "agent": "code-reviewer",
+      "task": "# Target\nReview `.scratch/token-efficient-tool-responses/ticket05-spec-r12.md` (sha256 e4d4152534c3a1c46754138b3b6766ce5313252f3f4cf6f6cd18617bf6dc40d4) as the r12 repair for ticket #119.\n\n# Method\nRead the candidate and every cited anchor, including `.omp/artifacts/token-eff05/review-cr-r11-source-7b7b5ac8-20261128T050430Z.json`. Verify the claimed closures; preserve earlier closures; check adjacent cases. Do not implement or edit.\n\n# Output\nReturn APPROVE or REQUEST CHANGES with stable finding IDs, taxonomy class, severity, exact anchor and fix. No writes or repo-mutating commands.",
+      "solutionSpace": "independent specification review of ticket #119 r12"
+    }
+  ]
+}

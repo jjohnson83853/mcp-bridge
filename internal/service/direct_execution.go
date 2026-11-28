@@ -13,6 +13,8 @@ import (
 	"github.com/jjohnson83853/mcp-bridge/internal/search"
 )
 
+const directProjectionMember = "mcp_bridge_projection"
+
 type boundDirectExecution struct {
 	surface      *ToolSurface
 	assembly     *Assembly
@@ -57,10 +59,28 @@ func (e boundDirectExecution) call(ctx context.Context, args json.RawMessage) (*
 		e.surface.contributeOperation(e.requestID, e.operationID, "succeeded")
 	}
 	e.logDispatchSuccess(backendCallID, backendStart, upstream)
+	var projectionDecisionValue projectionDecision
+	if !upstream.IsError {
+		fieldsBudget := maxProjectionFieldsBudget(16*67 + 1)
+		if e.surface.cfg.RetainedResults != nil {
+			fieldsBudget = projectionFieldsBudget(e.surface.cfg.RetainedResults())
+		}
+		projectionDecisionValue = applyDirectProjection(&upstream, e.binding.ServerID, e.binding.RawName, args, fieldsBudget)
+		if projectionDecisionDisclosed(projectionDecisionValue) {
+			outcome, logEvent := "skipped", true
+			if projectionDecisionValue.Applied {
+				outcome, logEvent = "applied", false
+			}
+			e.surface.recordProjectionDecision(e.binding.ServerID, projectionDecisionValue, outcome, logEvent)
+		}
+	}
 	result := &mcp.CallToolResult{
 		Content:           upstream.Content,
 		StructuredContent: upstream.StructuredContent,
 		IsError:           upstream.IsError,
+	}
+	if projectionDecisionDisclosed(projectionDecisionValue) {
+		return e.surface.boundedCallToolResult(e.request, result, directUpstreamCode(upstream.StructuredContent), projectionDecisionValue), nil
 	}
 	return e.surface.boundedCallToolResult(e.request, result, directUpstreamCode(upstream.StructuredContent)), nil
 }
@@ -71,6 +91,46 @@ func directUpstreamCode(structured any) string {
 	}
 	code, _ := content["code"].(string)
 	return code
+}
+
+func applyDirectProjection(result *mcp.CallToolResult, server, tool string, rawArguments json.RawMessage, fieldsBudget int) projectionDecision {
+	if result == nil || result.IsError {
+		return projectionDecision{}
+	}
+	_, args := projectionRequestArgs(nil, rawArguments)
+	path := projectionPath(args)
+	admission, err := decideProjection(server, tool, path, args, 0, fieldsBudget)
+	if err != nil || admission.Entry == "" {
+		return projectionDecision{}
+	}
+	structured, _ := result.StructuredContent.(map[string]any)
+	_, collision := structured[directProjectionMember]
+	candidate := *result
+	decision, err := transformProjectionResult(&candidate, admission, server, tool, path, args, fieldsBudget)
+	if err != nil {
+		return projectionFailure(admission, projectionReasonUnknownFieldSelection)
+	}
+	if collision && decision.Applied {
+		decision = projectionFailure(decision, projectionReasonDisclosureKeyCollision)
+	} else if decision.Applied {
+		*result = candidate
+	}
+	if projectionDecisionDisclosed(decision) && !collision {
+		switch structured := result.StructuredContent.(type) {
+		case nil:
+			result.StructuredContent = projectionDisclosure(decision)
+		case map[string]any:
+			if structured != nil {
+				updated := make(map[string]any, len(structured)+1)
+				for key, value := range structured {
+					updated[key] = value
+				}
+				updated[directProjectionMember] = projectionDisclosure(decision)
+				result.StructuredContent = updated
+			}
+		}
+	}
+	return decision
 }
 
 func (e boundDirectExecution) logDispatchFailure(backendCallID string, backendStart time.Time, dispatchErr *core.DispatchError) {

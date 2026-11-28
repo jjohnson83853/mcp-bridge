@@ -1,0 +1,26 @@
+{
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r9",
+  "revision": "r9",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "R9-1",
+      "class": "statement-contradiction",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "R9-2",
+      "class": "statement-contradiction",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "R9-3",
+      "class": "spec-gap",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/token-eff05/review-cr-r9-source-8ffe7679-20261128T044250Z.json",
+  "dispatchName": "ReviewTicket119SpecR9",
+  "format": "installed"
+}

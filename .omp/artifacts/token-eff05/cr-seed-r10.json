@@ -1,0 +1,34 @@
+{
+  "intent": "Review ticket 119 specification r10",
+  "instructions": "# Shared review packet \u2014 ticket #119, revision r10 (specification review)\n\nRepo: /home/opencode/projects/default/mcp-bridge (Go MCP bridge). Read-only.\nCandidate: `.scratch/token-efficient-tool-responses/ticket05-spec-r10.md`, sha256 154e3710131491f9c3736afa13e0f3055df86e11cb37eec389048910e15649ae, revision r10, candidate id token-efficient-tool-responses-ticket05-spec-r10, author planner.\nRepair review: R9-1 collision precedence override; R9-2 value-identical passthrough; R9-3 non-object SC carrier failure\nPrior review observation: `.omp/artifacts/token-eff05/review-cr-r9-source-8ffe7679-20261128T044250Z.json` (cr-r9).\n\n## Review scope\nApply W09E. Verify the claimed closures at their root invariants; preserve earlier closures; check adjacent cases, AC1\u2013AC7 semantics, D-table totality, out-of-band decision threading, write-set arithmetic and ticket-01 compatibility.\n\nReport APPROVE or REQUEST CHANGES with taxonomy-classified findings and anchors.\n",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses-ticket05-r10",
+    "revision": "r10",
+    "requests": [
+      {
+        "name": "ReviewTicket119SpecR10",
+        "taskId": "CR1",
+        "agent": "code-reviewer",
+        "effects": {
+          "kind": "read",
+          "paths": [
+            ".scratch/token-efficient-tool-responses/ticket05-spec-r10.md"
+          ]
+        },
+        "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r10",
+        "targetRevision": "r10"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "ReviewTicket119SpecR10",
+      "agent": "code-reviewer",
+      "task": "# Target\nReview `.scratch/token-efficient-tool-responses/ticket05-spec-r10.md` (sha256 154e3710131491f9c3736afa13e0f3055df86e11cb37eec389048910e15649ae) as the r10 repair for ticket #119.\n\n# Method\nRead the candidate and every cited anchor, including `.omp/artifacts/token-eff05/review-cr-r9-source-8ffe7679-20261128T044250Z.json`. Verify the claimed closures; preserve earlier closures; check adjacent cases. Do not implement or edit.\n\n# Output\nReturn APPROVE or REQUEST CHANGES with stable finding IDs, taxonomy class, severity, exact anchor and fix. No writes or repo-mutating commands.",
+      "solutionSpace": "independent specification review of ticket #119 r10"
+    }
+  ]
+}

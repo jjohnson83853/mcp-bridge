@@ -3,7 +3,7 @@
   "status": "COMPLETED",
   "artifact_receipt": ".omp/artifacts/receipt_T2.json",
   "telemetry_ref": null,
-  "summary": "T2 implementation and required verification completed.",
+  "summary": "Final T2 line-level test repairs completed; requested formatting and service/catalog checks passed.",
   "error_code": null,
   "evidence": [
     {
@@ -29,6 +29,12 @@
       "phase": "GREEN",
       "exit_code": 0,
       "output": "ok   github.com/jjohnson83853/mcp-bridge/internal/service\t0.017s\n"
+    },
+    {
+      "command": "gofmt -w internal/service/field_projection_surface_test.go && go test ./internal/service -run 'TestProjection|TestFieldProjection' -count=1 && go test ./internal/service ./internal/catalog -count=1 && gofmt -l internal/service/field_projection_surface_test.go",
+      "phase": "GREEN",
+      "exit_code": 0,
+      "output": "ok\tgithub.com/jjohnson83853/mcp-bridge/internal/service\t0.015s\nok\tgithub.com/jjohnson83853/mcp-bridge/internal/service\t7.012s\nok\tgithub.com/jjohnson83853/mcp-bridge/internal/catalog\t0.012s\n"
     }
   ],
   "decisions": [

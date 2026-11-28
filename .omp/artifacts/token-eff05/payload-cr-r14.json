@@ -1,0 +1,12 @@
+{
+  "i": "Review ticket 119 specification r14",
+  "context": "{\"instructions\":\"# Shared review packet \\u2014 ticket #119, revision r14 (specification review)\\n\\nRepo: /home/opencode/projects/default/mcp-bridge (Go MCP bridge). Read-only.\\nCandidate: `.scratch/token-efficient-tool-responses/ticket05-spec-r14.md`, sha256 cfca2e6b5b316afe48adcb7a679dea2479f2f835ee1d39f543a907bb3e5fc2fe, revision r14, candidate id token-efficient-tool-responses-ticket05-spec-r14, author planner.\\nRepair review: CR-R13-1 single fields rule: default-mode rows carry entry default list; [] only full-mode/no-match\\nPrior review observation: `.omp/artifacts/token-eff05/review-cr-r13-source-d3d30c82-20261128T051657Z.json` (cr-r13).\\n\\n## Review scope\\nApply W09E. Verify the claimed closures at their root invariants; preserve earlier closures; check adjacent cases, AC1\\u2013AC7 semantics, D-table totality, out-of-band decision threading, write-set arithmetic and ticket-01 compatibility.\\n\\nReport APPROVE or REQUEST CHANGES with taxonomy-classified findings and anchors.\\n\",\"workflowDispatch\":{\"statePath\":\"/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json\",\"schemaVersion\":1,\"projectRoot\":\"/home/opencode/projects/default/mcp-bridge\",\"feature\":\"token-efficient-tool-responses-ticket05-r14\",\"revision\":\"r14\",\"requests\":[{\"name\":\"ReviewTicket119SpecR14\",\"taskId\":\"CR1\",\"agent\":\"code-reviewer\",\"effects\":{\"kind\":\"read\",\"paths\":[\".scratch/token-efficient-tool-responses/ticket05-spec-r14.md\"]},\"targetCandidateId\":\"token-efficient-tool-responses-ticket05-spec-r14\",\"targetRevision\":\"r14\"}]}}",
+  "tasks": [
+    {
+      "name": "ReviewTicket119SpecR14",
+      "agent": "code-reviewer",
+      "task": "# Target\nReview `.scratch/token-efficient-tool-responses/ticket05-spec-r14.md` (sha256 cfca2e6b5b316afe48adcb7a679dea2479f2f835ee1d39f543a907bb3e5fc2fe) as the r14 repair for ticket #119.\n\n# Method\nRead the candidate and every cited anchor, including `.omp/artifacts/token-eff05/review-cr-r13-source-d3d30c82-20261128T051657Z.json`. Verify the claimed closures; preserve earlier closures; check adjacent cases. Do not implement or edit.\n\n# Output\nReturn APPROVE or REQUEST CHANGES with stable finding IDs, taxonomy class, severity, exact anchor and fix. No writes or repo-mutating commands.",
+      "solutionSpace": "independent specification review of ticket #119 r14"
+    }
+  ]
+}

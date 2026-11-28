@@ -50,6 +50,7 @@ type resultEntry struct {
 	maxUpstreamCodeBytes uint64
 	live                 bool
 	reservation          bool
+	projection           *projectionDecision
 }
 
 type resultMarker struct {
@@ -112,7 +113,13 @@ func newResultStore(bounds config.RetainedResultBounds, logger *observe.Logger, 
 	}
 }
 
-func (s *resultStore) commit(owner resultNamespace, resolver resultOwnerResolver, payload []byte, upstreamCode string, isError bool) resultCommit {
+func (s *resultStore) commit(owner resultNamespace, resolver resultOwnerResolver, payload []byte, upstreamCode string, isError bool, projection ...projectionDecision) resultCommit {
+	var disclosure *projectionDecision
+	if len(projection) > 0 {
+		decision := projection[0]
+		decision.Fields = append([]string(nil), decision.Fields...)
+		disclosure = &decision
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -164,6 +171,7 @@ func (s *resultStore) commit(owner resultNamespace, resolver resultOwnerResolver
 		deliveryCeilingBytes: s.bounds.DeliveryCeilingBytes,
 		previewCeilingBytes:  s.bounds.PreviewCeilingBytes,
 		maxUpstreamCodeBytes: s.bounds.MaxUpstreamCodeBytes,
+		projection:           disclosure,
 		live:                 true,
 		reservation:          true,
 	}

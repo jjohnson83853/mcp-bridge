@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "token-efficient-tool-responses-ticket05-r16",
+  "revision": "r16",
+  "requests": [
+    {
+      "name": "CriticTicket119SpecR16",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r16.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r16",
+      "targetRevision": "r16"
+    }
+  ]
+}

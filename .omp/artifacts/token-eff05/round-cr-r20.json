@@ -1,0 +1,26 @@
+{
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r20",
+  "revision": "r20",
+  "reviewerId": "code-reviewer",
+  "verdict": "APPROVE",
+  "findings": [
+    {
+      "id": "CR-R20-1",
+      "class": "ticket-mirror-drift",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR-R20-2",
+      "class": "ledger-state-drift",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR-R20-3",
+      "class": "stale-citation",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/token-eff05/review-cr-r20-source-9b5a916c-20261128T100505Z.json",
+  "dispatchName": "ReviewTicket119SpecR20",
+  "format": "installed"
+}

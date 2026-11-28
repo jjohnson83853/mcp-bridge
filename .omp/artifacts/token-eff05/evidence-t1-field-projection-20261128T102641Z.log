@@ -1,0 +1,5 @@
+$ go test ./internal/service -run TestFieldProjection -count=1
+ok  	github.com/jjohnson83853/mcp-bridge/internal/service	0.007s
+exit=0
+$ gofmt -l internal/service/field_projection.go internal/service/field_projection_test.go
+exit=0

@@ -1,0 +1,26 @@
+{
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r8",
+  "revision": "r8",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "F1",
+      "class": "statement-contradiction",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "F2",
+      "class": "statement-contradiction",
+      "severity": "LOW"
+    },
+    {
+      "id": "F3",
+      "class": "undefined-term",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/token-eff05/review-cr-r8-source-7783cb1b-20261128T043659Z.json",
+  "dispatchName": "ReviewTicket119SpecR8",
+  "format": "installed"
+}

@@ -4,9 +4,9 @@ package catalog
 
 // Bridge tool names advertised on the single /mcp endpoint (r8 §4.4).
 const (
-	ToolSearchTools   = "search_tools"
-	ToolDescribeTool  = "describe_tool"
-	ToolCallTool      = "call_tool"
+	ToolSearchTools    = "search_tools"
+	ToolDescribeTool   = "describe_tool"
+	ToolCallTool       = "call_tool"
 	ToolRetrieveResult = "retrieve_result"
 	ToolExposeTools    = "expose_tools"
 )
@@ -102,6 +102,24 @@ func CallToolInputSchema() map[string]any {
 				"type":                 "object",
 				"additionalProperties": true,
 				"description":          "Arguments for the upstream tool invocation",
+			},
+			"projection": map[string]any{
+				"type":                 "object",
+				"additionalProperties": false,
+				"properties": map[string]any{
+					"full": map[string]any{"type": "boolean"},
+					"fields": map[string]any{
+						"type":     "array",
+						"minItems": 1,
+						"maxItems": 16,
+						"items": map[string]any{
+							"type":      "string",
+							"minLength": 1,
+							"maxLength": 64,
+							"pattern":   "^[A-Za-z0-9_]+$",
+						},
+					},
+				},
 			},
 		},
 	}

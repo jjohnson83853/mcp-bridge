@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"math"
 	"strconv"
 	"unicode/utf8"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jjohnson83853/mcp-bridge/internal/config"
 	"github.com/jjohnson83853/mcp-bridge/internal/core"
@@ -15,12 +15,20 @@ import (
 
 const resultPageMaxWidth = uint64(math.MaxUint32)
 
-func deliverBoundedResult(store *resultStore, result *mcp.CallToolResult, owner resultNamespace, resolve resultOwnerResolver, upstreamCode string) *mcp.CallToolResult {
+const projectionRetainedEnvelopeHeadroom = uint64(6)
+
+func deliverBoundedResult(store *resultStore, result *mcp.CallToolResult, owner resultNamespace, resolve resultOwnerResolver, upstreamCode string, projection ...projectionDecision) *mcp.CallToolResult {
 	payload, err := json.Marshal(result)
 	if err != nil {
 		return errorResult(codeInternalError, "the bridge could not encode the tool result", core.ExecutionUnknown)
 	}
 	bounds := store.bounds
+	var disclosure *projectionDecision
+	if len(projection) > 0 {
+		decision := projection[0]
+		decision.Fields = append([]string(nil), decision.Fields...)
+		disclosure = &decision
+	}
 	if uint64(len(payload)) <= bounds.DeliveryCeilingBytes {
 		return result
 	}
@@ -31,11 +39,11 @@ func deliverBoundedResult(store *resultStore, result *mcp.CallToolResult, owner 
 			if owner.epoch == "" {
 				retention = "result_epoch_unresolved"
 			}
-			return renderResultTerminal(payload, result.IsError, upstreamCode, retention, bounds)
+			return renderResultTerminal(payload, result.IsError, upstreamCode, retention, bounds, disclosure)
 		}
 	}
 
-	commit := store.commit(owner, resolve, payload, upstreamCode, result.IsError)
+	commit := store.commit(owner, resolve, payload, upstreamCode, result.IsError, projection...)
 	if commit.handle != "" {
 		lookup := store.lookup(commit.handle, owner, resolve, 1)
 		if lookup.entry == nil {
@@ -46,7 +54,7 @@ func deliverBoundedResult(store *resultStore, result *mcp.CallToolResult, owner 
 		}
 		return renderResultPreview(lookup.entry)
 	}
-	return renderResultTerminal(payload, result.IsError, upstreamCode, commit.retention, bounds)
+	return renderResultTerminal(payload, result.IsError, upstreamCode, commit.retention, bounds, disclosure)
 }
 
 func renderResultPreview(entry *resultEntry) *mcp.CallToolResult {
@@ -59,6 +67,7 @@ func renderResultPreview(entry *resultEntry) *mcp.CallToolResult {
 	if entry.upstreamCode != "" {
 		metadata["upstream_code"] = entry.upstreamCode
 	}
+	addProjectionDisclosure(metadata, entry.projection, entry.upstreamCode, entry.maxUpstreamCodeBytes, entry.previewCeilingBytes)
 	content := boundedResultPrefix(entry.payload, entry.previewCeilingBytes, previewSizingMetadata(entry), entry.upstreamCode, entry.maxUpstreamCodeBytes)
 	return &mcp.CallToolResult{
 		Content:           []mcp.Content{&mcp.TextContent{Text: content}},
@@ -76,17 +85,18 @@ func renderResultPage(entry *resultEntry, page int) *mcp.CallToolResult {
 		return invalidArgumentsLookup().rejection
 	}
 	metadata := map[string]any{
-		"handle":           entry.handle,
-		"page":             page,
-		"total_pages":      totalPages,
-		"remaining_pages":  totalPages - page,
-		"total_bytes":      uint64(len(entry.payload)),
-		"remaining_bytes":  uint64(len(entry.payload) - end),
-		"is_error":         entry.isError,
+		"handle":          entry.handle,
+		"page":            page,
+		"total_pages":     totalPages,
+		"remaining_pages": totalPages - page,
+		"total_bytes":     uint64(len(entry.payload)),
+		"remaining_bytes": uint64(len(entry.payload) - end),
+		"is_error":        entry.isError,
 	}
 	if entry.upstreamCode != "" {
 		metadata["upstream_code"] = entry.upstreamCode
 	}
+	addProjectionDisclosure(metadata, entry.projection, entry.upstreamCode, entry.maxUpstreamCodeBytes, entry.deliveryCeilingBytes)
 	return &mcp.CallToolResult{
 		Content:           []mcp.Content{&mcp.TextContent{Text: string(entry.payload[start:end])}},
 		StructuredContent: metadata,
@@ -130,21 +140,17 @@ func resultPageLayout(entry *resultEntry, requested int) (total, start, end int)
 	return total, start, end
 }
 
-func renderResultTerminal(payload []byte, isError bool, upstreamCode, retention string, bounds config.RetainedResultBounds) *mcp.CallToolResult {
-	metadata := map[string]any{
-		"retention":       retention,
-		"execution_state": "executed",
-		"total_bytes":     uint64(len(payload)),
-		"is_error":        isError,
+func renderResultTerminal(payload []byte, isError bool, upstreamCode, retention string, bounds config.RetainedResultBounds, decision *projectionDecision) *mcp.CallToolResult {
+	sizingMetadata := terminalSizingMetadata(retention, upstreamCode)
+	var included []projectionDecision
+	if addProjectionDisclosure(sizingMetadata, decision, upstreamCode, bounds.MaxUpstreamCodeBytes, bounds.PreviewCeilingBytes) {
+		included = append(included, *decision)
 	}
-	if upstreamCode != "" {
-		metadata["upstream_code"] = upstreamCode
-	}
-	content := boundedResultPrefix(payload, bounds.PreviewCeilingBytes, terminalSizingMetadata(retention, upstreamCode), upstreamCode, bounds.MaxUpstreamCodeBytes)
-	return terminalResult(content, isError, len(payload), retention, upstreamCode)
+	content := boundedResultPrefix(payload, bounds.PreviewCeilingBytes, sizingMetadata, upstreamCode, bounds.MaxUpstreamCodeBytes)
+	return terminalResult(content, isError, len(payload), retention, upstreamCode, included...)
 }
 
-func terminalResult(content string, isError bool, totalBytes int, retention, upstreamCode string) *mcp.CallToolResult {
+func terminalResult(content string, isError bool, totalBytes int, retention, upstreamCode string, projection ...projectionDecision) *mcp.CallToolResult {
 	metadata := map[string]any{
 		"retention":       retention,
 		"execution_state": "executed",
@@ -154,6 +160,9 @@ func terminalResult(content string, isError bool, totalBytes int, retention, ups
 	if upstreamCode != "" {
 		metadata["upstream_code"] = upstreamCode
 	}
+	if len(projection) > 0 {
+		metadata["projection"] = projectionDisclosure(projection[0])
+	}
 	return &mcp.CallToolResult{
 		Content:           []mcp.Content{&mcp.TextContent{Text: content}},
 		StructuredContent: metadata,
@@ -162,36 +171,44 @@ func terminalResult(content string, isError bool, totalBytes int, retention, ups
 }
 
 func previewSizingMetadata(entry *resultEntry) map[string]any {
-	return map[string]any{
+	metadata := map[string]any{
 		"paging_required": true,
 		"handle":          entry.handle,
 		"total_bytes":     uint64(math.MaxUint64),
 		"is_error":        false,
 		"upstream_code":   entry.upstreamCode,
 	}
+	addProjectionDisclosure(metadata, entry.projection, entry.upstreamCode, entry.maxUpstreamCodeBytes, entry.previewCeilingBytes)
+	return metadata
 }
 
 func pageSizingMetadata(entry *resultEntry) map[string]any {
-	return map[string]any{
-		"handle":           entry.handle,
-		"page":             resultPageMaxWidth,
-		"total_pages":      resultPageMaxWidth,
-		"remaining_pages":  resultPageMaxWidth,
-		"total_bytes":      uint64(math.MaxUint64),
-		"remaining_bytes":  uint64(math.MaxUint64),
-		"is_error":         false,
-		"upstream_code":    entry.upstreamCode,
+	metadata := map[string]any{
+		"handle":          entry.handle,
+		"page":            resultPageMaxWidth,
+		"total_pages":     resultPageMaxWidth,
+		"remaining_pages": resultPageMaxWidth,
+		"total_bytes":     uint64(math.MaxUint64),
+		"remaining_bytes": uint64(math.MaxUint64),
+		"is_error":        false,
+		"upstream_code":   entry.upstreamCode,
 	}
+	addProjectionDisclosure(metadata, entry.projection, entry.upstreamCode, entry.maxUpstreamCodeBytes, entry.deliveryCeilingBytes)
+	return metadata
 }
 
-func terminalSizingMetadata(retention, upstreamCode string) map[string]any {
-	return map[string]any{
+func terminalSizingMetadata(retention, upstreamCode string, projection ...projectionDecision) map[string]any {
+	metadata := map[string]any{
 		"retention":       "result_aggregate_capacity_exceeded",
 		"execution_state": "executed",
 		"total_bytes":     uint64(math.MaxUint64),
 		"is_error":        false,
 		"upstream_code":   upstreamCode,
 	}
+	if len(projection) > 0 {
+		metadata["projection"] = projectionDisclosure(projection[0])
+	}
+	return metadata
 }
 
 func boundedResultPrefix(payload []byte, ceiling uint64, metadata map[string]any, upstreamCode string, maxUpstreamCodeBytes uint64) string {
@@ -247,7 +264,76 @@ func resultEnvelopeContentBudget(metadata map[string]any, upstreamCode string, m
 	return ceiling - baseBytes, true
 }
 
-func (t *ToolSurface) boundedCallToolResult(request mcp.Request, result *mcp.CallToolResult, upstreamCode string) *mcp.CallToolResult {
+const projectionMaximumBudgetHandle = "AAAAAAAAAA" + "AAAAAAAAAA" + "AAAAAAAAAA" + "AAAAAAAAAA" + "AAA"
+
+func addProjectionDisclosure(metadata map[string]any, decision *projectionDecision, upstreamCode string, maxUpstreamCodeBytes, ceiling uint64) bool {
+	if decision == nil {
+		return false
+	}
+	metadata["projection"] = projectionDisclosure(*decision)
+	remaining, ok := resultEnvelopeContentBudget(metadata, upstreamCode, maxUpstreamCodeBytes, ceiling)
+	if !ok || remaining <= projectionRetainedEnvelopeHeadroom+escapedJSONLength(upstreamCode) {
+		delete(metadata, "projection")
+		return false
+	}
+	return true
+}
+
+func projectionFieldsBudget(bounds config.RetainedResultBounds) int {
+	decision := projectionDecision{
+		Applied: false,
+		Entry:   "portainer.docker_proxy /containers/json",
+		Mode:    projectionModeFields,
+		Fields:  []string{},
+		Reason:  projectionReasonStructuredContentNotMirrorable,
+	}
+	preview := map[string]any{
+		"paging_required": true,
+		"handle":          projectionMaximumBudgetHandle,
+		"total_bytes":     uint64(math.MaxUint64),
+		"is_error":        false,
+		"upstream_code":   "",
+		"projection":      projectionDisclosure(decision),
+	}
+	page := map[string]any{
+		"handle":          projectionMaximumBudgetHandle,
+		"page":            resultPageMaxWidth,
+		"total_pages":     resultPageMaxWidth,
+		"remaining_pages": resultPageMaxWidth,
+		"total_bytes":     uint64(math.MaxUint64),
+		"remaining_bytes": uint64(math.MaxUint64),
+		"is_error":        false,
+		"upstream_code":   "",
+		"projection":      projectionDisclosure(decision),
+	}
+	terminal := terminalSizingMetadata("result_aggregate_capacity_exceeded", "", decision)
+	budget := 16*67 + 1
+	for _, candidate := range []int{
+		projectionFieldsBudgetForMetadata(preview, bounds.PreviewCeilingBytes, bounds),
+		projectionFieldsBudgetForMetadata(page, bounds.DeliveryCeilingBytes, bounds),
+		projectionFieldsBudgetForMetadata(terminal, bounds.PreviewCeilingBytes, bounds),
+	} {
+		if candidate < budget {
+			budget = candidate
+		}
+	}
+	return maxProjectionFieldsBudget(budget)
+}
+
+func projectionFieldsBudgetForMetadata(metadata map[string]any, ceiling uint64, bounds config.RetainedResultBounds) int {
+	remaining, ok := resultEnvelopeContentBudget(metadata, "", bounds.MaxUpstreamCodeBytes, ceiling)
+	if !ok || remaining <= projectionRetainedEnvelopeHeadroom {
+		return 0
+	}
+	fieldBudget := remaining - projectionRetainedEnvelopeHeadroom
+	maxInt := int(^uint(0) >> 1)
+	if fieldBudget > uint64(maxInt) {
+		return maxInt
+	}
+	return int(fieldBudget)
+}
+
+func (t *ToolSurface) boundedCallToolResult(request mcp.Request, result *mcp.CallToolResult, upstreamCode string, projection ...projectionDecision) *mcp.CallToolResult {
 	if t.cfg.RetainedResults == nil {
 		return result
 	}
@@ -263,7 +349,7 @@ func (t *ToolSurface) boundedCallToolResult(request mcp.Request, result *mcp.Cal
 		t.results.mu.Unlock()
 	}
 	owner, resolve := t.resultOwner(request, true)
-	return deliverBoundedResult(t.results, result, owner, resolve, upstreamCode)
+	return deliverBoundedResult(t.results, result, owner, resolve, upstreamCode, projection...)
 }
 
 func (t *ToolSurface) sweepRetainedResults() {
@@ -290,7 +376,6 @@ func (t *ToolSurface) retireRetainedResultNamespace(owner projectionOwner) {
 		epoch:     strconv.FormatUint(owner.epoch, 10),
 	})
 }
-
 
 func (t *ToolSurface) resultOwner(request mcp.Request, allowUnresolvedEpoch bool) (resultNamespace, resultOwnerResolver) {
 	if request == nil || request.GetExtra() == nil || request.GetExtra().Header == nil {

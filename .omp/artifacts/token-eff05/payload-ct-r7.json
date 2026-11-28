@@ -1,0 +1,12 @@
+{
+  "i": "Critic review ticket 119 specification r7",
+  "context": "{\"instructions\":\"# Shared review packet \\u2014 ticket #119, revision r7 (specification review, repair round 5)\\n\\nRepo: /home/opencode/projects/default/mcp-bridge (Go MCP bridge). Read-only.\\nCandidate: `.scratch/token-efficient-tool-responses/ticket05-spec-r7.md`, sha256 be2c8e287cc257371198e9ec024dc1bbc015a16fa7b29ad95c6e5f54fe1c5d6f, revision r7, candidate id token-efficient-tool-responses-ticket05-spec-r7, author planner.\\nRepair of review round 5 (seq 107, R6-1..R6-7 + open question). Earlier rounds: F1-F8, N1-N8, N2/N8/N9/N10/N11/N12/N13, F-A..F-H.\\n\\n## Review scope\\nApply W09E. Verify: R6-1 single normative disclosure schema vs AC1 exact-shape; R6-2 whole `upstream_result` re-derivation + README amendment + oracle on content and structuredContent; R6-3 out-of-band engine decision + forged matching over-ceiling oracle; R6-4 channel wording; R6-5 citations/terminology; R6-6 counter outcome domain incl. applied; R6-7 runtime budget authoritative/floor/clamp; non-object item whole-list skip choice. Check AC1\\u2013AC7 preservation, D-table totality, write set 3 NEW + 12 MODIFIED, and ticket-01 compatibility.\\n\\nReport APPROVE or REQUEST CHANGES with taxonomy-classified findings and anchors.\\n\",\"workflowDispatch\":{\"statePath\":\"/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json\",\"schemaVersion\":1,\"projectRoot\":\"/home/opencode/projects/default/mcp-bridge\",\"feature\":\"token-efficient-tool-responses-ticket05-r7\",\"revision\":\"r7\",\"requests\":[{\"name\":\"CriticTicket119SpecR7\",\"taskId\":\"CT1\",\"agent\":\"critic\",\"effects\":{\"kind\":\"read\",\"paths\":[\".scratch/token-efficient-tool-responses/ticket05-spec-r7.md\"]},\"targetCandidateId\":\"token-efficient-tool-responses-ticket05-spec-r7\",\"targetRevision\":\"r7\"}]}}",
+  "tasks": [
+    {
+      "name": "CriticTicket119SpecR7",
+      "agent": "critic",
+      "task": "# Target\nIndependently assess `.scratch/token-efficient-tool-responses/ticket05-spec-r7.md` (sha256 be2c8e287cc257371198e9ec024dc1bbc015a16fa7b29ad95c6e5f54fe1c5d6f) for ticket #119.\n\n# Method\nRead the candidate, prior finding ledger, evidence bundle and sources. Apply your full installed assessment. Do not implement or edit.\n\n# Output\nReturn PASS or REVISE with residual findings and verdict basis. No writes or repo-mutating commands.",
+      "solutionSpace": "independent critic assessment for ticket #119 r7"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "intent": "Repair and finish T3 projection observability",
+  "instructions": "# T3 repair \u2014 finish and fix the partial T3 edit (surgical, edit-first)\n\nA prior engineer made most T3 edits and left `internal/observe/envelope.go` syntactically broken. Do NOT redo working changes. Read ONLY the seven T3 files named below; edit immediately; target <=10 reads.\n\n## Exact repair 1 \u2014 `internal/observe/envelope.go` is broken (build error at :702)\nCurrent bad bytes around :700:\n\t\"projection_reason\",\nPUT >381:\ncase \"projection_reason\":\n\treason, ok := value.(string)\n\tif !ok || !validProjectionReason(reason) {\n\t\treturn false\n\t}\n\trecord[key] = reason\n\t\"protocol_version\",\n\nFix:\n- In the `envelopeFieldNames` slice, KEEP the line `\"projection_reason\",` (sorted between `\"process_state\",` and `\"protocol_version\",`).\n- DELETE the stray lines `PUT >381:` and the entire stray `case \"projection_reason\":` block from that slice. The slice must contain only string literals and end with `}`.\n- In `addEnvelopeFields` (:259), after the `case \"failure_reason\":` block (:376-382, which ends with `record[key] = reason`) and before `case \"quarantine_path\":`, INSERT exactly:\n\n\tcase \"projection_reason\":\n\t\treason, ok := value.(string)\n\t\tif !ok || !validProjectionReason(reason) {\n\t\t\treturn false\n\t\t}\n\t\trecord[key] = reason\n\n`validProjectionReason` already exists at :498.\n\n## Verify the other edits are complete and coherent (fix only real gaps)\n- `internal/observe/log.go`: `eventMessage` has `projection_skipped` and `projection_rejected` cases.\n- `internal/observe/metrics.go`: `bridge_projection_total` CounterVec labels {server,tool,outcome} registered; `RecordProjection(server, tool, outcome string) bool` accepts only applied/skipped/rejected and increments; nil-safe.\n- `internal/observe/log_test.go`: union test includes both events; 12-reason/field tests present and non-violating.\n- `internal/observe/metrics_test.go`: three-outcome domain, unknown-outcome refusal, `not_allowlisted` label, applied increment.\n- `docs/logging-contract.md`: events, enum, counter, log-free skip reasons.\n- `cmd/mcp-bridge/config_envelope_test.go`: count 132 -> 133.\n\nDo not touch any other file.\n\n## Verify (RED/GREEN not needed again; prior RED is recorded)\nRun exactly:\n  gofmt -w internal/observe/envelope.go\n  go test ./internal/observe ./cmd/mcp-bridge -count=1\n  gofmt -l internal/observe/log.go internal/observe/metrics.go internal/observe/envelope.go internal/observe/log_test.go internal/observe/metrics_test.go cmd/mcp-bridge/config_envelope_test.go\nReport command output.\n",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses-ticket05-r21",
+    "revision": "r21",
+    "requests": [
+      {
+        "name": "EngineerT3Repair2",
+        "taskId": "T3",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/observe/log.go",
+            "internal/observe/metrics.go",
+            "internal/observe/envelope.go",
+            "internal/observe/log_test.go",
+            "internal/observe/metrics_test.go",
+            "docs/logging-contract.md",
+            "cmd/mcp-bridge/config_envelope_test.go"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "EngineerT3Repair2",
+      "agent": "engineer",
+      "task": "# T3 repair \u2014 finish and fix the partial T3 edit (surgical, edit-first)\n\nA prior engineer made most T3 edits and left `internal/observe/envelope.go` syntactically broken. Do NOT redo working changes. Read ONLY the seven T3 files named below; edit immediately; target <=10 reads.\n\n## Exact repair 1 \u2014 `internal/observe/envelope.go` is broken (build error at :702)\nCurrent bad bytes around :700:\n\t\"projection_reason\",\nPUT >381:\ncase \"projection_reason\":\n\treason, ok := value.(string)\n\tif !ok || !validProjectionReason(reason) {\n\t\treturn false\n\t}\n\trecord[key] = reason\n\t\"protocol_version\",\n\nFix:\n- In the `envelopeFieldNames` slice, KEEP the line `\"projection_reason\",` (sorted between `\"process_state\",` and `\"protocol_version\",`).\n- DELETE the stray lines `PUT >381:` and the entire stray `case \"projection_reason\":` block from that slice. The slice must contain only string literals and end with `}`.\n- In `addEnvelopeFields` (:259), after the `case \"failure_reason\":` block (:376-382, which ends with `record[key] = reason`) and before `case \"quarantine_path\":`, INSERT exactly:\n\n\tcase \"projection_reason\":\n\t\treason, ok := value.(string)\n\t\tif !ok || !validProjectionReason(reason) {\n\t\t\treturn false\n\t\t}\n\t\trecord[key] = reason\n\n`validProjectionReason` already exists at :498.\n\n## Verify the other edits are complete and coherent (fix only real gaps)\n- `internal/observe/log.go`: `eventMessage` has `projection_skipped` and `projection_rejected` cases.\n- `internal/observe/metrics.go`: `bridge_projection_total` CounterVec labels {server,tool,outcome} registered; `RecordProjection(server, tool, outcome string) bool` accepts only applied/skipped/rejected and increments; nil-safe.\n- `internal/observe/log_test.go`: union test includes both events; 12-reason/field tests present and non-violating.\n- `internal/observe/metrics_test.go`: three-outcome domain, unknown-outcome refusal, `not_allowlisted` label, applied increment.\n- `docs/logging-contract.md`: events, enum, counter, log-free skip reasons.\n- `cmd/mcp-bridge/config_envelope_test.go`: count 132 -> 133.\n\nDo not touch any other file.\n\n## Verify (RED/GREEN not needed again; prior RED is recorded)\nRun exactly:\n  gofmt -w internal/observe/envelope.go\n  go test ./internal/observe ./cmd/mcp-bridge -count=1\n  gofmt -l internal/observe/log.go internal/observe/metrics.go internal/observe/envelope.go internal/observe/log_test.go internal/observe/metrics_test.go cmd/mcp-bridge/config_envelope_test.go\nReport command output.\n",
+      "solutionSpace": "one fix: repair envelope.go syntax/case, verify existing partial T3 edits, run tests"
+    }
+  ]
+}

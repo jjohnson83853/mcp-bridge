@@ -1,0 +1,7 @@
+$ go test ./internal/service ./internal/catalog ./internal/observe -count=1
+ok  	github.com/jjohnson83853/mcp-bridge/internal/service	4.107s
+ok  	github.com/jjohnson83853/mcp-bridge/internal/catalog	0.012s
+ok  	github.com/jjohnson83853/mcp-bridge/internal/observe	0.233s
+exit=0
+$ gofmt -l (changed Go files)
+exit=0

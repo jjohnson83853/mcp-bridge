@@ -1,0 +1,129 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r16",
+  "revision": "r16",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r16.md",
+      "sha256": "261372326838b070b6832275f1c25619d8eee4701438a86b7121cb986569e346"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/issue-119.md",
+      "sha256": "caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/refinement.md",
+      "sha256": "0889c58aa753869ac92acaa7f39a22fd4f9b6fd85e659fd0c37121914f76cc6b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/planner-evidence.md",
+      "sha256": "74acd6a6e9dc70cec955c787784ee377cfa37f8c2c31cc4b56d285e3fd25954d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_endpointlist.json",
+      "sha256": "a7167d80f4151eee2a31092beb2817b39c8c542888f338f9aa1e344f0c3ff398"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_docker_proxy.json",
+      "sha256": "a91db42a4a79684e3863a0ad6abf73a7ec1898dfca9ef9be45d0efed0486f1d1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r15-source-c05d346f-20261128T052543Z.json",
+      "sha256": "c05d346ffef99507911aaafabd34edcf3e8e6a6a5a4f1daa7e5269540f77006c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "161ff8201f76368e9e6b4a98ba786fcf36c74e346676bb2bc16f71857bb916b1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+      "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "559c8c44341b7516327b6a5ce8684a57b39219e1c8f8c2b5b0789b9fe4947a75"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
+      "sha256": "744579103ff3b3bf3b2b51052767a7f5f50bca2b3536617ad14bdff5300202f5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle_test.go",
+      "sha256": "cba6b86e42d029cf61d3b0eb17a54fdedc9ae3ea6a8643d47956c86f32dd9019"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+      "sha256": "4b3080089e71a4a751b5be2dfb53aad4b24c475a37cb429c190cc656c12ab62c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "df2102ab178fdf4928da5d21bf5c296bef06d32066fe10ea035055b40e23f1e5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "a5999feaf2750a5093d2d17414aff7608f82edf19a37ee21ced2cf1749869f07"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "99d72a5b60e087f89341033ea3d8b3bcc272b382c4b5fb7d43cb31bf25df0163"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "399482e76d6ed7a99f4ccfbaa97e37b194be8d3f1b4c82ccdef77f0809327ed7"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket119SpecR16",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r16.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r16",
+      "targetRevision": "r16",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "fd3e43f76fb9bfcfdb1f313263e8205ed6490a98c9df7ea410ddfd865c8e9b75",
+      "instructionsSha256": "972aa04bab204d95343854c2db755e89350c40c1a3bada0ab6c8ff64953a266c",
+      "requestSha256": "417b7113528b0d50da4c951b19bedc823e29ec8bad58636f442d389806240deb"
+    },
+    {
+      "name": "CriticTicket119SpecR16",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r16.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r16",
+      "targetRevision": "r16",
+      "reviewerId": "critic",
+      "taskSha256": "d1b43eac12b57183518e234080f64b656e724e102ecb46b0a95c987c33e6a264",
+      "instructionsSha256": "972aa04bab204d95343854c2db755e89350c40c1a3bada0ab6c8ff64953a266c",
+      "requestSha256": "1909e879c35accc5f61498b95c31d3fb8bb320f7e0f0739feb0442d746c03646"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Subject mode:** specification \u2014 **pass:** repair (r16, final budgeted review). Candidate `token-efficient-tool-responses-ticket05-spec-r16`. Hash not recomputed (no shell); read the full candidate, the cr-r15 artifact, the ledger, and anchors: `internal/service/tools.go:1000`, `internal/catalog/schema.go:93-107`, `internal/config/bounds.go:348-363`.\n**Files Reviewed:** 4 (candidate + 3 source anchors) plus the cr-r15 artifact and ledger. **Issues:** 4 LOW.\n\n### Closure evidence\n- **CR-R15-1 CLOSED.** Ladder L1\u2013L6 is normative at R4:14, design:45-50, C2, C5:80, rows 18/19/21 (:70/:71/:73), AC3:98, AC6:100, AC7:102, T1, T2, \u00a77:131, \u00a79:147, \u00a710:156. First-match-wins yields one reason per input: fields+select+dupe\u2192L3 `select_conflict`; full:true+fields+select\u2192L2; present-empty+select\u2192L3; non-matching+static violation\u2192L4; static-clean over-budget\u2192L6. `select_conflict` present in R4 ladder, C5, \u00a77 (8 skip + 4 reject = 12).\n- **Preserved:** CR-R14-1 (:6, :12, rows 6/7/9/15, AC6(d), \u00a77, T1/T2); CR-R13-1; CR-R12-1 (rows 6/15, C3, C4b(iv), AC1, AC6(d)); CR-R11-1\u20264 (override rows 5/6/7/9; rows 8/10 NO-OP; absent-SC creation; envelope always writable; README enumeration); R9-1/2/3; F1/F2/F3; R6-4 (log-free rows 2/3/12/17); R6-6; R6-7 clamp. Write set 3 NEW + 12 MODIFIED = T1\u222aT2\u222aT3; exclusions intact.\n- Anchors sound: `CallToolInputSchema` lacks `projection` and has top-level `additionalProperties:false` (schema.go:93-107) \u2192 T2's RED claim is real; `retainedResultEnvelopeFits` \u2264-ceiling at bounds.go:362, headroom 6.\n\n### Issues (LOW, advisory)\n[LOW][statement-ambiguity] L2 shorthand omits `full: true`\nFile: `.scratch/token-efficient-tool-responses/ticket05-spec-r16.md:14` (also :46)\nID: CR-R16-1 \u00b7 Confidence: HIGH\nIssue: \u201c`full` and `fields` together \u21d2 malformed_request\u201d literally fires for `{full:false, fields:[\u2026]}`, which AC3:98 pins to fields mode (mapping). Resolved by the AC, not by the ladder text.\nFix: write \u201c`full: true` + `fields`\u201d in R4(2), design L2, row 21.\n\n[LOW][statement-ambiguity] AC4 L5 clause lacks L1\u2013L4 precedence\nFile: :99 vs :98\nID: CR-R16-2 \u00b7 Confidence: HIGH\nIssue: AC4 says fields on non-matching ops \u2192 L5 `not_supported` unqualified; AC3 sends non-matching + duplicate fields to L4 `malformed_request`. Ladder resolves it; text does not.\nFix: qualify AC4 with \u201cstatically valid `fields` (after L1\u2013L4)\u201d.\n\n[LOW][documentation] \u201cNo pre-dispatch input reaches two steps\u201d\nFile: :50\nID: CR-R16-3 \u00b7 Confidence: HIGH\nIssue: Contradicts the same sentence\u2019s \u201cfirst matching step\u201d and composites that match two steps.\nFix: \u201cNo pre-dispatch input resolves to more than one step; the first matching step declares the reason.\u201d\n\n[LOW][traceability] \u00a79 count and ladder row labels\nFile: :147, :45-48\nID: CR-R16-4 \u00b7 Confidence: HIGH\nIssue: \u201cthe three composite inputs\u201d followed by four; ladder cites \u201c[former row 21a/21b/21c]\u201d although r15\u2019s D-table had a single row 21 (21 rows total); \u00a710:156 repeats it.\nFix: \u201cfour composite inputs\u201d; cite ladder steps or actual rows.\n\n### Open Questions\n[LOW] Schema-vs-ladder ownership of L1\nFile: :14(1), :114-115\nConfidence: LOW\nIssue: A strict per-member `projection` subschema would let decodeStrict preempt L1/L4, producing no `projection_rejected` record/counter that row 21 requires. L1\u2019s declared outcome implies the ladder owns classification, but the two-layer interplay is unstated.\nFix: one clause that the catalog `projection` subschema stays permissive so L1\u2013L6 classify and emit L+C.\n\n### Positive Observations\n- The total ladder is threaded through every normative site and oracle with composite counterexamples \u2014 the root fix, not per-site patching.\n- r16 preserved all prior closures and write-set arithmetic while adding no new R/AC/T IDs.\n\n### Review Limits\nSpecification mode: no build, tests or diagnostics; candidate sha256 not recomputed; \u00a78 live unknowns (wrapper bytes, endpoint member names) remain non-blocking.\n\n### Recommendation\nAPPROVE",
+  "invocationId": "0d1af26e-3a4d-4aff-934b-008e3664ad17"
+}

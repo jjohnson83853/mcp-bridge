@@ -1,0 +1,36 @@
+{
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r10",
+  "revision": "r10",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR-R10-1",
+      "class": "statement-contradiction",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR-R10-2",
+      "class": "statement-contradiction",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR-R10-3",
+      "class": "repair-completeness",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR-R10-4",
+      "class": "editorial",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR-R10-5",
+      "class": "spec-gap",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/token-eff05/review-cr-r10-source-c938712a-20261128T045409Z.json",
+  "dispatchName": "ReviewTicket119SpecR10",
+  "format": "installed"
+}

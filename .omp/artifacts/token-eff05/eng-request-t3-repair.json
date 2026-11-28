@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "feature": "token-efficient-tool-responses-ticket05-r21",
+  "revision": "r21",
+  "requests": [
+    {
+      "name": "EngineerT3Repair",
+      "taskId": "T3",
+      "agent": "engineer",
+      "effects": {
+        "kind": "write",
+        "paths": [
+          "internal/observe/log.go",
+          "internal/observe/metrics.go",
+          "internal/observe/envelope.go",
+          "internal/observe/log_test.go",
+          "internal/observe/metrics_test.go",
+          "docs/logging-contract.md",
+          "cmd/mcp-bridge/config_envelope_test.go"
+        ]
+      }
+    }
+  ]
+}

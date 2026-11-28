@@ -1,0 +1,10 @@
+{
+  "evidence": "live observed EndpointList payload member names (Critic C2, AC5 Type disposition)",
+  "method": "mcp__tool_call_tool portainer__EndpointList through the configured bridge (read-only upstream tool, readOnlyHint=true)",
+  "request_id": "1003a65c28a87636ae6c58ecfd9ede1d",
+  "select": "[].{Id:Id,Name:Name,Type:Type}",
+  "observed_at": "20261128T093237Z",
+  "result": [{"Id": 3, "Name": "Services", "Type": 1}, {"Id": 5, "Name": "docker-lxc", "Type": 1}, {"Id": 6, "Name": "docker-lxc-rw", "Type": 1}],
+  "full_unprojected": {"handle": "eTciHSU8k8HA5TMoLpn-Nf_xFaS8Waiz70FxBjUCPDA", "total_bytes": 25128},
+  "conclusion": "Id, Name and Type are present on every observed endpoint item; Type is an integer (1 for all three). The r16 AC5 inference is factually confirmed on this deployment."
+}

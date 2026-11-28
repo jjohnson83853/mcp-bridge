@@ -1,0 +1,129 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r19",
+  "revision": "r19",
+  "invocationId": "c4c56cee-3ca7-4e28-b8e7-d60858f7ee32",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r19.md",
+      "sha256": "e301582ac5a70fbe1c9ea2ebc2d9865018c5319c8897973a23d203d6c07ee7bf"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/issue-119.md",
+      "sha256": "caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/refinement.md",
+      "sha256": "0889c58aa753869ac92acaa7f39a22fd4f9b6fd85e659fd0c37121914f76cc6b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/planner-evidence.md",
+      "sha256": "74acd6a6e9dc70cec955c787784ee377cfa37f8c2c31cc4b56d285e3fd25954d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_endpointlist.json",
+      "sha256": "a7167d80f4151eee2a31092beb2817b39c8c542888f338f9aa1e344f0c3ff398"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_docker_proxy.json",
+      "sha256": "a91db42a4a79684e3863a0ad6abf73a7ec1898dfca9ef9be45d0efed0486f1d1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-ct-r16-source-bcd2aac8-20261128T093310Z.json",
+      "sha256": "bcd2aac8a75cbb6144e4e68abd61a8e234e11f40d3c73eca6708b9dbd3fe5084"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "161ff8201f76368e9e6b4a98ba786fcf36c74e346676bb2bc16f71857bb916b1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+      "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "559c8c44341b7516327b6a5ce8684a57b39219e1c8f8c2b5b0789b9fe4947a75"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
+      "sha256": "744579103ff3b3bf3b2b51052767a7f5f50bca2b3536617ad14bdff5300202f5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle_test.go",
+      "sha256": "cba6b86e42d029cf61d3b0eb17a54fdedc9ae3ea6a8643d47956c86f32dd9019"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+      "sha256": "4b3080089e71a4a751b5be2dfb53aad4b24c475a37cb429c190cc656c12ab62c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "df2102ab178fdf4928da5d21bf5c296bef06d32066fe10ea035055b40e23f1e5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "a5999feaf2750a5093d2d17414aff7608f82edf19a37ee21ced2cf1749869f07"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "99d72a5b60e087f89341033ea3d8b3bcc272b382c4b5fb7d43cb31bf25df0163"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "399482e76d6ed7a99f4ccfbaa97e37b194be8d3f1b4c82ccdef77f0809327ed7"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket119SpecR19",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r19.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r19",
+      "targetRevision": "r19",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "71ef23cd94d22284be4fed434a3356ec562d89921524602bb3558ac046d236a0",
+      "instructionsSha256": "5f943dd1c2c6ba41eee4fc7e98ccd36a257151d2fada1cbe6bf83fa4e772ab36",
+      "requestSha256": "95778b4cdf2a57b076819ce1c735f5e32607738c057a8e36e3ba7ddb4d1bcdf7"
+    },
+    {
+      "name": "CriticTicket119SpecR19",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r19.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r19",
+      "targetRevision": "r19",
+      "reviewerId": "critic",
+      "taskSha256": "9ed71d5c6b9c2e3f41a1b4973e7ee6e2473be0a80807ff23391fdc10ace85660",
+      "instructionsSha256": "5f943dd1c2c6ba41eee4fc7e98ccd36a257151d2fada1cbe6bf83fa4e772ab36",
+      "requestSha256": "b5a89b131bf25767783c4a19818ef85b6e0d34b4b690f2829a70fbf76d7b4d84"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Subject:** specification; **pass:** repair (r19). Candidate `token-efficient-tool-responses-ticket05-spec-r19` (sha256 as supplied; not recomputed - no shell). Read: r19, r18, cr-r16 observation, ct-r16 artifact, E20 artifact, issue #119, W09E, taxonomy. **Files:** 7. **Issues:** 3 (0 blocking at round 15).\n\n### Closure evidence\n- **C1 CLOSED** at the enumerated L2 sites: R4(2) :14, ladder L2 :48, C2 :78, C5 :82, row 21 :75, AC3 sub-clause :100, AC7 :104, T1 :110, T2 :113, \u00a77 :133, \u00a710 :160. One unqualified paraphrase survives at AC3:100 (F1, adjacent site - not a reopening of the ladder closure).\n- **C2 CLOSED:** E20 :33 (path + sha256), AC5 :102 asserts Id/Name/Type per projected item, inference wording retired, AC6(e) :103 explicitly unchanged, \u00a78 probe optional :144. E20 artifact confirms 3 items each Id/Name/Type, Type=1.\n- **Editorial CLOSED:** body-wide sweep `R(8|9|1[0-9])` -> no match; r18's own :162 carried `R16` tokens, r19 rewording removes them; R1-R7/AC1-AC7 intact.\n- Preserved closures intact; write set 3 NEW + 12 MODIFIED = T1+T2+T3 union, three exclusions held; ticket-01 budget/clamp preserved. Walked D-table rows 1-21 + ladder: every mode x select x error x shape cell is covered, no gap.\n\n### Issues\n`[CR-R19-1][MEDIUM][statement-contradiction][HIGH]` AC3 summary still rejects the false-valued composite\nFile: `ticket05-spec-r19.md:100`\nIssue: \"`fields`+`select` and `fields`+`full` rejected\" reads as member presence, so it rejects `{full:false,fields:[\"Id\"]}` that the same AC's sub-clause (:100) and L2 (:48) make APPLY; it also undercuts \u00a710:160's closure claim \"no oracle or prose site rejects full:false+fields\". Advisory at round 15.\nFix: write \"`fields` plus a `full: true` request rejected\" (mirror L2 wording).\n\n`[CR-R19-2][LOW][ticket-mirror-drift][HIGH]` AC4 quote not verbatim\nFile: `:101` vs issue #119 AC4; \u00a75 claim `:97`\nIssue: spec \"similarly named tools\"; ticket \"similarly named ones\". AC2/AC5 apostrophes also normalized to ASCII.\nFix: restore \"ones\", or state the normalization in \u00a75.\n\n`[CR-R19-3][LOW][stale-citation][HIGH]` Phantom \"D-table row 21b\"\nFile: `:160` (twice)\nIssue: D-table has rows 1-21 only; row 21 (:75) carries the correct text. Recurrence of CR-R16-4's class, new anchor.\nFix: cite \"row 21\" or \"ladder L2\".\n\n### Carried (not re-enumerated)\nCR-R16-2 (AC4 L5 unqualified), CR-R16-3 (:50 \"reaches two steps\"): unchanged LOW advisories.\n\n### Open Questions\n- E20's capture used upstream `select:\"[].{Id:Id,Name:Name,Type:Type}\"`; \u00a73:33 omits this. Evidence still sound (non-null Type=1 on all 3 proves member existence), but state the method.\n- AC6(a') :103 says error+request -> \"requested list\"; row 12 (:66) says `fields:[]` for full+error. Resolved by R2; qualify if that row is edited.\n\n### Positives\n- C1/C2 fixed by root change, not site patching; false-valued composites oracled at four levels.\n- E20 is falsifiable and host-bound; AC5 now asserts values, not just `applied:true`.\n- Editorial fix genuine: r18 was gated by tokens inside its own disposition row.\n- Coverage map, enum counts, write-set arithmetic, D-table totality all hold.\n\n### Verification limits\nNo shell: candidate/E20 hashes and the \"identical to r18 except \u00a710\" claim unverified by digest (spot-checked :14/:48/:75/:100/:101/:160/:162); spec-lint not executed - manual R\u2194AC coverage, count and token sweeps passed.\n\n### Recommendation\nAPPROVE"
+}

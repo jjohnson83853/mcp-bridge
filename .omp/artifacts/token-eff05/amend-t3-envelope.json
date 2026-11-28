@@ -1,0 +1,11 @@
+{
+  "taskId": "T3",
+  "paths": [
+    "cmd/mcp-bridge/config_envelope_test.go"
+  ],
+  "blockerIds": [],
+  "sourceId": "src-owner-amendment-t3-envelope",
+  "explicit": true,
+  "timedOut": false,
+  "automatic": false
+}

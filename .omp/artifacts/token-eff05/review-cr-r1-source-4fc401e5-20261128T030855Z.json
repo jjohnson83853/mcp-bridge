@@ -1,0 +1,108 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r1",
+  "revision": "r1",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r1.md",
+      "sha256": "a31552a04731e3229057265f6bd7642a998003c02454327d98e9c5fdc030ef3f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/issue-119.md",
+      "sha256": "caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/refinement.md",
+      "sha256": "0889c58aa753869ac92acaa7f39a22fd4f9b6fd85e659fd0c37121914f76cc6b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/planner-evidence.md",
+      "sha256": "74acd6a6e9dc70cec955c787784ee377cfa37f8c2c31cc4b56d285e3fd25954d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_endpointlist.json",
+      "sha256": "a7167d80f4151eee2a31092beb2817b39c8c542888f338f9aa1e344f0c3ff398"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_docker_proxy.json",
+      "sha256": "a91db42a4a79684e3863a0ad6abf73a7ec1898dfca9ef9be45d0efed0486f1d1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "161ff8201f76368e9e6b4a98ba786fcf36c74e346676bb2bc16f71857bb916b1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+      "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "df2102ab178fdf4928da5d21bf5c296bef06d32066fe10ea035055b40e23f1e5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "a5999feaf2750a5093d2d17414aff7608f82edf19a37ee21ced2cf1749869f07"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "99d72a5b60e087f89341033ea3d8b3bcc272b382c4b5fb7d43cb31bf25df0163"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "399482e76d6ed7a99f4ccfbaa97e37b194be8d3f1b4c82ccdef77f0809327ed7"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket119SpecR1",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r1.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r1",
+      "targetRevision": "r1",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "f4883a8d9dd436931d1f21b9d252b3a7dc521294f91e7c408af535565f673cd7",
+      "instructionsSha256": "3e323557e1d65b9cd7071e8e01d6bace59cbf3698f076a704bd5ecad652280da",
+      "requestSha256": "2d86ccca29fc375ca831cf07a03fb6ea9a5eddf4cf653ed63a7eba034fa8134a"
+    },
+    {
+      "name": "CriticTicket119SpecR1",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r1.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r1",
+      "targetRevision": "r1",
+      "reviewerId": "critic",
+      "taskSha256": "9e43cac8e35b05e71db9befc17803ade5af4cee05dc05a5dbf3bcc07ff5281df",
+      "instructionsSha256": "3e323557e1d65b9cd7071e8e01d6bace59cbf3698f076a704bd5ecad652280da",
+      "requestSha256": "9f392632533e8ee4c2baebf16d5448803438e67c94eb3dfb0d2c639b0cf6564f"
+    }
+  ],
+  "output": "## Spec review (W09E)\nMode: specification/initial; candidate ticket05-spec-r1 (r1); digest not recomputed (read-only toolset). 9 issues: HIGH 2, MEDIUM 6, LOW 1.\n\n[F1][HIGH][statement-contradiction] spec:51; tools.go:1055-1062,1075-1080. C3 rebuilds only the decoded result; `payload.upstream_result` still derives from raw envelope bytes, and \"left untouched and disclosed\" licenses a partial projection \u2014 AC1 can pass while full upstream objects remain in structuredContent (R2/R6 fail; cf. 110237/50260). Fix: both delivery sites use one transformed result; assert over the whole marshaled payload.\n\n[F2][HIGH][r-ac-coverage-gap] spec:11,69; bounded_delivery.go:58-83,164; config/bounds.go:365,375. Over-ceiling projections page to a metadata-only preview, dropping the disclosure (terminal path too); the over-ceiling oracle is full-opt-in only. Fix: disclosure in preview/page/terminal metadata + sizing/feasibility sets; add a default+paged oracle.\n\n[F3][MEDIUM][statement-contradiction] spec:73,49,124; E2/E3/E4. Only Id/Name/Type are evidenced; Status/GroupID (spelling unverified) are not, yet AC5 claims schema-derived defaults and T1's endpoint fixture is invented. Fix: narrow to Id/Name/Type or add observed payload evidence; restate AC5.\n\n[F4][MEDIUM][statement-contradiction] spec:71,74. `fields`+non-list: \"unknown iff in no item\" \u21d2 AC3 rejection; AC6(d) requires skip/pass-through. Fix: shape check before field validation; add oracle.\n\n[F5][MEDIUM][statement-contradiction] spec:51,52,54,74. C4 fires on entry match incl. IsError vs AC6(a) \"unchanged\"; C3 cannot see the `select` that C6/T1 gate on; entry/reason undefined for non-allowlisted `full`. Fix: add upstreamSelectPresent; enumerate the decision table (error/full/select/no-match).\n\n[F6][MEDIUM][statement-contradiction] spec:55,72,111. Counter `tool` claimed allowlisted-only (2 values), but AC4/C5 reject non-allowlisted `fields`. Fix: define the rejection label (fixed literal or entryID) and cardinality.\n\n[F7][MEDIUM][r-ac-coverage-gap] spec:13,50. R4's \"1\u201316 unique\" is advertised only; decodeStrict has no bounds check, `fields: []`/dupes project empty objects; no AC. Fix: explicit admission validation; T2 0/17/duplicate cases.\n\n[F8][LOW][ledger-state-drift] spec:87,89,103,109. \"2 new + 9 modified\" vs actual 3+9; T3 \"or NEW sibling\" breaks the exact set; T2's one-record AC6 assertion needs T3 but deps={T1}; \"every new assertion fails\" is false for AC4 guards. Fix: correct counts, dependency, RED wording.\n\nOpen Questions (low confidence): spec:49 `Names[0]` on empty `Names`; `defaultFields` slice aliasing vs immutable claim; README disambiguation from session projections.\n\nPositives: AC1\u2013AC7 byte-equal to the ticket checkboxes; R1\u2013R7 all AC-tagged. Corrections landed (T5\u2192T4, no stale live ref; mandatory T3 `eventMessage` registration + render/non-violation test, log.go:90/282). Verified anchors: bounded_delivery.go:18/250, tools.go:879/1119/1328, schema.go:93, metrics.go:132 (=Metrics struct), log_test.go:69, bounds 8192. Allowlist identity feasible; paging reuse/ordering sound; Proxmox/OPNsense exclusion justified.\n\n### Recommendation\nREQUEST CHANGES\n"
+}

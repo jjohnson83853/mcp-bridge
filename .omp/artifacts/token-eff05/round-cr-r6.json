@@ -1,0 +1,46 @@
+{
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r6",
+  "revision": "r6",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "R6-1",
+      "class": "statement-contradiction",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "R6-2",
+      "class": "statement-contradiction",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "R6-3",
+      "class": "r-ac-coverage-gap",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "R6-4",
+      "class": "statement-contradiction",
+      "severity": "LOW"
+    },
+    {
+      "id": "R6-5",
+      "class": "stale-citation",
+      "severity": "LOW"
+    },
+    {
+      "id": "R6-6",
+      "class": "r-ac-coverage-gap",
+      "severity": "LOW"
+    },
+    {
+      "id": "R6-7",
+      "class": "documentation",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/token-eff05/review-cr-r6-source-7f7ef9fe-20261128T042040Z.json",
+  "dispatchName": "ReviewTicket119SpecR6",
+  "format": "installed"
+}

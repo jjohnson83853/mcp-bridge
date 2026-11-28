@@ -1,0 +1,8 @@
+$ go test ./internal/observe -count=1
+ok  	github.com/jjohnson83853/mcp-bridge/internal/observe	0.153s
+exit=0
+$ go test ./cmd/mcp-bridge -run Envelope -count=1
+ok  	github.com/jjohnson83853/mcp-bridge/cmd/mcp-bridge	0.014s
+exit=0
+$ gofmt -l ...
+exit=0

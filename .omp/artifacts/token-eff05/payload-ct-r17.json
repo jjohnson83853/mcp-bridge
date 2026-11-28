@@ -1,0 +1,12 @@
+{
+  "i": "Critic review ticket 119 specification r17",
+  "context": "{\"instructions\":\"# Shared review packet \\u2014 ticket #119, revision r17 (specification review)\\n\\nRepo: /home/opencode/projects/default/mcp-bridge (Go MCP bridge). Read-only.\\nCandidate: `.scratch/token-efficient-tool-responses/ticket05-spec-r17.md`, sha256 0ef251470ee105101bd0df2b9ee8a6af04ea8868be49d028a5a7999df53b123e, revision r17, candidate id token-efficient-tool-responses-ticket05-spec-r17, author planner.\\nRepair review: C1 full:true wording + false-valued composites; C2 AC5 observed Id/Name/Type evidence E20\\nPrior review observation: `.omp/artifacts/token-eff05/review-ct-r16-source-bcd2aac8-20261128T093310Z.json` (ct-r16).\\n\\n## Review scope\\nApply W09E. Verify the claimed closures at their root invariants; preserve earlier closures; check adjacent cases, AC1\\u2013AC7 semantics, D-table totality, out-of-band decision threading, write-set arithmetic and ticket-01 compatibility.\\n\\nReport APPROVE or REQUEST CHANGES with taxonomy-classified findings and anchors.\\n\",\"workflowDispatch\":{\"statePath\":\"/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json\",\"schemaVersion\":1,\"projectRoot\":\"/home/opencode/projects/default/mcp-bridge\",\"feature\":\"token-efficient-tool-responses-ticket05-r17\",\"revision\":\"r17\",\"requests\":[{\"name\":\"CriticTicket119SpecR17\",\"taskId\":\"CT1\",\"agent\":\"critic\",\"effects\":{\"kind\":\"read\",\"paths\":[\".scratch/token-efficient-tool-responses/ticket05-spec-r17.md\"]},\"targetCandidateId\":\"token-efficient-tool-responses-ticket05-spec-r17\",\"targetRevision\":\"r17\"}]}}",
+  "tasks": [
+    {
+      "name": "CriticTicket119SpecR17",
+      "agent": "critic",
+      "task": "# Target\nIndependently assess `.scratch/token-efficient-tool-responses/ticket05-spec-r17.md` (sha256 0ef251470ee105101bd0df2b9ee8a6af04ea8868be49d028a5a7999df53b123e) for ticket #119.\n\n# Method\nRead the candidate, prior finding ledger, evidence bundle and sources. Apply your full installed assessment. Do not implement or edit.\n\n# Output\nReturn PASS or REVISE with residual findings and verdict basis. No writes or repo-mutating commands.",
+      "solutionSpace": "independent critic assessment for ticket #119 r17"
+    }
+  ]
+}

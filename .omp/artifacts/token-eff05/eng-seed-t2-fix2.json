@@ -1,0 +1,38 @@
+{
+  "intent": "T2 final line-level test repair",
+  "instructions": "# T2 final line-level repair \u2014 only `internal/service/field_projection_surface_test.go`\n\nApply these THREE edits with exact single-line/whole-line replacements. Do not use large multi-line block ranges. If an edit is rejected, re-read the exact 1-3 lines and retry with the smallest unique string.\n\nEdit A (4 occurrences, replace all):\n  old: `owner, nil, \"\"`\n  new: `owner, publisherResultResolver, \"\"`\n(line 515 has `store, large, owner, nil, \"\"`; 528 `projectionTestStore(bounds, 1), large, owner, nil, \"\"`; 534 `fullStore, fullPayload, owner, nil, \"\"`; 551 `projectionTestStore(bounds, 1), &direct, owner, nil, \"\"`)\n\nEdit B (line 504): replace the two lines\n  `_, err = decideProjection(\"portainer\", \"EndpointList\", \"\", map[string]any{\"projection\": map[string]any{\"fields\": []any{\"Id\"}}}, 0, projectionFieldsBudget(tight))`\n  `if err == nil || !strings.Contains(err.Error(), projectionReasonNotSupported) {`\nwith\n  `rejected, err := decideProjection(\"portainer\", \"EndpointList\", \"\", map[string]any{\"projection\": map[string]any{\"fields\": []any{\"Id\"}}}, 0, projectionFieldsBudget(tight))`\n  `if err == nil || rejected.Reason != projectionReasonNotSupported {`\n\nEdit C (line 294): replace\n  `if !reflect.DeepEqual(result[\"other\"], structured[\"other\"]) || !reflect.DeepEqual(result[\"mcp_bridge_projection\"], forged) {`\nwith\n  `if !reflect.DeepEqual(result[\"other\"], structured[\"other\"]) || !reflect.DeepEqual(result[\"mcp_bridge_projection\"], rawValue(mustProjectionJSON(t, forged))) {`\n\nNo other changes. Then run:\n  gofmt -w internal/service/field_projection_surface_test.go\n  go test ./internal/service -run 'TestProjection|TestFieldProjection' -count=1\n  go test ./internal/service ./internal/catalog -count=1\n  gofmt -l internal/service/field_projection_surface_test.go\nReport output. Touch no other file.\n",
+  "workflowDispatch": {
+    "statePath": "/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json",
+    "schemaVersion": 1,
+    "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+    "feature": "token-efficient-tool-responses-ticket05-r21",
+    "revision": "r21",
+    "requests": [
+      {
+        "name": "EngineerT2Fix2",
+        "taskId": "T2",
+        "agent": "engineer",
+        "effects": {
+          "kind": "write",
+          "paths": [
+            "internal/service/tools.go",
+            "internal/service/direct_execution.go",
+            "internal/catalog/schema.go",
+            "internal/service/bounded_delivery.go",
+            "internal/service/result_handle.go",
+            "internal/service/field_projection_surface_test.go",
+            "README.md"
+          ]
+        }
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "EngineerT2Fix2",
+      "agent": "engineer",
+      "task": "# T2 final line-level repair \u2014 only `internal/service/field_projection_surface_test.go`\n\nApply these THREE edits with exact single-line/whole-line replacements. Do not use large multi-line block ranges. If an edit is rejected, re-read the exact 1-3 lines and retry with the smallest unique string.\n\nEdit A (4 occurrences, replace all):\n  old: `owner, nil, \"\"`\n  new: `owner, publisherResultResolver, \"\"`\n(line 515 has `store, large, owner, nil, \"\"`; 528 `projectionTestStore(bounds, 1), large, owner, nil, \"\"`; 534 `fullStore, fullPayload, owner, nil, \"\"`; 551 `projectionTestStore(bounds, 1), &direct, owner, nil, \"\"`)\n\nEdit B (line 504): replace the two lines\n  `_, err = decideProjection(\"portainer\", \"EndpointList\", \"\", map[string]any{\"projection\": map[string]any{\"fields\": []any{\"Id\"}}}, 0, projectionFieldsBudget(tight))`\n  `if err == nil || !strings.Contains(err.Error(), projectionReasonNotSupported) {`\nwith\n  `rejected, err := decideProjection(\"portainer\", \"EndpointList\", \"\", map[string]any{\"projection\": map[string]any{\"fields\": []any{\"Id\"}}}, 0, projectionFieldsBudget(tight))`\n  `if err == nil || rejected.Reason != projectionReasonNotSupported {`\n\nEdit C (line 294): replace\n  `if !reflect.DeepEqual(result[\"other\"], structured[\"other\"]) || !reflect.DeepEqual(result[\"mcp_bridge_projection\"], forged) {`\nwith\n  `if !reflect.DeepEqual(result[\"other\"], structured[\"other\"]) || !reflect.DeepEqual(result[\"mcp_bridge_projection\"], rawValue(mustProjectionJSON(t, forged))) {`\n\nNo other changes. Then run:\n  gofmt -w internal/service/field_projection_surface_test.go\n  go test ./internal/service -run 'TestProjection|TestFieldProjection' -count=1\n  go test ./internal/service ./internal/catalog -count=1\n  gofmt -l internal/service/field_projection_surface_test.go\nReport output. Touch no other file.\n",
+      "solutionSpace": "one fix: three exact line-level replacements plus focused tests"
+    }
+  ]
+}

@@ -88,7 +88,7 @@ func TestEnvelopeFieldNamesMatchesIndependentR8Union(t *testing.T) {
 		"metadata_target_registered", "mode", "next_attempt_ms", "oauth_enabled", "operation",
 		"operation_id", "operation_id_state", "operation_relation", "outcome", "path_class",
 		"pins_resolved", "pins_total", "policy_source", "process_id", "process_state",
-		"protocol_version", "publication_impact", "quarantine_path", "refresh_id", "request_id", "resource",
+		"projection_reason", "protocol_version", "publication_impact", "quarantine_path", "refresh_id", "request_id", "resource",
 		"resource.address", "resource.listener", "resource.path", "resource_path_mode",
 		"retained_age_ms", "retained_generation", "route", "route_outcome", "schema_version",
 		"scope_required", "scope_state", "server", "servers_discovered", "service",
@@ -461,6 +461,7 @@ func TestLogLabelEnumeration(t *testing.T) {
 		"invalid_handle", "invalid_arguments", "result_capacity_exceeded",
 		"result_aggregate_capacity_exceeded", "result_namespace_retired",
 		"result_entropy_unavailable", "result_epoch_unresolved", "log_vocabulary_violation",
+		"projection_skipped", "projection_rejected",
 	}
 	for _, event := range newEvents {
 		if eventMessage(event) == "" {
@@ -507,4 +508,52 @@ func TestLogLabelEnumeration(t *testing.T) {
 		t.Fatalf("WriteJSONLine event injection: %v", err)
 	}
 	assertViolation("NewEnvelope/WriteJSONLine event", direct.Bytes())
+}
+func TestProjectionEventsRenderEnumeratedReasons(t *testing.T) {
+	tests := []struct {
+		reason  string
+		event   string
+		outcome string
+	}{
+		{"full_requested", "projection_skipped", "degraded"},
+		{"upstream_select_present", "projection_skipped", "degraded"},
+		{"upstream_error", "projection_skipped", "degraded"},
+		{"payload_unparseable", "projection_skipped", "degraded"},
+		{"payload_shape_unexpected", "projection_skipped", "degraded"},
+		{"item_shape_unexpected", "projection_skipped", "degraded"},
+		{"structured_content_not_mirrorable", "projection_skipped", "degraded"},
+		{"disclosure_key_collision", "projection_skipped", "degraded"},
+		{"malformed_request", "projection_rejected", "denied"},
+		{"not_supported", "projection_rejected", "denied"},
+		{"select_conflict", "projection_rejected", "denied"},
+		{"unknown_field_selection", "projection_rejected", "denied"},
+	}
+	for _, test := range tests {
+		t.Run(test.reason, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			NewLogger(&stdout, &stderr).Log(Entry{
+				Level: "warn", Event: test.event, Operation: "call_tool", Outcome: test.outcome,
+				Fields: map[string]any{"projection_reason": test.reason},
+			})
+			if stdout.Len() != 0 || strings.Count(stderr.String(), "\n") != 1 {
+				t.Fatalf("rendered streams stdout=%q stderr=%q; want one warning record", stdout.String(), stderr.String())
+			}
+			var record map[string]any
+			if err := json.Unmarshal(bytes.TrimSpace(stderr.Bytes()), &record); err != nil {
+				t.Fatalf("rendered invalid JSON: %v: %q", err, stderr.String())
+			}
+			if record["event"] != test.event || record["projection_reason"] != test.reason {
+				t.Fatalf("record = %#v; want event %q and the single reason %q", record, test.event, test.reason)
+			}
+			if record["event"] == "log_vocabulary_violation" {
+				t.Fatalf("registered projection event became a vocabulary violation: %s", stderr.String())
+			}
+		})
+	}
+	if _, ok := buildEnvelope(Entry{
+		Level: "warn", Event: "projection_skipped", Operation: "call_tool", Outcome: "degraded",
+		Fields: map[string]any{"projection_reason": "unbounded-payload"},
+	}); ok {
+		t.Fatal("unlisted projection reason was accepted")
+	}
 }

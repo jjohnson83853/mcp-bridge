@@ -1,0 +1,128 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r13",
+  "revision": "r13",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r13.md",
+      "sha256": "24c3299fe058a34aa62535373b2320dec5681bf0e2b0331a8cd309817394c58a"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/issue-119.md",
+      "sha256": "caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/refinement.md",
+      "sha256": "0889c58aa753869ac92acaa7f39a22fd4f9b6fd85e659fd0c37121914f76cc6b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/planner-evidence.md",
+      "sha256": "74acd6a6e9dc70cec955c787784ee377cfa37f8c2c31cc4b56d285e3fd25954d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_endpointlist.json",
+      "sha256": "a7167d80f4151eee2a31092beb2817b39c8c542888f338f9aa1e344f0c3ff398"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_docker_proxy.json",
+      "sha256": "a91db42a4a79684e3863a0ad6abf73a7ec1898dfca9ef9be45d0efed0486f1d1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r12-source-6b6a4ea2-20261128T051209Z.json",
+      "sha256": "6b6a4ea24d6aed9ae339d09eb5f73724cf72c0eadca0b45e8c8f28ff54191e98"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "161ff8201f76368e9e6b4a98ba786fcf36c74e346676bb2bc16f71857bb916b1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+      "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "559c8c44341b7516327b6a5ce8684a57b39219e1c8f8c2b5b0789b9fe4947a75"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
+      "sha256": "744579103ff3b3bf3b2b51052767a7f5f50bca2b3536617ad14bdff5300202f5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle_test.go",
+      "sha256": "cba6b86e42d029cf61d3b0eb17a54fdedc9ae3ea6a8643d47956c86f32dd9019"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+      "sha256": "4b3080089e71a4a751b5be2dfb53aad4b24c475a37cb429c190cc656c12ab62c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "df2102ab178fdf4928da5d21bf5c296bef06d32066fe10ea035055b40e23f1e5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "a5999feaf2750a5093d2d17414aff7608f82edf19a37ee21ced2cf1749869f07"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "99d72a5b60e087f89341033ea3d8b3bcc272b382c4b5fb7d43cb31bf25df0163"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "399482e76d6ed7a99f4ccfbaa97e37b194be8d3f1b4c82ccdef77f0809327ed7"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket119SpecR13",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r13.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r13",
+      "targetRevision": "r13",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "1ef56763a7d2714cfa65edb0fbec73d22400bf287e3dee48e76bfed0b5e1e30d",
+      "instructionsSha256": "ad1eebc5b1df6c1c73e8a9fa6cd7c0fc5d9674bac17dc7744a01e3750b4a56cc",
+      "requestSha256": "ac2de2322902aee26f68c2d3b4d80a991844517eb5bc4fe09d5453d5180b4b57"
+    },
+    {
+      "name": "CriticTicket119SpecR13",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r13.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r13",
+      "targetRevision": "r13",
+      "reviewerId": "critic",
+      "taskSha256": "500cbd7fe0f588b43f52a02304d170eb040fdfb4041e7dc9782bd9321a0d4a5d",
+      "instructionsSha256": "ad1eebc5b1df6c1c73e8a9fa6cd7c0fc5d9674bac17dc7744a01e3750b4a56cc",
+      "requestSha256": "b8dbe1857d334a8e2db0a4c66b34a848c1ceef1a5e899a3ea8897bc901026622"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Subject mode:** specification \u2014 **pass:** repair (r13). Candidate `token-efficient-tool-responses-ticket05-spec-r13`, sha256 as supplied; read the full candidate, `ticket05-spec-r12.md` for delta, cr-r12 artifact, README.md:484-498.\n**Files Reviewed:** 3 (+1 prior artifact). **Issues:** 1 (0 CRITICAL / 0 HIGH / 1 MEDIUM / 0 LOW).\n\n### Closure evidence\n- **CR-R12-1 CLOSED at its root invariant.** No surviving APPLY reading for non-object/non-mirrorable SC: :36, row 6 :52 (\"DIRECT path \u21d2 NO P\"), row 15 :61, C3, C4b(iv), AC6(d) :95, AC1 non-object clause :90, T2 unified fixture; \u00a710 :153 oracle matches. Deleted r12 wording absent (R7 :16 \"row 5 APPLYs\" is scoped to a nested forged member only).\n- **Open (ii) CLOSED:** rewriting is APPLY-only at :12, C3, C4b(ii), AC1 wrapper fixture, T1 :103, T2, \u00a710 :155.\n- **Open (i) CLOSED for rows 13/14/15/17** (requested list pinned at :61, :62/:64, AC6(a') :95, T1, T2, \u00a710 :154) \u2014 but see CR-R13-1, which it introduced elsewhere.\n- Preserved: CR-R11-1\u20264 (override scope; absent-SC carrier; README enumeration verified verbatim at README.md:492-494), CR-R10-1\u20264, R9-1/2/3, F1/F2/F3, R6/R7/N.\n- Write set arithmetic verified: 3 NEW + 12 MODIFIED = exactly T1\u222aT2\u222aT3; `result_handle_test.go`, `bounded_delivery_test.go`, `config/bounds.go` outside. Arity/variadic compatibility per E15 preserved.\n\n### Issues\n\n[CR-R13-1][statement-contradiction][MEDIUM][HIGH] `fields` pinning contradicts explicit `fields:[]` on default-mode skip/override rows\nFile: `.scratch/token-efficient-tool-responses/ticket05-spec-r13.md:12` (also :36, :37, :52, :66, :90, :91, :153)\nConfidence: HIGH\nIssue: R2 :12 and the open-(i) decision :37 require \"the entry DEFAULT list on every default-mode row (**apply or skip**)\", yet the r13-amended CR-R12-1 row :36 writes row 6 as `mode:default, fields:[]`; AC1 :90 (override, `mode:<producing mode>` = default on the direct path) and AC2 :91 write `fields:[]`; \u00a710 :153 repeats `fields:[]` as CR-R12-1's falsifiable oracle. D-table row 6 :52 and row 20 :66 emit P without any `fields` value, so the rule governs them, and it says default list. The trailing category \"rows with no selection\" (:12/:37/:143/:154) is not disjoint from \"every default-mode row\" \u2014 every default-mode row lacks a field selection \u2014 so rows 6/7/9/20 are claimed by both branches. The choice is also asymmetric with rows 15/17, where a skip carrie\u2026\nConsequence: T1's decision function and schema oracle (\":103, :108 default-mode rows carry the entry default list\") cannot satisfy AC1's override fixture (:90), AC2's (:91) or \u00a710's (:153) `fields:[]`; README/logging-contract disclosure text would state both. Engineer cannot author one passing unit \u2014 the same class of non-authorable fixture that made CR-R12-1 blocking.\nFix: pick one rule and align every site. Recommended: default-mode skip/override rows carry the entry default list (the attempted projection) \u2014 change `fields:[]` to the entry default list at :36, :90, :91, :153 and state `fields` explicitly in D-table rows 6, 7, 9, 20; delete \"rows with no selection\" from :12, :37, :143, :154 (full-mode and no-match rows already cover `[]`). If `[]` is intended instead, re-pin :12/:37/:154 as \"[] on every default-mode skip row\", change rows 15/17 to `[]`, and update AC6(a')/T1/T2 oracles to match.\n\n### Positive Observations\n- The unified carrier-failure rule is applied consistently across design, D-table, ACs, tasks and \u00a710; the writable-carrier distinction (multiplexer always / direct suppressed) is now unambiguous.\n- AC1's whole-marshal assertion is properly rescoped to `applied:true`, removing the r12 impossibility.\n\n### Review Limits\nSpecification mode: no build, tests or diagnostics; hash not independently recomputed. Section 8 live UNKNOWNs (wrapper bytes, endpoint member names) remain non-blocking.\n\n### Recommendation\nREQUEST CHANGES"
+}

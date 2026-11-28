@@ -1,0 +1,128 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r14",
+  "revision": "r14",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r14.md",
+      "sha256": "cfca2e6b5b316afe48adcb7a679dea2479f2f835ee1d39f543a907bb3e5fc2fe"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/issue-119.md",
+      "sha256": "caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/refinement.md",
+      "sha256": "0889c58aa753869ac92acaa7f39a22fd4f9b6fd85e659fd0c37121914f76cc6b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/planner-evidence.md",
+      "sha256": "74acd6a6e9dc70cec955c787784ee377cfa37f8c2c31cc4b56d285e3fd25954d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_endpointlist.json",
+      "sha256": "a7167d80f4151eee2a31092beb2817b39c8c542888f338f9aa1e344f0c3ff398"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_docker_proxy.json",
+      "sha256": "a91db42a4a79684e3863a0ad6abf73a7ec1898dfca9ef9be45d0efed0486f1d1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r13-source-d3d30c82-20261128T051657Z.json",
+      "sha256": "d3d30c824058922c20301b6190727ebf9460cb78bd8c717eaf965ce6e2b7dd5d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "161ff8201f76368e9e6b4a98ba786fcf36c74e346676bb2bc16f71857bb916b1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+      "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "559c8c44341b7516327b6a5ce8684a57b39219e1c8f8c2b5b0789b9fe4947a75"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
+      "sha256": "744579103ff3b3bf3b2b51052767a7f5f50bca2b3536617ad14bdff5300202f5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle_test.go",
+      "sha256": "cba6b86e42d029cf61d3b0eb17a54fdedc9ae3ea6a8643d47956c86f32dd9019"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+      "sha256": "4b3080089e71a4a751b5be2dfb53aad4b24c475a37cb429c190cc656c12ab62c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "df2102ab178fdf4928da5d21bf5c296bef06d32066fe10ea035055b40e23f1e5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "a5999feaf2750a5093d2d17414aff7608f82edf19a37ee21ced2cf1749869f07"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "99d72a5b60e087f89341033ea3d8b3bcc272b382c4b5fb7d43cb31bf25df0163"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "399482e76d6ed7a99f4ccfbaa97e37b194be8d3f1b4c82ccdef77f0809327ed7"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket119SpecR14",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r14.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r14",
+      "targetRevision": "r14",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "8c59236fa97c208649381c4f754104a794de881ac29d59e48e51d35c98e97143",
+      "instructionsSha256": "6431270f648cabbbe56efd6f1a2ff0ffd557ede467a6d14722429c5e3f25584b",
+      "requestSha256": "34ad8dbcb35a61614c5e76f3ef8ce40e771a2dd319f18b687ba0767131aefa10"
+    },
+    {
+      "name": "CriticTicket119SpecR14",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r14.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r14",
+      "targetRevision": "r14",
+      "reviewerId": "critic",
+      "taskSha256": "6a644046c91451c94a1b99bcc7dc05f286f56c209328027ef74810663d7fe5ea",
+      "instructionsSha256": "6431270f648cabbbe56efd6f1a2ff0ffd557ede467a6d14722429c5e3f25584b",
+      "requestSha256": "8f6d54474dfc4aa7ce65b891a0c4a6f596d447ea90870c21788fe2aa83668e51"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Subject mode:** specification \u2014 **pass:** repair (r14). Candidate `token-efficient-tool-responses-ticket05-spec-r14`. Hash not independently recomputed (no shell tool). Read the full candidate, the cr-r13 artifact, and the cited code anchors.\n**Files Reviewed:** 5 (candidate, prior artifact, bounds.go:215-240/340-363, README.md:484-500, bounded_delivery_test.go:335-353 + result_handle_test.go commit sites).\n**Issues:** 1 (0 CRITICAL / 0 HIGH / 1 MEDIUM / 0 LOW).\n\n### Closure evidence\n- **CR-R13-1 PARTIALLY closed.** Rule pinned once at :12; AUTO-DECISION :36, schema :45, rows 5/7/9/20 (:51,:53,:55,:66) now state the entry default list; AC1 :90 / AC2 :91 / AC6(d) :95 / AC7 :96 / T1 :103-104 / \u00a710 :150 all mode-aware. Rows 2/3/11/12 correctly re-pinned `fields:[]`; \"rows with no selection\" is no longer prescriptive (only deletion mentions at :36,:141,:150). Residual defects remain at :6, :16, :128.\n- **CR-R12-1 preserved** (unified carrier failure, both paths): :37, row 6 :52, row 15 :61, C3 :71, C4b(iv) :73, AC1 :90, AC6(d).\n- **CR-R11-1\u20264, CR-R10-1\u20264, R9-1/2/3, F1/F2/F3, R6/R7/N preserved**; no invariant reopened.\n- **Write set:** 3 NEW + 12 MODIFIED verified equal to T1\u222aT2\u222aT3; `result_handle_test.go`, `bounded_delivery_test.go`, `config/bounds.go` outside. Anchors match: commit sites :61/121/166/211/304; `terminalResult` 5-arg call :353 in `TestExecutionStateRegistry` :349; headroom 6, defaults 1536/512, conservative `\u2264 ceiling` helper; README:488-494 enumeration.\n\n### Issues\n\n[CR-R14-1][statement-contradiction][MEDIUM][HIGH] Row-15 `fields` value stated as entry default list at three sites\nFile: `.scratch/token-efficient-tool-responses/ticket05-spec-r14.md:16` (also :6, :128)\nID: CR-R14-1 \u2014 residual of CR-R13-1\nConfidence: HIGH\nIssue: R6 :16 \"the multiplexer envelope ALWAYS (rows 6/7/9/15 included, disclosing the attempted entry default list)\", objective :6 \"carrier-failure rows included, disclosing the attempted entry default list\", and \u00a77 :128 \"including rows 6/7/9/15 carrier-failure disclosures with fields = the entry default list\". Row 15 is `match | fields`; D-table :61, AC6(d) :95 (\"requested list for fields-mode rows\"), AC7 :96 and T1 :103 all pin the REQUESTED list. \u00a77 :128 even contradicts its own opening \"fields = the attempted list\". This is the same non-disjoint class as CR-R13-1, at a site the \u00a710 disposition claimed corrected. Consequence: the row-15 disclosure value is simultaneously normative as default-list (R6/\u00a77) and requested-list (D-table/AC6/T1); the \u00a77-derive\u2026\nFix: at :6, :16, :128 replace the flat \"entry default list\" with mode-aware wording: \"the attempted list \u2014 entry default list on default-mode rows (6/7/9), the requested list on fields-mode rows (15)\".\n\n### Open Questions (low-confidence \u2014 surfaced, not blocking)\n[LOW] Admission ordering: a statically bound-violating `fields` array can also exceed the runtime budget; D-table rows 19/21 (:65,:67) declare no precedence, so the reason is potentially two-outcome. R4's sentence order implies static-first; state it in one line to make AC3's \"no two-outcome input\" falsifiable.\n\n### Positive Observations\n- The single rule is now pinned in R2 and repeated verbatim in the schema, D-table, AC6(d) and T1, with AC6's formulation explicitly mode-aware \u2014 the right shape for closure.\n- \u00a710's four-class oracle (fields apply/skip, default apply/skip/override, full/no-match) is directly falsifiable and correctly paired with rows 2/3/11/12.\n\n### Review Limits\nSpecification mode: no build, tests or diagnostics run; candidate hash not recomputed; section 8 live UNKNOWNs (wrapper bytes, endpoint member names) remain non-blocking.\n\n### Recommendation\nREQUEST CHANGES"
+}

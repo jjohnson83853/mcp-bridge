@@ -1,0 +1,128 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r6",
+  "revision": "r6",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r6.md",
+      "sha256": "0fd10087215d6c849e122f3ddaedb65b0bd318d37a76ad05a50b6fe41bbbb708"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/issue-119.md",
+      "sha256": "caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/refinement.md",
+      "sha256": "0889c58aa753869ac92acaa7f39a22fd4f9b6fd85e659fd0c37121914f76cc6b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/planner-evidence.md",
+      "sha256": "74acd6a6e9dc70cec955c787784ee377cfa37f8c2c31cc4b56d285e3fd25954d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_endpointlist.json",
+      "sha256": "a7167d80f4151eee2a31092beb2817b39c8c542888f338f9aa1e344f0c3ff398"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_docker_proxy.json",
+      "sha256": "a91db42a4a79684e3863a0ad6abf73a7ec1898dfca9ef9be45d0efed0486f1d1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r5-source-d76d895c-20261128T040902Z.json",
+      "sha256": "d76d895c9d5f4a09891519a8db174f3fef5afeac1101ce3d72ab116906dacc83"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "161ff8201f76368e9e6b4a98ba786fcf36c74e346676bb2bc16f71857bb916b1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+      "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "559c8c44341b7516327b6a5ce8684a57b39219e1c8f8c2b5b0789b9fe4947a75"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
+      "sha256": "744579103ff3b3bf3b2b51052767a7f5f50bca2b3536617ad14bdff5300202f5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle_test.go",
+      "sha256": "cba6b86e42d029cf61d3b0eb17a54fdedc9ae3ea6a8643d47956c86f32dd9019"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+      "sha256": "4b3080089e71a4a751b5be2dfb53aad4b24c475a37cb429c190cc656c12ab62c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "df2102ab178fdf4928da5d21bf5c296bef06d32066fe10ea035055b40e23f1e5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "a5999feaf2750a5093d2d17414aff7608f82edf19a37ee21ced2cf1749869f07"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "99d72a5b60e087f89341033ea3d8b3bcc272b382c4b5fb7d43cb31bf25df0163"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "399482e76d6ed7a99f4ccfbaa97e37b194be8d3f1b4c82ccdef77f0809327ed7"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket119SpecR6",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r6.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r6",
+      "targetRevision": "r6",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "8fd9349462143a804d0c156683ddb425899e1e96fde7fed469bb03ef8658646c",
+      "instructionsSha256": "e045118ed05d575ff608f2e324b776ce72e6419ee3341878aa1ef2044669394c",
+      "requestSha256": "e8dcce86d4f39200b515f714ea309c9496e9b6e735ac38178570e79baa274427"
+    },
+    {
+      "name": "CriticTicket119SpecR6",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r6.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r6",
+      "targetRevision": "r6",
+      "reviewerId": "critic",
+      "taskSha256": "fb8f06588b795c93c5c0837bc12a966f538592777f2378d0ed2b03c468f1342b",
+      "instructionsSha256": "e045118ed05d575ff608f2e324b776ce72e6419ee3341878aa1ef2044669394c",
+      "requestSha256": "9ba414b9823e8a5b290155b48c8b22dc0cce978fb4a92714cbb145acec5a82fa"
+    }
+  ],
+  "output": "## Code Review Summary\nSpecification mode, **repair pass** (round 4: F-A\u2026F-H) on `ticket05-spec-r6.md` (0fd1008\u2026708). 3 MEDIUM, 4 LOW.\n\n### Closure evidence (independently verified)\n- **F-B CLOSED**: 21 rows (spec:46-66), each with outcome+reason+channel; all 12 \u00a77 reasons appear; aggregate `item_shape_unexpected` bound at AC6(d):94.\n- **F-D CLOSED**: maximal metadata sets and config validation untouched (bounds.go:221,226,233,348,365-396); \u00a78:134 states the consequence.\n- **F-F CLOSED**: derived budget \u2248700 B under defaults, so \"\u2265512\" holds; AC2:90 pins `base = measured + 512 \u2212 codeWidth` \u21d2 \u22656 escaped bytes of preview body (non-empty).\n- **F-G CLOSED**: definition spec:37; both stored schemas are `pinned:false`.\n- **F-E PARTIAL**: `retainedResultEnvelopeFits` is bounds.go:348-357, not :354-363 (claimed re-verified).\n- **F-A/F-C/F-H PARTIAL**: see R6-1\u2026R6-3.\n\n### Issues\n**[R6-1][MEDIUM][statement-contradiction] Disclosure member schema unspecified/contradictory**\nspec:38, :72, :89, :94; rows 51,52,54,60,65\nF-H's fixed shape (version marker, applied, entry, mode, fields) has **no `reason`**, yet skip rows 6/7/9/15 must disclose \"the row's specific reason on P\" (AC6(d):94). AC1:89 asserts EXACT `{applied,entry,mode,fields}` (no version marker), and the multiplexer `projection` member shape is never defined. T1/T2 exact-shape and channel oracles cannot both pass.\n**Fix**: one normative schema for both carriers, e.g. `{v,applied,entry,mode,fields,reason?}`, `reason` required iff `applied=false`; align AC1.\n\n**[R6-2][MEDIUM][statement-contradiction] Multiplexer carrier rewrite contradicts the documented envelope**\nAC1(F1):89; C4:71; :44; README.md:488-490; T2:106\nF1 forbids any upstream member anywhere, so `upstream_result` \u2014 which embeds the full list in **both** its text block and `structuredContent.result` \u2014 must be re-derived; this falsifies README's \"upstream_result retains the original CallToolResult shape\" and erases provenance for both allowlisted tools. No task requires amending that sentence, and AC1(F-A)'s oracle (\"delivered payload whose `result` member\u2026BOTH paths\") names a member absent at the multiplexer top level; a rewrite of only `.structuredContent.result` passes that wording while leaving the full list in `upstream_result.content`.\n**Fix**: state whole-member re-derivation in R2/C3, amend README:488-490, add oracle on `upstream_result.content` + `.structuredContent`.\n\n**[R6-3][MEDIUM][r-ac-coverage-gap] F-H guarantee unachievable by shape validation; no decisive oracle** (partial reopen of F-H)\n:38, :72; AC4:92; row 20:65; AC6(d):94\nOn a matching direct-path entry, row 20 leaves a well-formed upstream `mcp_bridge_projection` untouched; C4b then \"extracts from either recognized key (shape-validated)\", so an over-ceiling render can surface forged `applied:true` in preview/page/terminal metadata while the payload is unprojected \u2014 root invariant fails and row 20's L+C-only channel is violated. AC4's forgery oracle covers only non-matching entries; F-H only wrong shapes.\n**Fix**: thread the engine decision out-of-band, never re-parse the delivered result; add the matching+forged+over-ceiling oracle.\n\n**[R6-4][LOW][statement-contradiction]** \u00a77:124 says full_requested/upstream_error skips are \"counter-only\"; rows 47,48,56,57,62 specify P+C. **Fix**: \"log-free (payload+counter)\".\n**[R6-5][LOW][stale-citation]** F-E residue: `retainedResultEnvelopeFits` :348-357, not :354-363; E14:27 and W09E:78 still say \"pinned-*\" after F-G removed pinned as the discriminator.\n**[R6-6][LOW][r-ac-coverage-gap]** `bridge_projection_total` outcome domain undefined: APPLY rows 50,58,59 carry no C, so the stated 3-value outcome (\u00a77:126) cannot include applied; T3's bounded-label oracle has no defined label set. **Fix**: name the three outcomes; add C to APPLY rows.\n**[R6-7][LOW][documentation]** Two caps (R4:14 \"\u2265512\"/\"documented 512\" vs derived \u2248700; \u00a78:134 \"larger selections rejected\" though the minimum-valid ceiling (~725) yields budget <1 B, rejecting all non-empty selections). **Fix**: make the derived budget authoritative, 512 a documented floor, and pin unsigned clamp-at-0 (underflow would admit everything).\n\n### Open Questions\n- LOW conf: one non-object item forces a whole-list skip (row 51) instead of partial projection; N10 covers all-missing only. Same reason/channel as row 52, so oracles cannot distinguish \u2014 state the choice.\n- State: CR1/CT1 `blockedBy []` (state:214/232) contradict ledger deps; prior LOW retained, coordinator-owned.\n\n### Positive Observations\nF-B/F-D/F-F closures are substantive and falsifiable; the 21-row table is a total decision function; arity preservation verified against real callers (`commit` \u00d75, `terminalResult` :353, `deliverBoundedResult` \u00d720) and `TestTerminalFieldSemantics`' 5-key assertion stays safe because extraction only fires on a written member; write set 3+12 equals the T1\u2013T3 union; AC1\u2013AC7 verbatim vs refinement.md:18-24.\n\n### Review limits\nNo diagnostics/build access (spec mode); runtime probe items remain \u00a78 UNKNOWNs. [INFERENCE] This is the 5th CodeReviewer cycle under the default S15 budget.\n\n### Recommendation\nREQUEST CHANGES\n"
+}

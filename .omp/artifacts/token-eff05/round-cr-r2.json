@@ -1,0 +1,51 @@
+{
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r2",
+  "revision": "r2",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "N1",
+      "class": "statement-contradiction",
+      "severity": "HIGH"
+    },
+    {
+      "id": "N2",
+      "class": "statement-contradiction",
+      "severity": "HIGH"
+    },
+    {
+      "id": "N3",
+      "class": "statement-contradiction",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "N4",
+      "class": "statement-contradiction",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "N5",
+      "class": "statement-contradiction",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "N6",
+      "class": "statement-contradiction",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "N7",
+      "class": "undefined-term",
+      "severity": "LOW"
+    },
+    {
+      "id": "N8",
+      "class": "stale-citation",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/token-eff05/review-cr-r2-source-f3a60598-20261128T033817Z.json",
+  "dispatchName": "ReviewTicket119SpecR2",
+  "format": "installed"
+}

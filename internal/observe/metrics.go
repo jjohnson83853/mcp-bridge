@@ -142,6 +142,7 @@ type Metrics struct {
 	readiness      *prometheus.GaugeVec
 
 	retentionRejections    *prometheus.CounterVec
+	projectionTotal        *prometheus.CounterVec
 	resultsPaged           prometheus.Counter
 	resultPagesServed      prometheus.Counter
 	retentionEvictions     prometheus.Counter
@@ -187,6 +188,10 @@ func NewMetrics(serverIDs []string) *Metrics {
 			Name: "bridge_retention_rejections_total",
 			Help: "Retained results rejected by their bounded retention reason.",
 		}, []string{"retention"}),
+		projectionTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "bridge_projection_total",
+			Help: "Tool projection decisions by server, tool class, and outcome.",
+		}, []string{"server", "tool", "outcome"}),
 		resultsPaged: prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "bridge_results_paged_total",
 			Help: "Results retained and delivered using paging.",
@@ -213,6 +218,7 @@ func NewMetrics(serverIDs []string) *Metrics {
 		m.reloadTotal,
 		m.readiness,
 		m.retentionRejections,
+		m.projectionTotal,
 		m.resultsPaged,
 		m.resultPagesServed,
 		m.retentionEvictions,
@@ -302,6 +308,25 @@ func (m *Metrics) RecordRetentionRejection(retention string) bool {
 		return false
 	}
 	m.retentionRejections.WithLabelValues(retention).Inc()
+	return true
+}
+
+// RecordProjection counts one projection decision with bounded labels.
+func (m *Metrics) RecordProjection(server, tool, outcome string) bool {
+	if m == nil || !m.servers.valid(server) {
+		return false
+	}
+	switch tool {
+	case "EndpointList", "docker_proxy", "not_allowlisted":
+	default:
+		return false
+	}
+	switch outcome {
+	case "applied", "skipped", "rejected":
+	default:
+		return false
+	}
+	m.projectionTotal.WithLabelValues(server, tool, outcome).Inc()
 	return true
 }
 

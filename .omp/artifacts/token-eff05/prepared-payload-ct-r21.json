@@ -1,0 +1,12 @@
+{
+  "i": "Critic review ticket 119 specification r21",
+  "context": "{\"instructions\":\"# Shared review packet — ticket #119, revision r21 (specification review)\\n\\nRepo: /home/opencode/projects/default/mcp-bridge (Go MCP bridge). Read-only.\\nCandidate: `.scratch/token-efficient-tool-responses/ticket05-spec-r21.md`, sha256 6427b9f5ed02ef6605c23e011466ff2e742f66bc40647585fa61c3b62b4d6cfd, revision r21, candidate id token-efficient-tool-responses-ticket05-spec-r21, author planner.\\nRepair review: content-identical r20 relabel; corrected reviewer input set adds observe test files\\nPrior review observation: `.omp/artifacts/token-eff05/review-ct-r20-source-0f15c597-20261128T100655Z.json` (ct-r20).\\n\\n## Review scope\\nApply W09E. Verify the claimed closures at their root invariants; preserve earlier closures; check adjacent cases, AC1–AC7 semantics, D-table totality, out-of-band decision threading, write-set arithmetic and ticket-01 compatibility.\\n\\nReport APPROVE or REQUEST CHANGES with taxonomy-classified findings and anchors.\\n\",\"workflowDispatch\":{\"statePath\":\"/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json\",\"schemaVersion\":1,\"projectRoot\":\"/home/opencode/projects/default/mcp-bridge\",\"feature\":\"token-efficient-tool-responses-ticket05-r21\",\"revision\":\"r21\",\"requests\":[{\"name\":\"CriticTicket119SpecR21\",\"taskId\":\"CT1\",\"agent\":\"critic\",\"effects\":{\"kind\":\"read\",\"paths\":[\".scratch/token-efficient-tool-responses/ticket05-spec-r21.md\"]},\"targetCandidateId\":\"token-efficient-tool-responses-ticket05-spec-r21\",\"targetRevision\":\"r21\"}]}}",
+  "tasks": [
+    {
+      "name": "CriticTicket119SpecR21",
+      "agent": "critic",
+      "task": "# Target\nIndependently assess `.scratch/token-efficient-tool-responses/ticket05-spec-r21.md` (sha256 6427b9f5ed02ef6605c23e011466ff2e742f66bc40647585fa61c3b62b4d6cfd) for ticket #119.\n\n# Method\nRead the candidate, prior finding ledger, evidence bundle and sources. Apply your full installed assessment. Do not implement or edit.\n\n# Output\nReturn PASS or REVISE with residual findings and verdict basis. No writes or repo-mutating commands.",
+      "solutionSpace": "independent critic assessment for ticket #119 r21"
+    }
+  ]
+}

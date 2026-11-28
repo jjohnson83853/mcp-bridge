@@ -290,3 +290,47 @@ func TestPagingMetricsRegistered(t *testing.T) {
 		t.Fatalf("unregistered label reached exposition: %s", exp)
 	}
 }
+
+func TestProjectionMetricsBoundedLabelsAndOutcomes(t *testing.T) {
+	m := NewMetrics([]string{"portainer"})
+	var nilMetrics *Metrics
+	nilMetrics.RecordProjection("portainer", "EndpointList", "applied")
+
+	rows := []struct {
+		tool    string
+		outcome string
+	}{
+		{"EndpointList", "applied"}, // default APPLY
+		{"EndpointList", "applied"}, // fields APPLY
+		{"docker_proxy", "applied"},
+		{"EndpointList", "skipped"},
+		{"docker_proxy", "skipped"},
+		{"EndpointList", "rejected"},
+		{"not_allowlisted", "rejected"},
+	}
+	for _, row := range rows {
+		m.RecordProjection("portainer", row.tool, row.outcome)
+	}
+	m.RecordProjection("bad server", "EndpointList", "applied")
+	m.RecordProjection("portainer", "unbounded-tool", "skipped")
+	m.RecordProjection("portainer", "EndpointList", "unbounded-outcome")
+
+	exp := exposition(t, m)
+	for _, want := range []string{
+		`bridge_projection_total{outcome="applied",server="portainer",tool="EndpointList"} 2`,
+		`bridge_projection_total{outcome="applied",server="portainer",tool="docker_proxy"} 1`,
+		`bridge_projection_total{outcome="skipped",server="portainer",tool="EndpointList"} 1`,
+		`bridge_projection_total{outcome="skipped",server="portainer",tool="docker_proxy"} 1`,
+		`bridge_projection_total{outcome="rejected",server="portainer",tool="EndpointList"} 1`,
+		`bridge_projection_total{outcome="rejected",server="portainer",tool="not_allowlisted"} 1`,
+	} {
+		if !strings.Contains(exp, want) {
+			t.Errorf("missing projection counter sample %q in exposition: %s", want, exp)
+		}
+	}
+	for _, unbounded := range []string{"bad server", "unbounded-tool", "unbounded-outcome"} {
+		if strings.Contains(exp, unbounded) {
+			t.Errorf("unbounded projection label %q reached exposition: %s", unbounded, exp)
+		}
+	}
+}

@@ -1,0 +1,129 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r20",
+  "revision": "r20",
+  "invocationId": "79244b88-d7b2-4db0-8201-cdef984f1ea7",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r20.md",
+      "sha256": "6bdc90a5a85e10fae443b8ade2c5f3a7379eaa248218ad06916699cda88faf0e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/issue-119.md",
+      "sha256": "caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/refinement.md",
+      "sha256": "0889c58aa753869ac92acaa7f39a22fd4f9b6fd85e659fd0c37121914f76cc6b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/planner-evidence.md",
+      "sha256": "74acd6a6e9dc70cec955c787784ee377cfa37f8c2c31cc4b56d285e3fd25954d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_endpointlist.json",
+      "sha256": "a7167d80f4151eee2a31092beb2817b39c8c542888f338f9aa1e344f0c3ff398"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_docker_proxy.json",
+      "sha256": "a91db42a4a79684e3863a0ad6abf73a7ec1898dfca9ef9be45d0efed0486f1d1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-ct-r19-source-66563ef8-20261128T095028Z.json",
+      "sha256": "66563ef8438a9e7b1fe37ed77e43cf3d2e2c6735c5446a5f684754d42f01ab8c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "161ff8201f76368e9e6b4a98ba786fcf36c74e346676bb2bc16f71857bb916b1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+      "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "559c8c44341b7516327b6a5ce8684a57b39219e1c8f8c2b5b0789b9fe4947a75"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
+      "sha256": "744579103ff3b3bf3b2b51052767a7f5f50bca2b3536617ad14bdff5300202f5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle_test.go",
+      "sha256": "cba6b86e42d029cf61d3b0eb17a54fdedc9ae3ea6a8643d47956c86f32dd9019"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+      "sha256": "4b3080089e71a4a751b5be2dfb53aad4b24c475a37cb429c190cc656c12ab62c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "df2102ab178fdf4928da5d21bf5c296bef06d32066fe10ea035055b40e23f1e5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "a5999feaf2750a5093d2d17414aff7608f82edf19a37ee21ced2cf1749869f07"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "99d72a5b60e087f89341033ea3d8b3bcc272b382c4b5fb7d43cb31bf25df0163"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "399482e76d6ed7a99f4ccfbaa97e37b194be8d3f1b4c82ccdef77f0809327ed7"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket119SpecR20",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r20.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r20",
+      "targetRevision": "r20",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "82e992c41a999411eed9eb2bb453fb9236b6a37752aa8527bef3baf9129007ff",
+      "instructionsSha256": "06f9d0322535098c9bd740dbeeed0f1e2aac317319c1be27f2b91b801dacb05f",
+      "requestSha256": "f576acf7bb02a9f65f14431f6c332bcfdb99eff1818a02e1ef4231332b2ace4e"
+    },
+    {
+      "name": "CriticTicket119SpecR20",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r20.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r20",
+      "targetRevision": "r20",
+      "reviewerId": "critic",
+      "taskSha256": "58bf2297e045aa5fa213c349a8e2022004be5404b65e9df5bd3cebd043f220fc",
+      "instructionsSha256": "06f9d0322535098c9bd740dbeeed0f1e2aac317319c1be27f2b91b801dacb05f",
+      "requestSha256": "76e89d95afaeea09bfbb68896a0e4d0e1cb8d9fa1178da19463fecc97fdb8092"
+    }
+  ],
+  "output": "## Code Review Summary\n\n**Mode:** specification \u00b7 **pass:** repair (r20). Candidate `.scratch/token-efficient-tool-responses/ticket05-spec-r20.md` (packet sha256 6bdc90a5\u2026) vs issue-119, ct-r19, cr-r19, ledger, E20.\n**Files Reviewed:** 1 candidate + 5 anchors. **Total Issues:** 3 (LOW).\n\n### By Severity\n- CRITICAL 0 \u00b7 HIGH 0 \u00b7 MEDIUM 0 \u00b7 LOW 3\n\n### Supplied-finding closure\n- **Critic C1 / CR-R19-1 \u2014 CLOSED at root.** AC3:100 now reads verbatim \"`fields` with a present `select` is rejected after L1/L2; `full:true` with a present `fields` member is rejected at L2.\" Re-derived against ladder L2 (full:TRUE only, :14/:48/:75), L3, and the composite oracles (:100, :104, T1 :111, T2). No site rejects `{full:false,fields:[\u2026]}`; the old phrase survives only as a quoted historical string at :159.\n- **CR-R19-2 \u2014 PARTIALLY CLOSED** (\u2192 CR-R20-1).\n- **CR-R19-3 \u2014 CLOSED.** No live \"row 21b\" citation remains; only historical mentions (:150, :161).\n\n### Issues\n`[LOW][ticket-mirror-drift][HIGH]` AC2/AC5 not byte-verbatim\nFile: ticket05-spec-r20.md:99,102 (claim :97)\nID: CR-R20-1\nIssue: ticket uses U+2019 (\"upstream\u2019s\", \"tool\u2019s\"); spec uses ASCII while \u00a75:97 claims \"verbatim\". CR-R19-2's fix was \"restore 'ones' or state the normalization\"; only \"ones\" was restored (AC4:101 \u2713).\nFix: use U+2019 in AC2/AC5, or add a \u00a75 normalization clause.\n\n`[LOW][ledger-state-drift][HIGH]` \u00a710 dropped two prior disposition rows\nFile: :159-162 (vs r19:160-161)\nID: CR-R20-2\nIssue: \u00a710 keeps the Editorial row and claims \"earlier closures preserved\" but removed the r19 C1 MAJOR (L2 full+fields) and C2 MAJOR (AC5/E20) rows. Their clauses survive (R4:14, L2:48, row 21:75, AC3; \u00a73 E20, AC5), so auditability only.\nFix: restore both rows or name them in the preserved-closures list.\n\n`[LOW][stale-citation][HIGH]` \u00a79/\u00a710 describe a rewrite that did not happen\nFile: :150, :161\nID: CR-R20-3\nIssue: they say \u00a710 now \"cites 'D-table row 21'/'ladder L2'\", but r20 \u00a710 has no such citation \u2014 the row was replaced by the C1 residual row (affected clause \"AC3\"). Phantom citation is gone; the narrative is false.\nFix: state that the row carrying the citation was replaced.\n\n### Open Questions\n- [LOW] STATUS:5 claims the owner raised the budget by 3 to 19 (3 available), but ledger:tail records 16/16 with \"owner budget decision\" pending and no raise entry. Authority/admission is separate; routing to coordinator.\n- Retained advisories, unchanged: CR-R16-2 (AC4 L5 unqualified), CR-R16-3 (:50), AC6(a') vs row 12 `fields` wording, E20 select-method omission.\n\n### Positive Observations\n- C1 closed by root change at the exact Critic sentence; ladder/D-table/AC text mutually consistent; false-valued composites oracled at four levels.\n- AC4:101 matches the issue checkbox byte-for-byte.\n- Token sweep clean (no R-token above R7, no CR ids); D-table 21 rows contiguous and total; write set 3 NEW + 12 MODIFIED = T1\u222aT2\u222aT3 with exclusions intact; threading preserves existing arities (`deliverBoundedResult` 5-arg, `terminalResult` 5-arg at bounded_delivery_test.go:353); ticket-01 ceiling and `retrieve_result` behavior unchanged.\n\n### Verification limits\nRead-only, no shell: candidate/E20 hashes unverified by digest; spec-lint not executed; no Go tests run (specification mode). Anchors line-checked.\n\n### Recommendation\nAPPROVE"
+}

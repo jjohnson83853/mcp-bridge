@@ -1,0 +1,12 @@
+{
+  "i": "Critic review ticket 119 specification r6",
+  "context": "{\"instructions\":\"# Shared review packet \\u2014 ticket #119, revision r6 (specification review, repair round 4)\\n\\nRepo: /home/opencode/projects/default/mcp-bridge (Go MCP bridge). Read-only; no repo-mutating commands.\\nCandidate: `.scratch/token-efficient-tool-responses/ticket05-spec-r6.md`, sha256 0fd10087215d6c849e122f3ddaedb65b0bd318d37a76ad05a50b6fe41bbbb708, revision r6, candidate id token-efficient-tool-responses-ticket05-spec-r6, author planner.\\nRepair of review round 4 (seq 106, F-A..F-H). Prior rounds: F1-F8 (seq 103), N1-N8 (seq 104), N2/N8/N9/N10/N11/N12/N13 (seq 105).\\n\\n## Review scope\\nApply W09E. Verify: F-A carrier completeness (payload-bearing `result` member rewritten on both paths; non-payload verbatim; non-mirrorable skip); F-B 21-row D-table with per-row reasons/channels and bound aggregate reason; F-C disclosure channels; F-D runtime-derived budget with unchanged config validation and compatibility consequence; F-E all offsets re-verified; F-F conservative inequality; F-G term definition; F-H bridge-writer shape validation. Check AC1\\u2013AC7 preservation, write-set 3 NEW + 12 MODIFIED = per-task union, and ticket-01 paging compatibility.\\n\\nReport APPROVE or REQUEST CHANGES with taxonomy-classified findings and anchors.\\n\",\"workflowDispatch\":{\"statePath\":\"/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json\",\"schemaVersion\":1,\"projectRoot\":\"/home/opencode/projects/default/mcp-bridge\",\"feature\":\"token-efficient-tool-responses-ticket05-r6\",\"revision\":\"r6\",\"requests\":[{\"name\":\"CriticTicket119SpecR6\",\"taskId\":\"CT1\",\"agent\":\"critic\",\"effects\":{\"kind\":\"read\",\"paths\":[\".scratch/token-efficient-tool-responses/ticket05-spec-r6.md\"]},\"targetCandidateId\":\"token-efficient-tool-responses-ticket05-spec-r6\",\"targetRevision\":\"r6\"}]}}",
+  "tasks": [
+    {
+      "name": "CriticTicket119SpecR6",
+      "agent": "critic",
+      "task": "# Target\nIndependently assess `.scratch/token-efficient-tool-responses/ticket05-spec-r6.md` (sha256 0fd10087215d6c849e122f3ddaedb65b0bd318d37a76ad05a50b6fe41bbbb708) for ticket #119.\n\n# Method\nRead the candidate, prior finding ledger, evidence bundle and sources. Apply your full installed assessment. Do not implement or edit.\n\n# Output\nReturn PASS or REVISE with residual findings and verdict basis. No writes or repo-mutating commands.",
+      "solutionSpace": "independent critic assessment for ticket #119 r6"
+    }
+  ]
+}

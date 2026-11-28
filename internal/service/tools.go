@@ -544,7 +544,6 @@ func (t *ToolSurface) searchTools(ctx context.Context, req *mcp.CallToolRequest)
 	return t.boundedCallToolResult(req, result, ""), nil
 }
 
-
 // resolveBinding locates a published binding by either the wire tool name or
 // its derived public name (server/hash), so hybrid wire-name callers resolve
 // to the same binding as public-hash callers. The second return value is the
@@ -804,8 +803,8 @@ func (t *ToolSurface) exposeTools(ctx context.Context, req *mcp.CallToolRequest)
 		}
 	}
 	payload := map[string]any{
-		"exposed":         exposed,
-		"declared":        declared,
+		"exposed":          exposed,
+		"declared":         declared,
 		"catalog_revision": assembly.CatalogRevision(),
 	}
 	raw, err := json.Marshal(payload)
@@ -897,6 +896,7 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 		ToolName        string          `json:"tool_name"`
 		CatalogRevision string          `json:"catalog_revision"`
 		Arguments       json.RawMessage `json:"arguments"`
+		Projection      json.RawMessage `json:"projection"`
 	}
 	if err := decodeStrict(rawArguments(req), &wire); err != nil {
 		t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, "call_tool", "invalid_arguments")
@@ -935,6 +935,17 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 	if len(bytes.TrimSpace(args)) == 0 {
 		args = json.RawMessage(`{}`)
 	}
+	_, projectionArgs := projectionRequestArgs(wire.Projection, args)
+	fieldsBudget := maxProjectionFieldsBudget(16*67 + 1)
+	if t.cfg.RetainedResults != nil {
+		fieldsBudget = projectionFieldsBudget(t.cfg.RetainedResults())
+	}
+	preDecision, projectionErr := decideProjection(binding.ServerID, binding.RawName, projectionPath(projectionArgs), projectionArgs, 0, fieldsBudget)
+	if projectionErr != nil {
+		t.recordProjectionDecision(binding.ServerID, preDecision, "rejected", true)
+		return errorResult(search.CodeInvalidArguments, projectionErr.Error(), core.ExecutionNotStarted), nil
+	}
+
 	if len(binding.Def.InputSchema) > 0 {
 		if err := catalog.ValidateSchemaDocument(string(binding.Def.InputSchema)); err != nil {
 			t.logAdmissionFailure(ctx, requestID, operationID, corrState, start, "call_tool", "unsupported_schema")
@@ -998,6 +1009,20 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 		return errorResult(dispatchErr.Code, dispatchMessage(dispatchErr.Code), dispatchErr.ExecutionState), nil
 	}
 	upstream := decodeUpstreamResult(envelope.UpstreamResult)
+	projectionResultDecision, projectionErr := transformProjectionResult(&upstream, preDecision, binding.ServerID, binding.RawName, projectionPath(projectionArgs), projectionArgs, fieldsBudget)
+	if projectionErr != nil {
+		t.recordProjectionDecision(binding.ServerID, projectionResultDecision, "rejected", true)
+		return errorResult(search.CodeInvalidArguments, projectionErr.Error(), "executed"), nil
+	}
+	if projectionDecisionDisclosed(projectionResultDecision) {
+		outcome := "skipped"
+		logEvent := projectionResultDecision.Reason != projectionReasonFullRequested && projectionResultDecision.Reason != projectionReasonUpstreamError
+		if projectionResultDecision.Applied {
+			outcome, logEvent = "applied", false
+		}
+		t.recordProjectionDecision(binding.ServerID, projectionResultDecision, outcome, logEvent)
+	}
+
 	// A healthy transport delivering a tool-reported failure keeps the
 	// classes distinct: upstream succeeded transporting, the tool errored.
 	if upstream.IsError {
@@ -1041,11 +1066,18 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 		})
 	}
 
+	upstreamResultValue, err := multiplexerUpstreamResult(envelope.UpstreamResult, upstream, projectionResultDecision)
+	if err != nil {
+		return errorResult(codeInternalError, "the bridge could not encode the projected result", core.ExecutionUnknown), nil
+	}
 	payload := map[string]any{
 		"server":          envelope.Server,
 		"tool_name":       wire.ToolName,
 		"request_id":      newRequestID(),
-		"upstream_result": rawValue(envelope.UpstreamResult),
+		"upstream_result": upstreamResultValue,
+	}
+	if projectionDecisionDisclosed(projectionResultDecision) {
+		payload["projection"] = projectionDisclosure(projectionResultDecision)
 	}
 	fCount, fText, fStructured := summarizeShape(upstream.Content, payload)
 	if t.logger != nil {
@@ -1091,6 +1123,9 @@ func (t *ToolSurface) callTool(ctx context.Context, req *mcp.CallToolRequest) (*
 		Content:           upstream.Content,
 		StructuredContent: payload,
 		IsError:           upstream.IsError,
+	}
+	if projectionDecisionDisclosed(projectionResultDecision) {
+		return t.boundedCallToolResult(req, result, upstreamCode, projectionResultDecision), nil
 	}
 	return t.boundedCallToolResult(req, result, upstreamCode), nil
 }
@@ -1151,7 +1186,7 @@ func effectiveWireName(serverID, rawName string) string {
 }
 
 const (
-	searchDescriptionMaxBytes             = 36
+	searchDescriptionMaxBytes              = 36
 	searchDescriptionTruncationMarker      = "…"
 	searchDescriptionTruncationPrefixBytes = searchDescriptionMaxBytes - len(searchDescriptionTruncationMarker)
 )
@@ -1364,4 +1399,295 @@ func newRequestID() string {
 		return ""
 	}
 	return hex.EncodeToString(id[:])
+}
+
+// Projection is the optional call_tool field-selection request. SelectPresent
+// is derived from upstream arguments before admission and is never a wire
+// property.
+type Projection struct {
+	Full          *bool    `json:"full"`
+	Fields        []string `json:"fields"`
+	SelectPresent bool     `json:"-"`
+}
+
+func projectionRequestArgs(rawProjection, rawArguments json.RawMessage) (Projection, map[string]any) {
+	var projection Projection
+	if len(rawProjection) > 0 {
+		_ = json.Unmarshal(rawProjection, &projection)
+	}
+	arguments, _ := rawValue(rawArguments).(map[string]any)
+	decisionArgs := make(map[string]any, 3)
+	if len(rawProjection) > 0 {
+		decisionArgs["projection"] = rawValue(rawProjection)
+	}
+	for _, name := range []string{"path", "select"} {
+		value, ok := arguments[name]
+		if !ok {
+			continue
+		}
+		if name == "select" {
+			projection.SelectPresent = projectionSelectPresent(value)
+			if !projection.SelectPresent {
+				continue
+			}
+		}
+		decisionArgs[name] = value
+	}
+	return projection, decisionArgs
+}
+
+func projectionPath(args map[string]any) string {
+	path, _ := args["path"].(string)
+	return path
+}
+
+func (t *ToolSurface) recordProjectionDecision(server string, decision projectionDecision, outcome string, logEvent bool) {
+	tool := decision.Entry
+	if tool == "" {
+		tool = "not_allowlisted"
+	}
+	if t.cfg.Metrics != nil {
+		t.cfg.Metrics.RecordProjection(server, tool, outcome)
+	}
+	if !logEvent || t.logger == nil || decision.Reason == "" {
+		return
+	}
+	event, eventOutcome := "projection_skipped", "degraded"
+	if outcome == "rejected" {
+		event, eventOutcome = "projection_rejected", "denied"
+	}
+	t.logger.Log(observe.Entry{
+		Level:     "warn",
+		Event:     event,
+		Server:    server,
+		Operation: "call_tool",
+		Outcome:   eventOutcome,
+		Error:     observe.RuntimeErrorInfo(decision.Reason),
+		Fields:    map[string]any{"projection_reason": decision.Reason, "tool": tool},
+	})
+}
+
+type projectionPayload struct {
+	items         []any
+	wrapper       map[string]any
+	wrapperKey    string
+	wrapperString bool
+	rootString    bool
+}
+
+func decodeProjectionJSON(raw []byte) (any, error) {
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.UseNumber()
+	var value any
+	if err := decoder.Decode(&value); err != nil {
+		return nil, err
+	}
+	if offset := int(decoder.InputOffset()); len(bytes.TrimSpace(raw[offset:])) != 0 {
+		return nil, errors.New("service: trailing projection payload data")
+	}
+	return value, nil
+}
+
+func projectionPayloadFromValue(value any) (projectionPayload, bool) {
+	switch value := value.(type) {
+	case []any:
+		return projectionPayload{items: value}, true
+	case string:
+		inner, err := decodeProjectionJSON([]byte(value))
+		if err != nil {
+			return projectionPayload{}, false
+		}
+		items, ok := inner.([]any)
+		if !ok {
+			return projectionPayload{}, false
+		}
+		return projectionPayload{items: items, rootString: true}, true
+	case map[string]any:
+		result, ok := value["result"]
+		if !ok {
+			return projectionPayload{}, false
+		}
+		payload, ok := projectionPayloadFromValue(result)
+		if !ok || payload.wrapper != nil {
+			return projectionPayload{}, false
+		}
+		payload.rootString = false
+		payload.wrapper = value
+		payload.wrapperKey = "result"
+		_, payload.wrapperString = result.(string)
+		return payload, true
+	default:
+		return projectionPayload{}, false
+	}
+}
+
+func projectionPayloadFromText(content []mcp.Content) (projectionPayload, int, string) {
+	for index, block := range content {
+		text, ok := block.(*mcp.TextContent)
+		if !ok || text == nil {
+			continue
+		}
+		value, err := decodeProjectionJSON([]byte(text.Text))
+		if err != nil {
+			return projectionPayload{}, index, projectionReasonPayloadUnparseable
+		}
+		if wrapper, ok := value.(map[string]any); ok {
+			if wrapped, ok := wrapper["result"].(string); ok {
+				if _, err := decodeProjectionJSON([]byte(wrapped)); err != nil {
+					return projectionPayload{}, index, projectionReasonPayloadUnparseable
+				}
+			}
+		}
+		payload, ok := projectionPayloadFromValue(value)
+		if !ok {
+			return projectionPayload{}, index, projectionReasonPayloadShapeUnexpected
+		}
+		return payload, index, ""
+	}
+	return projectionPayload{}, -1, projectionReasonPayloadUnparseable
+}
+
+func projectionStructuredContentItems(structured any) ([]any, bool, bool) {
+	if structured == nil {
+		return nil, true, false
+	}
+	object, ok := structured.(map[string]any)
+	if !ok || object == nil {
+		return nil, false, false
+	}
+	value, present := object["result"]
+	if !present {
+		return nil, true, false
+	}
+	payload, ok := projectionPayloadFromValue(value)
+	if !ok || payload.wrapper != nil {
+		return nil, false, true
+	}
+	return payload.items, true, true
+}
+
+func sameProjectionItems(left, right []any) bool {
+	leftJSON, leftErr := json.Marshal(left)
+	rightJSON, rightErr := json.Marshal(right)
+	return leftErr == nil && rightErr == nil && bytes.Equal(leftJSON, rightJSON)
+}
+
+func projectedPayloadJSON(payload projectionPayload, items []any, itemJSON []byte) ([]byte, error) {
+	if payload.wrapper != nil {
+		wrapper := make(map[string]any, len(payload.wrapper))
+		for key, value := range payload.wrapper {
+			wrapper[key] = value
+		}
+		if payload.wrapperString {
+			wrapper[payload.wrapperKey] = string(itemJSON)
+		} else {
+			wrapper[payload.wrapperKey] = items
+		}
+		return json.Marshal(wrapper)
+	}
+	if payload.rootString {
+		return json.Marshal(string(itemJSON))
+	}
+	return itemJSON, nil
+}
+
+func projectionFailure(decision projectionDecision, reason string) projectionDecision {
+	decision.Applied = false
+	decision.Reason = reason
+	return decision
+}
+
+func transformProjectionResult(result *mcp.CallToolResult, decision projectionDecision, server, tool, path string, args map[string]any, fieldsBudget int) (projectionDecision, error) {
+	if result.IsError {
+		if decision.Mode == projectionModeFull || decision.Mode == projectionModeFields {
+			return projectionFailure(decision, projectionReasonUpstreamError), nil
+		}
+		return projectionDecision{}, nil
+	}
+	if decision.Reason == projectionReasonFullRequested || decision.Reason == projectionReasonUpstreamSelectPresent || decision.Entry == "" {
+		return decision, nil
+	}
+	structuredItems, mirrorable, hasStructuredPayload := projectionStructuredContentItems(result.StructuredContent)
+	if !mirrorable {
+		return projectionFailure(decision, projectionReasonStructuredContentNotMirrorable), nil
+	}
+	payload, textIndex, reason := projectionPayloadFromText(result.Content)
+	if reason != "" {
+		return projectionFailure(decision, reason), nil
+	}
+	if hasStructuredPayload && !sameProjectionItems(payload.items, structuredItems) {
+		return projectionFailure(decision, projectionReasonStructuredContentNotMirrorable), nil
+	}
+	projected, transformedDecision, err := transformProjection(server, tool, path, args, payload.items, fieldsBudget)
+	if err != nil {
+		return transformedDecision, err
+	}
+	if !transformedDecision.Applied {
+		return transformedDecision, nil
+	}
+	itemsJSON, err := json.Marshal(projected)
+	if err != nil {
+		return projectionFailure(transformedDecision, projectionReasonPayloadUnparseable), nil
+	}
+	textJSON, err := projectedPayloadJSON(payload, projected, itemsJSON)
+	if err != nil {
+		return projectionFailure(transformedDecision, projectionReasonPayloadUnparseable), nil
+	}
+	content := append([]mcp.Content(nil), result.Content...)
+	text, ok := content[textIndex].(*mcp.TextContent)
+	if !ok || text == nil {
+		return projectionFailure(transformedDecision, projectionReasonPayloadShapeUnexpected), nil
+	}
+	updatedText := *text
+	updatedText.Text = string(textJSON)
+	content[textIndex] = &updatedText
+	result.Content = content
+	if structured, ok := result.StructuredContent.(map[string]any); ok {
+		if value, present := structured["result"]; present {
+			updated := make(map[string]any, len(structured))
+			for key, value := range structured {
+				updated[key] = value
+			}
+			if _, isString := value.(string); isString {
+				updated["result"] = string(itemsJSON)
+			} else {
+				updated["result"] = projected
+			}
+			result.StructuredContent = updated
+		}
+	}
+	return transformedDecision, nil
+}
+
+func projectionDecisionDisclosed(decision projectionDecision) bool {
+	return decision.Entry != "" || decision.Reason != ""
+}
+
+func projectionDisclosure(decision projectionDecision) map[string]any {
+	fields := decision.Fields
+	if fields == nil {
+		fields = []string{}
+	}
+	disclosure := map[string]any{
+		"v":       1,
+		"applied": decision.Applied,
+		"entry":   decision.Entry,
+		"mode":    decision.Mode,
+		"fields":  fields,
+	}
+	if !decision.Applied {
+		disclosure["reason"] = decision.Reason
+	}
+	return disclosure
+}
+
+func multiplexerUpstreamResult(raw json.RawMessage, transformed mcp.CallToolResult, decision projectionDecision) (any, error) {
+	if !decision.Applied {
+		return rawValue(raw), nil
+	}
+	encoded, err := json.Marshal(transformed)
+	if err != nil {
+		return nil, err
+	}
+	return rawValue(encoded), nil
 }

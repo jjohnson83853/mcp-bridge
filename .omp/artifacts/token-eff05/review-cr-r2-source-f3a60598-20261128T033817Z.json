@@ -1,0 +1,116 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r2",
+  "revision": "r2",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r2.md",
+      "sha256": "dec0aed9929bf662192aafc435cc58a046183ad1423624c473692deb8a1a4bab"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/issue-119.md",
+      "sha256": "caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/refinement.md",
+      "sha256": "0889c58aa753869ac92acaa7f39a22fd4f9b6fd85e659fd0c37121914f76cc6b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/planner-evidence.md",
+      "sha256": "74acd6a6e9dc70cec955c787784ee377cfa37f8c2c31cc4b56d285e3fd25954d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_endpointlist.json",
+      "sha256": "a7167d80f4151eee2a31092beb2817b39c8c542888f338f9aa1e344f0c3ff398"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_docker_proxy.json",
+      "sha256": "a91db42a4a79684e3863a0ad6abf73a7ec1898dfca9ef9be45d0efed0486f1d1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r1-source-4fc401e5-20261128T030855Z.json",
+      "sha256": "4fc401e52ba0203bff2beb842d57d13c148e7bb2e67428656d8adbab368475b6"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "161ff8201f76368e9e6b4a98ba786fcf36c74e346676bb2bc16f71857bb916b1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+      "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
+      "sha256": "744579103ff3b3bf3b2b51052767a7f5f50bca2b3536617ad14bdff5300202f5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "df2102ab178fdf4928da5d21bf5c296bef06d32066fe10ea035055b40e23f1e5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "a5999feaf2750a5093d2d17414aff7608f82edf19a37ee21ced2cf1749869f07"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "99d72a5b60e087f89341033ea3d8b3bcc272b382c4b5fb7d43cb31bf25df0163"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "399482e76d6ed7a99f4ccfbaa97e37b194be8d3f1b4c82ccdef77f0809327ed7"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket119SpecR2",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r2.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r2",
+      "targetRevision": "r2",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "5a16e8ec420b05c310c5224422d25a73bcd4330bde078c02a9ca4df2bdffd3d1",
+      "instructionsSha256": "80e317ead686a57e599afe6eaeb657b18400aca4a953197995d4e2395cd88868",
+      "requestSha256": "0ce06b234253062fc8835ec55776cad2e2e5c44482ebc8d04f2dae8007145dfe"
+    },
+    {
+      "name": "CriticTicket119SpecR2",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r2.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r2",
+      "targetRevision": "r2",
+      "reviewerId": "critic",
+      "taskSha256": "8672d55915364ca172b8f9525a3a3111627b79f82a6b1ca77fe046d06bd3e058",
+      "instructionsSha256": "80e317ead686a57e599afe6eaeb657b18400aca4a953197995d4e2395cd88868",
+      "requestSha256": "82a344fee1e76be95ecddfa669a5baa3fa817dbebfa0c2fb774fbc6f30731b0c"
+    }
+  ],
+  "output": "## Code Review Summary\nMode: specification, repair pass r2. Candidate ticket05-spec-r2; sha supplied, not recomputed (read-only, no shell). Files Reviewed: 1 candidate + 15 cited source/anchor files. Total Issues: 8 \u2014 HIGH 2, MEDIUM 4, LOW 2.\n\nClosure verified: F1 CLOSED (one transformed value feeds tools.go:1048 and 1090-1095; carrier-completeness). F3 CLOSED (Id/Name/Type, AC5 restated). F4 CLOSED (shape first). F5 CLOSED (error/full/select/no-match rows). F7 CLOSED (bounds + absent!=empty). F8 CLOSED (3 NEW+12 MOD, deps T1+T3, RED wording). F6 NOT CLOSED (N3). F2 PARTIAL (N2, N4). Anchors spot-checked: schema.go:93, log.go:90/282, envelope.go:731, log_test.go:69, bounds.go:315/365-388, tools.go:879/1328.\n\nN1 [HIGH][statement-contradiction] spec:16,82,85,59\nConfidence HIGH.\nIssue: R6/AC6(d) require skip-pass-through when items miss ALL requested/default fields; R4/AC3 require post-dispatch unknown_field_selection rejection when a field is absent from every item \u2014 same fixture, opposite outcomes. AC6(d) also widened r1's \"default\" to \"requested/default\", contradicting spec:5 \"AC semantics preserved\".\nFix: default-all-missing => skip; fields-unknown => reject; scope AC6(d) to non-object/non-list carriers.\n\nN2 [HIGH][statement-contradiction] spec:38,105; config/bounds.go:315; result_handle.go:464\nConfidence HIGH.\nIssue: maximal disclosure modeled as \"16x64 raw bytes\", but these are caller strings marshaled into preview/page/terminal metadata; escapedJSONRuneLength shows 6x for <>&/control, so 16x64x6=6144 > 1536 preview ceiling. The config feasibility check passes while a legal 16-field request yields an empty preview (boundedResultPrefix \"\"), falsifying \"feasibility stays sound\". If sizing maps carry a maximal shape unconditionally, page splits change for unprojected calls, breaking R7/AC4 byte-identity.\nFix: bound disclosure by encoded width (admission alphabet/cap); service sizing maps mirror actual disclosure; config sets use maximal encoded shape; add escaped-max oracle.\n\nN3 [MEDIUM][statement-contradiction] spec:35,60,66,83\nConfidence HIGH.\nIssue: F6/C7 label non-matching docker_proxy paths \"docker_proxy\"; AC4/C1 require \"not_allowlisted\" for docker_proxy /images/json.\nFix: label by entry match; amend F6/C7 or AC4 consistently.\n\nN4 [MEDIUM][statement-contradiction] spec:63,81; bounded_delivery.go:34,49,133,147\nConfidence HIGH.\nIssue: C4/AC2/R2 require terminal metadata disclosure, but the terminal branch has no resultEntry (commit failure/retirement) and renderResultTerminal+terminalResult build fresh maps; T2 threads only commit/preview/page, so the entry-carried mechanism cannot reach terminal.\nFix: extract disclosure from deliverBoundedResult's result; pass to both terminal builders and terminalSizingMetadata; add terminal fixture (MaxRetainedResultBytes=1).\n\nN5 [MEDIUM][statement-contradiction] spec:99,100,112,129; result_handle_test.go:61,121,166,211,304\nConfidence HIGH.\nIssue: extending commit's signature breaks 5 existing call sites in a file outside the exact 3+12 write set, contradicting \"existing tests pass unmodified\".\nFix: add result_handle_test.go to T2, or preserve arity (options/variadic).\n\nN6 [MEDIUM][statement-contradiction] spec:54,59-60\nConfidence HIGH.\nIssue: the normative single-source D-table has no row for match+absent/fields shape failures (payload_unparseable, payload_shape_unexpected, item_shape_unexpected, structured_content_not_mirrorable) that AC6(d) requires; full+IsError yields upstream_error per AC6(a') but full_requested per spec:54.\nFix: enumerate carrier-failure rows with reasons; reconcile full+error.\n\nN7 [LOW][undefined-term] spec:14,61\nConfidence MEDIUM.\nIssue: projection:{} and {\"full\":false} map to no request mode; non-allowlisted behavior (projection key?) undefined.\nFix: define wire->request mapping or reject as malformed_request.\n\nN8 [LOW][stale-citation] spec:25,26,43\nConfidence HIGH.\nIssue: E11 1075-1080 => actual 1090-1095; E12 50/64/164 => 52/70/133; E5 describeTool 583 => 569; \u00a74 \"after tools.go:1119\" => call site 1000 (1119 is the helper declaration).\nFix: update anchors.\n\nOpen questions: single-source wording may imply re-marshaling pass-through paths, breaking R7 byte-identity (CallToolResult round-trip drops unknown upstream fields); endpoint Type inferred from the types filter, not an observed response key; select:\"\" presence undefined.\n\nPositives: F1 root fix is solid (one value + carrier completeness + whole-marshal oracle); F7 explicit bounds with absent!=empty; event registration tied to a render/non-violation test; write-set arithmetic matches; ticket 01 paging reused before retention.\n\n### Recommendation\nREQUEST CHANGES\n"
+}

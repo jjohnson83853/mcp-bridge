@@ -307,6 +307,51 @@ upstream servers. The annotations carry no guarantee that a client will skip
 its permission prompts — clients decide independently — and they never grant
 execution authority or bypass any policy.
 
+`call_tool` accepts an optional `projection` object for the two exact allowlisted
+list operations: `portainer__EndpointList` and
+`portainer__docker_proxy` with `arguments.path == "/containers/json"`.
+`full: true` keeps the upstream objects unprojected but remains subject to the
+response ceiling; `fields: ["Id", "Name"]` selects raw top-level keys.
+Otherwise, containers default to `Id`, `Name`, `State`, and `Image`, while
+endpoints default to `Id`, `Name`, and `Type`. `full: false` does not disable
+the default projection. The direct invocation path has no projection request;
+use `call_tool` with `full: true` to opt out. These response projections are
+separate from the session projections described below.
+
+Projection disclosures have one schema: `{v: 1, applied, entry, mode, fields,
+reason?}`. `entry` is the matching allowlist identity or `""` for a full
+request on a non-matching tool; `mode` is `default`, `fields`, or `full`.
+`reason` is present exactly when `applied` is false. `fields` is the list that
+produced the result or was attempted: defaults for default-mode applies and
+skips, the requested list for fields-mode applies and skips, and `[]` for full
+mode. The closed reason set is `full_requested`, `upstream_select_present`,
+`upstream_error`, `payload_unparseable`, `payload_shape_unexpected`,
+`item_shape_unexpected`, `structured_content_not_mirrorable`,
+`disclosure_key_collision`, `malformed_request`, `not_supported`,
+`select_conflict`, and `unknown_field_selection`.
+
+Pre-dispatch validation follows one first-match ladder: (L1) malformed object
+or member types → `malformed_request`; (L2) `full: true` with any `fields`
+member → `malformed_request`; (L3) `fields` with a present upstream `select`
+→ `select_conflict`; (L4) empty, duplicate, over-16, over-64-character, or
+non-ASCII-identifier fields → `malformed_request`; (L5) fields on a
+non-allowlisted operation → `not_supported`; (L6) a selection exceeding the
+runtime-derived delivery budget → `not_supported`. Thus
+`{full: false, fields: ["Id"]}` is a fields request, while
+`{full: true, fields: ["Id"]}` is rejected at L2.
+
+The multiplexer carries the disclosure in its `projection` envelope member,
+including skip decisions; preview, page, and terminal metadata use that same
+out-of-band decision when the ceiling admits it. Direct calls use the reserved
+`mcp_bridge_projection` member only on an absent or writable object structured
+content carrier. A colliding upstream member is never overwritten: an
+otherwise-applied default becomes a `disclosure_key_collision` skip, while
+other skip reasons remain unchanged. Non-object structured content is never
+replaced and produces a `structured_content_not_mirrorable` skip. Upstream
+disclosure-shaped values are not bridge-authoritative. If a projection is
+applied, the entire `upstream_result` is re-derived from the transformed
+result; pass-through values remain decoded-value-identical to the upstream.
+
 The built-in descriptions steer clients toward tools already declared in their
 active list. `search_tools` includes the exact, alphabetically sorted wire names
 of published configured pins; with no published pins it uses a baseline
@@ -486,12 +531,15 @@ explicitly re-list; no zero-prompt behavior is promised for any client
 (Gemini CLI 0.18.13.x is user-reported).
 
 At or below the delivery ceiling, `structuredContent.upstream_result` retains
-the original `CallToolResult` shape (content blocks, structured content,
-`isError`, metadata). Above the ceiling, the bridge returns a bounded preview
-plus a handle; `retrieve_result` pages report `total_pages` and reconstruct
-the retained bytes byte-for-byte. The outer `call_tool` envelope contains
-`server`, `tool_name`, `request_id`, and `upstream_result`; discovery revision
-and health fields are not duplicated.
+the `CallToolResult` shape (content blocks, structured content, `isError`, and
+metadata). When a field projection is applied, its content and payload-bearing
+structured-content member carry the projected shape; the complete
+`upstream_result` member is re-derived from that transformed result. Above the
+ceiling, the bridge returns a bounded preview plus a handle; `retrieve_result`
+pages report `total_pages` and reconstruct the retained bytes byte-for-byte.
+The outer `call_tool` envelope contains `server`, `tool_name`, `request_id`,
+`upstream_result`, and, when a projection decision is disclosed, `projection`;
+discovery revision and health fields are not duplicated.
 
 ## Prompt surface
 

@@ -1,0 +1,7 @@
+Owner milestone authorization for ticket #119 (token-efficient-tool-responses ticket 05), revision r21.
+
+Question presented: "Authorize implementation? Yes — select the reviewed r21 branch and dispatch the engineer through T1–T4, then verification and delivery. / No — stop at the approved specification."
+
+Owner answer (form): {"auth":"implement"} — Yes.
+
+Scope: select the reviewed r21 branch (token-efficient-tool-responses-ticket05-r21-r21) and authorize implementation tasks T1, T2, T3 under envelope env-1, followed by T4 verification.

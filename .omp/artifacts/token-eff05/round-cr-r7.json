@@ -1,0 +1,31 @@
+{
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r7",
+  "revision": "r7",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "R7-1",
+      "class": "statement-contradiction",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "R7-2",
+      "class": "stale-citation",
+      "severity": "LOW"
+    },
+    {
+      "id": "R7-3",
+      "class": "stale-citation",
+      "severity": "LOW"
+    },
+    {
+      "id": "R7-4",
+      "class": "undefined-term",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/token-eff05/review-cr-r7-source-bda5a81d-20261128T043045Z.json",
+  "dispatchName": "ReviewTicket119SpecR7",
+  "format": "installed"
+}

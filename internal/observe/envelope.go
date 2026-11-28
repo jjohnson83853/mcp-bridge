@@ -379,6 +379,12 @@ func addEnvelopeFields(record map[string]any, fields map[string]any) bool {
 				return false
 			}
 			record[key] = reason
+		case "projection_reason":
+			reason, ok := value.(string)
+			if !ok || !validProjectionReason(reason) {
+				return false
+			}
+			record[key] = reason
 		case "quarantine_path":
 			path, ok := value.(string)
 			if !ok || path == "" {
@@ -495,6 +501,18 @@ func addEnvelopeFields(record map[string]any, fields map[string]any) bool {
 	}
 	return true
 }
+func validProjectionReason(reason string) bool {
+	switch reason {
+	case "full_requested", "upstream_select_present", "upstream_error",
+		"payload_unparseable", "payload_shape_unexpected", "item_shape_unexpected",
+		"structured_content_not_mirrorable", "disclosure_key_collision",
+		"malformed_request", "not_supported", "select_conflict", "unknown_field_selection":
+		return true
+	default:
+		return false
+	}
+}
+
 func validDiscoveredToolName(name string) bool {
 	if name == "" {
 		return false
@@ -685,6 +703,7 @@ var envelopeFieldNames = [...]string{
 	"policy_source",
 	"process_id",
 	"process_state",
+	"projection_reason",
 	"protocol_version",
 	"publication_impact",
 	"quarantine_path",

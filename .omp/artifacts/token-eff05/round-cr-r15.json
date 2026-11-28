@@ -1,0 +1,16 @@
+{
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r15",
+  "revision": "r15",
+  "reviewerId": "code-reviewer",
+  "verdict": "REQUEST CHANGES",
+  "findings": [
+    {
+      "id": "CR-R15-1",
+      "class": "statement-contradiction",
+      "severity": "MEDIUM"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/token-eff05/review-cr-r15-source-c05d346f-20261128T052543Z.json",
+  "dispatchName": "ReviewTicket119SpecR15",
+  "format": "installed"
+}

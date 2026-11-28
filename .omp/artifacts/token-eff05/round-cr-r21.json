@@ -1,0 +1,26 @@
+{
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r21",
+  "revision": "r21",
+  "reviewerId": "code-reviewer",
+  "verdict": "APPROVE",
+  "findings": [
+    {
+      "id": "CR-R21-1",
+      "class": "statement-contradiction",
+      "severity": "LOW"
+    },
+    {
+      "id": "CR-R21-2",
+      "class": "stale-citation",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "CR-R21-3",
+      "class": "ledger-state-drift",
+      "severity": "LOW"
+    }
+  ],
+  "sourcePath": ".omp/artifacts/token-eff05/review-cr-r21-source-e3b84184-20261128T101422Z.json",
+  "dispatchName": "ReviewTicket119SpecR21",
+  "format": "installed"
+}

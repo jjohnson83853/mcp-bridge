@@ -1,0 +1,12 @@
+{
+  "i": "Critic review ticket 119 specification r9",
+  "context": "{\"instructions\":\"# Shared review packet \\u2014 ticket #119, revision r9 (specification review, repair round 7)\\n\\nRepo: /home/opencode/projects/default/mcp-bridge (Go MCP bridge). Read-only.\\nCandidate: `.scratch/token-efficient-tool-responses/ticket05-spec-r9.md`, sha256 92ec8bc32784a98fb99d1d98ce8943d1f47c13682b6b8befa3b9001789c91d18, revision r9, candidate id token-efficient-tool-responses-ticket05-spec-r9, author planner.\\nRepair of review round 7 (seq 109, F1/F2/F3 + AC4 wording). Earlier rounds: F1-F8, N1-N8, N2/N8/N9/N10/N11/N12/N13, F-A..F-H, R6-1..R6-7, R7-1..R7-4.\\n\\n## Review scope\\nApply W09E. Verify F1 (forged matching-entry rule (a): bridge never attaches applied:true; colliding upstream member verbatim and not bridge-authoritative; oracle), F2 (fallback scoped to payload-carrier rows; row 20 log+counter non-render; AC1 qualifier), F3 (`entry`=\\\"\\\" for no-match), AC4 byte-identity wording, and preserved closures. Check AC1\\u2013AC7, D-table, out-of-band decision, write set, ticket-01 compatibility.\\n\\nReport APPROVE or REQUEST CHANGES with taxonomy-classified findings and anchors.\\n\",\"workflowDispatch\":{\"statePath\":\"/home/opencode/projects/default/mcp-bridge/.omp/plans/execution-state.json\",\"schemaVersion\":1,\"projectRoot\":\"/home/opencode/projects/default/mcp-bridge\",\"feature\":\"token-efficient-tool-responses-ticket05-r9\",\"revision\":\"r9\",\"requests\":[{\"name\":\"CriticTicket119SpecR9\",\"taskId\":\"CT1\",\"agent\":\"critic\",\"effects\":{\"kind\":\"read\",\"paths\":[\".scratch/token-efficient-tool-responses/ticket05-spec-r9.md\"]},\"targetCandidateId\":\"token-efficient-tool-responses-ticket05-spec-r9\",\"targetRevision\":\"r9\"}]}}",
+  "tasks": [
+    {
+      "name": "CriticTicket119SpecR9",
+      "agent": "critic",
+      "task": "# Target\nIndependently assess `.scratch/token-efficient-tool-responses/ticket05-spec-r9.md` (sha256 92ec8bc32784a98fb99d1d98ce8943d1f47c13682b6b8befa3b9001789c91d18) for ticket #119.\n\n# Method\nRead the candidate, prior finding ledger, evidence bundle and sources. Apply your full installed assessment. Do not implement or edit.\n\n# Output\nReturn PASS or REVISE with residual findings and verdict basis. No writes or repo-mutating commands.",
+      "solutionSpace": "independent critic assessment for ticket #119 r9"
+    }
+  ]
+}

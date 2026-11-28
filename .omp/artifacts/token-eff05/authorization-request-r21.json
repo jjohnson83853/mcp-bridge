@@ -1,0 +1,14 @@
+{
+  "artifact": {
+    "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/owner-authorization-r21-20261128T101620Z.txt",
+    "sha256": "273d0ac7b41523001e062f1665f86af91bfa68335bc20e5702f14bcb1296d2b9"
+  },
+  "branchId": "token-efficient-tool-responses-ticket05-r21-r21",
+  "locator": "Owner answer to milestone authorization form: auth=implement",
+  "recordedAt": "2026-11-28T10:16:20Z",
+  "taskIds": [
+    "T1",
+    "T2",
+    "T3"
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r12",
+  "revision": "r12",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r12.md",
+      "sha256": "e4d4152534c3a1c46754138b3b6766ce5313252f3f4cf6f6cd18617bf6dc40d4"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/issue-119.md",
+      "sha256": "caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/refinement.md",
+      "sha256": "0889c58aa753869ac92acaa7f39a22fd4f9b6fd85e659fd0c37121914f76cc6b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/planner-evidence.md",
+      "sha256": "74acd6a6e9dc70cec955c787784ee377cfa37f8c2c31cc4b56d285e3fd25954d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_endpointlist.json",
+      "sha256": "a7167d80f4151eee2a31092beb2817b39c8c542888f338f9aa1e344f0c3ff398"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_docker_proxy.json",
+      "sha256": "a91db42a4a79684e3863a0ad6abf73a7ec1898dfca9ef9be45d0efed0486f1d1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r11-source-7b7b5ac8-20261128T050430Z.json",
+      "sha256": "7b7b5ac826b81745d672e0ec15c1bedf816e0a3e26f811a5ad6302497ffa0d7e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "161ff8201f76368e9e6b4a98ba786fcf36c74e346676bb2bc16f71857bb916b1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+      "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "559c8c44341b7516327b6a5ce8684a57b39219e1c8f8c2b5b0789b9fe4947a75"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
+      "sha256": "744579103ff3b3bf3b2b51052767a7f5f50bca2b3536617ad14bdff5300202f5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle_test.go",
+      "sha256": "cba6b86e42d029cf61d3b0eb17a54fdedc9ae3ea6a8643d47956c86f32dd9019"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+      "sha256": "4b3080089e71a4a751b5be2dfb53aad4b24c475a37cb429c190cc656c12ab62c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "df2102ab178fdf4928da5d21bf5c296bef06d32066fe10ea035055b40e23f1e5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "a5999feaf2750a5093d2d17414aff7608f82edf19a37ee21ced2cf1749869f07"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "99d72a5b60e087f89341033ea3d8b3bcc272b382c4b5fb7d43cb31bf25df0163"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "399482e76d6ed7a99f4ccfbaa97e37b194be8d3f1b4c82ccdef77f0809327ed7"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket119SpecR12",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r12.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r12",
+      "targetRevision": "r12",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "1e3e793bd169d9af4ad046f96a23544d10036057527ebb2aa20488767352476d",
+      "instructionsSha256": "538d2623199274bf0214a5de8214083dd3e80dd7e8507db62585a21757d9f284",
+      "requestSha256": "8239f387a0445a4c2061292d076114815f0d9c053de817d525a3a5908fe1ff24"
+    },
+    {
+      "name": "CriticTicket119SpecR12",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r12.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r12",
+      "targetRevision": "r12",
+      "reviewerId": "critic",
+      "taskSha256": "6624f61a085f1a53ac95ab4bd3066ee4760e8700bafdb9723c8b8f676be2a649",
+      "instructionsSha256": "538d2623199274bf0214a5de8214083dd3e80dd7e8507db62585a21757d9f284",
+      "requestSha256": "b1b541c040ac3d31e46e8738cb0ff1228d0f5c98a3eaeb474e470b33eeeffa40"
+    }
+  ],
+  "output": "## Code Review Summary\n\nSpecification mode, repair pass (r12). Candidate bound by supplied sha256 (no hash tool). Read the full r12 candidate, the cr-r11 artifact, and live anchors (tools.go:995-1098, direct_execution.go:53-65, bounded_delivery.go:18-70/133-232, result_handle.go:39/115/155, bounds.go:221-236/348-396, README.md:486-496).\nFiles: 1 spec + 9 anchors. Issues: 1 (0 CRITICAL / 0 HIGH / 1 MEDIUM / 0 LOW).\n\n### Closure evidence\n- CR-R11-1 CLOSED: override is rows 5/6/7/9 (+20) at :38/:68; rows 13/14/15/17 bracketed multiplexer-only; T1/T2 oracles aligned.\n- CR-R11-2 CLOSED: absent-SC writable carrier at :6, :12, :38, C4b(i) :75, AC1 :92, T1 :105, T2 :108.\n- CR-R11-4 CLOSED: T2 :108 amends README.md:492-494; quoted enumeration verified verbatim at README.md:494-496.\n- CR-R11-3 REOPENED as CR-R12-1.\n- Preserved R9-1/2/3, F1/F2/F3, R6-1..7, R7, N1-N13; opens (i)/(ii) closed. Write set 3 NEW + 12 MODIFIED = T1 union T2 union T3. Arity verified: resultEntry keyed literal only at result_handle.go:155; the 5-arg commit/terminalResult/deliverBoundedResult test call sites compile under variadic options.\n\n### Issues\n\n[CR-R12-1][MEDIUM][statement-contradiction][HIGH] (reopens CR-R11-3) Multiplexer non-object upstream SC has three incompatible outcomes\nFile: .scratch/token-efficient-tool-responses/ticket05-spec-r12.md:38,54,73,92,97,108,127,159\nIssue: C3 :73, AUTO-DECISION :38 and the section 10 oracle :159 say a matching multiplexer call with a nested non-object SC is row 5 APPLY, array embedded value-identically. Row 6 :54 (\"MULTIPLEXER envelope ALWAYS\"), AC1's R9-3 fixture :92 and T2 :108 instead demand a row 6 SKIP with reason structured_content_not_mirrorable. AC6(d) :97 demands a skip but no P (L+C+M only), contradicting row 6's always-writable envelope. The APPLY reading also cannot satisfy AC1's :92 whole-marshal assertion (projected set in upstream_result.structuredContent, no upstream-only member) while the array is value-identical. T1/T2 cannot author one passing fixture.\nFix: adopt carrier-failure on both paths (coherent with R6 :16, row 6, AC1's fail clause, section 7 :127): delete \"non-payload concern / row applies / embedded value-identically\" at :38/:73/:159; rewrite the section 10 oracle as \"multiplexer row 6 SKIP, envelope projection written because bridge-owned, SC value-identical\"; qualify AC6(d) so P is written on the multiplexer for rows 6/7/9/15 and suppressed only on the direct path. If APPLY is chosen instead, qualify AC1/AC6(d)/section 7/T2 as direct-only and drop nested non-object SC from R6's carrier-failure list.\n\n### Open Questions\n[LOW confidence] R2 :12 (\"fields = [] when nothing was applied or selected\") does not pin fields-mode skip rows 15/17 (selected, not applied). State [] or the requested list once.\n[LOW confidence] C4b(ii) :75 \"payload-bearing member rewritten (F-A)\" is unconditioned, though rows 6/7/9 SKIPs pass the payload through unchanged (:16, :97). Scope \"rewritten\" to APPLY rows.\n\n### Positive Observations\n- Writable-carrier scoping is consistent across :6/:12/:38/:54/:75/:92/:97/:130 for every case except the multiplexer non-object SC.\n\n### Review Limits\nSpecification mode: no build, diagnostics, or runtime observation. Section 8 live UNKNOWNs (wrapper bytes, endpoint member names, EndpointList SC absence) remain.\n\n### Recommendation\nREQUEST CHANGES"
+}

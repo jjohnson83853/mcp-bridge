@@ -1,0 +1,128 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r8",
+  "revision": "r8",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r8.md",
+      "sha256": "dccb027dbf8341eb94d7d45e2128f45ff29df0c552b3aa732606d8ef282555a3"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/issue-119.md",
+      "sha256": "caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/refinement.md",
+      "sha256": "0889c58aa753869ac92acaa7f39a22fd4f9b6fd85e659fd0c37121914f76cc6b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/planner-evidence.md",
+      "sha256": "74acd6a6e9dc70cec955c787784ee377cfa37f8c2c31cc4b56d285e3fd25954d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_endpointlist.json",
+      "sha256": "a7167d80f4151eee2a31092beb2817b39c8c542888f338f9aa1e344f0c3ff398"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_docker_proxy.json",
+      "sha256": "a91db42a4a79684e3863a0ad6abf73a7ec1898dfca9ef9be45d0efed0486f1d1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r7-source-bda5a81d-20261128T043045Z.json",
+      "sha256": "bda5a81def676c5d7e79e5eb040c7f5f1ec3a6d822650df51f22f082d78d6ce8"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "161ff8201f76368e9e6b4a98ba786fcf36c74e346676bb2bc16f71857bb916b1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+      "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "559c8c44341b7516327b6a5ce8684a57b39219e1c8f8c2b5b0789b9fe4947a75"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
+      "sha256": "744579103ff3b3bf3b2b51052767a7f5f50bca2b3536617ad14bdff5300202f5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle_test.go",
+      "sha256": "cba6b86e42d029cf61d3b0eb17a54fdedc9ae3ea6a8643d47956c86f32dd9019"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+      "sha256": "4b3080089e71a4a751b5be2dfb53aad4b24c475a37cb429c190cc656c12ab62c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "df2102ab178fdf4928da5d21bf5c296bef06d32066fe10ea035055b40e23f1e5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "a5999feaf2750a5093d2d17414aff7608f82edf19a37ee21ced2cf1749869f07"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "99d72a5b60e087f89341033ea3d8b3bcc272b382c4b5fb7d43cb31bf25df0163"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "399482e76d6ed7a99f4ccfbaa97e37b194be8d3f1b4c82ccdef77f0809327ed7"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket119SpecR8",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r8.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r8",
+      "targetRevision": "r8",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "fb112220c2415e44d059c6b26e3dffe5c74878a5ddd9631fc57a76d45d5b136d",
+      "instructionsSha256": "c3b01278a9d1b3fb8b411a4bd2fb3325624084e60531cfff04706e2b09c96544",
+      "requestSha256": "41da529686296c80430618c022b6220f765f526aa318758df3628a472f689068"
+    },
+    {
+      "name": "CriticTicket119SpecR8",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r8.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r8",
+      "targetRevision": "r8",
+      "reviewerId": "critic",
+      "taskSha256": "092fc9d18c0f3c629b28eb81a96c713c40fab4ff1ea4710aea41c67c4d4a8faa",
+      "instructionsSha256": "c3b01278a9d1b3fb8b411a4bd2fb3325624084e60531cfff04706e2b09c96544",
+      "requestSha256": "9ca3cff0eeea70d23e789a8b8f3d122c3650c25de2930de9a4d468edfe891abe"
+    }
+  ],
+  "output": "## Code Review Summary\n\nSpecification mode, **repair pass** (round 7; repairs round 6 residuals R7-1\u2026R7-4 + open questions). Candidate `.scratch/token-efficient-tool-responses/ticket05-spec-r8.md` (dccb027d\u2026, r8). Inputs read: r8 spec, `review-cr-r7-source-bda5a81d-\u2026json`, and repo anchors (bounds.go, bounded_delivery.go, direct_execution.go, tools.go, metrics.go, log.go, result_handle.go, README.md, bounded_delivery_test.go).\n\n**Total issues: 3** \u2014 CRITICAL 0 / HIGH 0 / MEDIUM 1 / LOW 2.\n\n### Closure evidence (independently verified)\n- **R7-1 CLOSED except one residual claim**: row 20 (:65) = \"NO payload-bytes disclosure; M + L + C\"; aligned at C4b:72, AC2:90, AC4:92, AC6(d):94, \u00a77:127, \u00a79:140, \u00a710:152, T1:102, T2:106-107. No surviving \"row 20 L+C only\" statement.\n- **R7-2 CLOSED**: README.md:488-490 verified verbatim (\"At or below the delivery ceiling, `structuredContent.upstream_result` retains\u2026\", 488\u2013490); cited at E18:31, T2:106.\n- **R7-3 CLOSED**: bounds.go:348-363 is `retainedResultEnvelopeFits`; :362 is `return baseBytes+upstreamCodeBytes+retainedEnvelopeHeadroom <= ceiling`; cited at R4:14, E13:26, \u00a77:127. E13's prefix formula matches bounded_delivery.go:204-213 exactly.\n- **R7-4 CLOSED**: `fields` defined at R2:12, \u00a74:44, AC1:89, AC6(e):94, T1:102 (`[]` when nothing applied).\n- **Open (i) CLOSED**: row 7 \"NON-EMPTY\" (:52), C3:70, AC6(b)/(d), T1.\n- **Preserved**: R6-1\u2026R6-7, AC1\u2013AC7 verbatim, 12-value enum, write set 3 NEW + 12 MODIFIED; E15 exact (bounded_delivery_test.go:349 `TestExecutionStateRegistry`, :353 5-arg `terminalResult`); maximal metadata bounds.go:365-396 contain no projection key.\n\n### Issues\n**[F1][statement-contradiction][MEDIUM][HIGH]** Forged-member claim is unachievable\nFile: `.scratch/token-efficient-tool-responses/ticket05-spec-r8.md:92` (also :89)\nIssue: AC4 says a forged reserved member on a MATCHING entry \"cannot surface `applied:true` anywhere\", yet its own explanation (\"payload is unprojected (no overwrite)\") plus C4b:72 (\"non-payload members verbatim\") and \u00a74:43 (\"SKIP \u2192 original bytes flow unchanged\") means the forged member is delivered verbatim. Counterexample: direct call to `portainer__EndpointList` with upstream SC `{\"result\":\"<list>\",\"mcp_bridge_projection\":{\"v\":1,\"applied\":true,\"entry\":\"endpoints\",\"mode\":\"default\",\"fields\":[\"Id\",\"Name\",\"Type\"]}}` under DeliveryCeilingBytes 8192 \u2192 row 20 skips, no render, client sees applied:true with an unprojected payload. A T2 oracle asserting absence of `applied:true` in delivered bytes fails.\nFix: narrow AC4/AC1 to \"the bridge never attaches an applied:true disclosure; a colliding upstream member is passed through verbatim and must not be trusted as a bridge disclosure\" and document that in row 20/README \u2014 or make row 20 strip/replace the key (explicit overwrite decision) so the in-band member is bridge-authoritative.\n\n**[F2][statement-contradiction][LOW][HIGH]** \u00a77 fallback does not exist for row 20\nFile: spec:127 (also :89)\nIssue: \u00a77 says under budget refusal \"the disclosure KEY is omitted from render metadata while the disclosure remains in the retained payload bytes\". Row 20 has no payload disclosure, so on a minimal-ceiling config a collision yields no client-visible disclosure at all. AC1:89 \"surfaced on M\" also lacks the over-ceiling/render qualifier.\nFix: scope the fallback to payload-carrier rows (not 1/4/16/18/19/20/21); state row 20's non-render path is log+counter only; qualify AC1 N11 with \"when the collision result is over-ceiling and rendered\".\n\n**[F3][undefined-term][LOW][HIGH]** `entry` undefined for no-match disclosures\nFile: spec:12 (schema), rows 2/3 spec:50-51, AC4:92\nIssue: `entry: string` is required in every disclosure, but rows 2/3 (no match + `full`) write a P disclosure (AC4: \"`projection.full` \u2192 disclosed no-op\") where no allowlist entry exists. No value is defined, so T1's 21-row oracle must invent one.\nFix: define `entry` = \"\" when no entry matched (keep the applied-row value = C1 entryID) and pin it in AC4's full-request oracle.\n\n### Open Questions\n[LOW][MEDIUM] AC4:92 (N2) \"identical envelope sizes \u2026 for unprojected calls\" conflicts with rows 11/12 adding an envelope `projection` member on `projection.full` (payload unprojected); the fail clause says \"unrequested calls\" and \u00a710 scopes byte identity per F-C. Reword to \"calls sent with no projection request\".\n\n### Positive Observations\n- R7-1's fix is applied at every cited surface with matching semantics \u2014 a genuine, falsifiable closure except F1.\n- R7-2/R7-3 citations resolve exactly, including the decisive bounds.go:362 return and the :204-213 prefix formula.\n- E15's variadic-preservation argument is verified against the real 5-arg call site.\n\n### Review limits\nSpecification mode: no build/diagnostics/VCS access; behavior is proposed, not observed; candidate digest taken from the packet. Live wrapper bytes and endpoint member names remain \u00a78 probe UNKNOWNs. Round 7 is schedule-advisory (rounds 3+ never block); this is a technical recommendation.\n\n### Recommendation\nREQUEST CHANGES\n"
+}

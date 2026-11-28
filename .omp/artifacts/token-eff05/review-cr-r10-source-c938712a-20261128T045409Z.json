@@ -1,0 +1,128 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r10",
+  "revision": "r10",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r10.md",
+      "sha256": "154e3710131491f9c3736afa13e0f3055df86e11cb37eec389048910e15649ae"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/issue-119.md",
+      "sha256": "caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/refinement.md",
+      "sha256": "0889c58aa753869ac92acaa7f39a22fd4f9b6fd85e659fd0c37121914f76cc6b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/planner-evidence.md",
+      "sha256": "74acd6a6e9dc70cec955c787784ee377cfa37f8c2c31cc4b56d285e3fd25954d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_endpointlist.json",
+      "sha256": "a7167d80f4151eee2a31092beb2817b39c8c542888f338f9aa1e344f0c3ff398"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_docker_proxy.json",
+      "sha256": "a91db42a4a79684e3863a0ad6abf73a7ec1898dfca9ef9be45d0efed0486f1d1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r9-source-8ffe7679-20261128T044250Z.json",
+      "sha256": "8ffe767967286056a7c3699e6cb3f7f66fa18434d7e744a9ef6ca1d231fa6b0b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "161ff8201f76368e9e6b4a98ba786fcf36c74e346676bb2bc16f71857bb916b1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+      "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "559c8c44341b7516327b6a5ce8684a57b39219e1c8f8c2b5b0789b9fe4947a75"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
+      "sha256": "744579103ff3b3bf3b2b51052767a7f5f50bca2b3536617ad14bdff5300202f5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle_test.go",
+      "sha256": "cba6b86e42d029cf61d3b0eb17a54fdedc9ae3ea6a8643d47956c86f32dd9019"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+      "sha256": "4b3080089e71a4a751b5be2dfb53aad4b24c475a37cb429c190cc656c12ab62c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "df2102ab178fdf4928da5d21bf5c296bef06d32066fe10ea035055b40e23f1e5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "a5999feaf2750a5093d2d17414aff7608f82edf19a37ee21ced2cf1749869f07"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "99d72a5b60e087f89341033ea3d8b3bcc272b382c4b5fb7d43cb31bf25df0163"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "399482e76d6ed7a99f4ccfbaa97e37b194be8d3f1b4c82ccdef77f0809327ed7"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket119SpecR10",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r10.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r10",
+      "targetRevision": "r10",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "7a97249e6eeffef961076dad3f34f20e5aaa6ee56887dc42fe169adb08680cd0",
+      "instructionsSha256": "7a34f73d8cb51482cc236683dad884fe3140ed860d7a52cffa0be1cf82b33ee0",
+      "requestSha256": "9b0a1d8fd6e86f5960c048102ee64f24b41319d1821025a61dfebf91ddaa0da8"
+    },
+    {
+      "name": "CriticTicket119SpecR10",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r10.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r10",
+      "targetRevision": "r10",
+      "reviewerId": "critic",
+      "taskSha256": "573fafd8bc9b72ef3f9d668f6cb7918d1df159d4ff8774b733fadafa946a925d",
+      "instructionsSha256": "7a34f73d8cb51482cc236683dad884fe3140ed860d7a52cffa0be1cf82b33ee0",
+      "requestSha256": "ca4a27c4208a037f91b456402287a1d8291dd392a688af27639b5df714242af9"
+    }
+  ],
+  "output": "## Code Review Summary\n\nSpecification mode, **repair pass** (R9-1/R9-2/R9-3). Candidate r10, supplied sha256 154e3710\u2026; reviewed r10 in full, r9, the r9 review JSON, and live anchors (tools.go:985-1100/:1339, direct_execution.go:25-90, bounded_delivery.go:1-80/125-300, result_handle.go:30-140, bounds.go:200-400, result_handle_test.go commit sites, bounded_delivery_test.go:349-358, metrics.go:290-320, envelope.go:726-736). Total: 5 \u2014 CRITICAL 0 / HIGH 0 / MEDIUM 2 / LOW 3.\n\n### Closure evidence\n- **R9-1 CLOSED** at the overwrite invariant: the single override (r10:37, C3:69, C4b:72, D-header:50, row 20:65) suppresses the bridge payload write on every reachable direct-path row; colliding value value-identical; APPLY\u2192SKIP `disclosure_key_collision`; \u00a710 oracles pin carrier-failure+select-present.\n- **R9-2 CLOSED** at rule level: R2:12, R7:17, E19:32, AC1:89, AC2:91, AC4:93, \u00a710:153. No \u201cbyte-identical to the upstream\u201d claim survives.\n- **R9-3 CLOSED** at classification (C4b iv:72, AC1:89, AC6(d):95, \u00a710:154), **not** at the channel (CR-R10-1).\n- Preserved: F1/F2/F3, AC4 no-request scoping, R7-1\u2026R7-4, R6-1\u2026R6-7, whole-list/NON-EMPTY, N1\u2013N13. Write set 3 NEW + 12 MODIFIED = T1\u222aT2\u222aT3; result_handle_test.go, bounded_delivery_test.go, bounds.go stay outside; 5-arg commit sites :61/121/166/211/304 and `terminalResult` :353 confirmed. E8\u2019s envelope.go:731 is the comment (function :732), non-decisive.\n\n### Issues\n**[CR-R10-1][MEDIUM][statement-contradiction][HIGH]** rows 6/15 order P where no writable carrier exists\nFile: r10:60, :62 vs :72 C4b(iv), :16 R6, :95 AC6(d), :154\nR9-3 makes a non-object upstream SC a carrier failure with \u201cnothing replaced \u2026 M/L+C\u201d, and R6/AC6(d) scope P to \u201cwhere a carrier exists\u201d, yet rows 6/15 keep unqualified \u201cP + L + C\u201d; the override column covers only reserved-key collisions, impossible on a non-object SC. The normative table orders a write an array/string cannot carry, contradicting C4b(iv) and the R9-3 oracle. Adjacent: row 9\u2019s \u201c\u2014\u201d shape leaves select-present + non-object SC without reason precedence.\nFix: \u201cP only where a writable SC carrier exists (multiplexer envelope or direct object SC); direct non-object SC \u21d2 M-when-rendered else L+C\u201d; pin select-present vs carrier-failure precedence.\n\n**[CR-R10-2][MEDIUM][statement-contradiction][HIGH]** AC4 asserts the direct-path override on both paths\nFile: r10:93 vs :51 row 5, :48 R2, :89 AC1\nAC4 requires the matching-forged oracle \u201c(both paths)\u201d and a decision that \u201cfollows the override (skip\u2026)\u201d. The override/`mcp_bridge_projection` is direct-only (C3:69, C4b:72, R6:16); on the multiplexer a nested forged member is a non-payload member preserved value-identically and row 5 decides APPLY with a legitimate applied:true envelope disclosure \u2014 falsifying both \u201cskip\u201d and \u201cno bridge-attached applied:true member exists anywhere\u201d.\nFix: scope the clause and \u201c(both paths)\u201d to the direct path (AC1:89 does), or state the multiplexer expectation (row 5 APPLY; nested member inert).\n\n**[CR-R10-3][LOW][repair-completeness][HIGH]** T2\u2019s R9-2 reword is absent\nFile: r10:107 == r9:106; r10:32, :153\n\u201cpass-through preserving original bytes\u201d survives although \u00a710:153 claims T2 reworded; E19:32 rules upstream-byte preservation unachievable, and raw-byte embedding would break AC4\u2019s byte-identity-to-today (:93).\nFix: \u201cpass-through leaves the `upstream_result` value unchanged (decoded-value identity); do not embed raw upstream bytes\u201d.\n\n**[CR-R10-4][LOW][editorial][MEDIUM]** override L/C reads as an alternative\nFile: r10:50, rows 5/6/13/14/17, :68 vs :65 \u201cM + L + C\u201d, :89, :95\n\u201cchannel becomes M \u2026 when rendered, else L+C\u201d can be read as dropping the warn record and counter when rendered; AC1 and AC6(d) require one of each always. Fix: state once that override rows always emit L+C, plus M when rendered within budget.\n\n**[CR-R10-5][LOW][spec-gap][MEDIUM]** unreachable override rows\nFile: r10:37, :53, :102\nThe override lists rows 15/17 (fields-mode), but fields cannot be requested on the direct path (R3:13), so the demanded oracles cannot be built end-to-end. Fix: drop 15/17 or mark engine-synthetic only.\n\n### Open Questions\n- `mode` on skip rows is undefined (R2:12 gives only the enum); inferable from the request. LOW confidence.\n\n### Positive Observations\n- R9-1 is one precedence rule evaluated before channel resolution, mirrored across C3/C4b/rows/ACs.\n- E19\u2019s cause verified (rawValue/UseNumber tools.go:1339; re-marshal bounded_delivery.go:19); \u201cverbatim\u201d consistently replaced by value-identity.\n\n### Review Limits\nSpecification mode: no build or diagnostics; behavior is proposed, not observed. No shell/hash tool, so the candidate is bound by the supplied sha256 and path. \u00a78 live-probe UNKNOWNs remain.\n\n### Recommendation\nREQUEST CHANGES"
+}

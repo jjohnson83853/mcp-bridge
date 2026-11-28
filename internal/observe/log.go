@@ -351,6 +351,10 @@ func eventMessage(event string) string {
 		return "result handle entropy unavailable"
 	case "result_epoch_unresolved":
 		return "result retention epoch unavailable"
+	case "projection_skipped":
+		return "tool result projection skipped"
+	case "projection_rejected":
+		return "tool result projection rejected"
 	case "log_vocabulary_violation":
 		return "log vocabulary violation"
 	default:

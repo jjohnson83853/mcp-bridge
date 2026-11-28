@@ -1,0 +1,16 @@
+{
+  "role": "critic",
+  "reviewerId": "critic",
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r16",
+  "revision": "r16",
+  "verdict": "REVISE",
+  "output": "### Verdict\nREVISE\n\nSpec ID: token-eff05-spec\nRevision: r16\nFindings by ID: C1 (CR-R16-1), C2\n\n**C1 / CR-R16-1 \u2014 MAJOR, statement-contradiction; high confidence.**  \nAt `ticket05-spec-r16.md:14` and \u00a74 L2, \u201c`full` + `fields` together\u201d requires rejection. AC3 (`:98`) explicitly accepts `{full:false,fields:[\"Id\"]}` as fields mode. The newly normative first-match ladder therefore conflicts with its acceptance oracle. This is the CodeReviewer\u2019s existing CR-R16-1, not a new finding; its advisory classification does not resolve the incompatible outcomes.  \n**Amendment:** Specify `full:true` plus a present `fields` member at every L2 reference; add this false-valued composite to T1/T2, including its interaction with `select`.\n\n**C2 \u2014 MAJOR, statement-contradiction / acceptance gap; high confidence.**  \nAC5 (`:100`) requires inferred endpoint `Type` to be \u201cprobe-confirmed, BLOCKED-if-mismatch,\u201d but \u00a78 makes confirmation optional and principally checks `applied:true`. For `[{\"Id\":1,\"Name\":\"endpoint\"}]`, AC6(e) permits projection with `applied:true` while omitting `Type`; the specified skip signal does not detect this mismatch. AC5 can consequently remain unverified despite a successful probe.  \n**Amendment:** Make evidence confirming endpoint default member names a prerequisite to claiming AC5/release, using an authorized capture or supplied evidence. Assert the actual member names\u2014not merely `applied:true`\u2014and ensure missing `Type` fails confirmation without changing the approved partial-miss behavior. Earlier omission\u2019s cause is unknown; this is not reopening a carrier-disclosure finding.\n\n**Verified basis and coverage:** Read the candidate, \u00a710 repair ledger, r15/r16 reviewer artifacts, issue/refinement/evidence bundle, captured Docker schema, and relevant source seams. Independently verified CR-R15-1\u2019s supplied composite outcomes, mode-aware attempted fields, unified carrier-failure rules, direct collision/error scoping, out-of-band delivery design, variadic compatibility, and the 3-new/12-modified write-set arithmetic. Reviewed R\u2192AC\u2192T mapping, negative/integration fixtures, RED/GREEN plans, retention lifecycle and rollback. Existing scrape-test conventions and the documented collector boundary support proportional observability reuse; no new stack is needed.\n\n**Limits:** Specification assessment only; no commands, tests, writes, hash recomputation or live probes. Proposed runtime behavior is not verified execution. T1/T2 admission acceptance and AC5 completion remain affected; no gate records were changed. If substantive disagreement over C1 remains, request coordinator escalation to configured `spec_critic_escalated`. User checkpoints still govern execution.",
+  "findings": [
+    {
+      "id": "C1"
+    },
+    {
+      "id": "C2"
+    }
+  ]
+}

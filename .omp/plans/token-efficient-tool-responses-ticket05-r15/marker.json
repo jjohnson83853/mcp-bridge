@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 2,
+  "feature": "token-efficient-tool-responses-ticket05-r15",
+  "revision": "r15",
+  "projectRoot": "/home/opencode/projects/default/mcp-bridge",
+  "authorizationId": "pending",
+  "envelopeId": "env-1",
+  "packetDigest": "ff0be10257dd6fab6df5407ee5843a41c18fb5c6bc9a8e40b96978840788e73e",
+  "selectedBranchId": null
+}

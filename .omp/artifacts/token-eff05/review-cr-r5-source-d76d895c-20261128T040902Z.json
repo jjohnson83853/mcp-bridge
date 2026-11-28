@@ -1,0 +1,136 @@
+{
+  "role": "code-reviewer",
+  "reviewerId": "code-reviewer",
+  "candidateId": "token-efficient-tool-responses-ticket05-spec-r5",
+  "revision": "r5",
+  "authorIds": [
+    "planner"
+  ],
+  "inputs": [
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.scratch/token-efficient-tool-responses/ticket05-spec-r5.md",
+      "sha256": "8bbb0907933a14a34f4bbcc8ca596696d467ac34604d1dbf8cca53b0fce0e64f"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/issue-119.md",
+      "sha256": "caf4384624c8ce814fe3df8a9019c2a410c976e6aaeddf276c5fffefc0e0fd81"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/refinement.md",
+      "sha256": "0889c58aa753869ac92acaa7f39a22fd4f9b6fd85e659fd0c37121914f76cc6b"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/planner-evidence.md",
+      "sha256": "74acd6a6e9dc70cec955c787784ee377cfa37f8c2c31cc4b56d285e3fd25954d"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_endpointlist.json",
+      "sha256": "a7167d80f4151eee2a31092beb2817b39c8c542888f338f9aa1e344f0c3ff398"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/schema-portainer_docker_proxy.json",
+      "sha256": "a91db42a4a79684e3863a0ad6abf73a7ec1898dfca9ef9be45d0efed0486f1d1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r1-source-4fc401e5-20261128T030855Z.json",
+      "sha256": "4fc401e52ba0203bff2beb842d57d13c148e7bb2e67428656d8adbab368475b6"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r2-source-f3a60598-20261128T033817Z.json",
+      "sha256": "f3a60598b804c1a748070d95f7e359587b1e4a6c56acac0d6f70686e1323b2c1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/.omp/artifacts/token-eff05/review-cr-r3-source-aca4c23f-20261128T035202Z.json",
+      "sha256": "aca4c23ffe1b95ee0aa33f6fa56a8c7e21bc3401e8ed9f80d68db31cde560c54"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/tools.go",
+      "sha256": "161ff8201f76368e9e6b4a98ba786fcf36c74e346676bb2bc16f71857bb916b1"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery.go",
+      "sha256": "f857d2d6749ccdcadef8b5a28208146bc14dac49427d08e96d6d3d0de8f3e977"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/direct_execution.go",
+      "sha256": "559c8c44341b7516327b6a5ce8684a57b39219e1c8f8c2b5b0789b9fe4947a75"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle.go",
+      "sha256": "744579103ff3b3bf3b2b51052767a7f5f50bca2b3536617ad14bdff5300202f5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/result_handle_test.go",
+      "sha256": "cba6b86e42d029cf61d3b0eb17a54fdedc9ae3ea6a8643d47956c86f32dd9019"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/service/bounded_delivery_test.go",
+      "sha256": "4b3080089e71a4a751b5be2dfb53aad4b24c475a37cb429c190cc656c12ab62c"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/catalog/schema.go",
+      "sha256": "df2102ab178fdf4928da5d21bf5c296bef06d32066fe10ea035055b40e23f1e5"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/config/bounds.go",
+      "sha256": "1beca68aaa48d672b9500daff0d4266af9cf420f3e6df92dd719cb875a629dc2"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/metrics.go",
+      "sha256": "16a92cab47e11ba15653a520a4ebacffd71a62b4744f5f9aba10146ff052c33e"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/envelope.go",
+      "sha256": "d421637f716c9262d1df3f23ec4358113e6ed4f1ce959a1d693a46eb2db23f95"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/internal/observe/log.go",
+      "sha256": "a5999feaf2750a5093d2d17414aff7608f82edf19a37ee21ced2cf1749869f07"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/docs/logging-contract.md",
+      "sha256": "99d72a5b60e087f89341033ea3d8b3bcc272b382c4b5fb7d43cb31bf25df0163"
+    },
+    {
+      "path": "/home/opencode/projects/default/mcp-bridge/README.md",
+      "sha256": "399482e76d6ed7a99f4ccfbaa97e37b194be8d3f1b4c82ccdef77f0809327ed7"
+    }
+  ],
+  "dispatches": [
+    {
+      "name": "ReviewTicket119SpecR5",
+      "taskId": "CR1",
+      "agent": "code-reviewer",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r5.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r5",
+      "targetRevision": "r5",
+      "reviewerId": "code-reviewer",
+      "taskSha256": "9dafbcd52481360e3a15741fad9e233e04190eb69acf836a9b2121ba9c7967c6",
+      "instructionsSha256": "ceadb22145e1ec6e6dc4b2c88be0cca89305b46140c457bc512bf2f661647310",
+      "requestSha256": "e12524218b7f5ec6b8e666581df6b7df1ab12bfea2c81cca4461b8b4f9a7415a"
+    },
+    {
+      "name": "CriticTicket119SpecR5",
+      "taskId": "CT1",
+      "agent": "critic",
+      "effects": {
+        "kind": "read",
+        "paths": [
+          ".scratch/token-efficient-tool-responses/ticket05-spec-r5.md"
+        ]
+      },
+      "targetCandidateId": "token-efficient-tool-responses-ticket05-spec-r5",
+      "targetRevision": "r5",
+      "reviewerId": "critic",
+      "taskSha256": "2b0387117900f4734224622aea4a20eaef31f644b584b314e972168b6008fa4b",
+      "instructionsSha256": "ceadb22145e1ec6e6dc4b2c88be0cca89305b46140c457bc512bf2f661647310",
+      "requestSha256": "6ab295efa53f2e61294d0b72b0809aede9bd4e751e19f1af794a9befd7cc05e5"
+    }
+  ],
+  "output": "## Code Review Summary\nSpec mode, initial pass on r4-repair content (round 4). Candidate `ticket05-spec-r5.md` sha256 `8bbb0907\u2026e64f`. 1 HIGH, 4 MEDIUM, 3 LOW.\n\n### Issues\n[HIGH][statement-contradiction] F-A direct carrier keeps unprojected data while disclosing applied=true\nAnchor: spec:50 (C4b ii), :61 (AC1 N11/F1), :12 (R2); `direct_execution.go:53,60-64`. conf:H\nE3 gives docker_proxy `output_schema {result:string}` + x-fastmcp-wrap-result; E14 copies `upstream.StructuredContent` into the direct result. Direct `docker_proxy /containers/json` default \u21d2 SC `{\"result\":\"<full list>\"}`; C4b(ii)/AC1(N11) keep it verbatim beside `mcp_bridge_projection{applied:true}`, while R2/AC1(F1) forbid any unprojected carrier when applied. The AC oracle would pin the violation.\nFix: rewrite the payload-bearing member to the projected list (carrier completeness) or SKIP with `structured_content_not_mirrorable`; restrict \"verbatim\" to non-payload members; add the wrapper fixture.\n\n[MEDIUM][r-ac-coverage-gap] F-B normative D-table absent; aggregate reason unbound\nAnchor: spec:45, :66 (AC6 d), T1:78; r3:44-63. conf:H\nr3's 13 rows carried per-row reasons (aggregate all-missing \u2192 `item_shape_unexpected`; default-mode error \u2192 no disclosure). r4/r5 compress them to one sentence, so the closed 12-value enum has no bound default-miss value: AC6(d)'s \"specific reason\" cannot fail (T3 union accepts any value) and T1 implements a table the candidate lacks.\nFix: reinstate r3's table plus N9/N10/C4b rows with explicit reasons; name the aggregate reason in AC6(d)/\u00a77.\n\n[MEDIUM][statement-contradiction] F-C \u00a74 forbids skip disclosures\nAnchor: spec:44 vs :16 (R6), :66 (AC6 a'/d). conf:H\nRule: SKIP \u2192 \"no disclosure member added\"; required: `full_requested`/`upstream_error` skips disclose `applied:false`+reason, and AC6(d) demands a disclosed `applied:false` for the direct reserved-key collision that C4b(iii) forbids payload-disclosing.\nFix: scope the clause to upstream result bytes/value; state each row's channel (payload vs log-only) per path.\n\n[MEDIUM][r-ac-coverage-gap] F-D config-feasibility regression unstated\nAnchor: spec:82-83 (T3), :104 (\u00a78); `config/bounds.go:348-363`. conf:H\nThe maximal disclosure (~600 B: 512 B array + keys) added to the maximal sets raises the minimum admissible `preview_ceiling_bytes` from \u2248730 to \u22481352 (`maximalPreviewMetadata` \u2248212 B + 512 + 6). Configs in that range validate today and fail after; no AC covers it; \u00a78 claims no config change.\nFix: state the new minimum, assert the default still validates, add an existing-bounds oracle, document the consequence.\n\n[MEDIUM][stale-citation] F-E N8 reopened \u2014 citation repair incomplete\nAnchor: E14:27 (:60/:69-73), T2:77, E12:25 (:188), E13:26 (:219, :200-216). conf:H\nActual `direct_execution.go`: decode :53, result :60-64, bounded call :65 \u2014 T2's \"between :60 and :69-73\" lands after construction. `terminalSizingMetadata` is :187; `retainedEnvelopeHeadroom` :221; `boundedResultPrefix` 197-228; E16's `observe.RecordRetentionRejection` is a `(*Metrics)` method.\nFix: correct offsets; verify every offset, not only the first anchor per citation.\n\n### Closure\nClosed: N9 (single outcome; `fields:[]` rejects; `{}`/`full:false` absent; full+fields conflict); N10 (AC6(e)); N12 (5-arg call `bounded_delivery_test.go:353`; keyed `resultEntry`; variadic `commit`); N13 count; AC1\u2013AC7 verbatim vs issue-119; write set 3 NEW + 13 MODIFIED = T1\u2013T3 = state effects; ticket-01 arity/seams.\nResidual: N11 (F-A); N13 totality (F-B); N8 (F-E); N2 oracle F-F (\"measured+512\u2212codeWidth+6<1536\" matches neither `retainedResultEnvelopeFits` base+512+6\u2264ceiling nor `boundedResultPrefix` base+512\u2212codeWidth<ceiling; conservative at empty code; the 512 cap leaves \u2248190 B preview budget, so substance holds).\nLOW: F-G \"pinned\" undefined (both entries `pinned:false`; direct path = config pin or `expose_tools` tool); F-H `projection` extracted without path discrimination; state CR1/CT1 `blockedBy []` vs ledger deps.\n\n### Positive\n512 cap computed from both bounds; partitions single-outcome; enum bounded; arity preserved; ACs verbatim.\n\nRound 4: advisory for admission under W09; technical verdict stands.\n\n### Recommendation\nREQUEST CHANGES\n"
+}
